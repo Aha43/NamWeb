@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Conflict + empty/error polish: the sync notice now auto-dismisses after ~4s (still manually
+  dismissible), and a failed initial load shows the error with a Retry button that re-runs the pull
+  (`useWorkspace` gains `retry`). Rounds out the empty/no-remote/error states across the app.
+  Closes #9.
 - Backlog UI: the `backlog` tab renders the `backlogItems` lens (reusing the shared `ActionRow`)
   with a single promote-to-Next action (→ `setStatus NEXT`). All three MVP tabs are now functional.
   2 tests. Closes #8.

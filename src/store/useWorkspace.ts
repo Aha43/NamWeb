@@ -19,11 +19,15 @@ export interface UseWorkspace {
   error: string | null;
   /** No workspace row yet — the desktop must push one first. */
   noRemote: boolean;
-  /** Transient sync notice (conflict reloaded / sync failed); dismiss with clearNotice. */
+  /** Transient sync notice (conflict reloaded / sync failed); auto-dismisses, or clearNotice. */
   notice: string | null;
   clearNotice: () => void;
+  /** Re-run the initial load (used by the load-error retry). */
+  retry: () => void;
   dispatch: (intent: Intent) => void;
 }
+
+const NOTICE_TIMEOUT_MS = 4000;
 
 export function useWorkspace(): UseWorkspace {
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
@@ -36,26 +40,33 @@ export function useWorkspace(): UseWorkspace {
   const committedRef = useRef<WorkspaceSnapshot | null>(null);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
 
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      const result = await pull(supabase, WORKSPACE_NAME);
-      if (!active) return;
-      if (result.kind === 'ok') {
-        const snap = { document: result.document, version: result.version };
-        committedRef.current = snap;
-        setSnapshot(snap);
-      } else if (result.kind === 'noRemote') {
-        setNoRemote(true);
-      } else {
-        setError(result.message);
-      }
-      setLoading(false);
-    })();
-    return () => {
-      active = false;
-    };
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setNoRemote(false);
+    const result = await pull(supabase, WORKSPACE_NAME);
+    if (result.kind === 'ok') {
+      const snap = { document: result.document, version: result.version };
+      committedRef.current = snap;
+      setSnapshot(snap);
+    } else if (result.kind === 'noRemote') {
+      setNoRemote(true);
+    } else {
+      setError(result.message);
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  // Auto-dismiss the transient sync notice.
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), NOTICE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   const dispatch = useCallback((intent: Intent) => {
     // Optimistic display update for immediate feedback.
@@ -72,6 +83,7 @@ export function useWorkspace(): UseWorkspace {
   }, []);
 
   const clearNotice = useCallback(() => setNotice(null), []);
+  const retry = useCallback(() => void load(), [load]);
 
   return {
     document: snapshot?.document ?? null,
@@ -80,6 +92,7 @@ export function useWorkspace(): UseWorkspace {
     noRemote,
     notice,
     clearNotice,
+    retry,
     dispatch,
   };
 }

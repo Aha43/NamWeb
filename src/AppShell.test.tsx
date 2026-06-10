@@ -11,6 +11,7 @@ function workspace(overrides: Partial<UseWorkspace> = {}): UseWorkspace {
     noRemote: false,
     notice: null,
     clearNotice: vi.fn(),
+    retry: vi.fn(),
     dispatch: vi.fn(),
     ...overrides,
   };
@@ -46,6 +47,14 @@ describe('AppShell', () => {
   it('shows a loading state while the workspace loads', () => {
     render(<AppShell workspace={workspace({ loading: true })} onSignOut={() => {}} />);
     expect(screen.getByText('Loading…')).toBeInTheDocument();
+  });
+
+  it('shows a load error with a Retry that re-runs the load', () => {
+    const retry = vi.fn();
+    render(<AppShell workspace={workspace({ error: 'Network error', retry })} onSignOut={() => {}} />);
+    expect(screen.getByText('Network error')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(retry).toHaveBeenCalledOnce();
   });
 
   it('shows the no-remote hint when there is no workspace yet', () => {

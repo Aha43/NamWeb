@@ -46,7 +46,16 @@ export function AppShell({ workspace, onSignOut }: { workspace: UseWorkspace; on
         {workspace.loading ? (
           <Centered>Loading…</Centered>
         ) : workspace.error ? (
-          <Centered>{workspace.error}</Centered>
+          <Centered>
+            <p>{workspace.error}</p>
+            <button
+              type="button"
+              onClick={workspace.retry}
+              className="mt-3 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              Retry
+            </button>
+          </Centered>
         ) : workspace.noRemote ? (
           <Centered>No workspace yet — sync from the desktop app first.</Centered>
         ) : tab === 'inbox' ? (
