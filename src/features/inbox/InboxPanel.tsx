@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Button } from '@/components/ui/button';
 import type { NamNode } from '../../domain/types';
 
 export interface InboxPanelProps {
@@ -28,28 +29,23 @@ export function InboxPanel({ items, onAdd, onConvert, onDelete }: InboxPanelProp
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Add to inbox…"
-          className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-base outline-none focus:border-blue-500"
+          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
         />
-        <button
-          type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-        >
-          Add
-        </button>
+        <Button type="submit">Add</Button>
       </form>
 
       {items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-slate-400">Inbox zero. Nothing to process.</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">Inbox zero. Nothing to process.</p>
       ) : (
-        <ul className="divide-y divide-slate-200 rounded-lg border border-slate-200 bg-white">
+        <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-2 px-3 py-2">
-              <span className="flex-1 text-sm text-slate-800">{item.title}</span>
+              <span className="flex-1 text-sm text-foreground">{item.title}</span>
               <button
                 type="button"
                 aria-label={`Convert ${item.title} to next action`}
                 onClick={() => onConvert(item.id)}
-                className="rounded-md px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
               >
                 → Next
               </button>
@@ -57,7 +53,7 @@ export function InboxPanel({ items, onAdd, onConvert, onDelete }: InboxPanelProp
                 type="button"
                 aria-label={`Delete ${item.title}`}
                 onClick={() => onDelete(item.id)}
-                className="rounded-md px-2 py-1 text-xs font-medium text-slate-400 hover:bg-slate-100 hover:text-red-600"
+                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-destructive"
               >
                 Delete
               </button>

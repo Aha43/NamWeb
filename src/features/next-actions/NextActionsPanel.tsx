@@ -25,7 +25,7 @@ export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog }: NextAction
                     type="button"
                     aria-label={`Mark ${row.title} done`}
                     onClick={() => onMarkDone(row.id)}
-                    className="rounded-md px-2 py-1 text-xs font-medium text-green-700 hover:bg-green-50"
+                    className="rounded-md px-2 py-1 text-xs font-medium text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40"
                   >
                     Done
                   </button>
@@ -33,7 +33,7 @@ export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog }: NextAction
                     type="button"
                     aria-label={`Move ${row.title} to backlog`}
                     onClick={() => onMarkBacklog(row.id)}
-                    className="rounded-md px-2 py-1 text-xs font-medium text-slate-500 hover:bg-slate-100"
+                    className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
                     Backlog
                   </button>

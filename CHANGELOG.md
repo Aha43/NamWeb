@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Restyled all existing surfaces onto the design system: Inbox, Next Actions, Backlog, `ActionRow`,
+  Login, and the not-found / loading states moved from hardcoded `slate-*` classes to the dark-aware
+  design tokens (`bg-card` / `text-foreground` / `text-muted-foreground` / `border-border` /
+  `text-primary` / `text-destructive`), with the shadcn `Button` for primary actions. The app is now
+  fully dark-mode-correct end to end. Closes #21.
+
 ### Added
 
 - Focus execution deck — the centerpiece. An immersive full-screen `/focus` surface (outside the
