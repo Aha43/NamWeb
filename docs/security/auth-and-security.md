@@ -151,6 +151,31 @@ To keep the ladder climbable during the "weeks of frontend dev":
 
 If those three hold, switching token custody later is a localized project, not a rewrite.
 
+## Identity providers & SSO
+
+Current: **email/password only**. Roadmap, in priority order:
+
+**Near-term — Google + Microsoft social login (target: deploy-time).** Tracked in **issue #14**.
+- Coexists with email/password; the login screen just gains "Continue with…" buttons.
+- **Non-invasive**: a social provider yields the *same* Supabase JWT, so RLS, `workspaceClient`,
+  and the domain layer are untouched. Scope = provider config (Google Cloud / Entra ID) + buttons
+  + OAuth-redirect handling.
+- **Deploy-time is the natural fit**: needs hosted Supabase, a real domain, and provider apps with
+  **public callback URLs** — awkward on the local stack.
+- **Prerequisite decision (before real users):** identity-linking policy — "same verified email =
+  same Supabase user" — so the **desktop (email/pw)** and **web (Google/MS)** resolve to one
+  account → one workspace. Cheap now; migration pain if split accounts already exist at launch.
+
+**Way down — enterprise SSO (SAML 2.0 / OIDC).** `supabase.auth.signInWithSSO({ domain })`.
+- Also mints a Supabase JWT → data layer unchanged.
+- But it's a **product-shape decision, not an auth toggle**: implies multi-tenant (orgs, not one
+  person — currently out of scope, R6), a paid Supabase tier, tenant/domain mapping, and eventually
+  SCIM provisioning. Gated on NamWeb becoming a multi-tenant SaaS.
+
+**Composes with the BFF (H1):** social login's `authorization_code + PKCE` is *more* natural behind
+a backend, which would own the code exchange and set the cookie. Adding providers now and moving to
+a BFF later do not conflict.
+
 ## Cross-repo notes
 
 - The **JWT secret, GoTrue config, and `workspaces` RLS live in NamDesktop** (`supabase/`),
@@ -171,3 +196,4 @@ mobile auth. Revisit only if the product direction changes.
 |---|---|
 | 2026-06-10 | Initial spec — documents the web-MVP auth baseline (JWT-bearer SPA, localStorage session, Supabase RLS) and a first hardening backlog. |
 | 2026-06-10 | Sharpened H1 to the BFF / token-mediating backend pattern (IETF browser-apps BCP); added H1a sender-constrained tokens (DPoP/mTLS, Supabase bearer-only caveat); added an "Upgrade path" section on the seams that keep the climb cheap and the discipline that protects it. |
+| 2026-06-10 | Added "Identity providers & SSO": Google + Microsoft social login near-term/deploy-time (issue #14, with the identity-linking-across-clients prerequisite) and enterprise SSO as a way-down, multi-tenant-gated item. |
