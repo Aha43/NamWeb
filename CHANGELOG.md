@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Workspace sync client (`src/sync/workspaceClient.ts`): `pull(name)` and `push(name, document,
+  guardVersion)` over `@supabase/supabase-js`, mirroring the NamDesktop cloud-sync contract —
+  version-guarded update, first-push insert, and conflict detection (guarded update matches zero
+  rows → fetch to disambiguate first-push from a stale-version conflict). Typed `PullResult` /
+  `PushResult`. 9 unit tests against a mocked Supabase client. No UI. Closes #3.
 - Domain model + lenses (`src/domain/`): TypeScript mirror of the NamDesktop workspace document
   (`NamNode`, `NodeStatus`, `WorkspaceDocument`, with field names matching the Jackson JSON blob)
   and pure lens selectors ported verbatim from the Java lenses — `inboxItems` (inbox children, any
