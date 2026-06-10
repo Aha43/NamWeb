@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Auth + session: Supabase client (`src/lib/supabase.ts`) from `.env` vars, a `useSession` hook
+  tracking sign-in/sign-out, and an email/password `Login` form with error states. The app is gated
+  behind login — `App` shows `Login` until there's a session, then the `AppShell` (now with a Sign
+  out button). Shell extracted from `App` into `AppShell` for clean testing. 5 tests (login submit +
+  error, shell tabs + sign-out). Closes #4.
 - Workspace sync client (`src/sync/workspaceClient.ts`): `pull(name)` and `push(name, document,
   guardVersion)` over `@supabase/supabase-js`, mirroring the NamDesktop cloud-sync contract —
   version-guarded update, first-push insert, and conflict detection (guarded update matches zero
