@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Next Actions UI: the `next` tab renders the `nextActions` lens with project path, tags, and a due
+  hint, and mark-done / send-to-backlog actions (→ `setStatus`). New `projectPath` lens helper
+  (ancestor project titles, structural containers excluded) and a shared `ActionRow`/`ActionList`
+  presentation plus `toActionRow` mapper (reused by Backlog next). 6 tests (panel + projectPath).
+  Closes #7.
 - `make dev` one-command launcher (`makefile` + `scripts/dev-up.ps1`): ensures npm deps and `.env`
   are present, checks whether the local Supabase stack is up on `127.0.0.1:54321` and starts it from
   the sibling NamDesktop repo if not (waiting until ready), then runs `npm run dev`. Cross-platform

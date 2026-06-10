@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { inboxItems } from './domain/lenses';
+import { inboxItems, nextActions } from './domain/lenses';
 import { newId, nowIso } from './lib/local';
 import { InboxPanel } from './features/inbox/InboxPanel';
+import { NextActionsPanel } from './features/next-actions/NextActionsPanel';
+import { toActionRow } from './features/actions/rows';
 import type { UseWorkspace } from './store/useWorkspace';
 
 type Tab = 'inbox' | 'next' | 'backlog';
@@ -52,6 +54,12 @@ export function AppShell({ workspace, onSignOut }: { workspace: UseWorkspace; on
             onAdd={(title) => dispatch({ type: 'addInboxItem', id: newId(), title, now: nowIso() })}
             onConvert={(id) => dispatch({ type: 'convertInboxToNext', id, now: nowIso() })}
             onDelete={(id) => dispatch({ type: 'deleteLeaf', id })}
+          />
+        ) : tab === 'next' ? (
+          <NextActionsPanel
+            rows={document ? nextActions(document).map((n) => toActionRow(document, n)) : []}
+            onMarkDone={(id) => dispatch({ type: 'setStatus', id, status: 'DONE', now: nowIso() })}
+            onMarkBacklog={(id) => dispatch({ type: 'setStatus', id, status: 'BACKLOG', now: nowIso() })}
           />
         ) : (
           <Centered>{TABS.find((t) => t.id === tab)!.label} — coming soon.</Centered>

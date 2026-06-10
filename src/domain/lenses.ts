@@ -43,6 +43,24 @@ export function nextActions(doc: WorkspaceDocument): NamNode[] {
   );
 }
 
+/**
+ * Ancestor project titles for a node, top-most first, excluding structural
+ * containers (root/inbox/projects/actions). Empty when the node sits directly
+ * under a structural container. Mirrors NamDesktop's `projectPath`.
+ */
+export function projectPath(doc: WorkspaceDocument, id: string): string[] {
+  const parents = buildParentIndex(doc);
+  const structural = structuralNodeIds(doc);
+  const path: string[] = [];
+  let cursor = parents.get(id);
+  while (cursor && !structural.has(cursor)) {
+    const ancestor = doc.nodes[cursor];
+    if (ancestor) path.unshift(ancestor.title);
+    cursor = parents.get(cursor);
+  }
+  return path;
+}
+
 /** Backlog = BACKLOG, non-project, non-structural, not an unprocessed inbox item. */
 export function backlogItems(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);

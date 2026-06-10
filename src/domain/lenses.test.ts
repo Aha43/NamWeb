@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
-import { backlogItems, buildParentIndex, inboxItems, nextActions, structuralNodeIds } from './lenses';
+import { backlogItems, buildParentIndex, inboxItems, nextActions, projectPath, structuralNodeIds } from './lenses';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -120,6 +120,40 @@ describe('nextActions', () => {
     const doc = workspace((Object.values(workspace().nodes)).map((n) => ({ ...n, status: 'NEXT' as const })));
     expect(ids(nextActions(doc))).not.toContain('inbox');
     expect(ids(nextActions(doc))).not.toContain('root');
+  });
+});
+
+describe('projectPath', () => {
+  it('is empty for an action directly under a structural container', () => {
+    const doc = workspace([node('a', { status: 'NEXT' })], (d) => addChild(d, 'actions', 'a'));
+    expect(projectPath(doc, 'a')).toEqual([]);
+  });
+
+  it('lists the parent project for an action under a project', () => {
+    const doc = workspace(
+      [node('home', { project: true, title: 'Home' }), node('a', { status: 'NEXT' })],
+      (d) => {
+        addChild(d, 'projects', 'home');
+        addChild(d, 'home', 'a');
+      },
+    );
+    expect(projectPath(doc, 'a')).toEqual(['Home']);
+  });
+
+  it('lists ancestors top-most first for a nested sub-project', () => {
+    const doc = workspace(
+      [
+        node('home', { project: true, title: 'Home' }),
+        node('kitchen', { project: true, title: 'Kitchen' }),
+        node('a', { status: 'NEXT' }),
+      ],
+      (d) => {
+        addChild(d, 'projects', 'home');
+        addChild(d, 'home', 'kitchen');
+        addChild(d, 'kitchen', 'a');
+      },
+    );
+    expect(projectPath(doc, 'a')).toEqual(['Home', 'Kitchen']);
   });
 });
 
