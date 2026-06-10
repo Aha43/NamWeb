@@ -1,10 +1,12 @@
 # Web App — Brewing Document
 
-> Status: **precondition met, awaiting planning session.** Cloud sync (NamDesktop #215–217,
-> #350–351) shipped to NamDesktop `main` via PR #352 on 2026-06-10 — the foundation this doc
-> waited on. This doc now lives in its own repo (NamWeb). It is **not yet** promoted to "ready
-> for implementation": run the planning session described under "What to do when this gets
-> promoted" first, then flip this status and create the epics/issues.
+> Status: **ready for implementation — MVP sprint in progress.** Promoted in the first NamWeb
+> planning session (2026-06-10). Decided: full-triage MVP (capture + Next/Backlog + mark
+> done/next/backlog), mobile-first responsive online-only, **direct to Supabase** (no web API),
+> React + Vite + TypeScript. Key reframe vs the original brewing doc: cloud sync shipped a working
+> JSON-blob-over-Supabase contract, so the MVP consumes it directly — the web-API + relational
+> schema migration is a **deferred future epic, not a prerequisite**. Sprint tracked as NamWeb
+> issues #1–#9.
 >
 > _(Original framing: brewing doc capturing direction and open questions so the idea ripens.
 > Promote only after the cloud-sync API layer is live — which it now is.)_
