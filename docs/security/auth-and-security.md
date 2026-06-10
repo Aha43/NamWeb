@@ -78,9 +78,20 @@ No CSRF surface today (auth is `Bearer`-header, not cookies) — that changes if
 Grouped; each is a parking-lot item, not a decision.
 
 **Client token handling**
-- **H1 — Move tokens off `localStorage`.** Introduce a thin backend (the deferred web-API
-  epic) that sets **httpOnly, Secure, SameSite cookies**; the SPA stops holding the JWT.
-  Brings CSRF into scope (mitigate with SameSite + CSRF tokens). Biggest single hardening.
+- **H1 — Adopt the BFF / token-mediating backend pattern.** This is the current recommended
+  architecture in the IETF **"OAuth 2.0 for Browser-Based Apps"** BCP
+  (`draft-ietf-oauth-browser-based-apps`), which ranks "tokens held in JS" (what we do today)
+  as the *least* secure option. A same-origin backend (the deferred web-API epic) does the
+  GoTrue token exchange and **holds the access + refresh tokens server-side**; the browser
+  gets only an **httpOnly, Secure, SameSite session cookie** — it never sees the access token.
+  Kills the localStorage-exfiltration risk (R1) at the cost of running a server and bringing
+  **CSRF** into scope (mitigate with SameSite + anti-CSRF token). Biggest single hardening.
+- **H1a — Sender-constrained tokens (a *separate* axis from H1).** Bearer tokens are usable by
+  whoever holds them; sender-constraining binds a token to a key so a stolen one is useless —
+  **DPoP (RFC 9449)** or **mTLS-bound tokens (RFC 8705)**. Caveat: **Supabase/GoTrue issues
+  plain bearer JWTs and does not support DPoP**, so this means stepping outside Supabase
+  defaults. Note that H1 (cookie, no token in browser) already addresses most of the same
+  public-client threat, so this is lower priority unless service-to-service tokens appear.
 - **H2 — Add a strict CSP** + standard security headers (X-Frame-Options/frame-ancestors,
   Referrer-Policy, etc.) at the hosting layer.
 - **H3 — Graceful session expiry**: detect refresh failure / 401 and route to a clean
@@ -105,6 +116,41 @@ Grouped; each is a parking-lot item, not a decision.
 
 ---
 
+## Upgrade path — can we climb the ladder later from today's choices?
+
+Short answer: **yes, and rather cleanly** — because the swappable parts are already isolated.
+The current SPA-token model is the entry rung, not a dead end.
+
+**What makes the climb cheap (the seams that already exist):**
+- **Data access is centralized** in `src/sync/workspaceClient.ts` (`pull`/`push`). Moving to a
+  BFF means re-pointing those two functions at `/api/...` instead of `supabase.from(...)`. The
+  contract is unchanged and already proven by the desktop's Java client.
+- **Auth is isolated** in `src/lib/supabase.ts`, `src/auth/Login.tsx`, `src/auth/useSession.ts`.
+  A cookie-session login swaps these few files; the rest of the app doesn't care.
+- **Domain, lenses, mutations, conflict-retry, and UI are transport-agnostic** — they operate on
+  the workspace document, not on HTTP. A BFF migration does **not** touch them.
+- **RLS is the authorization boundary** and survives every architecture: SPA-direct or BFF, the
+  DB still enforces `auth.uid() = owner_user_id` — provided the BFF *forwards the user's JWT*
+  rather than using the service-role key with app-side authz.
+
+**So the realistic ladder:**
+1. **SPA holds bearer JWT** (today) — fine for single-user personal use.
+2. **BFF / token-mediating backend** (H1) — bounded change to the seams above + build the backend.
+3. **Asymmetric signing / JWKS** — if multiple services must verify tokens; Supabase is moving
+   toward asymmetric keys, so this is config + rotation, not a redesign. Not blocked today.
+4. **Sender-constrained tokens** (H1a) — the one genuinely constrained rung (Supabase is
+   bearer-only); largely subsumed by step 2 for the browser edge.
+
+**The real risk to the upgrade path is not the current design — it's discipline erosion.**
+To keep the ladder climbable during the "weeks of frontend dev":
+- **Never scatter `supabase.from(...)` / `supabase.auth` calls across components.** Keep all data
+  access behind `workspaceClient` and all auth behind `lib/supabase` + `useSession`. A swap is
+  trivial if these stay the only seams, and painful if they leak everywhere.
+- **Keep authorization in RLS**, not in client/app code. Don't let the client become the gate.
+- **Keep the domain layer transport-free.** No HTTP/Supabase types in `domain/` or the UI.
+
+If those three hold, switching token custody later is a localized project, not a rewrite.
+
 ## Cross-repo notes
 
 - The **JWT secret, GoTrue config, and `workspaces` RLS live in NamDesktop** (`supabase/`),
@@ -124,3 +170,4 @@ mobile auth. Revisit only if the product direction changes.
 | Date | Change |
 |---|---|
 | 2026-06-10 | Initial spec — documents the web-MVP auth baseline (JWT-bearer SPA, localStorage session, Supabase RLS) and a first hardening backlog. |
+| 2026-06-10 | Sharpened H1 to the BFF / token-mediating backend pattern (IETF browser-apps BCP); added H1a sender-constrained tokens (DPoP/mTLS, Supabase bearer-only caveat); added an "Upgrade path" section on the seams that keep the climb cheap and the discipline that protects it. |
