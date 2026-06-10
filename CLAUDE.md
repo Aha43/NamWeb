@@ -26,11 +26,30 @@ dependency chain that led here.
 
 ## Tech stack
 
-**TBD — deferred to a planning session.** The design doc lists the frontend stack as an open
-question (current prior: React + TypeScript, but not committed), along with scope, auth, PWA,
-and whether a thin web API sits in front of the DB. Do not scaffold a framework until the
-stack is decided in the planning chat and a corresponding issue exists. This section gets
-filled in (and a Build commands section added) when the scaffold issue lands.
+Decided in the first planning session (see `docs/features/web-app/design.md`):
+
+- **React + TypeScript** on **Vite** (mobile-first responsive SPA, online-only for the MVP).
+- **`@supabase/supabase-js`** — talks **directly** to the same Supabase project as NamDesktop
+  cloud sync. No web API of our own; the web-API + relational schema is a deferred future epic.
+- **TanStack Query** — server state, optimistic updates, the sync conflict-retry.
+- **Tailwind CSS** — styling.
+- **Vitest** + Testing Library — unit/component tests. **ESLint** (flat config) — lint.
+
+## Build commands
+
+```bash
+npm install      # install dependencies (first time)
+npm run dev      # start the Vite dev server (http://localhost:5173)
+npm run build    # typecheck + production build to dist/
+npm run test     # run the Vitest suite once
+npm run lint     # eslint
+npm run typecheck # tsc --noEmit
+```
+
+Copy `.env.example` to `.env` to configure the Supabase URL + publishable key. The defaults
+target the local Supabase stack run from NamDesktop (`make supabase-start`).
+
+`npm run test` is this repo's equivalent of NamDesktop's `make test`; `npm run dev` of `make run`.
 
 ## Workflow
 
