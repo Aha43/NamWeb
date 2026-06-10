@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Routing (React Router): real, deep-linkable routes — `/inbox`, `/next`, `/backlog`, `/focus`
+  (placeholder), an index redirect to `/inbox`, and a not-found. The `useState` tab is gone; the
+  shell is now a route layout (`AppShell` + `Outlet`, `NavLink` nav). Workspace state moved behind a
+  `WorkspaceProvider` / `useWorkspaceContext` so the route pages (and both shells coming in #18)
+  share one instance; surfaces split into page containers under `src/routes/`. Tests run against a
+  deterministic Supabase test env. Closes #17.
 - Design-system & theming foundation: shadcn/ui (Radix + Tailwind) wired up — `cn` util, `@`→`src`
   path alias, Tailwind theme tokens via CSS variables, `tailwindcss-animate`, `lucide-react`, a
   `Button` primitive, and a dark-mode `ThemeProvider`/`ThemeToggle` (default dark to echo the
