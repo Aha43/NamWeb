@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Domain model + lenses (`src/domain/`): TypeScript mirror of the NamDesktop workspace document
+  (`NamNode`, `NodeStatus`, `WorkspaceDocument`, with field names matching the Jackson JSON blob)
+  and pure lens selectors ported verbatim from the Java lenses — `inboxItems` (inbox children, any
+  status), `nextActions` (NEXT, non-project, non-structural), `backlogItems` (BACKLOG, non-project,
+  not an inbox item), plus `structuralNodeIds`/`buildParentIndex` helpers. 15 unit tests. No UI.
+  Closes #2.
 - App scaffold: Vite + React + TypeScript SPA with Tailwind CSS, `@supabase/supabase-js`, and
   TanStack Query. Mobile-first app shell with a bottom nav (Inbox / Next / Backlog placeholders),
   `.env.example` defaulting to the local Supabase stack, Vitest + Testing Library setup with a
