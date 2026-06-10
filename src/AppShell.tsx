@@ -1,4 +1,8 @@
 import { useState } from 'react';
+import { inboxItems } from './domain/lenses';
+import { newId, nowIso } from './lib/local';
+import { InboxPanel } from './features/inbox/InboxPanel';
+import type { UseWorkspace } from './store/useWorkspace';
 
 type Tab = 'inbox' | 'next' | 'backlog';
 
@@ -8,12 +12,10 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'backlog', label: 'Backlog' },
 ];
 
-/**
- * Authenticated app shell. Mobile-first layout with a bottom nav.
- * Panels are placeholders until the feature issues (#6–#8) land.
- */
-export function AppShell({ onSignOut }: { onSignOut: () => void }) {
+/** Authenticated app shell: header, sync notice, active panel, and bottom nav. */
+export function AppShell({ workspace, onSignOut }: { workspace: UseWorkspace; onSignOut: () => void }) {
   const [tab, setTab] = useState<Tab>('inbox');
+  const { document, dispatch } = workspace;
 
   return (
     <div className="flex min-h-dvh flex-col bg-slate-50 text-slate-900">
@@ -28,8 +30,32 @@ export function AppShell({ onSignOut }: { onSignOut: () => void }) {
         </button>
       </header>
 
+      {workspace.notice && (
+        <div role="status" className="flex items-center justify-between bg-amber-50 px-4 py-2 text-sm text-amber-800">
+          <span>{workspace.notice}</span>
+          <button type="button" onClick={workspace.clearNotice} className="font-medium hover:underline">
+            Dismiss
+          </button>
+        </div>
+      )}
+
       <main className="flex-1 overflow-y-auto px-4 py-6">
-        <Placeholder tab={tab} />
+        {workspace.loading ? (
+          <Centered>Loading…</Centered>
+        ) : workspace.error ? (
+          <Centered>{workspace.error}</Centered>
+        ) : workspace.noRemote ? (
+          <Centered>No workspace yet — sync from the desktop app first.</Centered>
+        ) : tab === 'inbox' ? (
+          <InboxPanel
+            items={document ? inboxItems(document) : []}
+            onAdd={(title) => dispatch({ type: 'addInboxItem', id: newId(), title, now: nowIso() })}
+            onConvert={(id) => dispatch({ type: 'convertInboxToNext', id, now: nowIso() })}
+            onDelete={(id) => dispatch({ type: 'deleteLeaf', id })}
+          />
+        ) : (
+          <Centered>{TABS.find((t) => t.id === tab)!.label} — coming soon.</Centered>
+        )}
       </main>
 
       <nav
@@ -55,13 +81,6 @@ export function AppShell({ onSignOut }: { onSignOut: () => void }) {
   );
 }
 
-function Placeholder({ tab }: { tab: Tab }) {
-  const label = TABS.find((t) => t.id === tab)!.label;
-  return (
-    <section className="mx-auto max-w-md text-center text-slate-500">
-      <p className="text-sm">
-        <span className="font-medium text-slate-700">{label}</span> — coming soon.
-      </p>
-    </section>
-  );
+function Centered({ children }: { children: React.ReactNode }) {
+  return <section className="mx-auto max-w-md py-8 text-center text-sm text-slate-500">{children}</section>;
 }

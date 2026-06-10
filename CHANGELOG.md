@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Inbox UI: the workspace now runs end-to-end. `AppShell` consumes the `useWorkspace` hook (wired
+  via a new `AuthedApp`), renders the inbox via the `inboxItems` lens, and shows loading / no-remote
+  / dismissible sync-notice states. New `InboxPanel` (`src/features/inbox/`) provides quick-add
+  capture (the headline flow → `addInboxItem`), convert-to-Next, and delete, with an Inbox-zero
+  empty state. `src/lib/local.ts` supplies node ids and Java-`LocalDateTime`-compatible timestamps.
+  11 tests (InboxPanel + AppShell states). Closes #6.
 - Workspace store + mutations: intent-based pure mutations (`src/domain/mutations.ts` —
   `addInboxItem`, `convertInboxToNext`, `setStatus`, `deleteLeaf`, each replayable), the optimistic
   single-flight commit with intent-replay conflict-retry (`src/store/commit.ts` — push guarded;

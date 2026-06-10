@@ -1,9 +1,8 @@
-import { AppShell } from './AppShell';
+import { AuthedApp } from './AuthedApp';
 import { Login } from './auth/Login';
 import { useSession } from './auth/useSession';
-import { supabase } from './lib/supabase';
 
-/** Auth gate: shows the login form until there is a session, then the app shell. */
+/** Auth gate: shows the login form until there is a session, then the app. */
 export default function App() {
   const { session, loading } = useSession();
 
@@ -17,5 +16,5 @@ export default function App() {
 
   if (!session) return <Login />;
 
-  return <AppShell onSignOut={() => void supabase.auth.signOut()} />;
+  return <AuthedApp />;
 }
