@@ -1,16 +1,32 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { ShellLayout } from './ShellLayout';
 import { InboxPage } from './InboxPage';
 import { NextActionsPage } from './NextActionsPage';
 import { BacklogPage } from './BacklogPage';
-import { FocusPage } from './FocusPage';
 import { NotFound } from './NotFound';
+
+// Code-split the immersive focus deck (pulls in framer-motion) off the main bundle.
+const FocusPage = lazy(() => import('./FocusPage').then((m) => ({ default: m.FocusPage })));
 
 export function AppRoutes() {
   return (
     <Routes>
-      {/* Immersive execution surface — no shell chrome. */}
-      <Route path="focus" element={<FocusPage />} />
+      {/* Immersive execution surface — no shell chrome; lazily loaded. */}
+      <Route
+        path="focus"
+        element={
+          <Suspense
+            fallback={
+              <div className="flex min-h-dvh items-center justify-center bg-background text-sm text-muted-foreground">
+                Loading…
+              </div>
+            }
+          >
+            <FocusPage />
+          </Suspense>
+        }
+      />
       <Route element={<ShellLayout />}>
         <Route index element={<Navigate to="/inbox" replace />} />
         <Route path="inbox" element={<InboxPage />} />

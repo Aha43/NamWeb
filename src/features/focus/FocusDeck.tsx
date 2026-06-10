@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { FocusCard } from './focusCards';
@@ -17,6 +17,7 @@ export interface FocusDeckProps {
  */
 export function FocusDeck({ cards, onDone, onExit }: FocusDeckProps) {
   const [index, setIndex] = useState(0);
+  const reduceMotion = useReducedMotion();
 
   const len = cards.length;
   const safeIndex = len === 0 ? 0 : ((index % len) + len) % len;
@@ -66,9 +67,9 @@ export function FocusDeck({ cards, onDone, onExit }: FocusDeckProps) {
             if (info.offset.x < -80) next();
             else if (info.offset.x > 80) prev();
           }}
-          initial={{ opacity: 0, x: 24 }}
+          initial={reduceMotion ? false : { opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: reduceMotion ? 0 : 0.15 }}
           className="w-full max-w-lg cursor-grab rounded-2xl border border-border bg-card p-8 shadow-sm active:cursor-grabbing"
         >
           {current.path.length > 0 && (
@@ -94,7 +95,7 @@ export function FocusDeck({ cards, onDone, onExit }: FocusDeckProps) {
         </Button>
       </div>
 
-      <p className="pb-6 text-center text-sm text-muted-foreground" aria-label="Progress">
+      <p className="pb-6 text-center text-sm text-muted-foreground" aria-label="Progress" aria-live="polite">
         {safeIndex + 1} / {len}
       </p>
     </div>

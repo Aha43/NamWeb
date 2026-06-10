@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- Interaction & a11y polish: the focus deck is **code-split** — framer-motion now loads on demand
+  with the `/focus` route instead of in the initial bundle (clears the chunk-size warning; main
+  bundle drops below 500 kB). The deck respects `prefers-reduced-motion` and announces its progress
+  via `aria-live`. Closes #22.
 - Restyled all existing surfaces onto the design system: Inbox, Next Actions, Backlog, `ActionRow`,
   Login, and the not-found / loading states moved from hardcoded `slate-*` classes to the dark-aware
   design tokens (`bg-card` / `text-foreground` / `text-muted-foreground` / `border-border` /
