@@ -1,0 +1,16 @@
+import { Inbox, Layers, ListTodo, Target, type LucideIcon } from 'lucide-react';
+
+export interface NavItem {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+/** All routable surfaces. The desktop sidebar shows them all; the phone bottom bar
+ *  foregrounds a subset (capture + execution) and the rest live in the More sheet. */
+export const SURFACES: NavItem[] = [
+  { to: '/inbox', label: 'Inbox', icon: Inbox },
+  { to: '/next', label: 'Next', icon: ListTodo },
+  { to: '/backlog', label: 'Backlog', icon: Layers },
+  { to: '/focus', label: 'Focus', icon: Target },
+];

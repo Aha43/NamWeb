@@ -1,9 +1,17 @@
-import { AppShell } from './AppShell';
-import { supabase } from './lib/supabase';
-import { useWorkspace } from './store/useWorkspace';
+import { BrowserRouter } from 'react-router-dom';
+import { WorkspaceProvider } from './store/WorkspaceProvider';
+import { CaptureProvider } from './capture/CaptureProvider';
+import { AppRoutes } from './routes/AppRoutes';
 
-/** Mounted only once authenticated; owns the workspace and renders the shell. */
+/** Mounted only once authenticated; owns the workspace, capture, and the routed shell. */
 export function AuthedApp() {
-  const workspace = useWorkspace();
-  return <AppShell workspace={workspace} onSignOut={() => void supabase.auth.signOut()} />;
+  return (
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <WorkspaceProvider>
+        <CaptureProvider>
+          <AppRoutes />
+        </CaptureProvider>
+      </WorkspaceProvider>
+    </BrowserRouter>
+  );
 }

@@ -1,0 +1,92 @@
+import { render, screen, fireEvent, within } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { NamNode, WorkspaceDocument } from '@/domain/types';
+import type { UseWorkspace } from '@/store/useWorkspace';
+import { WorkspaceContext } from '@/store/workspace-context';
+import { CaptureProvider } from '@/capture/CaptureProvider';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { AppRoutes } from '@/routes/AppRoutes';
+
+function setViewport(isDesktop: boolean) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: isDesktop,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }) as unknown as MediaQueryList;
+}
+
+afterEach(() => setViewport(false));
+
+function node(id: string, partial: Partial<NamNode> = {}): NamNode {
+  return {
+    id, title: id, description: null, status: 'BACKLOG', project: false,
+    childIds: [], tags: [], blockedBy: [], resources: [],
+    createdAt: null, updatedAt: null, statusChangedAt: null, dueAt: null, ...partial,
+  };
+}
+
+function workspace(): UseWorkspace {
+  const document: WorkspaceDocument = {
+    formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox',
+    projectsNodeId: 'projects', nextActionsNodeId: 'actions',
+    nodes: {
+      root: node('root', { childIds: ['inbox', 'projects', 'actions'] }),
+      inbox: node('inbox'), projects: node('projects'), actions: node('actions'),
+    },
+    registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
+  };
+  return {
+    document, loading: false, error: null, noRemote: false, notice: null,
+    clearNotice: vi.fn(), retry: vi.fn(), dispatch: vi.fn(),
+  };
+}
+
+function renderShell(isDesktop: boolean) {
+  setViewport(isDesktop);
+  render(
+    <ThemeProvider>
+      <WorkspaceContext.Provider value={workspace()}>
+        <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <CaptureProvider>
+            <AppRoutes />
+          </CaptureProvider>
+        </MemoryRouter>
+      </WorkspaceContext.Provider>
+    </ThemeProvider>,
+  );
+}
+
+describe('adaptive shell', () => {
+  it('phone: capture + execution forward, sidebar absent', () => {
+    renderShell(false);
+    expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Sidebar' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Capture' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Focus' })).toBeInTheDocument();
+  });
+
+  it('phone: secondary surfaces (Backlog) live behind the More sheet', () => {
+    renderShell(false);
+    // Backlog is not a primary bottom-bar item.
+    expect(screen.queryByRole('link', { name: 'Backlog' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    const more = screen.getByRole('navigation', { name: 'More' });
+    expect(within(more).getByRole('link', { name: 'Backlog' })).toBeInTheDocument();
+  });
+
+  it('desktop: persistent sidebar with every surface, no bottom bar', () => {
+    renderShell(true);
+    const sidebar = screen.getByRole('navigation', { name: 'Sidebar' });
+    expect(within(sidebar).getByRole('link', { name: 'Backlog' })).toBeInTheDocument();
+    expect(within(sidebar).getByRole('link', { name: 'Inbox' })).toBeInTheDocument();
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Capture' })).toBeInTheDocument();
+  });
+});

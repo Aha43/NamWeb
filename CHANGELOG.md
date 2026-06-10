@@ -6,8 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Interaction & a11y polish: the focus deck is **code-split** — framer-motion now loads on demand
+  with the `/focus` route instead of in the initial bundle (clears the chunk-size warning; main
+  bundle drops below 500 kB). The deck respects `prefers-reduced-motion` and announces its progress
+  via `aria-live`. Closes #22.
+- Restyled all existing surfaces onto the design system: Inbox, Next Actions, Backlog, `ActionRow`,
+  Login, and the not-found / loading states moved from hardcoded `slate-*` classes to the dark-aware
+  design tokens (`bg-card` / `text-foreground` / `text-muted-foreground` / `border-border` /
+  `text-primary` / `text-destructive`), with the shadcn `Button` for primary actions. The app is now
+  fully dark-mode-correct end to end. Closes #21.
+
 ### Added
 
+- Focus execution deck — the centerpiece. An immersive full-screen `/focus` surface (outside the
+  shell chrome, mirroring how desktop focus mode hides the toolbar) modeled on NamDesktop focus
+  mode: one card at a time (project path, title, description) with an `N / total` counter, Done &
+  advance (`setStatus DONE`), circular prev/next, and an all-done state. Keyboard (←/→/Space/Esc) and
+  swipe (framer-motion) navigation, plus a Next/Backlog source toggle. Replaces the placeholder.
+  Closes #20.
+- Capture surface: an always-available quick-capture sheet (`CaptureProvider` + `CaptureSheet`)
+  opened from anywhere via `useCapture().openCapture()` — both the phone center Capture button and
+  the desktop sidebar Capture button now open it (no longer routing to Inbox). Stays open for rapid
+  multi-capture, dispatches `addInboxItem`, and adapts its side (bottom on phone, right on desktop).
+  Closes #19.
+- Adaptive shell — the architectural spine. The form-factor split is now **IA, not just CSS**: a
+  `useIsDesktop` breakpoint switches between a `DesktopShell` (persistent sidebar listing every
+  surface, parity-ready) and a `PhoneShell` that pushes **capture + execution to the front** — a
+  center Capture button and a Focus action in the bottom bar, with Backlog and the rest behind a
+  **More** sheet. Shared `ShellContent` / `SyncNotice`; shadcn `Sheet` primitive added; shells
+  styled on the dark-aware design tokens. Tests mock `matchMedia` for both form factors. Closes #18.
+- Routing (React Router): real, deep-linkable routes — `/inbox`, `/next`, `/backlog`, `/focus`
+  (placeholder), an index redirect to `/inbox`, and a not-found. The `useState` tab is gone; the
+  shell is now a route layout (`AppShell` + `Outlet`, `NavLink` nav). Workspace state moved behind a
+  `WorkspaceProvider` / `useWorkspaceContext` so the route pages (and both shells coming in #18)
+  share one instance; surfaces split into page containers under `src/routes/`. Tests run against a
+  deterministic Supabase test env. Closes #17.
+- Design-system & theming foundation: shadcn/ui (Radix + Tailwind) wired up — `cn` util, `@`→`src`
+  path alias, Tailwind theme tokens via CSS variables, `tailwindcss-animate`, `lucide-react`, a
+  `Button` primitive, and a dark-mode `ThemeProvider`/`ThemeToggle` (default dark to echo the
+  desktop, no-FOUC inline script, persisted to localStorage). Surface restyle comes later. Closes #16.
 - Conflict + empty/error polish: the sync notice now auto-dismisses after ~4s (still manually
   dismissible), and a failed initial load shows the error with a Retry button that re-runs the pull
   (`useWorkspace` gains `retry`). Rounds out the empty/no-remote/error states across the app.

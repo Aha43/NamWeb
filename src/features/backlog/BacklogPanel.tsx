@@ -23,7 +23,7 @@ export function BacklogPanel({ rows, onPromote }: BacklogPanelProps) {
                   type="button"
                   aria-label={`Promote ${row.title} to next`}
                   onClick={() => onPromote(row.id)}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-blue-600 hover:bg-blue-50"
+                  className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
                 >
                   → Next
                 </button>
