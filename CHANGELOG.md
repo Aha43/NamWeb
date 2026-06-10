@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Workspace store + mutations: intent-based pure mutations (`src/domain/mutations.ts` —
+  `addInboxItem`, `convertInboxToNext`, `setStatus`, `deleteLeaf`, each replayable), the optimistic
+  single-flight commit with intent-replay conflict-retry (`src/store/commit.ts` — push guarded;
+  on conflict pull, re-apply the same intent, push once more; bounded give-up that surfaces a
+  "reloaded" notice; handles vanished node / vanished row), and the `useWorkspace` hook
+  (`src/store/useWorkspace.ts`) that loads the `default` row, holds the snapshot, and serializes
+  dispatched intents. 15 unit tests on the pure core (mutations + every commit branch). No UI yet.
+  Closes #5.
 - Auth + session: Supabase client (`src/lib/supabase.ts`) from `.env` vars, a `useSession` hook
   tracking sign-in/sign-out, and an email/password `Login` form with error states. The app is gated
   behind login — `App` shows `Login` until there's a session, then the `AppShell` (now with a Sign
