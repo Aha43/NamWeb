@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Adaptive shell — the architectural spine. The form-factor split is now **IA, not just CSS**: a
+  `useIsDesktop` breakpoint switches between a `DesktopShell` (persistent sidebar listing every
+  surface, parity-ready) and a `PhoneShell` that pushes **capture + execution to the front** — a
+  center Capture button and a Focus action in the bottom bar, with Backlog and the rest behind a
+  **More** sheet. Shared `ShellContent` / `SyncNotice`; shadcn `Sheet` primitive added; shells
+  styled on the dark-aware design tokens. Tests mock `matchMedia` for both form factors. Closes #18.
 - Routing (React Router): real, deep-linkable routes — `/inbox`, `/next`, `/backlog`, `/focus`
   (placeholder), an index redirect to `/inbox`, and a not-found. The `useState` tab is gone; the
   shell is now a route layout (`AppShell` + `Outlet`, `NavLink` nav). Workspace state moved behind a
