@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Design-system & theming foundation: shadcn/ui (Radix + Tailwind) wired up — `cn` util, `@`→`src`
+  path alias, Tailwind theme tokens via CSS variables, `tailwindcss-animate`, `lucide-react`, a
+  `Button` primitive, and a dark-mode `ThemeProvider`/`ThemeToggle` (default dark to echo the
+  desktop, no-FOUC inline script, persisted to localStorage). Surface restyle comes later. Closes #16.
 - Conflict + empty/error polish: the sync notice now auto-dismisses after ~4s (still manually
   dismissible), and a failed initial load shows the error with a Retry button that re-runs the pull
   (`useWorkspace` gains `retry`). Rounds out the empty/no-remote/error states across the app.
