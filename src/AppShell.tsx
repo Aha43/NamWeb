@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { inboxItems, nextActions } from './domain/lenses';
+import { backlogItems, inboxItems, nextActions } from './domain/lenses';
 import { newId, nowIso } from './lib/local';
 import { InboxPanel } from './features/inbox/InboxPanel';
 import { NextActionsPanel } from './features/next-actions/NextActionsPanel';
+import { BacklogPanel } from './features/backlog/BacklogPanel';
 import { toActionRow } from './features/actions/rows';
 import type { UseWorkspace } from './store/useWorkspace';
 
@@ -62,7 +63,10 @@ export function AppShell({ workspace, onSignOut }: { workspace: UseWorkspace; on
             onMarkBacklog={(id) => dispatch({ type: 'setStatus', id, status: 'BACKLOG', now: nowIso() })}
           />
         ) : (
-          <Centered>{TABS.find((t) => t.id === tab)!.label} — coming soon.</Centered>
+          <BacklogPanel
+            rows={document ? backlogItems(document).map((n) => toActionRow(document, n)) : []}
+            onPromote={(id) => dispatch({ type: 'setStatus', id, status: 'NEXT', now: nowIso() })}
+          />
         )}
       </main>
 

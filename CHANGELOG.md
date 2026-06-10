@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Backlog UI: the `backlog` tab renders the `backlogItems` lens (reusing the shared `ActionRow`)
+  with a single promote-to-Next action (→ `setStatus NEXT`). All three MVP tabs are now functional.
+  2 tests. Closes #8.
 - Next Actions UI: the `next` tab renders the `nextActions` lens with project path, tags, and a due
   hint, and mark-done / send-to-backlog actions (→ `setStatus`). New `projectPath` lens helper
   (ancestor project titles, structural containers excluded) and a shared `ActionRow`/`ActionList`
