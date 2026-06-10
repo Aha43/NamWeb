@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Focus execution deck — the centerpiece. An immersive full-screen `/focus` surface (outside the
+  shell chrome, mirroring how desktop focus mode hides the toolbar) modeled on NamDesktop focus
+  mode: one card at a time (project path, title, description) with an `N / total` counter, Done &
+  advance (`setStatus DONE`), circular prev/next, and an all-done state. Keyboard (←/→/Space/Esc) and
+  swipe (framer-motion) navigation, plus a Next/Backlog source toggle. Replaces the placeholder.
+  Closes #20.
 - Capture surface: an always-available quick-capture sheet (`CaptureProvider` + `CaptureSheet`)
   opened from anywhere via `useCapture().openCapture()` — both the phone center Capture button and
   the desktop sidebar Capture button now open it (no longer routing to Inbox). Stays open for rapid
