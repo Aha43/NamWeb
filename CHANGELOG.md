@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Capture surface: an always-available quick-capture sheet (`CaptureProvider` + `CaptureSheet`)
+  opened from anywhere via `useCapture().openCapture()` — both the phone center Capture button and
+  the desktop sidebar Capture button now open it (no longer routing to Inbox). Stays open for rapid
+  multi-capture, dispatches `addInboxItem`, and adapts its side (bottom on phone, right on desktop).
+  Closes #19.
 - Adaptive shell — the architectural spine. The form-factor split is now **IA, not just CSS**: a
   `useIsDesktop` breakpoint switches between a `DesktopShell` (persistent sidebar listing every
   surface, parity-ready) and a `PhoneShell` that pushes **capture + execution to the front** — a

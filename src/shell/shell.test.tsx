@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NamNode, WorkspaceDocument } from '@/domain/types';
 import type { UseWorkspace } from '@/store/useWorkspace';
 import { WorkspaceContext } from '@/store/workspace-context';
+import { CaptureProvider } from '@/capture/CaptureProvider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AppRoutes } from '@/routes/AppRoutes';
 
@@ -53,7 +54,9 @@ function renderShell(isDesktop: boolean) {
     <ThemeProvider>
       <WorkspaceContext.Provider value={workspace()}>
         <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <AppRoutes />
+          <CaptureProvider>
+            <AppRoutes />
+          </CaptureProvider>
         </MemoryRouter>
       </WorkspaceContext.Provider>
     </ThemeProvider>,

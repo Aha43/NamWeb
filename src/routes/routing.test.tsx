@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { NamNode, WorkspaceDocument } from '@/domain/types';
 import type { UseWorkspace } from '@/store/useWorkspace';
 import { WorkspaceContext } from '@/store/workspace-context';
+import { CaptureProvider } from '@/capture/CaptureProvider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AppRoutes } from './AppRoutes';
 
@@ -45,7 +46,9 @@ function renderAt(path: string, overrides: Partial<UseWorkspace> = {}) {
     <ThemeProvider>
       <WorkspaceContext.Provider value={ws}>
         <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <AppRoutes />
+          <CaptureProvider>
+            <AppRoutes />
+          </CaptureProvider>
         </MemoryRouter>
       </WorkspaceContext.Provider>
     </ThemeProvider>,

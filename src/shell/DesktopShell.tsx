@@ -1,7 +1,8 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { useCapture } from '@/capture/capture-context';
 import { cn } from '@/lib/utils';
 import { SURFACES } from './nav';
 import { ShellContent } from './ShellContent';
@@ -9,15 +10,14 @@ import { SyncNotice } from './SyncNotice';
 
 /** Laptop/desktop: persistent sidebar with every surface (parity-ready) + content area. */
 export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
-  const navigate = useNavigate();
+  const { openCapture } = useCapture();
 
   return (
     <div className="flex min-h-dvh bg-background text-foreground">
       <aside className="flex w-60 shrink-0 flex-col border-r border-border p-4">
         <h1 className="px-2 text-lg font-semibold tracking-tight">NamWeb</h1>
 
-        {/* TODO(#19): open the global capture sheet instead of routing to Inbox. */}
-        <Button className="mt-4 justify-start gap-2" onClick={() => navigate('/inbox')}>
+        <Button className="mt-4 justify-start gap-2" onClick={openCapture}>
           <Plus />
           Capture
         </Button>

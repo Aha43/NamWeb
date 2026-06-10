@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { Inbox, ListTodo, MoreHorizontal, Plus, Target, type LucideIcon } from 'lucide-react';
+import { useCapture } from '@/capture/capture-context';
 import {
   Sheet,
   SheetContent,
@@ -18,7 +19,7 @@ import { SyncNotice } from './SyncNotice';
 /** Phone: capture + execution pushed to the front; everything else lives in the More sheet. */
 export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const navigate = useNavigate();
+  const { openCapture } = useCapture();
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
@@ -39,12 +40,12 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
         <BottomLink to="/inbox" label="Inbox" icon={Inbox} />
         <BottomLink to="/next" label="Next" icon={ListTodo} />
 
-        {/* Capture — the headline action, front and center. TODO(#19): open a capture sheet. */}
+        {/* Capture — the headline action, front and center. */}
         <div className="flex justify-center">
           <button
             type="button"
             aria-label="Capture"
-            onClick={() => navigate('/inbox')}
+            onClick={openCapture}
             className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
           >
             <Plus className="h-6 w-6" />
