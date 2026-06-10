@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- `make dev` one-command launcher (`makefile` + `scripts/dev-up.ps1`): ensures npm deps and `.env`
+  are present, checks whether the local Supabase stack is up on `127.0.0.1:54321` and starts it from
+  the sibling NamDesktop repo if not (waiting until ready), then runs `npm run dev`. Cross-platform
+  PowerShell (TcpClient port probe, no Windows-only cmdlets). Thin `make run/test/build/lint/install`
+  passthroughs too. Closes #10.
 - Inbox UI: the workspace now runs end-to-end. `AppShell` consumes the `useWorkspace` hook (wired
   via a new `AuthedApp`), renders the inbox via the `inboxItems` lens, and shows loading / no-remote
   / dismissible sync-notice states. New `InboxPanel` (`src/features/inbox/`) provides quick-add
