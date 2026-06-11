@@ -57,6 +57,26 @@ describe('ActionDialog', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/date like/i);
   });
 
+  it('exposes make-project and move-to when wired', () => {
+    const onMakeProject = vi.fn();
+    const onMove = vi.fn();
+    render(
+      <ActionDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onSave={vi.fn()}
+        onMakeProject={onMakeProject}
+        moveTargets={[{ id: 'p1', label: 'Home' }]}
+        onMove={onMove}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
+    expect(onMakeProject).toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('Move to'), { target: { value: 'p1' } });
+    expect(onMove).toHaveBeenCalledWith('p1');
+  });
+
   it('does not save with an empty title', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);

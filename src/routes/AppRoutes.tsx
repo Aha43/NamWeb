@@ -4,6 +4,8 @@ import { ShellLayout } from './ShellLayout';
 import { InboxPage } from './InboxPage';
 import { NextActionsPage } from './NextActionsPage';
 import { BacklogPage } from './BacklogPage';
+import { ProjectsPage } from './ProjectsPage';
+import { ProjectWorkbenchPage } from './ProjectWorkbenchPage';
 import { NotFound } from './NotFound';
 
 // Code-split the immersive focus deck (pulls in framer-motion) off the main bundle.
@@ -32,6 +34,8 @@ export function AppRoutes() {
         <Route path="inbox" element={<InboxPage />} />
         <Route path="next" element={<NextActionsPage />} />
         <Route path="backlog" element={<BacklogPage />} />
+        <Route path="projects" element={<ProjectsPage />} />
+        <Route path="projects/:id" element={<ProjectWorkbenchPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

@@ -4,7 +4,7 @@ import type { ActionRowData } from '../actions/rows';
 import { BacklogPanel } from './BacklogPanel';
 
 function row(overrides: Partial<ActionRowData> = {}): ActionRowData {
-  return { id: 'a', title: 'Buy milk', path: [], tags: [], dueAt: null, touchedAt: null, ...overrides };
+  return { id: 'a', title: 'Buy milk', status: 'BACKLOG', path: [], tags: [], dueAt: null, touchedAt: null, ...overrides };
 }
 
 describe('BacklogPanel', () => {

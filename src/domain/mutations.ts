@@ -5,6 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
+import { subtreeIds } from './lenses';
 
 export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; now: string }
@@ -15,6 +16,12 @@ export type Intent =
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
+  | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; now: string }
+  | { type: 'addSubProject'; parentId: string; id: string; title: string; now: string }
+  | { type: 'moveNode'; id: string; newParentId: string; now: string }
+  | { type: 'convertActionToProject'; id: string; now: string }
+  | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
+  | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
 /** Trimmed, lower-cased, de-duplicated, non-empty — mirrors NamDesktop tag handling. */
@@ -60,9 +67,22 @@ function detach(doc: WorkspaceDocument, id: string): void {
   }
 }
 
+/** The id of whichever node lists `id` as a child, or undefined. */
+function parentOf(doc: WorkspaceDocument, id: string): string | undefined {
+  for (const node of Object.values(doc.nodes)) {
+    if (node.childIds.includes(id)) return node.id;
+  }
+  return undefined;
+}
+
+const structuralIds = (doc: WorkspaceDocument): Set<string> =>
+  new Set([doc.rootNodeId, doc.inboxNodeId, doc.projectsNodeId, doc.nextActionsNodeId]);
+
 /** Does this intent target a node that must already exist? (addInboxItem creates one.) */
 export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): boolean {
-  if (intent.type === 'addInboxItem') return true;
+  if (intent.type === 'addInboxItem' || intent.type === 'addSubProject' || intent.type === 'addAction') {
+    return true;
+  }
   return Boolean(doc.nodes[intent.id]);
 }
 
@@ -134,6 +154,70 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!node) return next;
       node.tags = normalizeTags(intent.tags);
       node.updatedAt = intent.now;
+      return next;
+    }
+    case 'addAction': {
+      if (!next.nodes[intent.parentId]) return next;
+      next.nodes[intent.id] = {
+        ...newNode(intent.id, intent.title, intent.now),
+        status: intent.status,
+        statusChangedAt: intent.now,
+      };
+      next.nodes[intent.parentId].childIds.push(intent.id);
+      return next;
+    }
+    case 'addSubProject': {
+      if (!next.nodes[intent.parentId]) return next;
+      next.nodes[intent.id] = { ...newNode(intent.id, intent.title, intent.now), project: true };
+      next.nodes[intent.parentId].childIds.push(intent.id);
+      return next;
+    }
+    case 'moveNode': {
+      const node = next.nodes[intent.id];
+      const newParent = next.nodes[intent.newParentId];
+      if (!node || !newParent || intent.id === intent.newParentId) return next;
+      if (structuralIds(next).has(intent.id)) return next; // never move a container
+      if (subtreeIds(next, intent.id).has(intent.newParentId)) return next; // no cycles
+      detach(next, intent.id);
+      newParent.childIds.push(intent.id);
+      node.updatedAt = intent.now;
+      return next;
+    }
+    case 'convertActionToProject': {
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      node.project = true;
+      node.updatedAt = intent.now;
+      // a free action becomes a top-level project
+      if (parentOf(next, intent.id) === next.nextActionsNodeId) {
+        detach(next, intent.id);
+        next.nodes[next.projectsNodeId]?.childIds.push(intent.id);
+      }
+      return next;
+    }
+    case 'convertProjectToAction': {
+      const node = next.nodes[intent.id];
+      if (!node || node.childIds.length > 0) return next; // leaf only
+      node.project = false;
+      node.status = intent.status;
+      node.updatedAt = intent.now;
+      node.statusChangedAt = intent.now;
+      // a top-level project becomes a free action
+      if (parentOf(next, intent.id) === next.projectsNodeId) {
+        detach(next, intent.id);
+        next.nodes[next.nextActionsNodeId]?.childIds.push(intent.id);
+      }
+      return next;
+    }
+    case 'deleteRecursive': {
+      if (!next.nodes[intent.id]) return next;
+      const subtree = subtreeIds(next, intent.id);
+      detach(next, intent.id);
+      for (const id of subtree) delete next.nodes[id];
+      // drop any blockedBy references to the removed nodes
+      for (const node of Object.values(next.nodes)) {
+        node.blockedBy = node.blockedBy.filter((b) => !subtree.has(b));
+      }
       return next;
     }
     case 'deleteLeaf': {

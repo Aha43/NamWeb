@@ -7,15 +7,13 @@ import {
 import { cn } from '@/lib/utils';
 import type { NodeStatus } from '@/domain/types';
 
-type ActiveStatus = 'NEXT' | 'BACKLOG' | 'DONE';
-
-const LETTER: Record<ActiveStatus, string> = { NEXT: 'N', BACKLOG: 'B', DONE: 'D' };
-const TONE: Record<ActiveStatus, string> = {
+const LETTER: Partial<Record<NodeStatus, string>> = { NEXT: 'N', BACKLOG: 'B', DONE: 'D' };
+const TONE: Partial<Record<NodeStatus, string>> = {
   NEXT: 'text-primary border-primary/40',
   BACKLOG: 'text-muted-foreground border-border',
   DONE: 'text-green-600 dark:text-green-400 border-green-600/40',
 };
-const OPTIONS: { status: ActiveStatus; label: string }[] = [
+const OPTIONS: { status: NodeStatus; label: string }[] = [
   { status: 'NEXT', label: 'Next' },
   { status: 'BACKLOG', label: 'Backlog' },
   { status: 'DONE', label: 'Done' },
@@ -27,7 +25,7 @@ export function StatusMenu({
   title,
   onSetStatus,
 }: {
-  status: ActiveStatus;
+  status: NodeStatus;
   title: string;
   onSetStatus: (status: NodeStatus) => void;
 }) {
@@ -37,10 +35,10 @@ export function StatusMenu({
         aria-label={`Status of ${title}: ${status}. Change status.`}
         className={cn(
           'inline-flex h-6 w-6 items-center justify-center rounded-md border text-xs font-semibold outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
-          TONE[status],
+          TONE[status] ?? 'text-muted-foreground border-border',
         )}
       >
-        {LETTER[status]}
+        {LETTER[status] ?? status[0]}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {OPTIONS.map((option) => (

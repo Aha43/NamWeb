@@ -42,7 +42,7 @@ export function NextActionsPanel({
               onRename={onRename && ((title) => onRename(row.id, title))}
               actions={
                 <StatusMenu
-                  status="NEXT"
+                  status={row.status}
                   title={row.title}
                   onSetStatus={(status) => onSetStatus(row.id, status)}
                 />

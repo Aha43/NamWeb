@@ -136,6 +136,78 @@ describe('applyIntent', () => {
     expect(next.nodes['a'].updatedAt).toBe(NOW);
   });
 
+  it('addAction creates a leaf action with the given status under the parent', () => {
+    const doc = workspace([node('p', { project: true })]);
+    doc.nodes['projects'].childIds.push('p');
+    const next = applyIntent(doc, { type: 'addAction', parentId: 'p', id: 'a', title: 'Do', status: 'NEXT', now: NOW });
+    expect(next.nodes['p'].childIds).toEqual(['a']);
+    expect(next.nodes['a']).toMatchObject({ title: 'Do', project: false, status: 'NEXT', createdAt: NOW, statusChangedAt: NOW });
+  });
+
+  it('addSubProject creates a project under the parent (no-op if parent gone)', () => {
+    const doc = workspace([node('p', { project: true })]);
+    doc.nodes['projects'].childIds.push('p');
+    const next = applyIntent(doc, { type: 'addSubProject', parentId: 'p', id: 's', title: 'Sub', now: NOW });
+    expect(next.nodes['p'].childIds).toEqual(['s']);
+    expect(next.nodes['s']).toMatchObject({ title: 'Sub', project: true, createdAt: NOW });
+    expect(applyIntent(doc, { type: 'addSubProject', parentId: 'ghost', id: 'x', title: 'X', now: NOW }).nodes['x']).toBeUndefined();
+  });
+
+  it('moveNode reparents but refuses cycles, self, and structural moves', () => {
+    const doc = workspace([
+      node('p1', { project: true, childIds: ['p2'] }),
+      node('p2', { project: true }),
+      node('a'),
+    ]);
+    doc.nodes['projects'].childIds.push('p1');
+    doc.nodes['actions'].childIds.push('a');
+
+    const moved = applyIntent(doc, { type: 'moveNode', id: 'a', newParentId: 'p2', now: NOW });
+    expect(moved.nodes['actions'].childIds).toEqual([]);
+    expect(moved.nodes['p2'].childIds).toEqual(['a']);
+
+    // cycle: can't move p1 under its own descendant p2
+    expect(applyIntent(doc, { type: 'moveNode', id: 'p1', newParentId: 'p2', now: NOW })).toEqual(doc);
+    // self
+    expect(applyIntent(doc, { type: 'moveNode', id: 'a', newParentId: 'a', now: NOW })).toEqual(doc);
+    // structural container can't be moved
+    expect(applyIntent(doc, { type: 'moveNode', id: 'inbox', newParentId: 'p1', now: NOW })).toEqual(doc);
+  });
+
+  it('convertActionToProject flags project and lifts a free action to top-level', () => {
+    const doc = workspace([node('a', { status: 'NEXT' })]);
+    doc.nodes['actions'].childIds.push('a');
+    const next = applyIntent(doc, { type: 'convertActionToProject', id: 'a', now: NOW });
+    expect(next.nodes['a']).toMatchObject({ project: true, updatedAt: NOW });
+    expect(next.nodes['actions'].childIds).toEqual([]);
+    expect(next.nodes['projects'].childIds).toEqual(['a']);
+  });
+
+  it('convertProjectToAction only converts leaf projects', () => {
+    const doc = workspace([node('p', { project: true, childIds: ['c'] }), node('c', { project: true })]);
+    doc.nodes['projects'].childIds.push('p');
+    // p has a child → no-op
+    expect(applyIntent(doc, { type: 'convertProjectToAction', id: 'p', status: 'NEXT', now: NOW })).toEqual(doc);
+    // leaf c converts
+    const next = applyIntent(doc, { type: 'convertProjectToAction', id: 'c', status: 'NEXT', now: NOW });
+    expect(next.nodes['c']).toMatchObject({ project: false, status: 'NEXT', updatedAt: NOW });
+  });
+
+  it('deleteRecursive removes the subtree and sweeps blockedBy refs', () => {
+    const doc = workspace([
+      node('p', { project: true, childIds: ['c'] }),
+      node('c'),
+      node('blocked', { blockedBy: ['c'] }),
+    ]);
+    doc.nodes['projects'].childIds.push('p');
+    doc.nodes['actions'].childIds.push('blocked');
+    const next = applyIntent(doc, { type: 'deleteRecursive', id: 'p' });
+    expect(next.nodes['p']).toBeUndefined();
+    expect(next.nodes['c']).toBeUndefined();
+    expect(next.nodes['projects'].childIds).toEqual([]);
+    expect(next.nodes['blocked'].blockedBy).toEqual([]);
+  });
+
   it('no-ops when a status/delete/edit target is missing (replay safety)', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'setStatus', id: 'ghost', status: 'DONE', now: NOW })).toEqual(doc);

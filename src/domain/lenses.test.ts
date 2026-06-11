@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
-import { backlogItems, buildParentIndex, inboxItems, nextActions, projectPath, structuralNodeIds } from './lenses';
+import {
+  backlogItems,
+  buildParentIndex,
+  buildPath,
+  effectiveTags,
+  inboxItems,
+  nextActions,
+  projectPath,
+  projects,
+  structuralNodeIds,
+} from './lenses';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -58,6 +68,45 @@ describe('structuralNodeIds', () => {
   it('returns the four container ids', () => {
     const doc = workspace();
     expect([...structuralNodeIds(doc)].sort()).toEqual(['actions', 'inbox', 'projects', 'root']);
+  });
+});
+
+describe('projects', () => {
+  it('returns the project children directly under the projects node', () => {
+    const doc = workspace(
+      [node('p1', { project: true }), node('p2', { project: true }), node('loose')],
+      (d) => {
+        addChild(d, 'projects', 'p1');
+        addChild(d, 'projects', 'p2');
+        addChild(d, 'projects', 'loose'); // not a project — excluded
+      },
+    );
+    expect(ids(projects(doc))).toEqual(['p1', 'p2']);
+  });
+});
+
+describe('buildPath / effectiveTags', () => {
+  // projects/p1[home] / p2[kitchen] / a[urgent]
+  function nested(): WorkspaceDocument {
+    return workspace(
+      [
+        node('p1', { project: true, tags: ['home'], childIds: ['p2'] }),
+        node('p2', { project: true, tags: ['kitchen'], childIds: ['a'] }),
+        node('a', { status: 'NEXT', tags: ['urgent'] }),
+      ],
+      (d) => addChild(d, 'projects', 'p1'),
+    );
+  }
+
+  it('buildPath returns the ancestor project chain, top-most first', () => {
+    expect(ids(buildPath(nested(), 'a'))).toEqual(['p1', 'p2']);
+    expect(projectPath(nested(), 'a')).toEqual(['p1', 'p2']);
+    expect(buildPath(nested(), 'p1')).toEqual([]);
+  });
+
+  it('effectiveTags unions own tags with inherited ancestor tags (own first)', () => {
+    expect(effectiveTags(nested(), 'a')).toEqual(['urgent', 'home', 'kitchen']);
+    expect(effectiveTags(nested(), 'p2')).toEqual(['kitchen', 'home']);
   });
 });
 
