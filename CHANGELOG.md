@@ -28,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Inline status switch: each Next/Backlog row has a status badge (N/B/D) that opens a menu to set
+  Next / Backlog / Done (replacing the ad-hoc per-row buttons), mirroring NamDesktop's clickable
+  badge. Adds a shadcn `dropdown-menu` primitive (`@radix-ui/react-dropdown-menu`). Closes #37.
 - FIFO/LIFO sort toggle on Next & Backlog: a toolbar control cycles unsorted → oldest-first →
   newest-first (by `createdAt`), persisted per-list in localStorage. Mirrors NamDesktop's clock
   toggle. Closes #38.

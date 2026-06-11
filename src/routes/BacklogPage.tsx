@@ -16,7 +16,7 @@ export function BacklogPage() {
       rows={document ? sortNodes(backlogItems(document), sortMode).map((n) => toActionRow(document, n)) : []}
       sortMode={sortMode}
       onCycleSort={cycleSort}
-      onPromote={(id) => dispatch({ type: 'setStatus', id, status: 'NEXT', now: nowIso() })}
+      onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
       onRename={(id, title) => {
         const node = document?.nodes[id];

@@ -8,7 +8,7 @@ function row(overrides: Partial<ActionRowData> = {}): ActionRowData {
 }
 
 function setup(rows: ActionRowData[]) {
-  const handlers = { onMarkDone: vi.fn(), onMarkBacklog: vi.fn(), onRename: vi.fn() };
+  const handlers = { onSetStatus: vi.fn(), onRename: vi.fn() };
   render(<NextActionsPanel rows={rows} {...handlers} />);
   return handlers;
 }
@@ -28,24 +28,15 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('Due Mar 20')).toBeInTheDocument();
   });
 
-  it('marks done and sends to backlog by id', () => {
-    const { onMarkDone, onMarkBacklog } = setup([row({ id: 'x', title: 'Buy milk' })]);
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Buy milk done' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Move Buy milk to backlog' }));
-    expect(onMarkDone).toHaveBeenCalledWith('x');
-    expect(onMarkBacklog).toHaveBeenCalledWith('x');
+  it('renders a status control for each row', () => {
+    setup([row({ id: 'x', title: 'Buy milk' })]);
+    expect(screen.getByRole('button', { name: /status of Buy milk/i })).toBeInTheDocument();
   });
 
   it('shows the sort toggle and cycles it', () => {
     const onCycleSort = vi.fn();
     render(
-      <NextActionsPanel
-        rows={[row()]}
-        onMarkDone={vi.fn()}
-        onMarkBacklog={vi.fn()}
-        sortMode="fifo"
-        onCycleSort={onCycleSort}
-      />,
+      <NextActionsPanel rows={[row()]} onSetStatus={vi.fn()} sortMode="fifo" onCycleSort={onCycleSort} />,
     );
     fireEvent.click(screen.getByRole('button', { name: /sort: oldest/i }));
     expect(onCycleSort).toHaveBeenCalledOnce();

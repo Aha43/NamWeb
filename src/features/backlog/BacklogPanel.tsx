@@ -1,19 +1,21 @@
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
+import { StatusMenu } from '../actions/StatusMenu';
 import type { SortMode } from '../actions/sort';
 import type { ActionRowData } from '../actions/rows';
+import type { NodeStatus } from '@/domain/types';
 
 export interface BacklogPanelProps {
   rows: ActionRowData[];
-  onPromote: (id: string) => void;
+  onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
   sortMode?: SortMode;
   onCycleSort?: () => void;
 }
 
-/** Backlog: the list with a single promote-to-Next action. Presentational. */
-export function BacklogPanel({ rows, onPromote, onEdit, onRename, sortMode, onCycleSort }: BacklogPanelProps) {
+/** Backlog: the list with an inline status switch. Presentational. */
+export function BacklogPanel({ rows, onSetStatus, onEdit, onRename, sortMode, onCycleSort }: BacklogPanelProps) {
   return (
     <section className="mx-auto max-w-md">
       {sortMode && onCycleSort && rows.length > 0 && (
@@ -32,14 +34,11 @@ export function BacklogPanel({ rows, onPromote, onEdit, onRename, sortMode, onCy
               onEdit={onEdit && (() => onEdit(row.id))}
               onRename={onRename && ((title) => onRename(row.id, title))}
               actions={
-                <button
-                  type="button"
-                  aria-label={`Promote ${row.title} to next`}
-                  onClick={() => onPromote(row.id)}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
-                >
-                  → Next
-                </button>
+                <StatusMenu
+                  status="BACKLOG"
+                  title={row.title}
+                  onSetStatus={(status) => onSetStatus(row.id, status)}
+                />
               }
             />
           ))}

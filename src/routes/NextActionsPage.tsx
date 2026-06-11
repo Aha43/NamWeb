@@ -16,8 +16,7 @@ export function NextActionsPage() {
       rows={document ? sortNodes(nextActions(document), sortMode).map((n) => toActionRow(document, n)) : []}
       sortMode={sortMode}
       onCycleSort={cycleSort}
-      onMarkDone={(id) => dispatch({ type: 'setStatus', id, status: 'DONE', now: nowIso() })}
-      onMarkBacklog={(id) => dispatch({ type: 'setStatus', id, status: 'BACKLOG', now: nowIso() })}
+      onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
       onRename={(id, title) => {
         const node = document?.nodes[id];
