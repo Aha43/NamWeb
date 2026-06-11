@@ -12,7 +12,11 @@ export function TagsPage() {
   const [selected, setSelected] = useState<string[]>([]);
 
   const tags = document ? allTags(document) : [];
-  const rows = document ? contextItems(document, selected).map((n) => toActionRow(document, n)) : [];
+  // Only filter once at least one tag is chosen — an empty selection matches everything.
+  const rows =
+    document && selected.length > 0
+      ? contextItems(document, selected).map((n) => toActionRow(document, n))
+      : [];
 
   return (
     <TagFilterPanel

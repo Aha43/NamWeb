@@ -13,6 +13,20 @@ describe('TagFilterPanel', () => {
     expect(screen.getByText('No tags yet.')).toBeInTheDocument();
   });
 
+  it('prompts to pick a tag when none are selected (no match flood)', () => {
+    render(
+      <TagFilterPanel
+        allTags={['home', 'urgent']}
+        selected={[]}
+        rows={[]}
+        onToggleTag={vi.fn()}
+        onSetStatus={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Select one or more tags to filter.')).toBeInTheDocument();
+    expect(screen.queryByText(/match/)).not.toBeInTheDocument();
+  });
+
   it('toggles tags and shows the match count', () => {
     const onToggleTag = vi.fn();
     render(

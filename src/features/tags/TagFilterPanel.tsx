@@ -57,16 +57,20 @@ export function TagFilterPanel({
             })}
           </div>
 
-          <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
-            <span>{rows.length} {rows.length === 1 ? 'match' : 'matches'}</span>
-            {onSaveView && selected.length > 0 && (
-              <Button type="button" variant="outline" size="sm" onClick={onSaveView}>
-                Save as view…
-              </Button>
-            )}
-          </div>
+          {selected.length === 0 ? (
+            <p className="px-1 text-xs text-muted-foreground">Select one or more tags to filter.</p>
+          ) : (
+            <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
+              <span>{rows.length} {rows.length === 1 ? 'match' : 'matches'}</span>
+              {onSaveView && (
+                <Button type="button" variant="outline" size="sm" onClick={onSaveView}>
+                  Save as view…
+                </Button>
+              )}
+            </div>
+          )}
 
-          {rows.length > 0 && (
+          {selected.length > 0 && rows.length > 0 && (
             <ActionList>
               {rows.map((row) => (
                 <ActionRow
