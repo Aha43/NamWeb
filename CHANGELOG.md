@@ -20,6 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Form & dialog UI primitives: `Input`, `Textarea`, `Label`, and a shadcn `Dialog` (on the
+  already-present `@radix-ui/react-dialog`) added to `src/components/ui`, styled on the design
+  tokens and matching the existing `Button`/`Sheet` conventions. Primitives only — they unblock
+  the Action edit dialog and later form-driven surfaces. Closes #25.
 - Brand logo on the login screen: the NamWeb mark (ported from NamDesktop's `logo-mark.svg`,
   inlined as a `currentColor`-driven `LogoMark` component so it tracks the theme) now sits above
   the heading on the login card, dark-mode aware and with an accessible name. Closes #24.
