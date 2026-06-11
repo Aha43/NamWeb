@@ -111,6 +111,14 @@ export function effectiveTags(doc: WorkspaceDocument, id: string): string[] {
   return out;
 }
 
+/** Done = DONE, non-project, non-structural — completed actions, kept for reference. */
+export function doneItems(doc: WorkspaceDocument): NamNode[] {
+  const structural = structuralNodeIds(doc);
+  return Object.values(doc.nodes).filter(
+    (n) => n.status === 'DONE' && !n.project && !structural.has(n.id),
+  );
+}
+
 /** Backlog = BACKLOG, non-project, non-structural, not an unprocessed inbox item. */
 export function backlogItems(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);

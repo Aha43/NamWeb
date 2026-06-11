@@ -4,6 +4,7 @@ import {
   backlogItems,
   buildParentIndex,
   buildPath,
+  doneItems,
   effectiveTags,
   inboxItems,
   nextActions,
@@ -107,6 +108,20 @@ describe('buildPath / effectiveTags', () => {
   it('effectiveTags unions own tags with inherited ancestor tags (own first)', () => {
     expect(effectiveTags(nested(), 'a')).toEqual(['urgent', 'home', 'kitchen']);
     expect(effectiveTags(nested(), 'p2')).toEqual(['kitchen', 'home']);
+  });
+});
+
+describe('doneItems', () => {
+  it('returns DONE non-project actions', () => {
+    const doc = workspace(
+      [node('d', { status: 'DONE' }), node('n', { status: 'NEXT' }), node('dp', { status: 'DONE', project: true })],
+      (d) => {
+        addChild(d, 'actions', 'd');
+        addChild(d, 'actions', 'n');
+        addChild(d, 'projects', 'dp');
+      },
+    );
+    expect(ids(doneItems(doc))).toEqual(['d']);
   });
 });
 

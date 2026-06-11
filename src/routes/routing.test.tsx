@@ -25,10 +25,11 @@ function document(): WorkspaceDocument {
       root: node('root', { childIds: ['inbox', 'projects', 'actions'] }),
       inbox: node('inbox', { childIds: ['cap'] }),
       projects: node('projects', { childIds: ['proj'] }),
-      actions: node('actions', { childIds: ['nxt', 'bk'] }),
+      actions: node('actions', { childIds: ['nxt', 'bk', 'dn'] }),
       cap: node('cap', { title: 'Capture me', status: 'BACKLOG' }),
       nxt: node('nxt', { title: 'Do this', status: 'NEXT' }),
       bk: node('bk', { title: 'Later thing', status: 'BACKLOG' }),
+      dn: node('dn', { title: 'Old task', status: 'DONE' }),
       proj: node('proj', { title: 'Roadmap', project: true, childIds: ['t1'] }),
       t1: node('t1', { title: 'Task one', status: 'NEXT' }),
     },
@@ -81,6 +82,12 @@ describe('routing', () => {
   it('renders the projects surface at /projects', () => {
     renderAt('/projects');
     expect(screen.getByLabelText('Add project')).toBeInTheDocument();
+  });
+
+  it('renders the done surface at /done', () => {
+    renderAt('/done');
+    expect(screen.getByText('Old task')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Restore Old task to next' })).toBeInTheDocument();
   });
 
   it('renders a project workbench at /projects/:id', () => {

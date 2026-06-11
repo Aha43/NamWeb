@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Done surface: a new `/done` route (and **Done** nav entry) listing completed actions with
+  restore-to-Next, move-to-Backlog, and delete. New `doneItems` lens. Closes #49.
+
 - Workbench heat-map: a project with sub-projects can toggle its sub-project section to a heat-map
   of cards — each showing done/total and a done-ratio-coloured border (red/amber/green) — that drill
   in on click. New `missionStats` roll-up. Mirrors NamDesktop's MCR mode. Closes #47.
