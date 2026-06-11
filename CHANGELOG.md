@@ -28,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Inline title rename: double-click a row's title (Inbox / Next / Backlog) to edit it in place —
+  Enter commits via `updateNode` (preserving description), Esc or blur cancels. Shared
+  `InlineRename` component. Closes #35.
 - Relative age hint on rows: Inbox / Next / Backlog rows now show a compact age (`3d`, `2w`, `4m`,
   `1y`) from `updatedAt`/`createdAt`, amber once older than a week — mirroring NamDesktop's Age
   column. New `formatAge` in `src/lib/dates.ts`. Closes #36.

@@ -13,6 +13,10 @@ export function BacklogPage() {
       rows={document ? backlogItems(document).map((n) => toActionRow(document, n)) : []}
       onPromote={(id) => dispatch({ type: 'setStatus', id, status: 'NEXT', now: nowIso() })}
       onEdit={openEditor}
+      onRename={(id, title) => {
+        const node = document?.nodes[id];
+        if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
+      }}
     />
   );
 }

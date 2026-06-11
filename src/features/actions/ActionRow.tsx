@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
+import { InlineRename } from './InlineRename';
 import type { ActionRowData } from './rows';
 
 const DUE_TONE: Record<DueTone, string> = {
@@ -16,20 +17,37 @@ export function ActionRow({
   row,
   actions,
   onEdit,
+  onRename,
 }: {
   row: ActionRowData;
   actions: ReactNode;
   onEdit?: () => void;
+  /** Commit an inline title rename (double-click the title to start). */
+  onRename?: (title: string) => void;
 }) {
   const due = row.dueAt ? formatDueHint(row.dueAt) : null;
   const age = row.touchedAt ? formatAge(row.touchedAt) : null;
+  const [renaming, setRenaming] = useState(false);
   return (
     <li className="flex items-center gap-2 px-3 py-2">
       <div className="min-w-0 flex-1">
         {row.path.length > 0 && (
           <p className="truncate text-xs text-muted-foreground">{row.path.join(' › ')}</p>
         )}
-        <p className="truncate text-sm text-foreground">{row.title}</p>
+        {renaming && onRename ? (
+          <InlineRename
+            title={row.title}
+            onCommit={(t) => { onRename(t); setRenaming(false); }}
+            onCancel={() => setRenaming(false)}
+          />
+        ) : (
+          <p
+            className="truncate text-sm text-foreground"
+            onDoubleClick={onRename ? () => setRenaming(true) : undefined}
+          >
+            {row.title}
+          </p>
+        )}
         {(row.tags.length > 0 || due || age) && (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
             {row.tags.map((tag) => (

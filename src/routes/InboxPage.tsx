@@ -32,6 +32,10 @@ export function InboxPage() {
         onProcess={setProcessingId}
         onDelete={(id) => dispatch({ type: 'deleteLeaf', id })}
         onEdit={openEditor}
+        onRename={(id, title) => {
+          const node = document?.nodes[id];
+          if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
+        }}
       />
       {processing && (
         <InboxProcessDialog

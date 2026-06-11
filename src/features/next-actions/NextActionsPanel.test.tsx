@@ -8,7 +8,7 @@ function row(overrides: Partial<ActionRowData> = {}): ActionRowData {
 }
 
 function setup(rows: ActionRowData[]) {
-  const handlers = { onMarkDone: vi.fn(), onMarkBacklog: vi.fn() };
+  const handlers = { onMarkDone: vi.fn(), onMarkBacklog: vi.fn(), onRename: vi.fn() };
   render(<NextActionsPanel rows={rows} {...handlers} />);
   return handlers;
 }
@@ -34,5 +34,14 @@ describe('NextActionsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Move Buy milk to backlog' }));
     expect(onMarkDone).toHaveBeenCalledWith('x');
     expect(onMarkBacklog).toHaveBeenCalledWith('x');
+  });
+
+  it('renames inline on double-click + Enter', () => {
+    const { onRename } = setup([row({ id: 'x', title: 'Buy milk' })]);
+    fireEvent.doubleClick(screen.getByText('Buy milk'));
+    const input = screen.getByLabelText('Rename Buy milk');
+    fireEvent.change(input, { target: { value: 'Buy oat milk' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith('x', 'Buy oat milk');
   });
 });

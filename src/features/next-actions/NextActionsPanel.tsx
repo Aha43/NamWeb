@@ -6,10 +6,11 @@ export interface NextActionsPanelProps {
   onMarkDone: (id: string) => void;
   onMarkBacklog: (id: string) => void;
   onEdit?: (id: string) => void;
+  onRename?: (id: string, title: string) => void;
 }
 
 /** Next Actions: the list with mark-done and send-to-backlog. Presentational. */
-export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog, onEdit }: NextActionsPanelProps) {
+export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog, onEdit, onRename }: NextActionsPanelProps) {
   return (
     <section className="mx-auto max-w-md">
       {rows.length === 0 ? (
@@ -21,6 +22,7 @@ export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog, onEdit }: Ne
               key={row.id}
               row={row}
               onEdit={onEdit && (() => onEdit(row.id))}
+              onRename={onRename && ((title) => onRename(row.id, title))}
               actions={
                 <>
                   <button

@@ -3,6 +3,7 @@ import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatAge } from '@/lib/dates';
+import { InlineRename } from '../actions/InlineRename';
 import type { NamNode } from '../../domain/types';
 
 export interface InboxPanelProps {
@@ -11,11 +12,13 @@ export interface InboxPanelProps {
   onProcess: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit?: (id: string) => void;
+  onRename?: (id: string, title: string) => void;
 }
 
 /** Inbox: quick-add capture plus the list of unprocessed items. Pure/presentational. */
-export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit }: InboxPanelProps) {
+export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit, onRename }: InboxPanelProps) {
   const [title, setTitle] = useState('');
+  const [renamingId, setRenamingId] = useState<string | null>(null);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -44,7 +47,22 @@ export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit }: InboxP
         <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-2 px-3 py-2">
-              <span className="flex-1 text-sm text-foreground">{item.title}</span>
+              {renamingId === item.id && onRename ? (
+                <div className="flex-1">
+                  <InlineRename
+                    title={item.title}
+                    onCommit={(t) => { onRename(item.id, t); setRenamingId(null); }}
+                    onCancel={() => setRenamingId(null)}
+                  />
+                </div>
+              ) : (
+                <span
+                  className="flex-1 text-sm text-foreground"
+                  onDoubleClick={onRename ? () => setRenamingId(item.id) : undefined}
+                >
+                  {item.title}
+                </span>
+              )}
               {(() => {
                 const age = formatAge(item.updatedAt ?? item.createdAt ?? '');
                 return age ? (
