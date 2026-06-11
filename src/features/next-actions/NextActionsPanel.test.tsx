@@ -4,11 +4,11 @@ import type { ActionRowData } from '../actions/rows';
 import { NextActionsPanel } from './NextActionsPanel';
 
 function row(overrides: Partial<ActionRowData> = {}): ActionRowData {
-  return { id: 'a', title: 'Buy milk', path: [], tags: [], dueAt: null, ...overrides };
+  return { id: 'a', title: 'Buy milk', path: [], tags: [], dueAt: null, touchedAt: null, ...overrides };
 }
 
 function setup(rows: ActionRowData[]) {
-  const handlers = { onMarkDone: vi.fn(), onMarkBacklog: vi.fn() };
+  const handlers = { onSetStatus: vi.fn(), onRename: vi.fn() };
   render(<NextActionsPanel rows={rows} {...handlers} />);
   return handlers;
 }
@@ -28,11 +28,26 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('Due Mar 20')).toBeInTheDocument();
   });
 
-  it('marks done and sends to backlog by id', () => {
-    const { onMarkDone, onMarkBacklog } = setup([row({ id: 'x', title: 'Buy milk' })]);
-    fireEvent.click(screen.getByRole('button', { name: 'Mark Buy milk done' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Move Buy milk to backlog' }));
-    expect(onMarkDone).toHaveBeenCalledWith('x');
-    expect(onMarkBacklog).toHaveBeenCalledWith('x');
+  it('renders a status control for each row', () => {
+    setup([row({ id: 'x', title: 'Buy milk' })]);
+    expect(screen.getByRole('button', { name: /status of Buy milk/i })).toBeInTheDocument();
+  });
+
+  it('shows the sort toggle and cycles it', () => {
+    const onCycleSort = vi.fn();
+    render(
+      <NextActionsPanel rows={[row()]} onSetStatus={vi.fn()} sortMode="fifo" onCycleSort={onCycleSort} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /sort: oldest/i }));
+    expect(onCycleSort).toHaveBeenCalledOnce();
+  });
+
+  it('renames inline on double-click + Enter', () => {
+    const { onRename } = setup([row({ id: 'x', title: 'Buy milk' })]);
+    fireEvent.doubleClick(screen.getByText('Buy milk'));
+    const input = screen.getByLabelText('Rename Buy milk');
+    fireEvent.change(input, { target: { value: 'Buy oat milk' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith('x', 'Buy oat milk');
   });
 });

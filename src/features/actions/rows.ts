@@ -8,6 +8,8 @@ export interface ActionRowData {
   path: string[];
   tags: string[];
   dueAt: string | null;
+  /** For the age hint — updatedAt falling back to createdAt. */
+  touchedAt: string | null;
 }
 
 export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowData {
@@ -17,5 +19,6 @@ export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowDat
     path: projectPath(doc, node.id),
     tags: node.tags,
     dueAt: node.dueAt,
+    touchedAt: node.updatedAt ?? node.createdAt,
   };
 }

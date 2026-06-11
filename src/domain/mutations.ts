@@ -9,6 +9,8 @@ import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; now: string }
   | { type: 'convertInboxToNext'; id: string; now: string }
+  | { type: 'convertInboxToAction'; id: string; status: NodeStatus; now: string }
+  | { type: 'convertInboxToProject'; id: string; now: string }
   | { type: 'setStatus'; id: string; status: NodeStatus; now: string }
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; now: string }
@@ -82,6 +84,26 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       node.status = 'NEXT';
       node.updatedAt = intent.now;
       node.statusChangedAt = intent.now;
+      return next;
+    }
+    case 'convertInboxToAction': {
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      detach(next, intent.id);
+      next.nodes[next.nextActionsNodeId]?.childIds.push(intent.id);
+      node.project = false;
+      node.status = intent.status;
+      node.updatedAt = intent.now;
+      node.statusChangedAt = intent.now;
+      return next;
+    }
+    case 'convertInboxToProject': {
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      detach(next, intent.id);
+      next.nodes[next.projectsNodeId]?.childIds.push(intent.id);
+      node.project = true;
+      node.updatedAt = intent.now;
       return next;
     }
     case 'setStatus': {

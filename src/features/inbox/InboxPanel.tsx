@@ -1,19 +1,24 @@
 import { useState, type FormEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { formatAge } from '@/lib/dates';
+import { InlineRename } from '../actions/InlineRename';
 import type { NamNode } from '../../domain/types';
 
 export interface InboxPanelProps {
   items: NamNode[];
   onAdd: (title: string) => void;
-  onConvert: (id: string) => void;
+  onProcess: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit?: (id: string) => void;
+  onRename?: (id: string, title: string) => void;
 }
 
 /** Inbox: quick-add capture plus the list of unprocessed items. Pure/presentational. */
-export function InboxPanel({ items, onAdd, onConvert, onDelete, onEdit }: InboxPanelProps) {
+export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit, onRename }: InboxPanelProps) {
   const [title, setTitle] = useState('');
+  const [renamingId, setRenamingId] = useState<string | null>(null);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -42,7 +47,35 @@ export function InboxPanel({ items, onAdd, onConvert, onDelete, onEdit }: InboxP
         <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-2 px-3 py-2">
-              <span className="flex-1 text-sm text-foreground">{item.title}</span>
+              {renamingId === item.id && onRename ? (
+                <div className="flex-1">
+                  <InlineRename
+                    title={item.title}
+                    onCommit={(t) => { onRename(item.id, t); setRenamingId(null); }}
+                    onCancel={() => setRenamingId(null)}
+                  />
+                </div>
+              ) : (
+                <span
+                  className="flex-1 text-sm text-foreground"
+                  onDoubleClick={onRename ? () => setRenamingId(item.id) : undefined}
+                >
+                  {item.title}
+                </span>
+              )}
+              {(() => {
+                const age = formatAge(item.updatedAt ?? item.createdAt ?? '');
+                return age ? (
+                  <span
+                    className={cn(
+                      'text-[11px]',
+                      age.stale ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground',
+                    )}
+                  >
+                    {age.label}
+                  </span>
+                ) : null;
+              })()}
               {onEdit && (
                 <button
                   type="button"
@@ -55,11 +88,11 @@ export function InboxPanel({ items, onAdd, onConvert, onDelete, onEdit }: InboxP
               )}
               <button
                 type="button"
-                aria-label={`Convert ${item.title} to next action`}
-                onClick={() => onConvert(item.id)}
+                aria-label={`Process ${item.title}`}
+                onClick={() => onProcess(item.id)}
                 className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
               >
-                → Next
+                Process…
               </button>
               <button
                 type="button"

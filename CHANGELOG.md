@@ -28,6 +28,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Inline status switch: each Next/Backlog row has a status badge (N/B/D) that opens a menu to set
+  Next / Backlog / Done (replacing the ad-hoc per-row buttons), mirroring NamDesktop's clickable
+  badge. Adds a shadcn `dropdown-menu` primitive (`@radix-ui/react-dropdown-menu`). Closes #37.
+- FIFO/LIFO sort toggle on Next & Backlog: a toolbar control cycles unsorted → oldest-first →
+  newest-first (by `createdAt`), persisted per-list in localStorage. Mirrors NamDesktop's clock
+  toggle. Closes #38.
+- Inline title rename: double-click a row's title (Inbox / Next / Backlog) to edit it in place —
+  Enter commits via `updateNode` (preserving description), Esc or blur cancels. Shared
+  `InlineRename` component. Closes #35.
+- Relative age hint on rows: Inbox / Next / Backlog rows now show a compact age (`3d`, `2w`, `4m`,
+  `1y`) from `updatedAt`/`createdAt`, amber once older than a week — mirroring NamDesktop's Age
+  column. New `formatAge` in `src/lib/dates.ts`. Closes #36.
+- Inbox Process dialog: an item can now be clarified — **one action** vs **needs planning (project)**,
+  and for an action **do it next** vs **park for later (backlog)** — via a two-step dialog opened
+  from the inbox row's "Process…" action (replaces the bare "→ Next"). New `convertInboxToAction`
+  and `convertInboxToProject` mutations. Mirrors NamDesktop's ProcessInboxDialog. Closes #34.
 - Configurable workspace identity: the synced workspace row is no longer hardcoded to `default` —
   it reads `VITE_WORKSPACE_NAME` (defaulting to `default`), matching NamDesktop's normal-mode
   (`default`) vs dev-mode (`dev`) naming so the web client can point at the right row (e.g. `dev`
