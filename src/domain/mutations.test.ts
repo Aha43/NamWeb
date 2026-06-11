@@ -219,6 +219,19 @@ describe('applyIntent', () => {
     expect(unlinked.nodes['a'].blockedBy).toEqual([]);
   });
 
+  it('saved views: create (replacing same name), rename, delete', () => {
+    const doc = workspace();
+    const created = applyIntent(doc, { type: 'createSavedView', name: 'Errands', tags: ['home'], nextOnly: true });
+    expect(created.savedViews).toEqual([{ name: 'Errands', tags: ['home'], nextOnly: true }]);
+    // same name replaces rather than duplicates
+    const replaced = applyIntent(created, { type: 'createSavedView', name: 'Errands', tags: ['town'], nextOnly: false });
+    expect(replaced.savedViews).toEqual([{ name: 'Errands', tags: ['town'], nextOnly: false }]);
+    const renamed = applyIntent(replaced, { type: 'renameSavedView', oldName: 'Errands', newName: 'Town' });
+    expect(renamed.savedViews[0].name).toBe('Town');
+    const deleted = applyIntent(renamed, { type: 'deleteSavedView', name: 'Town' });
+    expect(deleted.savedViews).toEqual([]);
+  });
+
   it('no-ops when a status/delete/edit target is missing (replay safety)', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'setStatus', id: 'ghost', status: 'DONE', now: NOW })).toEqual(doc);

@@ -1,47 +1,60 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ActionRowData } from '../actions/rows';
+import type { SavedView } from '../../domain/types';
 import { TagFilterPanel } from './TagFilterPanel';
 
 function row(id: string, title: string): ActionRowData {
   return { id, title, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null };
 }
 
+function setup(over: Partial<React.ComponentProps<typeof TagFilterPanel>> = {}) {
+  const handlers = {
+    onToggleTag: vi.fn(), onToggleNextOnly: vi.fn(), onSetStatus: vi.fn(),
+    onOpenView: vi.fn(), onRenameView: vi.fn(), onDeleteView: vi.fn(),
+  };
+  render(
+    <TagFilterPanel
+      allTags={['home', 'urgent']}
+      selected={[]}
+      nextOnly={false}
+      rows={[]}
+      savedViews={[]}
+      {...handlers}
+      {...over}
+    />,
+  );
+  return handlers;
+}
+
 describe('TagFilterPanel', () => {
   it('shows the empty state with no tags', () => {
-    render(<TagFilterPanel allTags={[]} selected={[]} rows={[]} onToggleTag={vi.fn()} onSetStatus={vi.fn()} />);
+    setup({ allTags: [] });
     expect(screen.getByText('No tags yet.')).toBeInTheDocument();
   });
 
   it('prompts to pick a tag when none are selected (no match flood)', () => {
-    render(
-      <TagFilterPanel
-        allTags={['home', 'urgent']}
-        selected={[]}
-        rows={[]}
-        onToggleTag={vi.fn()}
-        onSetStatus={vi.fn()}
-      />,
-    );
+    setup({ selected: [], rows: [] });
     expect(screen.getByText('Select one or more tags to filter.')).toBeInTheDocument();
     expect(screen.queryByText(/match/)).not.toBeInTheDocument();
   });
 
   it('toggles tags and shows the match count', () => {
-    const onToggleTag = vi.fn();
-    render(
-      <TagFilterPanel
-        allTags={['home', 'urgent']}
-        selected={['home']}
-        rows={[row('a', 'Fix tap')]}
-        onToggleTag={onToggleTag}
-        onSetStatus={vi.fn()}
-      />,
-    );
+    const { onToggleTag } = setup({ selected: ['home'], rows: [row('a', 'Fix tap')] });
     expect(screen.getByRole('button', { name: 'home' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('1 match')).toBeInTheDocument();
     expect(screen.getByText('Fix tap')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'urgent' }));
     expect(onToggleTag).toHaveBeenCalledWith('urgent');
+  });
+
+  it('opens and deletes a saved view', () => {
+    const view: SavedView = { name: 'Errands', tags: ['home'], nextOnly: true };
+    const { onOpenView, onDeleteView } = setup({ savedViews: [view] });
+    expect(screen.getByText('Saved views')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open view Errands' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete view Errands' }));
+    expect(onOpenView).toHaveBeenCalledWith(view);
+    expect(onDeleteView).toHaveBeenCalledWith('Errands');
   });
 });

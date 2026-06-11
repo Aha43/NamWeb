@@ -23,6 +23,9 @@ export type Intent =
   | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
   | { type: 'addPrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'removePrerequisite'; actionId: string; prereqId: string; now: string }
+  | { type: 'createSavedView'; name: string; tags: string[]; nextOnly: boolean }
+  | { type: 'renameSavedView'; oldName: string; newName: string }
+  | { type: 'deleteSavedView'; name: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
@@ -87,6 +90,13 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
   }
   if (intent.type === 'addPrerequisite' || intent.type === 'removePrerequisite') {
     return Boolean(doc.nodes[intent.actionId]);
+  }
+  if (
+    intent.type === 'createSavedView' ||
+    intent.type === 'renameSavedView' ||
+    intent.type === 'deleteSavedView'
+  ) {
+    return true; // operate on the savedViews list, not a node
   }
   return Boolean(doc.nodes[intent.id]);
 }
@@ -227,6 +237,22 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (i === -1) return next;
       action.blockedBy.splice(i, 1);
       action.updatedAt = intent.now;
+      return next;
+    }
+    case 'createSavedView': {
+      // Replace an existing view of the same name, else append.
+      next.savedViews = next.savedViews.filter((v) => v.name !== intent.name);
+      next.savedViews.push({ name: intent.name, tags: intent.tags, nextOnly: intent.nextOnly });
+      return next;
+    }
+    case 'renameSavedView': {
+      next.savedViews = next.savedViews.map((v) =>
+        v.name === intent.oldName ? { ...v, name: intent.newName } : v,
+      );
+      return next;
+    }
+    case 'deleteSavedView': {
+      next.savedViews = next.savedViews.filter((v) => v.name !== intent.name);
       return next;
     }
     case 'deleteRecursive': {

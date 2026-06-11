@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Saved Views: save the current tag filter as a named view and open / rename / delete saved views
+  from `/tags`, plus a **Next only** toggle so views round-trip fully. New `createSavedView` /
+  `renameSavedView` / `deleteSavedView` mutations over `doc.savedViews`. Closes #57.
 - Tag-filter surface: a new `/tags` route (and **Tags** nav entry) to filter active actions by
   tags (AND) via toggle chips, with a live match count and the inline status menu / edit / rename.
   Closes #56.
