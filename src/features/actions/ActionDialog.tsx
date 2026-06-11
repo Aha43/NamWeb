@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { parseFlexibleDate } from '@/lib/dates';
 import type { NamNode, NodeStatus } from '@/domain/types';
 
 /** The edited fields the dialog produces on save. Tags are raw (un-normalized). */
@@ -48,19 +49,25 @@ export function ActionDialog({
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
   const [tags, setTags] = useState(node.tags.join(', '));
-  const [dueAt, setDueAt] = useState(node.dueAt ?? '');
+  const [due, setDue] = useState(node.dueAt ?? '');
+  const [dueError, setDueError] = useState(false);
   const [status, setStatus] = useState<NodeStatus>(node.status);
 
   function submit(event: FormEvent) {
     event.preventDefault();
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
+    const dueAt = parseFlexibleDate(due);
+    if (due.trim() && dueAt === null) {
+      setDueError(true);
+      return;
+    }
     const trimmedDescription = description.trim();
     onSave({
       title: trimmedTitle,
       description: trimmedDescription ? trimmedDescription : null,
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
-      dueAt: dueAt || null,
+      dueAt,
       status,
     });
     onOpenChange(false);
@@ -98,7 +105,21 @@ export function ActionDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="action-due">Due</Label>
-              <Input id="action-due" type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />
+              <Input
+                id="action-due"
+                placeholder="26-7-4"
+                value={due}
+                aria-invalid={dueError}
+                onChange={(e) => {
+                  setDue(e.target.value);
+                  if (dueError) setDueError(false);
+                }}
+              />
+              {dueError && (
+                <p role="alert" className="text-xs text-destructive">
+                  Use a date like 26-7-4 or 2026-07-04.
+                </p>
+              )}
             </div>
           </div>
           <fieldset className="space-y-1.5">

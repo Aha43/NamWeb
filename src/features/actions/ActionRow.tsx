@@ -1,6 +1,15 @@
 import type { ReactNode } from 'react';
 import { Pencil } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { formatDueHint, type DueTone } from '@/lib/dates';
 import type { ActionRowData } from './rows';
+
+const DUE_TONE: Record<DueTone, string> = {
+  overdue: 'text-red-600 dark:text-red-400',
+  today: 'text-amber-600 dark:text-amber-400',
+  soon: 'text-blue-600 dark:text-blue-400',
+  later: 'text-muted-foreground',
+};
 
 /** One action row: project path, title, tags, due hint, and a slot for actions. */
 export function ActionRow({
@@ -12,6 +21,7 @@ export function ActionRow({
   actions: ReactNode;
   onEdit?: () => void;
 }) {
+  const due = row.dueAt ? formatDueHint(row.dueAt) : null;
   return (
     <li className="flex items-center gap-2 px-3 py-2">
       <div className="min-w-0 flex-1">
@@ -19,15 +29,15 @@ export function ActionRow({
           <p className="truncate text-xs text-muted-foreground">{row.path.join(' › ')}</p>
         )}
         <p className="truncate text-sm text-foreground">{row.title}</p>
-        {(row.tags.length > 0 || row.dueAt) && (
+        {(row.tags.length > 0 || due) && (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
             {row.tags.map((tag) => (
               <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                 {tag}
               </span>
             ))}
-            {row.dueAt && (
-              <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">Due {row.dueAt}</span>
+            {due && (
+              <span className={cn('text-[11px] font-medium', DUE_TONE[due.tone])}>Due {due.label}</span>
             )}
           </div>
         )}

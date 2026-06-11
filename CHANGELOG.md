@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- Due dates now match NamDesktop: the Action dialog accepts **flexible date entry** (`26-7-4`,
+  `2026/6/15`, separators `- / .`, 2-digit year → `20YY`) via a ported `parseFlexibleDate`, with an
+  inline error on bad input; and list rows show a compact, urgency-coloured hint (overdue / Today /
+  `Nd` / short date) instead of the raw ISO string. New tested `src/lib/dates.ts`. Closes #31.
 - UI now uses the full product name **Next Action Master** (via a single `APP_NAME` constant)
   instead of the internal "NamWeb" — on the login card, both shell headers, the logo's accessible
   name, and the document title. Repo/package identifiers stay "NamWeb". Closes #30.
