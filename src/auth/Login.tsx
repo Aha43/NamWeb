@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { LogoMark } from '@/components/brand/LogoMark';
 import { supabase } from '../lib/supabase';
 
 /** Email/password sign-in. Single-user; the session is persisted by supabase-js. */
@@ -24,8 +25,9 @@ export function Login() {
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm"
       >
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight text-card-foreground">NamWeb</h1>
+        <div className="flex flex-col items-center text-center">
+          <LogoMark className="h-12 w-12 text-card-foreground" />
+          <h1 className="mt-3 text-lg font-semibold tracking-tight text-card-foreground">NamWeb</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your workspace.</p>
         </div>
 

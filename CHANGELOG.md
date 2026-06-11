@@ -20,6 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Brand logo on the login screen: the NamWeb mark (ported from NamDesktop's `logo-mark.svg`,
+  inlined as a `currentColor`-driven `LogoMark` component so it tracks the theme) now sits above
+  the heading on the login card, dark-mode aware and with an accessible name. Closes #24.
 - Focus execution deck — the centerpiece. An immersive full-screen `/focus` surface (outside the
   shell chrome, mirroring how desktop focus mode hides the toolbar) modeled on NamDesktop focus
   mode: one card at a time (project path, title, description) with an `N / total` counter, Done &

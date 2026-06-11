@@ -17,6 +17,11 @@ describe('Login', () => {
     fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
   }
 
+  it('shows the brand logo on the login card', () => {
+    render(<Login />);
+    expect(screen.getByRole('img', { name: /namweb/i })).toBeInTheDocument();
+  });
+
   it('submits the entered credentials', async () => {
     signInWithPassword.mockResolvedValue({ error: null });
     render(<Login />);
