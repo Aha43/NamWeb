@@ -3,10 +3,16 @@ import { Button } from '@/components/ui/button';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { supabase } from '../lib/supabase';
 
+// TODO(dev-only): prefill the local Supabase test credentials to speed manual
+// testing. Gated on import.meta.env.DEV so it never ships in a production build;
+// delete this block before going productish.
+const DEV_EMAIL = import.meta.env.DEV ? 'test@namdesktop.local' : '';
+const DEV_PASSWORD = import.meta.env.DEV ? 'namdesktop-local' : '';
+
 /** Email/password sign-in. Single-user; the session is persisted by supabase-js. */
 export function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEV_EMAIL);
+  const [password, setPassword] = useState(DEV_PASSWORD);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
