@@ -41,6 +41,13 @@ export interface MoveTarget {
   label: string;
 }
 
+/** A current prerequisite of the action. */
+export interface Blocker {
+  id: string;
+  title: string;
+  done: boolean;
+}
+
 export function ActionDialog({
   node,
   open,
@@ -49,6 +56,11 @@ export function ActionDialog({
   onMakeProject,
   moveTargets,
   onMove,
+  blockers,
+  blockerCandidates,
+  wouldUnblock,
+  onAddPrerequisite,
+  onRemovePrerequisite,
 }: {
   node: NamNode;
   open: boolean;
@@ -57,6 +69,11 @@ export function ActionDialog({
   onMakeProject?: () => void;
   moveTargets?: MoveTarget[];
   onMove?: (targetId: string) => void;
+  blockers?: Blocker[];
+  blockerCandidates?: MoveTarget[];
+  wouldUnblock?: string[];
+  onAddPrerequisite?: (prereqId: string) => void;
+  onRemovePrerequisite?: (prereqId: string) => void;
 }) {
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
@@ -159,6 +176,54 @@ export function ActionDialog({
               ))}
             </div>
           </fieldset>
+          {onAddPrerequisite && onRemovePrerequisite && (
+            <div className="space-y-1.5 border-t border-border pt-3">
+              <span className="text-sm font-medium text-foreground">Blocked by</span>
+              {blockers && blockers.length > 0 ? (
+                <ul className="flex flex-col gap-1">
+                  {blockers.map((blocker) => (
+                    <li key={blocker.id} className="flex items-center gap-2 text-sm">
+                      <span className={cn('flex-1 truncate', blocker.done && 'text-muted-foreground line-through')}>
+                        {blocker.title}
+                      </span>
+                      <button
+                        type="button"
+                        aria-label={`Remove prerequisite ${blocker.title}`}
+                        onClick={() => onRemovePrerequisite(blocker.id)}
+                        className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-muted-foreground">No prerequisites.</p>
+              )}
+              {blockerCandidates && blockerCandidates.length > 0 && (
+                <select
+                  aria-label="Add prerequisite"
+                  defaultValue=""
+                  onChange={(e) => {
+                    if (e.target.value) onAddPrerequisite(e.target.value);
+                  }}
+                  className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+                >
+                  <option value="" disabled>
+                    Add a prerequisite…
+                  </option>
+                  {blockerCandidates.map((candidate) => (
+                    <option key={candidate.id} value={candidate.id}>
+                      {candidate.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+              {wouldUnblock && wouldUnblock.length > 0 && (
+                <p className="text-xs text-muted-foreground">Would unblock: {wouldUnblock.join(', ')}</p>
+              )}
+            </div>
+          )}
           {(onMakeProject || (moveTargets && onMove)) && (
             <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
               {onMakeProject && (

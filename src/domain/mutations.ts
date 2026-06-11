@@ -5,7 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
-import { subtreeIds } from './lenses';
+import { canAddPrerequisite, subtreeIds } from './lenses';
 
 export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; now: string }
@@ -21,6 +21,8 @@ export type Intent =
   | { type: 'moveNode'; id: string; newParentId: string; now: string }
   | { type: 'convertActionToProject'; id: string; now: string }
   | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
+  | { type: 'addPrerequisite'; actionId: string; prereqId: string; now: string }
+  | { type: 'removePrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
@@ -82,6 +84,9 @@ const structuralIds = (doc: WorkspaceDocument): Set<string> =>
 export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): boolean {
   if (intent.type === 'addInboxItem' || intent.type === 'addSubProject' || intent.type === 'addAction') {
     return true;
+  }
+  if (intent.type === 'addPrerequisite' || intent.type === 'removePrerequisite') {
+    return Boolean(doc.nodes[intent.actionId]);
   }
   return Boolean(doc.nodes[intent.id]);
 }
@@ -207,6 +212,21 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
         detach(next, intent.id);
         next.nodes[next.nextActionsNodeId]?.childIds.push(intent.id);
       }
+      return next;
+    }
+    case 'addPrerequisite': {
+      if (!canAddPrerequisite(next, intent.actionId, intent.prereqId)) return next;
+      next.nodes[intent.actionId].blockedBy.push(intent.prereqId);
+      next.nodes[intent.actionId].updatedAt = intent.now;
+      return next;
+    }
+    case 'removePrerequisite': {
+      const action = next.nodes[intent.actionId];
+      if (!action) return next;
+      const i = action.blockedBy.indexOf(intent.prereqId);
+      if (i === -1) return next;
+      action.blockedBy.splice(i, 1);
+      action.updatedAt = intent.now;
       return next;
     }
     case 'deleteRecursive': {

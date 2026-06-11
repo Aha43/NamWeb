@@ -208,6 +208,17 @@ describe('applyIntent', () => {
     expect(next.nodes['blocked'].blockedBy).toEqual([]);
   });
 
+  it('addPrerequisite links a blocker but refuses cycles; removePrerequisite unlinks', () => {
+    const doc = workspace([node('a', { status: 'NEXT' }), node('b', { status: 'NEXT' })]);
+    doc.nodes['actions'].childIds.push('a', 'b');
+    const linked = applyIntent(doc, { type: 'addPrerequisite', actionId: 'a', prereqId: 'b', now: NOW });
+    expect(linked.nodes['a']).toMatchObject({ blockedBy: ['b'], updatedAt: NOW });
+    // reverse edge would cycle → no-op
+    expect(applyIntent(linked, { type: 'addPrerequisite', actionId: 'b', prereqId: 'a', now: NOW })).toEqual(linked);
+    const unlinked = applyIntent(linked, { type: 'removePrerequisite', actionId: 'a', prereqId: 'b', now: NOW });
+    expect(unlinked.nodes['a'].blockedBy).toEqual([]);
+  });
+
   it('no-ops when a status/delete/edit target is missing (replay safety)', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'setStatus', id: 'ghost', status: 'DONE', now: NOW })).toEqual(doc);

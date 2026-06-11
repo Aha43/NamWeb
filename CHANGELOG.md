@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Blockers in the Action dialog: a **Blocked by** section to add prerequisites (a cycle-safe
+  candidate picker) and remove them, plus a **Would unblock: …** hint — dispatched live via the
+  editor provider. Closes #53.
+- Blocked surface: a new `/blocked` route (and **Blocked** nav entry) listing actions awaiting
+  prerequisites, grouped under each active blocker (the header opens that blocker). Closes #52.
+- Prerequisites foundation: `addPrerequisite` / `removePrerequisite` mutations (cycle-safe via
+  `canAddPrerequisite`) and `isBlocked` / `blockedGroups` / `unblocks` selectors — the
+  dependency-graph core behind the Blocked surface and the dialog's blockers section. Closes #51.
+- Due surface: a new `/due` route (and **Due** nav entry) grouping non-done actions with due dates
+  by urgency — Overdue / Today / This week / Later (empty sections hidden) — with the inline status
+  menu, edit, and rename. New `dueGroups` lens. Closes #50.
+- Done surface: a new `/done` route (and **Done** nav entry) listing completed actions with
+  restore-to-Next, move-to-Backlog, and delete. New `doneItems` lens. Closes #49.
+
 - Workbench heat-map: a project with sub-projects can toggle its sub-project section to a heat-map
   of cards — each showing done/total and a done-ratio-coloured border (red/amber/green) — that drill
   in on click. New `missionStats` roll-up. Mirrors NamDesktop's MCR mode. Closes #47.

@@ -2,8 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import {
   backlogItems,
+  blockedGroups,
   buildParentIndex,
   buildPath,
+  canAddPrerequisite,
+  doneItems,
+  dueGroups,
+  isBlocked,
+  unblocks,
   effectiveTags,
   inboxItems,
   nextActions,
@@ -107,6 +113,80 @@ describe('buildPath / effectiveTags', () => {
   it('effectiveTags unions own tags with inherited ancestor tags (own first)', () => {
     expect(effectiveTags(nested(), 'a')).toEqual(['urgent', 'home', 'kitchen']);
     expect(effectiveTags(nested(), 'p2')).toEqual(['kitchen', 'home']);
+  });
+});
+
+describe('prerequisites / blocked', () => {
+  // a blocked by b; b blocked by c
+  function chain() {
+    return workspace(
+      [
+        node('a', { status: 'NEXT', blockedBy: ['b'] }),
+        node('b', { status: 'NEXT', blockedBy: ['c'] }),
+        node('c', { status: 'NEXT' }),
+      ],
+      (d) => ['a', 'b', 'c'].forEach((id) => addChild(d, 'actions', id)),
+    );
+  }
+
+  it('isBlocked reflects non-DONE prerequisites', () => {
+    const doc = chain();
+    expect(isBlocked(doc, 'a')).toBe(true);
+    doc.nodes['b'].status = 'DONE';
+    expect(isBlocked(doc, 'a')).toBe(false); // its only blocker is done
+    expect(isBlocked(doc, 'c')).toBe(false); // no blockers
+  });
+
+  it('canAddPrerequisite rejects self, duplicates, and cycles', () => {
+    const doc = chain();
+    expect(canAddPrerequisite(doc, 'a', 'a')).toBe(false); // self
+    expect(canAddPrerequisite(doc, 'a', 'b')).toBe(false); // duplicate
+    expect(canAddPrerequisite(doc, 'c', 'a')).toBe(false); // cycle: a→b→c, so c→a closes it
+    expect(canAddPrerequisite(doc, 'a', 'c')).toBe(true); // fine
+  });
+
+  it('blockedGroups groups blocked actions by active blocker; unblocks is the inverse', () => {
+    const doc = chain();
+    const groups = blockedGroups(doc);
+    expect(groups.map((g) => g.blocker.id).sort()).toEqual(['b', 'c']);
+    const byB = groups.find((g) => g.blocker.id === 'b')!;
+    expect(ids(byB.actions)).toEqual(['a']);
+    expect(ids(unblocks(doc, 'b'))).toEqual(['a']);
+  });
+});
+
+describe('dueGroups', () => {
+  it('buckets non-done due actions by urgency', () => {
+    const now = new Date(2026, 5, 11); // 2026-06-11
+    const doc = workspace(
+      [
+        node('o', { status: 'NEXT', dueAt: '2026-06-01' }),
+        node('t', { status: 'NEXT', dueAt: '2026-06-11' }),
+        node('w', { status: 'NEXT', dueAt: '2026-06-14' }),
+        node('l', { status: 'NEXT', dueAt: '2026-08-01' }),
+        node('done', { status: 'DONE', dueAt: '2026-06-01' }), // excluded
+      ],
+      (d) => ['o', 't', 'w', 'l', 'done'].forEach((id) => addChild(d, 'actions', id)),
+    );
+    const g = dueGroups(doc, now);
+    expect(ids(g.overdue)).toEqual(['o']);
+    expect(ids(g.today)).toEqual(['t']);
+    expect(ids(g.thisWeek)).toEqual(['w']);
+    expect(ids(g.later)).toEqual(['l']);
+  });
+});
+
+describe('doneItems', () => {
+  it('returns DONE non-project actions', () => {
+    const doc = workspace(
+      [node('d', { status: 'DONE' }), node('n', { status: 'NEXT' }), node('dp', { status: 'DONE', project: true })],
+      (d) => {
+        addChild(d, 'actions', 'd');
+        addChild(d, 'actions', 'n');
+        addChild(d, 'projects', 'dp');
+      },
+    );
+    expect(ids(doneItems(doc))).toEqual(['d']);
   });
 });
 
