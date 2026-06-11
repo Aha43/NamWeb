@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useCapture } from '@/capture/capture-context';
 import { cn } from '@/lib/utils';
+import { APP_NAME } from '@/lib/app';
 import { SURFACES } from './nav';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -15,7 +16,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   return (
     <div className="flex min-h-dvh bg-background text-foreground">
       <aside className="flex w-60 shrink-0 flex-col border-r border-border p-4">
-        <h1 className="px-2 text-lg font-semibold tracking-tight">NamWeb</h1>
+        <h1 className="px-2 text-lg font-semibold tracking-tight">{APP_NAME}</h1>
 
         <Button className="mt-4 justify-start gap-2" onClick={openCapture}>
           <Plus />

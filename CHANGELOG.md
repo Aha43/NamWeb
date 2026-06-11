@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- UI now uses the full product name **Next Action Master** (via a single `APP_NAME` constant)
+  instead of the internal "NamWeb" — on the login card, both shell headers, the logo's accessible
+  name, and the document title. Repo/package identifiers stay "NamWeb". Closes #30.
+
 - Interaction & a11y polish: the focus deck is **code-split** — framer-motion now loads on demand
   with the `/focus` route instead of in the initial bundle (clears the chunk-size warning; main
   bundle drops below 500 kB). The deck respects `prefers-reduced-motion` and announces its progress

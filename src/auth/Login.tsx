@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { supabase } from '../lib/supabase';
+import { APP_NAME } from '../lib/app';
 import { DEV_WORKSPACE, isDevWorkspaceSelected, setWorkspaceName } from '../lib/workspace';
 
 // TODO(dev-only): prefill the local Supabase test credentials to speed manual
@@ -41,7 +42,7 @@ export function Login() {
       >
         <div className="flex flex-col items-center text-center">
           <LogoMark className="h-12 w-12 text-card-foreground" />
-          <h1 className="mt-3 text-lg font-semibold tracking-tight text-card-foreground">NamWeb</h1>
+          <h1 className="mt-3 text-lg font-semibold tracking-tight text-card-foreground">{APP_NAME}</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your workspace.</p>
         </div>
 
