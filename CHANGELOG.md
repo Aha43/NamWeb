@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Due surface: a new `/due` route (and **Due** nav entry) grouping non-done actions with due dates
+  by urgency — Overdue / Today / This week / Later (empty sections hidden) — with the inline status
+  menu, edit, and rename. New `dueGroups` lens. Closes #50.
 - Done surface: a new `/done` route (and **Done** nav entry) listing completed actions with
   restore-to-Next, move-to-Backlog, and delete. New `doneItems` lens. Closes #49.
 

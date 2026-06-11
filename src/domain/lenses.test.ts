@@ -5,6 +5,7 @@ import {
   buildParentIndex,
   buildPath,
   doneItems,
+  dueGroups,
   effectiveTags,
   inboxItems,
   nextActions,
@@ -108,6 +109,27 @@ describe('buildPath / effectiveTags', () => {
   it('effectiveTags unions own tags with inherited ancestor tags (own first)', () => {
     expect(effectiveTags(nested(), 'a')).toEqual(['urgent', 'home', 'kitchen']);
     expect(effectiveTags(nested(), 'p2')).toEqual(['kitchen', 'home']);
+  });
+});
+
+describe('dueGroups', () => {
+  it('buckets non-done due actions by urgency', () => {
+    const now = new Date(2026, 5, 11); // 2026-06-11
+    const doc = workspace(
+      [
+        node('o', { status: 'NEXT', dueAt: '2026-06-01' }),
+        node('t', { status: 'NEXT', dueAt: '2026-06-11' }),
+        node('w', { status: 'NEXT', dueAt: '2026-06-14' }),
+        node('l', { status: 'NEXT', dueAt: '2026-08-01' }),
+        node('done', { status: 'DONE', dueAt: '2026-06-01' }), // excluded
+      ],
+      (d) => ['o', 't', 'w', 'l', 'done'].forEach((id) => addChild(d, 'actions', id)),
+    );
+    const g = dueGroups(doc, now);
+    expect(ids(g.overdue)).toEqual(['o']);
+    expect(ids(g.today)).toEqual(['t']);
+    expect(ids(g.thisWeek)).toEqual(['w']);
+    expect(ids(g.later)).toEqual(['l']);
   });
 });
 

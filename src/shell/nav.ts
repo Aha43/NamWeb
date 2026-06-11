@@ -1,4 +1,4 @@
-import { CheckCircle2, Folders, Inbox, Layers, ListTodo, Target, type LucideIcon } from 'lucide-react';
+import { CalendarClock, CheckCircle2, Folders, Inbox, Layers, ListTodo, Target, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -12,6 +12,7 @@ export const SURFACES: NavItem[] = [
   { to: '/inbox', label: 'Inbox', icon: Inbox },
   { to: '/next', label: 'Next', icon: ListTodo },
   { to: '/backlog', label: 'Backlog', icon: Layers },
+  { to: '/due', label: 'Due', icon: CalendarClock },
   { to: '/projects', label: 'Projects', icon: Folders },
   { to: '/done', label: 'Done', icon: CheckCircle2 },
   { to: '/focus', label: 'Focus', icon: Target },

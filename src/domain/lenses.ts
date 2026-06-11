@@ -111,6 +111,35 @@ export function effectiveTags(doc: WorkspaceDocument, id: string): string[] {
   return out;
 }
 
+export interface DueGroups {
+  overdue: NamNode[];
+  today: NamNode[];
+  thisWeek: NamNode[];
+  later: NamNode[];
+}
+
+/**
+ * Non-done actions with a due date, grouped by urgency relative to `now`:
+ * overdue / today / within a week / later. Mirrors NamDesktop's DueLens.
+ */
+export function dueGroups(doc: WorkspaceDocument, now: Date = new Date()): DueGroups {
+  const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const groups: DueGroups = { overdue: [], today: [], thisWeek: [], later: [] };
+  const structural = structuralNodeIds(doc);
+  for (const node of Object.values(doc.nodes)) {
+    if (node.project || node.status === 'DONE' || structural.has(node.id) || !node.dueAt) continue;
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueAt);
+    if (!match) continue;
+    const due0 = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime();
+    const days = Math.round((due0 - today0) / 86_400_000);
+    if (days < 0) groups.overdue.push(node);
+    else if (days === 0) groups.today.push(node);
+    else if (days <= 7) groups.thisWeek.push(node);
+    else groups.later.push(node);
+  }
+  return groups;
+}
+
 /** Done = DONE, non-project, non-structural — completed actions, kept for reference. */
 export function doneItems(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);

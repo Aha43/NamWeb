@@ -7,6 +7,7 @@ import { BacklogPage } from './BacklogPage';
 import { ProjectsPage } from './ProjectsPage';
 import { ProjectWorkbenchPage } from './ProjectWorkbenchPage';
 import { DonePage } from './DonePage';
+import { DuePage } from './DuePage';
 import { NotFound } from './NotFound';
 
 // Code-split the immersive focus deck (pulls in framer-motion) off the main bundle.
@@ -38,6 +39,7 @@ export function AppRoutes() {
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="projects/:id" element={<ProjectWorkbenchPage />} />
         <Route path="done" element={<DonePage />} />
+        <Route path="due" element={<DuePage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>
