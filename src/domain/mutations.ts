@@ -15,6 +15,7 @@ export type Intent =
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
+  | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; now: string }
   | { type: 'addSubProject'; parentId: string; id: string; title: string; now: string }
   | { type: 'moveNode'; id: string; newParentId: string; now: string }
   | { type: 'convertActionToProject'; id: string; now: string }
@@ -91,7 +92,9 @@ const structuralIds = (doc: WorkspaceDocument): Set<string> =>
 
 /** Does this intent target a node that must already exist? (addInboxItem creates one.) */
 export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): boolean {
-  if (intent.type === 'addInboxItem' || intent.type === 'addSubProject') return true;
+  if (intent.type === 'addInboxItem' || intent.type === 'addSubProject' || intent.type === 'addAction') {
+    return true;
+  }
   return Boolean(doc.nodes[intent.id]);
 }
 
@@ -163,6 +166,16 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!node) return next;
       node.tags = normalizeTags(intent.tags);
       node.updatedAt = intent.now;
+      return next;
+    }
+    case 'addAction': {
+      if (!next.nodes[intent.parentId]) return next;
+      next.nodes[intent.id] = {
+        ...newNode(intent.id, intent.title, intent.now),
+        status: intent.status,
+        statusChangedAt: intent.now,
+      };
+      next.nodes[intent.parentId].childIds.push(intent.id);
       return next;
     }
     case 'addSubProject': {

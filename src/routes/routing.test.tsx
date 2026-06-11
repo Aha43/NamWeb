@@ -24,11 +24,13 @@ function document(): WorkspaceDocument {
     nodes: {
       root: node('root', { childIds: ['inbox', 'projects', 'actions'] }),
       inbox: node('inbox', { childIds: ['cap'] }),
-      projects: node('projects'),
+      projects: node('projects', { childIds: ['proj'] }),
       actions: node('actions', { childIds: ['nxt', 'bk'] }),
       cap: node('cap', { title: 'Capture me', status: 'BACKLOG' }),
       nxt: node('nxt', { title: 'Do this', status: 'NEXT' }),
       bk: node('bk', { title: 'Later thing', status: 'BACKLOG' }),
+      proj: node('proj', { title: 'Roadmap', project: true, childIds: ['t1'] }),
+      t1: node('t1', { title: 'Task one', status: 'NEXT' }),
     },
     registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
   };
@@ -79,6 +81,13 @@ describe('routing', () => {
   it('renders the projects surface at /projects', () => {
     renderAt('/projects');
     expect(screen.getByLabelText('Add project')).toBeInTheDocument();
+  });
+
+  it('renders a project workbench at /projects/:id', () => {
+    renderAt('/projects/proj');
+    expect(screen.getByRole('button', { name: 'Projects' })).toBeInTheDocument(); // breadcrumb root
+    expect(screen.getByText('Task one')).toBeInTheDocument(); // its direct action
+    expect(screen.getByLabelText('Add action')).toBeInTheDocument();
   });
 
   it('redirects the index route to /inbox', () => {

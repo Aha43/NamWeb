@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Project Workbench (`/projects/:id`): drill into a project — a clickable breadcrumb of ancestors,
+  the project's own actions (full row parity: status menu, edit, inline rename), its sub-project
+  sections (open to drill in), and quick-adds for an action or a sub-project. New `addAction`
+  mutation; action rows now carry their status. Closes #45.
 - Projects surface: a new `/projects` route (and **Projects** nav entry in both shells) listing
   top-level projects with their tags, a quick-add to create one (`addSubProject`), and open-into
   the workbench. Closes #44.

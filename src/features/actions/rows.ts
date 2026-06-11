@@ -1,10 +1,11 @@
-import type { NamNode, WorkspaceDocument } from '../../domain/types';
+import type { NamNode, NodeStatus, WorkspaceDocument } from '../../domain/types';
 import { projectPath } from '../../domain/lenses';
 
-/** Flattened action view-model shared by the Next Actions and Backlog panels. */
+/** Flattened action view-model shared by the Next Actions, Backlog, and Workbench lists. */
 export interface ActionRowData {
   id: string;
   title: string;
+  status: NodeStatus;
   path: string[];
   tags: string[];
   dueAt: string | null;
@@ -16,6 +17,7 @@ export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowDat
   return {
     id: node.id,
     title: node.title,
+    status: node.status,
     path: projectPath(doc, node.id),
     tags: node.tags,
     dueAt: node.dueAt,

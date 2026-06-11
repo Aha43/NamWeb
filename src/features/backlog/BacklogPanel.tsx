@@ -35,7 +35,7 @@ export function BacklogPanel({ rows, onSetStatus, onEdit, onRename, sortMode, on
               onRename={onRename && ((title) => onRename(row.id, title))}
               actions={
                 <StatusMenu
-                  status="BACKLOG"
+                  status={row.status}
                   title={row.title}
                   onSetStatus={(status) => onSetStatus(row.id, status)}
                 />

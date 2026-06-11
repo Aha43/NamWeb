@@ -136,6 +136,14 @@ describe('applyIntent', () => {
     expect(next.nodes['a'].updatedAt).toBe(NOW);
   });
 
+  it('addAction creates a leaf action with the given status under the parent', () => {
+    const doc = workspace([node('p', { project: true })]);
+    doc.nodes['projects'].childIds.push('p');
+    const next = applyIntent(doc, { type: 'addAction', parentId: 'p', id: 'a', title: 'Do', status: 'NEXT', now: NOW });
+    expect(next.nodes['p'].childIds).toEqual(['a']);
+    expect(next.nodes['a']).toMatchObject({ title: 'Do', project: false, status: 'NEXT', createdAt: NOW, statusChangedAt: NOW });
+  });
+
   it('addSubProject creates a project under the parent (no-op if parent gone)', () => {
     const doc = workspace([node('p', { project: true })]);
     doc.nodes['projects'].childIds.push('p');
