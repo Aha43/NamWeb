@@ -25,12 +25,14 @@ function document(): WorkspaceDocument {
       root: node('root', { childIds: ['inbox', 'projects', 'actions'] }),
       inbox: node('inbox', { childIds: ['cap'] }),
       projects: node('projects', { childIds: ['proj'] }),
-      actions: node('actions', { childIds: ['nxt', 'bk', 'dn', 'due1'] }),
+      actions: node('actions', { childIds: ['nxt', 'bk', 'dn', 'due1', 'blk', 'bd'] }),
       cap: node('cap', { title: 'Capture me', status: 'BACKLOG' }),
       nxt: node('nxt', { title: 'Do this', status: 'NEXT' }),
       bk: node('bk', { title: 'Later thing', status: 'BACKLOG' }),
       dn: node('dn', { title: 'Old task', status: 'DONE' }),
       due1: node('due1', { title: 'Pay bill', status: 'NEXT', dueAt: '2020-01-01' }),
+      blk: node('blk', { title: 'Prep', status: 'NEXT' }),
+      bd: node('bd', { title: 'Wait task', status: 'NEXT', blockedBy: ['blk'] }),
       proj: node('proj', { title: 'Roadmap', project: true, childIds: ['t1'] }),
       t1: node('t1', { title: 'Task one', status: 'NEXT' }),
     },
@@ -89,6 +91,12 @@ describe('routing', () => {
     renderAt('/due');
     expect(screen.getByText('Overdue')).toBeInTheDocument();
     expect(screen.getByText('Pay bill')).toBeInTheDocument();
+  });
+
+  it('renders the blocked surface at /blocked, grouped by blocker', () => {
+    renderAt('/blocked');
+    expect(screen.getByText('Blocked by: Prep')).toBeInTheDocument();
+    expect(screen.getByText('Wait task')).toBeInTheDocument();
   });
 
   it('renders the done surface at /done', () => {

@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Blocked surface: a new `/blocked` route (and **Blocked** nav entry) listing actions awaiting
+  prerequisites, grouped under each active blocker (the header opens that blocker). Closes #52.
 - Prerequisites foundation: `addPrerequisite` / `removePrerequisite` mutations (cycle-safe via
   `canAddPrerequisite`) and `isBlocked` / `blockedGroups` / `unblocks` selectors — the
   dependency-graph core behind the Blocked surface and the dialog's blockers section. Closes #51.
