@@ -1,7 +1,8 @@
-// React hook owning the workspace document: loads the `default` row on mount,
-// holds the snapshot, and dispatches intents through the serialized conflict-retry
-// commit. Writes are single-flight (a promise chain) so two taps can't race the
-// optimistic version guard. Reads stay snappy via an immediate optimistic apply.
+// React hook owning the workspace document: loads the synced workspace row on
+// mount, holds the snapshot, and dispatches intents through the serialized
+// conflict-retry commit. Writes are single-flight (a promise chain) so two taps
+// can't race the optimistic version guard. Reads stay snappy via an immediate
+// optimistic apply.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
@@ -10,7 +11,10 @@ import { applyIntent, type Intent } from '../domain/mutations';
 import { commitIntent, type WorkspaceSnapshot } from './commit';
 import type { WorkspaceDocument } from '../domain/types';
 
-const WORKSPACE_NAME = 'default';
+// The remote workspace row to sync against. NamDesktop names it `default` in
+// normal mode and `dev` in dev-mode (CloudSyncSettings.WORKSPACE_DEFAULT / _DEV);
+// override via VITE_WORKSPACE_NAME to point the web client at the right row.
+const WORKSPACE_NAME = import.meta.env.VITE_WORKSPACE_NAME?.trim() || 'default';
 
 export interface UseWorkspace {
   document: WorkspaceDocument | null;

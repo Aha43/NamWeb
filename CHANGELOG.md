@@ -20,6 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Configurable workspace identity: the synced workspace row is no longer hardcoded to `default` —
+  it reads `VITE_WORKSPACE_NAME` (defaulting to `default`), matching NamDesktop's normal-mode
+  (`default`) vs dev-mode (`dev`) naming so the web client can point at the right row (e.g. `dev`
+  for local testing). Closes #27.
 - Edit an action after capture: a reusable **Action dialog** (title, description, tags, due date,
   and status radios) opened from a pencil button on every Inbox / Next / Backlog row via an
   app-wide `ActionEditorProvider` (`useActionEditor().openEditor(id)`, mirroring the capture
