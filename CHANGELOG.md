@@ -20,6 +20,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Edit an action after capture: a reusable **Action dialog** (title, description, tags, due date,
+  and status radios) opened from a pencil button on every Inbox / Next / Backlog row via an
+  app-wide `ActionEditorProvider` (`useActionEditor().openEditor(id)`, mirroring the capture
+  provider). Backed by new pure, replayable mutations — `updateNode`, `setDue`, `updateTags`
+  (with tag normalization) — dispatched only for fields that actually changed, so edits replay
+  through the conflict-retry commit. Closes #26.
 - Form & dialog UI primitives: `Input`, `Textarea`, `Label`, and a shadcn `Dialog` (on the
   already-present `@radix-ui/react-dialog`) added to `src/components/ui`, styled on the design
   tokens and matching the existing `Button`/`Sheet` conventions. Primitives only — they unblock

@@ -1,8 +1,17 @@
 import type { ReactNode } from 'react';
+import { Pencil } from 'lucide-react';
 import type { ActionRowData } from './rows';
 
 /** One action row: project path, title, tags, due hint, and a slot for actions. */
-export function ActionRow({ row, actions }: { row: ActionRowData; actions: ReactNode }) {
+export function ActionRow({
+  row,
+  actions,
+  onEdit,
+}: {
+  row: ActionRowData;
+  actions: ReactNode;
+  onEdit?: () => void;
+}) {
   return (
     <li className="flex items-center gap-2 px-3 py-2">
       <div className="min-w-0 flex-1">
@@ -23,7 +32,19 @@ export function ActionRow({ row, actions }: { row: ActionRowData; actions: React
           </div>
         )}
       </div>
-      <div className="flex shrink-0 items-center gap-1">{actions}</div>
+      <div className="flex shrink-0 items-center gap-1">
+        {onEdit && (
+          <button
+            type="button"
+            aria-label={`Edit ${row.title}`}
+            onClick={onEdit}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {actions}
+      </div>
     </li>
   );
 }

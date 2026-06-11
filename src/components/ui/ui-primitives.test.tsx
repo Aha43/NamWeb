@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { Input } from './input';
 import { Textarea } from './textarea';
 import { Label } from './label';
-import { Dialog, DialogContent, DialogTitle } from './dialog';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from './dialog';
 
 describe('ui primitives', () => {
   it('renders input, textarea and an associated label', () => {
@@ -23,6 +23,7 @@ describe('ui primitives', () => {
       <Dialog open>
         <DialogContent>
           <DialogTitle>Edit action</DialogTitle>
+          <DialogDescription>Edit the action details.</DialogDescription>
         </DialogContent>
       </Dialog>,
     );

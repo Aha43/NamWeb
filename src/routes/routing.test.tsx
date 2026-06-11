@@ -5,6 +5,7 @@ import type { NamNode, WorkspaceDocument } from '@/domain/types';
 import type { UseWorkspace } from '@/store/useWorkspace';
 import { WorkspaceContext } from '@/store/workspace-context';
 import { CaptureProvider } from '@/capture/CaptureProvider';
+import { ActionEditorProvider } from '@/features/actions/ActionEditorProvider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { AppRoutes } from './AppRoutes';
 
@@ -47,7 +48,9 @@ function renderAt(path: string, overrides: Partial<UseWorkspace> = {}) {
       <WorkspaceContext.Provider value={ws}>
         <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <CaptureProvider>
-            <AppRoutes />
+            <ActionEditorProvider>
+              <AppRoutes />
+            </ActionEditorProvider>
           </CaptureProvider>
         </MemoryRouter>
       </WorkspaceContext.Provider>
@@ -87,6 +90,17 @@ describe('routing', () => {
     renderAt('/inbox', { loading: true });
     expect(screen.getByText('Loading…')).toBeInTheDocument();
     expect(screen.queryByLabelText('Quick add')).not.toBeInTheDocument();
+  });
+
+  it('opens the action editor from a row and dispatches the edit', () => {
+    const ws = renderAt('/next');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Do this' }));
+    expect(screen.getByText('Edit action')).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Do this now' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(ws.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'updateNode', id: 'nxt', title: 'Do this now' }),
+    );
   });
 
   it('shows a dismissible sync notice across routes', () => {
