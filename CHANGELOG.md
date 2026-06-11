@@ -20,6 +20,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Configurable workspace identity: the synced workspace row is no longer hardcoded to `default` —
+  it reads `VITE_WORKSPACE_NAME` (defaulting to `default`), matching NamDesktop's normal-mode
+  (`default`) vs dev-mode (`dev`) naming so the web client can point at the right row (e.g. `dev`
+  for local testing). Closes #27.
+- Dev workspace switcher: a runtime workspace-name resolver (`src/lib/workspace.ts`, localStorage
+  over the env default) plus a dev-builds-only "Use dev workspace" checkbox on the login screen
+  that points the session at the `dev` row — so a developer can see NamDesktop dev-mode data
+  without a rebuild. Seed of a future user-facing "Play" sandbox. Closes #28.
+- Edit an action after capture: a reusable **Action dialog** (title, description, tags, due date,
+  and status radios) opened from a pencil button on every Inbox / Next / Backlog row via an
+  app-wide `ActionEditorProvider` (`useActionEditor().openEditor(id)`, mirroring the capture
+  provider). Backed by new pure, replayable mutations — `updateNode`, `setDue`, `updateTags`
+  (with tag normalization) — dispatched only for fields that actually changed, so edits replay
+  through the conflict-retry commit. Closes #26.
+- Form & dialog UI primitives: `Input`, `Textarea`, `Label`, and a shadcn `Dialog` (on the
+  already-present `@radix-ui/react-dialog`) added to `src/components/ui`, styled on the design
+  tokens and matching the existing `Button`/`Sheet` conventions. Primitives only — they unblock
+  the Action edit dialog and later form-driven surfaces. Closes #25.
+- Brand logo on the login screen: the NamWeb mark (ported from NamDesktop's `logo-mark.svg`,
+  inlined as a `currentColor`-driven `LogoMark` component so it tracks the theme) now sits above
+  the heading on the login card, dark-mode aware and with an accessible name. Closes #24.
 - Focus execution deck — the centerpiece. An immersive full-screen `/focus` surface (outside the
   shell chrome, mirroring how desktop focus mode hides the toolbar) modeled on NamDesktop focus
   mode: one card at a time (project path, title, description) with an `N / total` counter, Done &

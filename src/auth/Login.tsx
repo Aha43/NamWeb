@@ -1,13 +1,28 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { LogoMark } from '@/components/brand/LogoMark';
 import { supabase } from '../lib/supabase';
+import { DEV_WORKSPACE, isDevWorkspaceSelected, setWorkspaceName } from '../lib/workspace';
+
+// TODO(dev-only): prefill the local Supabase test credentials to speed manual
+// testing. Gated on import.meta.env.DEV so it never ships in a production build;
+// delete this block before going productish.
+const DEV_EMAIL = import.meta.env.DEV ? 'test@namdesktop.local' : '';
+const DEV_PASSWORD = import.meta.env.DEV ? 'namdesktop-local' : '';
 
 /** Email/password sign-in. Single-user; the session is persisted by supabase-js. */
 export function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState(DEV_EMAIL);
+  const [password, setPassword] = useState(DEV_PASSWORD);
+  const [devWorkspace, setDevWorkspace] = useState(isDevWorkspaceSelected());
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  function toggleDevWorkspace(checked: boolean) {
+    setDevWorkspace(checked);
+    // Persisted now so the workspace hook picks it up when it mounts post-sign-in.
+    setWorkspaceName(checked ? DEV_WORKSPACE : null);
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -24,8 +39,9 @@ export function Login() {
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm"
       >
-        <div>
-          <h1 className="text-lg font-semibold tracking-tight text-card-foreground">NamWeb</h1>
+        <div className="flex flex-col items-center text-center">
+          <LogoMark className="h-12 w-12 text-card-foreground" />
+          <h1 className="mt-3 text-lg font-semibold tracking-tight text-card-foreground">NamWeb</h1>
           <p className="mt-1 text-sm text-muted-foreground">Sign in to your workspace.</p>
         </div>
 
@@ -52,6 +68,17 @@ export function Login() {
             className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
           />
         </label>
+
+        {import.meta.env.DEV && (
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <input
+              type="checkbox"
+              checked={devWorkspace}
+              onChange={(e) => toggleDevWorkspace(e.target.checked)}
+            />
+            Use dev workspace
+          </label>
+        )}
 
         {error && (
           <p role="alert" className="text-sm text-destructive">

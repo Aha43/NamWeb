@@ -10,7 +10,24 @@ export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; now: string }
   | { type: 'convertInboxToNext'; id: string; now: string }
   | { type: 'setStatus'; id: string; status: NodeStatus; now: string }
+  | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
+  | { type: 'setDue'; id: string; dueAt: string | null; now: string }
+  | { type: 'updateTags'; id: string; tags: string[]; now: string }
   | { type: 'deleteLeaf'; id: string };
+
+/** Trimmed, lower-cased, de-duplicated, non-empty — mirrors NamDesktop tag handling. */
+export function normalizeTags(tags: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of tags) {
+    const tag = raw.trim().toLowerCase();
+    if (tag && !seen.has(tag)) {
+      seen.add(tag);
+      out.push(tag);
+    }
+  }
+  return out;
+}
 
 function newNode(id: string, title: string, now: string): NamNode {
   return {
@@ -73,6 +90,28 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       node.status = intent.status;
       node.updatedAt = intent.now;
       node.statusChangedAt = intent.now;
+      return next;
+    }
+    case 'updateNode': {
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      node.title = intent.title;
+      node.description = intent.description;
+      node.updatedAt = intent.now;
+      return next;
+    }
+    case 'setDue': {
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      node.dueAt = intent.dueAt;
+      node.updatedAt = intent.now;
+      return next;
+    }
+    case 'updateTags': {
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      node.tags = normalizeTags(intent.tags);
+      node.updatedAt = intent.now;
       return next;
     }
     case 'deleteLeaf': {

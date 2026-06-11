@@ -5,10 +5,11 @@ export interface NextActionsPanelProps {
   rows: ActionRowData[];
   onMarkDone: (id: string) => void;
   onMarkBacklog: (id: string) => void;
+  onEdit?: (id: string) => void;
 }
 
 /** Next Actions: the list with mark-done and send-to-backlog. Presentational. */
-export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog }: NextActionsPanelProps) {
+export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog, onEdit }: NextActionsPanelProps) {
   return (
     <section className="mx-auto max-w-md">
       {rows.length === 0 ? (
@@ -19,6 +20,7 @@ export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog }: NextAction
             <ActionRow
               key={row.id}
               row={row}
+              onEdit={onEdit && (() => onEdit(row.id))}
               actions={
                 <>
                   <button

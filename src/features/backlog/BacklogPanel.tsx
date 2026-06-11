@@ -4,10 +4,11 @@ import type { ActionRowData } from '../actions/rows';
 export interface BacklogPanelProps {
   rows: ActionRowData[];
   onPromote: (id: string) => void;
+  onEdit?: (id: string) => void;
 }
 
 /** Backlog: the list with a single promote-to-Next action. Presentational. */
-export function BacklogPanel({ rows, onPromote }: BacklogPanelProps) {
+export function BacklogPanel({ rows, onPromote, onEdit }: BacklogPanelProps) {
   return (
     <section className="mx-auto max-w-md">
       {rows.length === 0 ? (
@@ -18,6 +19,7 @@ export function BacklogPanel({ rows, onPromote }: BacklogPanelProps) {
             <ActionRow
               key={row.id}
               row={row}
+              onEdit={onEdit && (() => onEdit(row.id))}
               actions={
                 <button
                   type="button"

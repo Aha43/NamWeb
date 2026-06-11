@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { applyIntent, intentTargetExists, type Intent } from './mutations';
+import { applyIntent, intentTargetExists, normalizeTags, type Intent } from './mutations';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -84,10 +84,53 @@ describe('applyIntent', () => {
     expect(next.nodes['actions'].childIds).toEqual([]);
   });
 
-  it('no-ops when a status/delete target is missing (replay safety)', () => {
+  it('updateNode sets title and description and stamps updatedAt', () => {
+    const doc = workspace([node('a', { title: 'old', description: null })]);
+    const next = applyIntent(doc, {
+      type: 'updateNode',
+      id: 'a',
+      title: 'new title',
+      description: 'some notes',
+      now: NOW,
+    });
+    expect(next.nodes['a']).toMatchObject({ title: 'new title', description: 'some notes', updatedAt: NOW });
+    // updateNode leaves status untouched.
+    expect(next.nodes['a'].status).toBe('BACKLOG');
+  });
+
+  it('setDue sets the due date (and clears it with null)', () => {
+    const doc = workspace([node('a')]);
+    const due = applyIntent(doc, { type: 'setDue', id: 'a', dueAt: '2026-07-01', now: NOW });
+    expect(due.nodes['a']).toMatchObject({ dueAt: '2026-07-01', updatedAt: NOW });
+    const cleared = applyIntent(due, { type: 'setDue', id: 'a', dueAt: null, now: NOW });
+    expect(cleared.nodes['a'].dueAt).toBeNull();
+  });
+
+  it('updateTags normalizes (trim, lowercase, de-dupe) and stamps updatedAt', () => {
+    const doc = workspace([node('a')]);
+    const next = applyIntent(doc, {
+      type: 'updateTags',
+      id: 'a',
+      tags: ['  Phone ', 'phone', 'Home', ''],
+      now: NOW,
+    });
+    expect(next.nodes['a'].tags).toEqual(['phone', 'home']);
+    expect(next.nodes['a'].updatedAt).toBe(NOW);
+  });
+
+  it('no-ops when a status/delete/edit target is missing (replay safety)', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'setStatus', id: 'ghost', status: 'DONE', now: NOW })).toEqual(doc);
     expect(applyIntent(doc, { type: 'deleteLeaf', id: 'ghost' })).toEqual(doc);
+    expect(applyIntent(doc, { type: 'updateNode', id: 'ghost', title: 't', description: null, now: NOW })).toEqual(doc);
+    expect(applyIntent(doc, { type: 'setDue', id: 'ghost', dueAt: '2026-07-01', now: NOW })).toEqual(doc);
+    expect(applyIntent(doc, { type: 'updateTags', id: 'ghost', tags: ['x'], now: NOW })).toEqual(doc);
+  });
+});
+
+describe('normalizeTags', () => {
+  it('trims, lower-cases, de-duplicates, and drops empties (order preserved)', () => {
+    expect(normalizeTags(['  Phone ', 'PHONE', 'home', '', '  '])).toEqual(['phone', 'home']);
   });
 });
 

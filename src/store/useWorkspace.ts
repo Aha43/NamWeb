@@ -1,16 +1,16 @@
-// React hook owning the workspace document: loads the `default` row on mount,
-// holds the snapshot, and dispatches intents through the serialized conflict-retry
-// commit. Writes are single-flight (a promise chain) so two taps can't race the
-// optimistic version guard. Reads stay snappy via an immediate optimistic apply.
+// React hook owning the workspace document: loads the synced workspace row on
+// mount, holds the snapshot, and dispatches intents through the serialized
+// conflict-retry commit. Writes are single-flight (a promise chain) so two taps
+// can't race the optimistic version guard. Reads stay snappy via an immediate
+// optimistic apply.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { getWorkspaceName } from '../lib/workspace';
 import { pull } from '../sync/workspaceClient';
 import { applyIntent, type Intent } from '../domain/mutations';
 import { commitIntent, type WorkspaceSnapshot } from './commit';
 import type { WorkspaceDocument } from '../domain/types';
-
-const WORKSPACE_NAME = 'default';
 
 export interface UseWorkspace {
   document: WorkspaceDocument | null;
@@ -39,12 +39,14 @@ export function useWorkspace(): UseWorkspace {
   // Last server-confirmed snapshot — the base every commit guards against.
   const committedRef = useRef<WorkspaceSnapshot | null>(null);
   const queueRef = useRef<Promise<void>>(Promise.resolve());
+  // Frozen at mount: the workspace row chosen at login (e.g. `dev`) drives this session.
+  const workspaceNameRef = useRef(getWorkspaceName());
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     setNoRemote(false);
-    const result = await pull(supabase, WORKSPACE_NAME);
+    const result = await pull(supabase, workspaceNameRef.current);
     if (result.kind === 'ok') {
       const snap = { document: result.document, version: result.version };
       committedRef.current = snap;
@@ -75,7 +77,7 @@ export function useWorkspace(): UseWorkspace {
     queueRef.current = queueRef.current.then(async () => {
       const base = committedRef.current;
       if (!base) return;
-      const result = await commitIntent(supabase, WORKSPACE_NAME, base, intent);
+      const result = await commitIntent(supabase, workspaceNameRef.current, base, intent);
       committedRef.current = result.snapshot;
       setSnapshot(result.snapshot);
       if (result.outcome !== 'synced') setNotice(result.message ?? 'Sync failed');
