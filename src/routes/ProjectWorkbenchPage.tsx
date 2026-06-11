@@ -40,6 +40,11 @@ export function ProjectWorkbenchPage() {
         const node = document.nodes[actionId];
         if (node) dispatch({ type: 'updateNode', id: actionId, title, description: node.description, now: nowIso() });
       }}
+      onConvertToAction={
+        project.childIds.length === 0
+          ? () => dispatch({ type: 'convertProjectToAction', id, status: 'NEXT', now: nowIso() })
+          : undefined
+      }
     />
   );
 }

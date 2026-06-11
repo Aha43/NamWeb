@@ -53,6 +53,13 @@ describe('ProjectWorkbench', () => {
     expect(onOpenProject).toHaveBeenCalledWith('s');
   });
 
+  it('offers convert-to-action for a leaf project', () => {
+    const onConvertToAction = vi.fn();
+    setup({ actions: [], subProjects: [], onConvertToAction });
+    fireEvent.click(screen.getByRole('button', { name: 'Convert to action' }));
+    expect(onConvertToAction).toHaveBeenCalled();
+  });
+
   it('adds actions and sub-projects', () => {
     const { onAddAction, onAddSubProject } = setup();
     fireEvent.change(screen.getByLabelText('Add action'), { target: { value: 'Measure' } });

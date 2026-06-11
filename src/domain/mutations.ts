@@ -5,6 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
+import { subtreeIds } from './lenses';
 
 export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; now: string }
@@ -72,19 +73,6 @@ function parentOf(doc: WorkspaceDocument, id: string): string | undefined {
     if (node.childIds.includes(id)) return node.id;
   }
   return undefined;
-}
-
-/** `id` plus every descendant id, via childIds. */
-function collectSubtree(doc: WorkspaceDocument, id: string): Set<string> {
-  const ids = new Set<string>();
-  const stack = [id];
-  while (stack.length) {
-    const cur = stack.pop()!;
-    if (ids.has(cur)) continue;
-    ids.add(cur);
-    for (const child of doc.nodes[cur]?.childIds ?? []) stack.push(child);
-  }
-  return ids;
 }
 
 const structuralIds = (doc: WorkspaceDocument): Set<string> =>
@@ -189,7 +177,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const newParent = next.nodes[intent.newParentId];
       if (!node || !newParent || intent.id === intent.newParentId) return next;
       if (structuralIds(next).has(intent.id)) return next; // never move a container
-      if (collectSubtree(next, intent.id).has(intent.newParentId)) return next; // no cycles
+      if (subtreeIds(next, intent.id).has(intent.newParentId)) return next; // no cycles
       detach(next, intent.id);
       newParent.childIds.push(intent.id);
       node.updatedAt = intent.now;
@@ -223,7 +211,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'deleteRecursive': {
       if (!next.nodes[intent.id]) return next;
-      const subtree = collectSubtree(next, intent.id);
+      const subtree = subtreeIds(next, intent.id);
       detach(next, intent.id);
       for (const id of subtree) delete next.nodes[id];
       // drop any blockedBy references to the removed nodes

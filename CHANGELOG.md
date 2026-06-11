@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Reshape items between actions and projects: the Action dialog gains **Make project** (lift an
+  action to a project) and **Move to…** (reparent to another project or Free actions, excluding the
+  item's own subtree); a leaf project's workbench offers **Convert to action**. Wires the
+  `convertActionToProject` / `moveNode` / `convertProjectToAction` mutations. Closes #46.
 - Project Workbench (`/projects/:id`): drill into a project — a clickable breadcrumb of ancestors,
   the project's own actions (full row parity: status menu, edit, inline rename), its sub-project
   sections (open to drill in), and quick-adds for an action or a sub-project. New `addAction`

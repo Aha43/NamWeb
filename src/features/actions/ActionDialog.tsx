@@ -35,16 +35,28 @@ const STATUSES: { value: NodeStatus; label: string }[] = [
  * seeded from `node`, it reports the edited fields via `onSave` and never mutates.
  * Mirrors NamDesktop's ActionDialog (blockers/resources/move are later sprints).
  */
+/** A reparent target: a project, or the special "Free actions" container. */
+export interface MoveTarget {
+  id: string;
+  label: string;
+}
+
 export function ActionDialog({
   node,
   open,
   onOpenChange,
   onSave,
+  onMakeProject,
+  moveTargets,
+  onMove,
 }: {
   node: NamNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (edits: ActionEdits) => void;
+  onMakeProject?: () => void;
+  moveTargets?: MoveTarget[];
+  onMove?: (targetId: string) => void;
 }) {
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
@@ -147,6 +159,34 @@ export function ActionDialog({
               ))}
             </div>
           </fieldset>
+          {(onMakeProject || (moveTargets && onMove)) && (
+            <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+              {onMakeProject && (
+                <Button type="button" variant="outline" size="sm" onClick={onMakeProject}>
+                  Make project
+                </Button>
+              )}
+              {moveTargets && onMove && (
+                <select
+                  aria-label="Move to"
+                  defaultValue=""
+                  onChange={(e) => {
+                    if (e.target.value) onMove(e.target.value);
+                  }}
+                  className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+                >
+                  <option value="" disabled>
+                    Move to…
+                  </option>
+                  {moveTargets.map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {target.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel

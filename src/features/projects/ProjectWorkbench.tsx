@@ -19,6 +19,8 @@ export interface ProjectWorkbenchProps {
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  /** Provided only when the project is a leaf (no children) — convert it back to an action. */
+  onConvertToAction?: () => void;
 }
 
 /** A project's workbench: breadcrumb, its direct actions, and its sub-project sections. */
@@ -34,6 +36,7 @@ export function ProjectWorkbench({
   onSetStatus,
   onEdit,
   onRename,
+  onConvertToAction,
 }: ProjectWorkbenchProps) {
   return (
     <section className="mx-auto max-w-md space-y-4">
@@ -103,9 +106,14 @@ export function ProjectWorkbench({
       )}
 
       {actions.length === 0 && subProjects.length === 0 && (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Nothing here yet — add an action or a sub-project.
-        </p>
+        <div className="space-y-3 py-8 text-center">
+          <p className="text-sm text-muted-foreground">Nothing here yet — add an action or a sub-project.</p>
+          {onConvertToAction && (
+            <Button type="button" variant="outline" size="sm" onClick={onConvertToAction}>
+              Convert to action
+            </Button>
+          )}
+        </div>
       )}
     </section>
   );

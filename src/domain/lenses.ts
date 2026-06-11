@@ -28,6 +28,19 @@ export function getNode(doc: WorkspaceDocument, id: string): NamNode | undefined
   return doc.nodes[id];
 }
 
+/** `id` plus every descendant id, walked via `childIds`. */
+export function subtreeIds(doc: WorkspaceDocument, id: string): Set<string> {
+  const ids = new Set<string>();
+  const stack = [id];
+  while (stack.length) {
+    const cur = stack.pop()!;
+    if (ids.has(cur)) continue;
+    ids.add(cur);
+    for (const child of doc.nodes[cur]?.childIds ?? []) stack.push(child);
+  }
+  return ids;
+}
+
 /** Inbox = direct children of the inbox node, in child order, regardless of status. */
 export function inboxItems(doc: WorkspaceDocument): NamNode[] {
   const inbox = doc.nodes[doc.inboxNodeId];
