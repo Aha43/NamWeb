@@ -58,3 +58,27 @@ export function formatDueHint(dueAt: string, now: Date = new Date()): DueHint | 
   if (days <= 7) return { label: `${days}d`, tone: 'soon' };
   return { label: shortDate, tone: 'later' };
 }
+
+export interface AgeHint {
+  label: string;
+  /** Older than a week — NamDesktop highlights these in amber. */
+  stale: boolean;
+}
+
+/**
+ * A compact relative age (d/w/m/y) for an ISO date-time, à la NamDesktop's Age
+ * column. Returns `null` if the input can't be parsed.
+ */
+export function formatAge(iso: string, now: Date = new Date()): AgeHint | null {
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) return null;
+  const days = Math.floor((now.getTime() - then) / 86_400_000);
+  const stale = days > 7;
+  let label: string;
+  if (days <= 0) label = 'today';
+  else if (days < 7) label = `${days}d`;
+  else if (days < 30) label = `${Math.floor(days / 7)}w`;
+  else if (days < 365) label = `${Math.floor(days / 30)}m`;
+  else label = `${Math.floor(days / 365)}y`;
+  return { label, stale };
+}

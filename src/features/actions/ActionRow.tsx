@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatDueHint, type DueTone } from '@/lib/dates';
+import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
 import type { ActionRowData } from './rows';
 
 const DUE_TONE: Record<DueTone, string> = {
@@ -22,6 +22,7 @@ export function ActionRow({
   onEdit?: () => void;
 }) {
   const due = row.dueAt ? formatDueHint(row.dueAt) : null;
+  const age = row.touchedAt ? formatAge(row.touchedAt) : null;
   return (
     <li className="flex items-center gap-2 px-3 py-2">
       <div className="min-w-0 flex-1">
@@ -29,7 +30,7 @@ export function ActionRow({
           <p className="truncate text-xs text-muted-foreground">{row.path.join(' › ')}</p>
         )}
         <p className="truncate text-sm text-foreground">{row.title}</p>
-        {(row.tags.length > 0 || due) && (
+        {(row.tags.length > 0 || due || age) && (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
             {row.tags.map((tag) => (
               <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
@@ -38,6 +39,16 @@ export function ActionRow({
             ))}
             {due && (
               <span className={cn('text-[11px] font-medium', DUE_TONE[due.tone])}>Due {due.label}</span>
+            )}
+            {age && (
+              <span
+                className={cn(
+                  'text-[11px]',
+                  age.stale ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground',
+                )}
+              >
+                {age.label}
+              </span>
             )}
           </div>
         )}

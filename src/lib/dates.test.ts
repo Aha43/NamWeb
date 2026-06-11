@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDueHint, parseFlexibleDate } from './dates';
+import { formatAge, formatDueHint, parseFlexibleDate } from './dates';
 
 describe('parseFlexibleDate', () => {
   it('expands 2-digit years and zero-pads month/day', () => {
@@ -42,5 +42,21 @@ describe('formatDueHint', () => {
 
   it('returns null for a non-ISO string', () => {
     expect(formatDueHint('26-7-4', now)).toBeNull();
+  });
+});
+
+describe('formatAge', () => {
+  const now = new Date(2026, 5, 11, 12, 0, 0); // 2026-06-11
+
+  it('uses d/w/m/y buckets and flags staleness past a week', () => {
+    expect(formatAge('2026-06-11T09:00:00', now)).toEqual({ label: 'today', stale: false });
+    expect(formatAge('2026-06-08T12:00:00', now)).toEqual({ label: '3d', stale: false });
+    expect(formatAge('2026-05-28T12:00:00', now)).toEqual({ label: '2w', stale: true });
+    expect(formatAge('2026-03-11T12:00:00', now)).toEqual({ label: '3m', stale: true });
+    expect(formatAge('2024-06-11T12:00:00', now)).toEqual({ label: '2y', stale: true });
+  });
+
+  it('returns null for an unparseable value', () => {
+    expect(formatAge('nope', now)).toBeNull();
   });
 });

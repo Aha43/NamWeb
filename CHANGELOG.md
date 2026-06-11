@@ -28,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Relative age hint on rows: Inbox / Next / Backlog rows now show a compact age (`3d`, `2w`, `4m`,
+  `1y`) from `updatedAt`/`createdAt`, amber once older than a week — mirroring NamDesktop's Age
+  column. New `formatAge` in `src/lib/dates.ts`. Closes #36.
 - Inbox Process dialog: an item can now be clarified — **one action** vs **needs planning (project)**,
   and for an action **do it next** vs **park for later (backlog)** — via a two-step dialog opened
   from the inbox row's "Process…" action (replaces the bare "→ Next"). New `convertInboxToAction`

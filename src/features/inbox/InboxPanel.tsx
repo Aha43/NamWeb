@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { formatAge } from '@/lib/dates';
 import type { NamNode } from '../../domain/types';
 
 export interface InboxPanelProps {
@@ -43,6 +45,19 @@ export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit }: InboxP
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-2 px-3 py-2">
               <span className="flex-1 text-sm text-foreground">{item.title}</span>
+              {(() => {
+                const age = formatAge(item.updatedAt ?? item.createdAt ?? '');
+                return age ? (
+                  <span
+                    className={cn(
+                      'text-[11px]',
+                      age.stale ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground',
+                    )}
+                  >
+                    {age.label}
+                  </span>
+                ) : null;
+              })()}
               {onEdit && (
                 <button
                   type="button"
