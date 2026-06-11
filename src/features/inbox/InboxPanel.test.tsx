@@ -12,7 +12,7 @@ function item(id: string, title: string): NamNode {
 }
 
 function setup(items: NamNode[] = []) {
-  const handlers = { onAdd: vi.fn(), onConvert: vi.fn(), onDelete: vi.fn() };
+  const handlers = { onAdd: vi.fn(), onProcess: vi.fn(), onDelete: vi.fn() };
   render(<InboxPanel items={items} {...handlers} />);
   return handlers;
 }
@@ -45,11 +45,11 @@ describe('InboxPanel', () => {
     expect(onAdd).not.toHaveBeenCalled();
   });
 
-  it('converts and deletes by id', () => {
-    const { onConvert, onDelete } = setup([item('a', 'Buy milk')]);
-    fireEvent.click(screen.getByRole('button', { name: 'Convert Buy milk to next action' }));
+  it('processes and deletes by id', () => {
+    const { onProcess, onDelete } = setup([item('a', 'Buy milk')]);
+    fireEvent.click(screen.getByRole('button', { name: 'Process Buy milk' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete Buy milk' }));
-    expect(onConvert).toHaveBeenCalledWith('a');
+    expect(onProcess).toHaveBeenCalledWith('a');
     expect(onDelete).toHaveBeenCalledWith('a');
   });
 });

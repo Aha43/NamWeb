@@ -28,6 +28,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Inbox Process dialog: an item can now be clarified — **one action** vs **needs planning (project)**,
+  and for an action **do it next** vs **park for later (backlog)** — via a two-step dialog opened
+  from the inbox row's "Process…" action (replaces the bare "→ Next"). New `convertInboxToAction`
+  and `convertInboxToProject` mutations. Mirrors NamDesktop's ProcessInboxDialog. Closes #34.
 - Configurable workspace identity: the synced workspace row is no longer hardcoded to `default` —
   it reads `VITE_WORKSPACE_NAME` (defaulting to `default`), matching NamDesktop's normal-mode
   (`default`) vs dev-mode (`dev`) naming so the web client can point at the right row (e.g. `dev`

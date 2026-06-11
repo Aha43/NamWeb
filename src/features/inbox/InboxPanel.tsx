@@ -6,13 +6,13 @@ import type { NamNode } from '../../domain/types';
 export interface InboxPanelProps {
   items: NamNode[];
   onAdd: (title: string) => void;
-  onConvert: (id: string) => void;
+  onProcess: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit?: (id: string) => void;
 }
 
 /** Inbox: quick-add capture plus the list of unprocessed items. Pure/presentational. */
-export function InboxPanel({ items, onAdd, onConvert, onDelete, onEdit }: InboxPanelProps) {
+export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit }: InboxPanelProps) {
   const [title, setTitle] = useState('');
 
   function submit(event: FormEvent) {
@@ -55,11 +55,11 @@ export function InboxPanel({ items, onAdd, onConvert, onDelete, onEdit }: InboxP
               )}
               <button
                 type="button"
-                aria-label={`Convert ${item.title} to next action`}
-                onClick={() => onConvert(item.id)}
+                aria-label={`Process ${item.title}`}
+                onClick={() => onProcess(item.id)}
                 className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
               >
-                → Next
+                Process…
               </button>
               <button
                 type="button"

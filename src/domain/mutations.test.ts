@@ -69,6 +69,24 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ status: 'NEXT', updatedAt: NOW, statusChangedAt: NOW });
   });
 
+  it('convertInboxToAction moves to actions with the given status', () => {
+    const doc = workspace([node('a')]);
+    doc.nodes['inbox'].childIds.push('a');
+    const next = applyIntent(doc, { type: 'convertInboxToAction', id: 'a', status: 'BACKLOG', now: NOW });
+    expect(next.nodes['inbox'].childIds).toEqual([]);
+    expect(next.nodes['actions'].childIds).toEqual(['a']);
+    expect(next.nodes['a']).toMatchObject({ status: 'BACKLOG', project: false, updatedAt: NOW, statusChangedAt: NOW });
+  });
+
+  it('convertInboxToProject moves to projects and sets project=true', () => {
+    const doc = workspace([node('a')]);
+    doc.nodes['inbox'].childIds.push('a');
+    const next = applyIntent(doc, { type: 'convertInboxToProject', id: 'a', now: NOW });
+    expect(next.nodes['inbox'].childIds).toEqual([]);
+    expect(next.nodes['projects'].childIds).toEqual(['a']);
+    expect(next.nodes['a']).toMatchObject({ project: true, updatedAt: NOW });
+  });
+
   it('setStatus stamps status and timestamps', () => {
     const doc = workspace([node('a', { status: 'NEXT' })]);
     doc.nodes['actions'].childIds.push('a');
