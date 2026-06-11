@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Search surface: a new `/search` route (and **Search** nav entry) — a query box searching titles
+  and tags (case-insensitive, excludes done), with results tagged Action / Project and their
+  project path; opening an action edits it, opening a project drills into its workbench. Closes #58.
 - Saved Views: save the current tag filter as a named view and open / rename / delete saved views
   from `/tags`, plus a **Next only** toggle so views round-trip fully. New `createSavedView` /
   `renameSavedView` / `deleteSavedView` mutations over `doc.savedViews`. Closes #57.

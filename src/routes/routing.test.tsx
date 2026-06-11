@@ -104,6 +104,12 @@ describe('routing', () => {
     expect(screen.getByRole('button', { name: 'home' })).toBeInTheDocument();
   });
 
+  it('searches at /search', () => {
+    renderAt('/search');
+    fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'road' } });
+    expect(screen.getByText('Roadmap')).toBeInTheDocument(); // the project node
+  });
+
   it('renders the done surface at /done', () => {
     renderAt('/done');
     expect(screen.getByText('Old task')).toBeInTheDocument();
