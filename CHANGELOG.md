@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Tag & search selectors (`src/domain/lenses.ts`): `allTags`, `contextItems` (AND-match over
+  effective own+inherited tags, optional NEXT-only), and `searchResults` (case-insensitive
+  title/tag search). Pure foundation for the tag-filter and search surfaces. Closes #55.
 - Blockers in the Action dialog: a **Blocked by** section to add prerequisites (a cycle-safe
   candidate picker) and remove them, plus a **Would unblock: …** hint — dispatched live via the
   editor provider. Closes #53.

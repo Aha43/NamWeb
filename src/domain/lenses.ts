@@ -197,6 +197,51 @@ export function dueGroups(doc: WorkspaceDocument, now: Date = new Date()): DueGr
   return groups;
 }
 
+/** Sorted, de-duplicated tags present across all nodes, plus the registered tags. */
+export function allTags(doc: WorkspaceDocument): string[] {
+  const set = new Set<string>(doc.registeredTags);
+  for (const node of Object.values(doc.nodes)) for (const tag of node.tags) set.add(tag);
+  return [...set].sort();
+}
+
+/**
+ * Non-done actions whose effective tags (own + inherited) include *every* required
+ * tag (AND). `nextOnly` restricts to NEXT. Mirrors NamDesktop's ContextLens.
+ */
+export function contextItems(
+  doc: WorkspaceDocument,
+  requiredTags: string[],
+  nextOnly = false,
+): NamNode[] {
+  const structural = structuralNodeIds(doc);
+  return Object.values(doc.nodes).filter((n) => {
+    if (n.project || n.status === 'DONE' || structural.has(n.id)) return false;
+    if (nextOnly && n.status !== 'NEXT') return false;
+    if (requiredTags.length === 0) return true;
+    const tags = new Set(effectiveTags(doc, n.id));
+    return requiredTags.every((t) => tags.has(t));
+  });
+}
+
+export interface SearchResult {
+  node: NamNode;
+  /** Ancestor project titles, for context. */
+  path: string[];
+}
+
+/** Case-insensitive title/tag search over non-structural, non-done nodes (actions and projects). */
+export function searchResults(doc: WorkspaceDocument, query: string): SearchResult[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const structural = structuralNodeIds(doc);
+  return Object.values(doc.nodes)
+    .filter((n) => {
+      if (structural.has(n.id) || n.status === 'DONE') return false;
+      return n.title.toLowerCase().includes(q) || n.tags.some((t) => t.toLowerCase().includes(q));
+    })
+    .map((node) => ({ node, path: projectPath(doc, node.id) }));
+}
+
 /** Done = DONE, non-project, non-structural — completed actions, kept for reference. */
 export function doneItems(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);
