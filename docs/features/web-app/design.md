@@ -10,6 +10,10 @@
 >
 > _(Original framing: brewing doc capturing direction and open questions so the idea ripens.
 > Promote only after the cloud-sync API layer is live — which it now is.)_
+>
+> **Post-MVP planning lives in [`roadmap.md`](./roadmap.md)** — the area breakdown, the
+> form-factor (phone vs PC/laptop) split, and the sprint milestones that carry the desktop-browser
+> mode to functional parity with NamDesktop.
 
 ---
 
