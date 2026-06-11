@@ -44,21 +44,58 @@ export function nextActions(doc: WorkspaceDocument): NamNode[] {
 }
 
 /**
- * Ancestor project titles for a node, top-most first, excluding structural
- * containers (root/inbox/projects/actions). Empty when the node sits directly
- * under a structural container. Mirrors NamDesktop's `projectPath`.
+ * Ancestor nodes for a node, top-most first, excluding structural containers
+ * (root/inbox/projects/actions) — the enclosing project chain, for breadcrumbs.
+ * Empty when the node sits directly under a structural container. Mirrors
+ * NamDesktop's `buildPath`.
  */
-export function projectPath(doc: WorkspaceDocument, id: string): string[] {
+export function buildPath(doc: WorkspaceDocument, id: string): NamNode[] {
   const parents = buildParentIndex(doc);
   const structural = structuralNodeIds(doc);
-  const path: string[] = [];
+  const path: NamNode[] = [];
   let cursor = parents.get(id);
   while (cursor && !structural.has(cursor)) {
     const ancestor = doc.nodes[cursor];
-    if (ancestor) path.unshift(ancestor.title);
+    if (ancestor) path.unshift(ancestor);
     cursor = parents.get(cursor);
   }
   return path;
+}
+
+/** Ancestor project *titles*, top-most first — the string form of {@link buildPath}. */
+export function projectPath(doc: WorkspaceDocument, id: string): string[] {
+  return buildPath(doc, id).map((n) => n.title);
+}
+
+/** Top-level projects: the project children directly under the projects node. */
+export function projects(doc: WorkspaceDocument): NamNode[] {
+  const root = doc.nodes[doc.projectsNodeId];
+  if (!root) return [];
+  return root.childIds
+    .map((id) => doc.nodes[id])
+    .filter((n): n is NamNode => Boolean(n) && n.project);
+}
+
+/**
+ * A node's own tags plus tags inherited from its ancestor projects, de-duplicated
+ * with own tags first. Mirrors NamDesktop's `effectiveTags`.
+ */
+export function effectiveTags(doc: WorkspaceDocument, id: string): string[] {
+  const node = doc.nodes[id];
+  if (!node) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const add = (tags: string[]) => {
+    for (const tag of tags) {
+      if (!seen.has(tag)) {
+        seen.add(tag);
+        out.push(tag);
+      }
+    }
+  };
+  add(node.tags);
+  for (const ancestor of buildPath(doc, id)) add(ancestor.tags);
+  return out;
 }
 
 /** Backlog = BACKLOG, non-project, non-structural, not an unprocessed inbox item. */

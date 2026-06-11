@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- Project hierarchy lenses (`src/domain/lenses.ts`): `projects` (top-level projects), `buildPath`
+  (ancestor project chain for breadcrumbs; `projectPath` is now its string form), and
+  `effectiveTags` (own + inherited ancestor-project tags). Pure, no UI — foundation for the
+  Projects list and Workbench. Closes #42.
+
 ### Changed
 
 - Due dates now match NamDesktop: the Action dialog accepts **flexible date entry** (`26-7-4`,
