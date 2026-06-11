@@ -1,4 +1,6 @@
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
+import { SortButton } from '../actions/SortButton';
+import type { SortMode } from '../actions/sort';
 import type { ActionRowData } from '../actions/rows';
 
 export interface NextActionsPanelProps {
@@ -7,12 +9,27 @@ export interface NextActionsPanelProps {
   onMarkBacklog: (id: string) => void;
   onEdit?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
+  sortMode?: SortMode;
+  onCycleSort?: () => void;
 }
 
 /** Next Actions: the list with mark-done and send-to-backlog. Presentational. */
-export function NextActionsPanel({ rows, onMarkDone, onMarkBacklog, onEdit, onRename }: NextActionsPanelProps) {
+export function NextActionsPanel({
+  rows,
+  onMarkDone,
+  onMarkBacklog,
+  onEdit,
+  onRename,
+  sortMode,
+  onCycleSort,
+}: NextActionsPanelProps) {
   return (
     <section className="mx-auto max-w-md">
+      {sortMode && onCycleSort && rows.length > 0 && (
+        <div className="mb-2 flex justify-end">
+          <SortButton mode={sortMode} onCycle={onCycleSort} />
+        </div>
+      )}
       {rows.length === 0 ? (
         <EmptyState>No next actions.</EmptyState>
       ) : (

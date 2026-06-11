@@ -1,4 +1,6 @@
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
+import { SortButton } from '../actions/SortButton';
+import type { SortMode } from '../actions/sort';
 import type { ActionRowData } from '../actions/rows';
 
 export interface BacklogPanelProps {
@@ -6,12 +8,19 @@ export interface BacklogPanelProps {
   onPromote: (id: string) => void;
   onEdit?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
+  sortMode?: SortMode;
+  onCycleSort?: () => void;
 }
 
 /** Backlog: the list with a single promote-to-Next action. Presentational. */
-export function BacklogPanel({ rows, onPromote, onEdit, onRename }: BacklogPanelProps) {
+export function BacklogPanel({ rows, onPromote, onEdit, onRename, sortMode, onCycleSort }: BacklogPanelProps) {
   return (
     <section className="mx-auto max-w-md">
+      {sortMode && onCycleSort && rows.length > 0 && (
+        <div className="mb-2 flex justify-end">
+          <SortButton mode={sortMode} onCycle={onCycleSort} />
+        </div>
+      )}
       {rows.length === 0 ? (
         <EmptyState>Backlog is empty.</EmptyState>
       ) : (

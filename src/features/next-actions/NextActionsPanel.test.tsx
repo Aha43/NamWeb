@@ -36,6 +36,21 @@ describe('NextActionsPanel', () => {
     expect(onMarkBacklog).toHaveBeenCalledWith('x');
   });
 
+  it('shows the sort toggle and cycles it', () => {
+    const onCycleSort = vi.fn();
+    render(
+      <NextActionsPanel
+        rows={[row()]}
+        onMarkDone={vi.fn()}
+        onMarkBacklog={vi.fn()}
+        sortMode="fifo"
+        onCycleSort={onCycleSort}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: /sort: oldest/i }));
+    expect(onCycleSort).toHaveBeenCalledOnce();
+  });
+
   it('renames inline on double-click + Enter', () => {
     const { onRename } = setup([row({ id: 'x', title: 'Buy milk' })]);
     fireEvent.doubleClick(screen.getByText('Buy milk'));

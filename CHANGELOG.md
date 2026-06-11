@@ -28,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- FIFO/LIFO sort toggle on Next & Backlog: a toolbar control cycles unsorted → oldest-first →
+  newest-first (by `createdAt`), persisted per-list in localStorage. Mirrors NamDesktop's clock
+  toggle. Closes #38.
 - Inline title rename: double-click a row's title (Inbox / Next / Backlog) to edit it in place —
   Enter commits via `updateNode` (preserving description), Esc or blur cancels. Shared
   `InlineRename` component. Closes #35.
