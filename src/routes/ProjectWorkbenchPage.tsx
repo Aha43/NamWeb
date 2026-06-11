@@ -3,6 +3,7 @@ import { buildPath } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
+import { missionStats } from '@/features/projects/missionStats';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
@@ -26,6 +27,7 @@ export function ProjectWorkbenchPage() {
       breadcrumb={buildPath(document, id)}
       actions={actions}
       subProjects={subProjects}
+      subProjectStats={subProjects.length > 0 ? missionStats(document, id) : undefined}
       onOpenProject={(pid) => navigate(`/projects/${pid}`)}
       onOpenProjects={() => navigate('/projects')}
       onAddAction={(title) =>

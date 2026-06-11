@@ -53,6 +53,14 @@ describe('ProjectWorkbench', () => {
     expect(onOpenProject).toHaveBeenCalledWith('s');
   });
 
+  it('toggles the sub-project heat-map when stats are provided', () => {
+    setup({ subProjectStats: [{ id: 's', title: 'Plumbing', subProjectCount: 0, done: 1, total: 4, ratio: 0.25 }] });
+    fireEvent.click(screen.getByRole('button', { name: /heat-map/i }));
+    expect(screen.getByText('1/4 done')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /list/i }));
+    expect(screen.queryByText('1/4 done')).not.toBeInTheDocument();
+  });
+
   it('offers convert-to-action for a leaf project', () => {
     const onConvertToAction = vi.fn();
     setup({ actions: [], subProjects: [], onConvertToAction });

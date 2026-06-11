@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Workbench heat-map: a project with sub-projects can toggle its sub-project section to a heat-map
+  of cards — each showing done/total and a done-ratio-coloured border (red/amber/green) — that drill
+  in on click. New `missionStats` roll-up. Mirrors NamDesktop's MCR mode. Closes #47.
 - Reshape items between actions and projects: the Action dialog gains **Make project** (lift an
   action to a project) and **Move to…** (reparent to another project or Free actions, excluding the
   item's own subtree); a leaf project's workbench offers **Convert to action**. Wires the
