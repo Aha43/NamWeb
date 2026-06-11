@@ -1,4 +1,4 @@
-import { Inbox, Layers, ListTodo, Target, type LucideIcon } from 'lucide-react';
+import { Folders, Inbox, Layers, ListTodo, Target, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   to: string;
@@ -12,5 +12,6 @@ export const SURFACES: NavItem[] = [
   { to: '/inbox', label: 'Inbox', icon: Inbox },
   { to: '/next', label: 'Next', icon: ListTodo },
   { to: '/backlog', label: 'Backlog', icon: Layers },
+  { to: '/projects', label: 'Projects', icon: Folders },
   { to: '/focus', label: 'Focus', icon: Target },
 ];

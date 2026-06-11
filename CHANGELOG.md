@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Projects surface: a new `/projects` route (and **Projects** nav entry in both shells) listing
+  top-level projects with their tags, a quick-add to create one (`addSubProject`), and open-into
+  the workbench. Closes #44.
 - Project hierarchy mutations (`src/domain/mutations.ts`): `addSubProject`, `moveNode` (reparent,
   with self/cycle/structural guards), `convertActionToProject` (lifts a free action to a top-level
   project), `convertProjectToAction` (leaf projects only), and `deleteRecursive` (subtree delete,

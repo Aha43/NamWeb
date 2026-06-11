@@ -76,6 +76,11 @@ describe('routing', () => {
     expect(screen.getByText('Later thing')).toBeInTheDocument();
   });
 
+  it('renders the projects surface at /projects', () => {
+    renderAt('/projects');
+    expect(screen.getByLabelText('Add project')).toBeInTheDocument();
+  });
+
   it('redirects the index route to /inbox', () => {
     renderAt('/');
     expect(screen.getByLabelText('Quick add')).toBeInTheDocument();
