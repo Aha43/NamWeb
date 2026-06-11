@@ -12,6 +12,7 @@ import {
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { APP_NAME } from '@/lib/app';
 import { SURFACES } from './nav';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -24,7 +25,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b border-border bg-background px-4 py-3">
-        <h1 className="text-lg font-semibold tracking-tight">NamWeb</h1>
+        <h1 className="text-lg font-semibold tracking-tight">{APP_NAME}</h1>
       </header>
 
       <SyncNotice />

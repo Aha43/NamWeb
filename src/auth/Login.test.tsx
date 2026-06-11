@@ -23,7 +23,7 @@ describe('Login', () => {
 
   it('shows the brand logo on the login card', () => {
     render(<Login />);
-    expect(screen.getByRole('img', { name: /namweb/i })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /next action master/i })).toBeInTheDocument();
   });
 
   it('toggling the dev-workspace checkbox selects the dev row', () => {

@@ -4,6 +4,8 @@
 // white check are fixed brand colours. Size and colour come from `className`
 // (e.g. `h-12 w-12 text-card-foreground`).
 
+import { APP_NAME } from '@/lib/app';
+
 export function LogoMark({ className }: { className?: string }) {
   return (
     <svg
@@ -11,10 +13,10 @@ export function LogoMark({ className }: { className?: string }) {
       viewBox="0 0 256 256"
       fill="none"
       role="img"
-      aria-label="NamWeb"
+      aria-label={APP_NAME}
       className={className}
     >
-      <title>NamWeb</title>
+      <title>{APP_NAME}</title>
       <g stroke="currentColor" strokeWidth={11} strokeLinecap="round" opacity={0.42}>
         <path d="M128 74 L84 182" />
         <path d="M128 74 L172 182" />

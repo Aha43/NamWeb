@@ -19,12 +19,13 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('No next actions.')).toBeInTheDocument();
   });
 
-  it('renders title, project path, tags, and due hint', () => {
+  it('renders title, project path, tags, and a formatted due hint', () => {
     setup([row({ title: 'Get quotes', path: ['Home', 'Kitchen'], tags: ['@phone'], dueAt: '2026-03-20' })]);
     expect(screen.getByText('Get quotes')).toBeInTheDocument();
     expect(screen.getByText('Home › Kitchen')).toBeInTheDocument();
     expect(screen.getByText('@phone')).toBeInTheDocument();
-    expect(screen.getByText('Due 2026-03-20')).toBeInTheDocument();
+    // 2026-03-20 is well in the past → overdue short-date label, not raw ISO.
+    expect(screen.getByText('Due Mar 20')).toBeInTheDocument();
   });
 
   it('marks done and sends to backlog by id', () => {

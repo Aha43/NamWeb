@@ -27,14 +27,14 @@ describe('ActionDialog', () => {
     expect(screen.getByLabelText('Due')).toHaveValue('2026-07-01');
   });
 
-  it('reports the edited fields and chosen status on save', () => {
+  it('reports the edited fields and chosen status on save, parsing a flexible due date', () => {
     const onSave = vi.fn();
     const onOpenChange = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={onOpenChange} onSave={onSave} />);
 
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: '  Call plumber  ' } });
     fireEvent.change(screen.getByLabelText('Tags'), { target: { value: 'Home,  phone ' } });
-    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-15' } });
+    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '26-8-15' } }); // relaxed input
     fireEvent.click(screen.getByText('Next')); // status radio
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
@@ -46,6 +46,15 @@ describe('ActionDialog', () => {
       status: 'NEXT',
     });
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('blocks save and flags an invalid due date', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('Due'), { target: { value: 'whenever' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(/date like/i);
   });
 
   it('does not save with an empty title', () => {

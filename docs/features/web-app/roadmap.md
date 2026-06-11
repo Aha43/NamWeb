@@ -107,6 +107,17 @@ under one rule:
 The Auth & Deploy track runs alongside, starting after Sprint 1 (deployment unblocks dogfooding
 on real devices). The Phone companion track is deferred to its own planning pass.
 
+### Interleaved Polish sprints
+
+Between the main sprints, run **Polish sprints** (`Polish 1`, `Polish 2`, … ⇄ `feature/polish-N`)
+for small, low-risk fixes *noticed while using* the previous sprint's work — naming, formatting,
+rough edges. Explicitly not biggies. Same milestone⇄sprint⇄branch 1:1 convention; slotted between
+Sprint N and Sprint N+1.
+
+| Milestone (sprint) | Feature branch (1:1) | Scope |
+|---|---|---|
+| **Polish 1** (between Sprint 1 & 2) | `feature/polish-1` | Spell out "Next Action Master" in the UI (#30); date input/display parity with NamDesktop (#31) |
+
 Each milestone is decomposed into per-surface issues at its own start — one sprint at a time, per
 CLAUDE.md. Only Sprint 1 is broken out into issues initially.
 
