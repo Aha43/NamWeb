@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Project hierarchy mutations (`src/domain/mutations.ts`): `addSubProject`, `moveNode` (reparent,
+  with self/cycle/structural guards), `convertActionToProject` (lifts a free action to a top-level
+  project), `convertProjectToAction` (leaf projects only), and `deleteRecursive` (subtree delete,
+  sweeping `blockedBy` references). Pure, replayable, tested. Closes #43.
 - Project hierarchy lenses (`src/domain/lenses.ts`): `projects` (top-level projects), `buildPath`
   (ancestor project chain for breadcrumbs; `projectPath` is now its string form), and
   `effectiveTags` (own + inherited ancestor-project tags). Pure, no UI — foundation for the
