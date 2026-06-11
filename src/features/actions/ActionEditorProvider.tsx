@@ -3,7 +3,7 @@ import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
-import { projectPath, subtreeIds } from '@/domain/lenses';
+import { canAddPrerequisite, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 
 /** Same tag list (already normalized) — avoids dispatching a no-op tag update. */
@@ -33,10 +33,46 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     return targets;
   }, [node, document]);
 
+  // Blocked-by data, recomputed live as prerequisites are added/removed.
+  const blockers = useMemo(() => {
+    if (!node || !document) return [];
+    return node.blockedBy
+      .map((id) => document.nodes[id])
+      .filter(Boolean)
+      .map((b) => ({ id: b.id, title: b.title, done: b.status === 'DONE' }));
+  }, [node, document]);
+
+  const blockerCandidates = useMemo<MoveTarget[]>(() => {
+    if (!node || !document) return [];
+    const structural = structuralNodeIds(document);
+    const targets: MoveTarget[] = [];
+    for (const candidate of Object.values(document.nodes)) {
+      if (candidate.project || structural.has(candidate.id)) continue;
+      if (!canAddPrerequisite(document, node.id, candidate.id)) continue;
+      targets.push({ id: candidate.id, label: candidate.title });
+    }
+    return targets;
+  }, [node, document]);
+
+  const wouldUnblock = useMemo(() => {
+    if (!node || !document) return [];
+    return unblocks(document, node.id).map((n) => n.title);
+  }, [node, document]);
+
   function makeProject() {
     if (!node) return;
     dispatch({ type: 'convertActionToProject', id: node.id, now: nowIso() });
     setEditingId(null);
+  }
+
+  function addPrerequisite(prereqId: string) {
+    if (!node) return;
+    dispatch({ type: 'addPrerequisite', actionId: node.id, prereqId, now: nowIso() });
+  }
+
+  function removePrerequisite(prereqId: string) {
+    if (!node) return;
+    dispatch({ type: 'removePrerequisite', actionId: node.id, prereqId, now: nowIso() });
   }
 
   function move(targetId: string) {
@@ -78,6 +114,11 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           onMakeProject={node.project ? undefined : makeProject}
           moveTargets={moveTargets}
           onMove={move}
+          blockers={blockers}
+          blockerCandidates={blockerCandidates}
+          wouldUnblock={wouldUnblock}
+          onAddPrerequisite={node.project ? undefined : addPrerequisite}
+          onRemovePrerequisite={node.project ? undefined : removePrerequisite}
         />
       )}
     </ActionEditorContext.Provider>

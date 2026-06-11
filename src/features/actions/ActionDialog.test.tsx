@@ -77,6 +77,29 @@ describe('ActionDialog', () => {
     expect(onMove).toHaveBeenCalledWith('p1');
   });
 
+  it('manages prerequisites and shows would-unblock', () => {
+    const onAddPrerequisite = vi.fn();
+    const onRemovePrerequisite = vi.fn();
+    render(
+      <ActionDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onSave={vi.fn()}
+        blockers={[{ id: 'b1', title: 'Prep', done: false }]}
+        blockerCandidates={[{ id: 'c1', label: 'Other task' }]}
+        wouldUnblock={['Ship it']}
+        onAddPrerequisite={onAddPrerequisite}
+        onRemovePrerequisite={onRemovePrerequisite}
+      />,
+    );
+    expect(screen.getByText('Would unblock: Ship it')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove prerequisite Prep' }));
+    expect(onRemovePrerequisite).toHaveBeenCalledWith('b1');
+    fireEvent.change(screen.getByLabelText('Add prerequisite'), { target: { value: 'c1' } });
+    expect(onAddPrerequisite).toHaveBeenCalledWith('c1');
+  });
+
   it('does not save with an empty title', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);

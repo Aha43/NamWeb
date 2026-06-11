@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Blockers in the Action dialog: a **Blocked by** section to add prerequisites (a cycle-safe
+  candidate picker) and remove them, plus a **Would unblock: …** hint — dispatched live via the
+  editor provider. Closes #53.
 - Blocked surface: a new `/blocked` route (and **Blocked** nav entry) listing actions awaiting
   prerequisites, grouped under each active blocker (the header opens that blocker). Closes #52.
 - Prerequisites foundation: `addPrerequisite` / `removePrerequisite` mutations (cycle-safe via
