@@ -111,6 +111,63 @@ export function effectiveTags(doc: WorkspaceDocument, id: string): string[] {
   return out;
 }
 
+/** Following `blockedBy` edges from `startId`, can we reach `targetId`? */
+function dependsOn(doc: WorkspaceDocument, startId: string, targetId: string): boolean {
+  const seen = new Set<string>();
+  const stack = [startId];
+  while (stack.length) {
+    const cur = stack.pop()!;
+    if (cur === targetId) return true;
+    if (seen.has(cur)) continue;
+    seen.add(cur);
+    for (const b of doc.nodes[cur]?.blockedBy ?? []) stack.push(b);
+  }
+  return false;
+}
+
+/** May `prereqId` be added as a prerequisite of `actionId`? (exists, not self, not dup, no cycle) */
+export function canAddPrerequisite(doc: WorkspaceDocument, actionId: string, prereqId: string): boolean {
+  const action = doc.nodes[actionId];
+  if (actionId === prereqId || !action || !doc.nodes[prereqId]) return false;
+  if (action.blockedBy.includes(prereqId)) return false;
+  // adding action→prereq would cycle iff prereq already (transitively) depends on action
+  return !dependsOn(doc, prereqId, actionId);
+}
+
+/** True when a node has at least one prerequisite that isn't DONE. */
+export function isBlocked(doc: WorkspaceDocument, id: string): boolean {
+  const node = doc.nodes[id];
+  if (!node) return false;
+  return node.blockedBy.some((b) => doc.nodes[b] && doc.nodes[b].status !== 'DONE');
+}
+
+/** Actions that list `id` among their prerequisites — they unblock when `id` is done. */
+export function unblocks(doc: WorkspaceDocument, id: string): NamNode[] {
+  return Object.values(doc.nodes).filter((n) => n.blockedBy.includes(id));
+}
+
+export interface BlockedGroup {
+  blocker: NamNode;
+  actions: NamNode[];
+}
+
+/** Blocked actions grouped by each active (non-DONE) prerequisite. Mirrors NamDesktop's BlockedLens. */
+export function blockedGroups(doc: WorkspaceDocument): BlockedGroup[] {
+  const structural = structuralNodeIds(doc);
+  const byBlocker = new Map<string, NamNode[]>();
+  for (const node of Object.values(doc.nodes)) {
+    if (node.project || node.status === 'DONE' || structural.has(node.id)) continue;
+    for (const bid of node.blockedBy) {
+      const blocker = doc.nodes[bid];
+      if (!blocker || blocker.status === 'DONE') continue;
+      const list = byBlocker.get(bid) ?? [];
+      list.push(node);
+      byBlocker.set(bid, list);
+    }
+  }
+  return [...byBlocker.keys()].map((bid) => ({ blocker: doc.nodes[bid]!, actions: byBlocker.get(bid)! }));
+}
+
 export interface DueGroups {
   overdue: NamNode[];
   today: NamNode[];

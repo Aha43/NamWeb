@@ -2,10 +2,14 @@ import { describe, expect, it } from 'vitest';
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import {
   backlogItems,
+  blockedGroups,
   buildParentIndex,
   buildPath,
+  canAddPrerequisite,
   doneItems,
   dueGroups,
+  isBlocked,
+  unblocks,
   effectiveTags,
   inboxItems,
   nextActions,
@@ -109,6 +113,45 @@ describe('buildPath / effectiveTags', () => {
   it('effectiveTags unions own tags with inherited ancestor tags (own first)', () => {
     expect(effectiveTags(nested(), 'a')).toEqual(['urgent', 'home', 'kitchen']);
     expect(effectiveTags(nested(), 'p2')).toEqual(['kitchen', 'home']);
+  });
+});
+
+describe('prerequisites / blocked', () => {
+  // a blocked by b; b blocked by c
+  function chain() {
+    return workspace(
+      [
+        node('a', { status: 'NEXT', blockedBy: ['b'] }),
+        node('b', { status: 'NEXT', blockedBy: ['c'] }),
+        node('c', { status: 'NEXT' }),
+      ],
+      (d) => ['a', 'b', 'c'].forEach((id) => addChild(d, 'actions', id)),
+    );
+  }
+
+  it('isBlocked reflects non-DONE prerequisites', () => {
+    const doc = chain();
+    expect(isBlocked(doc, 'a')).toBe(true);
+    doc.nodes['b'].status = 'DONE';
+    expect(isBlocked(doc, 'a')).toBe(false); // its only blocker is done
+    expect(isBlocked(doc, 'c')).toBe(false); // no blockers
+  });
+
+  it('canAddPrerequisite rejects self, duplicates, and cycles', () => {
+    const doc = chain();
+    expect(canAddPrerequisite(doc, 'a', 'a')).toBe(false); // self
+    expect(canAddPrerequisite(doc, 'a', 'b')).toBe(false); // duplicate
+    expect(canAddPrerequisite(doc, 'c', 'a')).toBe(false); // cycle: a→b→c, so c→a closes it
+    expect(canAddPrerequisite(doc, 'a', 'c')).toBe(true); // fine
+  });
+
+  it('blockedGroups groups blocked actions by active blocker; unblocks is the inverse', () => {
+    const doc = chain();
+    const groups = blockedGroups(doc);
+    expect(groups.map((g) => g.blocker.id).sort()).toEqual(['b', 'c']);
+    const byB = groups.find((g) => g.blocker.id === 'b')!;
+    expect(ids(byB.actions)).toEqual(['a']);
+    expect(ids(unblocks(doc, 'b'))).toEqual(['a']);
   });
 });
 

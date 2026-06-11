@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Prerequisites foundation: `addPrerequisite` / `removePrerequisite` mutations (cycle-safe via
+  `canAddPrerequisite`) and `isBlocked` / `blockedGroups` / `unblocks` selectors — the
+  dependency-graph core behind the Blocked surface and the dialog's blockers section. Closes #51.
 - Due surface: a new `/due` route (and **Due** nav entry) grouping non-done actions with due dates
   by urgency — Overdue / Today / This week / Later (empty sections hidden) — with the inline status
   menu, edit, and rename. New `dueGroups` lens. Closes #50.
