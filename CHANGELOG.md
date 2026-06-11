@@ -24,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   it reads `VITE_WORKSPACE_NAME` (defaulting to `default`), matching NamDesktop's normal-mode
   (`default`) vs dev-mode (`dev`) naming so the web client can point at the right row (e.g. `dev`
   for local testing). Closes #27.
+- Dev workspace switcher: a runtime workspace-name resolver (`src/lib/workspace.ts`, localStorage
+  over the env default) plus a dev-builds-only "Use dev workspace" checkbox on the login screen
+  that points the session at the `dev` row — so a developer can see NamDesktop dev-mode data
+  without a rebuild. Seed of a future user-facing "Play" sandbox. Closes #28.
 - Edit an action after capture: a reusable **Action dialog** (title, description, tags, due date,
   and status radios) opened from a pencil button on every Inbox / Next / Backlog row via an
   app-wide `ActionEditorProvider` (`useActionEditor().openEditor(id)`, mirroring the capture
