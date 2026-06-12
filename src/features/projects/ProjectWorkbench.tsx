@@ -4,9 +4,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ActionList, ActionRow } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
+import { ReorderControls } from '../actions/ReorderControls';
 import type { ActionRowData } from '../actions/rows';
 import { ratioBorderClass, type MissionStat } from './missionStats';
 import type { NamNode, NodeStatus } from '../../domain/types';
+
+type MoveDirection = 'up' | 'down';
 
 export interface ProjectWorkbenchProps {
   project: NamNode;
@@ -22,6 +25,10 @@ export interface ProjectWorkbenchProps {
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  /** Hand-order a direct action within the project (reorders the project's childIds). */
+  onMoveAction?: (id: string, direction: MoveDirection) => void;
+  /** Hand-order a direct sub-project within the project. */
+  onMoveSubProject?: (id: string, direction: MoveDirection) => void;
   /** Provided only when the project is a leaf (no children) — convert it back to an action. */
   onConvertToAction?: () => void;
   onSaveAsTemplate?: () => void;
@@ -43,6 +50,8 @@ export function ProjectWorkbench({
   onSetStatus,
   onEdit,
   onRename,
+  onMoveAction,
+  onMoveSubProject,
   onConvertToAction,
   onSaveAsTemplate,
   templateNames,
@@ -103,18 +112,27 @@ export function ProjectWorkbench({
 
       {actions.length > 0 && (
         <ActionList>
-          {actions.map((row) => (
+          {actions.map((row, index) => (
             <ActionRow
               key={row.id}
               row={row}
               onEdit={() => onEdit(row.id)}
               onRename={(title) => onRename(row.id, title)}
               actions={
-                <StatusMenu
-                  status={row.status}
-                  title={row.title}
-                  onSetStatus={(status) => onSetStatus(row.id, status)}
-                />
+                <div className="flex items-center gap-1">
+                  {onMoveAction && (
+                    <ReorderControls
+                      title={row.title}
+                      onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
+                      onDown={index < actions.length - 1 ? () => onMoveAction(row.id, 'down') : undefined}
+                    />
+                  )}
+                  <StatusMenu
+                    status={row.status}
+                    title={row.title}
+                    onSetStatus={(status) => onSetStatus(row.id, status)}
+                  />
+                </div>
               }
             />
           ))}
@@ -161,13 +179,13 @@ export function ProjectWorkbench({
             </div>
           ) : (
             <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-              {subProjects.map((sub) => (
-                <li key={sub.id}>
+              {subProjects.map((sub, index) => (
+                <li key={sub.id} className="flex items-center gap-1 pr-2">
                   <button
                     type="button"
                     aria-label={`Open ${sub.title}`}
                     onClick={() => onOpenProject(sub.id)}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-accent"
+                    className="flex flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
                   >
                     <span className="flex-1 truncate text-sm text-foreground">{sub.title}</span>
                     {sub.childIds.length > 0 && (
@@ -175,6 +193,13 @@ export function ProjectWorkbench({
                     )}
                     <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                   </button>
+                  {onMoveSubProject && (
+                    <ReorderControls
+                      title={sub.title}
+                      onUp={index > 0 ? () => onMoveSubProject(sub.id, 'up') : undefined}
+                      onDown={index < subProjects.length - 1 ? () => onMoveSubProject(sub.id, 'down') : undefined}
+                    />
+                  )}
                 </li>
               ))}
             </ul>

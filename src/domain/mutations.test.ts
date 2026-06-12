@@ -319,3 +319,18 @@ describe('reorderView', () => {
     expect(intentTargetExists(workspace(), { type: 'reorderView', view: 'next', order: [] })).toBe(true);
   });
 });
+
+describe('reorderChildren', () => {
+  it("rewrites a parent's childIds order without mutating the input", () => {
+    const doc = workspace([node('p', { project: true, childIds: ['a', 'b', 'c'] }), node('a'), node('b'), node('c')]);
+    const next = applyIntent(doc, { type: 'reorderChildren', parentId: 'p', order: ['c', 'a', 'b'] });
+    expect(next.nodes.p.childIds).toEqual(['c', 'a', 'b']);
+    expect(doc.nodes.p.childIds).toEqual(['a', 'b', 'c']); // input untouched
+  });
+
+  it('no-ops when the parent is gone', () => {
+    const doc = workspace();
+    expect(applyIntent(doc, { type: 'reorderChildren', parentId: 'ghost', order: [] })).toEqual(doc);
+    expect(intentTargetExists(doc, { type: 'reorderChildren', parentId: 'ghost', order: [] })).toBe(false);
+  });
+});

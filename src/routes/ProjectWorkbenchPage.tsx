@@ -1,6 +1,7 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { buildPath } from '@/domain/lenses';
+import { buildPath, projectActions, subProjects } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
+import type { NamNode } from '@/domain/types';
 import type { ClonedTemplateNode } from '@/domain/mutations';
 import type { TemplateNode } from '@/domain/types';
 import { toActionRow } from '@/features/actions/rows';
@@ -24,19 +25,34 @@ export function ProjectWorkbenchPage() {
   const project = document.nodes[id];
   if (!project || !project.project) return <Navigate to="/projects" replace />;
 
-  const children = project.childIds.map((cid) => document.nodes[cid]).filter(Boolean);
-  const actions = children.filter((n) => !n.project).map((n) => toActionRow(document, n));
-  const subProjects = children.filter((n) => n.project);
+  const actionNodes = projectActions(document, id);
+  const subProjectNodes = subProjects(document, id);
+  const actions = actionNodes.map((n) => toActionRow(document, n));
+
+  // Hand-order a child within its kind by swapping its childIds slot with the adjacent same-kind
+  // sibling, then persisting the whole new childIds order (shared with the desktop).
+  const move = (kind: NamNode[], nodeId: string, direction: 'up' | 'down') => {
+    const i = kind.findIndex((n) => n.id === nodeId);
+    const j = direction === 'up' ? i - 1 : i + 1;
+    if (i < 0 || j < 0 || j >= kind.length) return;
+    const order = [...project.childIds];
+    const a = order.indexOf(nodeId);
+    const b = order.indexOf(kind[j].id);
+    [order[a], order[b]] = [order[b], order[a]];
+    dispatch({ type: 'reorderChildren', parentId: id, order });
+  };
 
   return (
     <ProjectWorkbench
       project={project}
       breadcrumb={buildPath(document, id)}
       actions={actions}
-      subProjects={subProjects}
-      subProjectStats={subProjects.length > 0 ? missionStats(document, id) : undefined}
+      subProjects={subProjectNodes}
+      subProjectStats={subProjectNodes.length > 0 ? missionStats(document, id) : undefined}
       onOpenProject={(pid) => navigate(`/projects/${pid}`)}
       onOpenProjects={() => navigate('/projects')}
+      onMoveAction={(actionId, direction) => move(actionNodes, actionId, direction)}
+      onMoveSubProject={(pid, direction) => move(subProjectNodes, pid, direction)}
       onAddAction={(title) =>
         dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'NEXT', now: nowIso() })
       }

@@ -17,9 +17,11 @@ import {
   effectiveTags,
   inboxItems,
   nextActions,
+  projectActions,
   projectPath,
   projects,
   structuralNodeIds,
+  subProjects,
 } from './lenses';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
@@ -348,6 +350,29 @@ describe('backlogItems', () => {
       },
     );
     expect(backlogItems(doc)).toEqual([]);
+  });
+});
+
+describe('projectActions / subProjects', () => {
+  const doc = workspace([
+    node('p', { title: 'P', project: true, childIds: ['a1', 'sp1', 'a2', 'sp2'] }),
+    node('a1', { project: false }),
+    node('sp1', { project: true }),
+    node('a2', { project: false }),
+    node('sp2', { project: true }),
+  ]);
+
+  it('returns direct actions in childIds order', () => {
+    expect(projectActions(doc, 'p').map((n) => n.id)).toEqual(['a1', 'a2']);
+  });
+
+  it('returns direct sub-projects in childIds order', () => {
+    expect(subProjects(doc, 'p').map((n) => n.id)).toEqual(['sp1', 'sp2']);
+  });
+
+  it('is empty for an unknown node', () => {
+    expect(projectActions(doc, 'ghost')).toEqual([]);
+    expect(subProjects(doc, 'ghost')).toEqual([]);
   });
 });
 

@@ -29,6 +29,7 @@ export type Intent =
   | { type: 'createMissionControl'; name: string; tags: string[] }
   | { type: 'deleteMissionControl'; name: string }
   | { type: 'reorderView'; view: string; order: string[] }
+  | { type: 'reorderChildren'; parentId: string; order: string[] }
   | { type: 'saveAsTemplate'; name: string; nodeId: string }
   | { type: 'deleteTemplate'; name: string }
   | { type: 'applyTemplate'; parentId: string; nodes: ClonedTemplateNode[]; now: string }
@@ -144,7 +145,9 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     return true; // operate on a document-level list, not a node
   }
   if (intent.type === 'saveAsTemplate') return Boolean(doc.nodes[intent.nodeId]);
-  if (intent.type === 'applyTemplate') return Boolean(doc.nodes[intent.parentId]);
+  if (intent.type === 'applyTemplate' || intent.type === 'reorderChildren') {
+    return Boolean(doc.nodes[intent.parentId]);
+  }
   return Boolean(doc.nodes[intent.id]);
 }
 
@@ -307,6 +310,14 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       // live items at display time (new items appended, vanished ids ignored), so we just store
       // the order verbatim — pure and replay-safe.
       next.viewOrders = { ...next.viewOrders, [intent.view]: intent.order };
+      return next;
+    }
+    case 'reorderChildren': {
+      // Reorder a project's structural children (its `childIds`) — the order shared with the
+      // desktop. The page computes the new full order (a permutation of the current childIds), so
+      // we store it verbatim; ignored if the parent vanished. Pure and replay-safe.
+      const parent = next.nodes[intent.parentId];
+      if (parent) parent.childIds = intent.order;
       return next;
     }
     case 'createMissionControl': {

@@ -103,6 +103,25 @@ export function projects(doc: WorkspaceDocument): NamNode[] {
     .filter((n): n is NamNode => Boolean(n) && n.project);
 }
 
+/** A project's direct child nodes, in `childIds` order, filtered by kind. */
+function childrenByKind(doc: WorkspaceDocument, projectId: string, wantProject: boolean): NamNode[] {
+  const node = doc.nodes[projectId];
+  if (!node) return [];
+  return node.childIds
+    .map((id) => doc.nodes[id])
+    .filter((n): n is NamNode => Boolean(n) && n.project === wantProject);
+}
+
+/** A project's direct actions (non-project children), in `childIds` order. */
+export function projectActions(doc: WorkspaceDocument, projectId: string): NamNode[] {
+  return childrenByKind(doc, projectId, false);
+}
+
+/** A project's direct sub-projects, in `childIds` order. */
+export function subProjects(doc: WorkspaceDocument, projectId: string): NamNode[] {
+  return childrenByKind(doc, projectId, true);
+}
+
 /**
  * A node's own tags plus tags inherited from its ancestor projects, de-duplicated
  * with own tags first. Mirrors NamDesktop's `effectiveTags`.
