@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import {
   allTags,
+  applyViewOrder,
   backlogItems,
   blockedGroups,
   buildParentIndex,
@@ -347,5 +348,27 @@ describe('backlogItems', () => {
       },
     );
     expect(backlogItems(doc)).toEqual([]);
+  });
+});
+
+describe('applyViewOrder', () => {
+  const ids = (nodes: NamNode[]) => nodes.map((n) => n.id);
+  const list = [node('a'), node('b'), node('c')];
+
+  it('returns the input order when no saved order exists', () => {
+    expect(ids(applyViewOrder(list, undefined))).toEqual(['a', 'b', 'c']);
+    expect(ids(applyViewOrder(list, []))).toEqual(['a', 'b', 'c']);
+  });
+
+  it('orders known ids by the saved order', () => {
+    expect(ids(applyViewOrder(list, ['c', 'a', 'b']))).toEqual(['c', 'a', 'b']);
+  });
+
+  it('appends new items (not yet in the order) after the known ones', () => {
+    expect(ids(applyViewOrder(list, ['b', 'a']))).toEqual(['b', 'a', 'c']);
+  });
+
+  it('ignores saved ids that are no longer present', () => {
+    expect(ids(applyViewOrder(list, ['gone', 'c', 'a', 'b']))).toEqual(['c', 'a', 'b']);
   });
 });
