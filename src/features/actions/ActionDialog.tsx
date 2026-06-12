@@ -143,6 +143,12 @@ export function ActionDialog({
                   setDue(e.target.value);
                   if (dueError) setDueError(false);
                 }}
+                onBlur={() => {
+                  // Echo a canonical zero-padded ISO form (26-7-4 → 2026-07-04) to confirm
+                  // what was parsed. Leave unparseable text untouched (don't nag on blur).
+                  const iso = parseFlexibleDate(due);
+                  if (iso) setDue(iso);
+                }}
               />
               {dueError && (
                 <p role="alert" className="text-xs text-destructive">
