@@ -25,7 +25,8 @@ test.describe('backlog', () => {
     await page.getByRole('menuitem', { name: 'Next' }).click();
     await expect(page.getByText('Renew passport')).toHaveCount(0); // left the backlog
 
-    await page.goto('/next');
+    // In-app nav (no reload) so the optimistic promotion is observed deterministically.
+    await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Next' }).click();
     await expect(page.getByText('Renew passport')).toBeVisible();
   });
 });
@@ -83,7 +84,8 @@ test.describe('reshape', () => {
     await page.getByRole('button', { name: 'Edit Plan trip' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Make project' }).click();
 
-    await page.goto('/projects');
+    // Navigate in-app (no full reload) so the optimistic change is observed deterministically.
+    await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
     await expect(page.getByRole('button', { name: 'Open Plan trip' })).toBeVisible();
   });
 
@@ -92,7 +94,7 @@ test.describe('reshape', () => {
     await page.getByRole('button', { name: 'Edit Fix sink' }).click();
     await page.getByLabel('Move to').selectOption({ label: 'Home' });
 
-    await page.goto('/projects');
+    await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
     await page.getByRole('button', { name: 'Open Home' }).click();
     await expect(page.getByText('Fix sink')).toBeVisible();
   });
