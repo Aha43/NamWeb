@@ -26,6 +26,8 @@ export type Intent =
   | { type: 'createSavedView'; name: string; tags: string[]; nextOnly: boolean }
   | { type: 'renameSavedView'; oldName: string; newName: string }
   | { type: 'deleteSavedView'; name: string }
+  | { type: 'createMissionControl'; name: string; tags: string[] }
+  | { type: 'deleteMissionControl'; name: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
@@ -94,9 +96,11 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
   if (
     intent.type === 'createSavedView' ||
     intent.type === 'renameSavedView' ||
-    intent.type === 'deleteSavedView'
+    intent.type === 'deleteSavedView' ||
+    intent.type === 'createMissionControl' ||
+    intent.type === 'deleteMissionControl'
   ) {
-    return true; // operate on the savedViews list, not a node
+    return true; // operate on a document-level list, not a node
   }
   return Boolean(doc.nodes[intent.id]);
 }
@@ -253,6 +257,15 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'deleteSavedView': {
       next.savedViews = next.savedViews.filter((v) => v.name !== intent.name);
+      return next;
+    }
+    case 'createMissionControl': {
+      next.missionControls = next.missionControls.filter((m) => m.name !== intent.name);
+      next.missionControls.push({ name: intent.name, tags: intent.tags });
+      return next;
+    }
+    case 'deleteMissionControl': {
+      next.missionControls = next.missionControls.filter((m) => m.name !== intent.name);
       return next;
     }
     case 'deleteRecursive': {

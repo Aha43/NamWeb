@@ -232,6 +232,16 @@ describe('applyIntent', () => {
     expect(deleted.savedViews).toEqual([]);
   });
 
+  it('goal boards: create (replacing same name) and delete', () => {
+    const doc = workspace();
+    const created = applyIntent(doc, { type: 'createMissionControl', name: 'Q3', tags: ['goal'] });
+    expect(created.missionControls).toEqual([{ name: 'Q3', tags: ['goal'] }]);
+    const replaced = applyIntent(created, { type: 'createMissionControl', name: 'Q3', tags: ['q3'] });
+    expect(replaced.missionControls).toEqual([{ name: 'Q3', tags: ['q3'] }]);
+    const deleted = applyIntent(replaced, { type: 'deleteMissionControl', name: 'Q3' });
+    expect(deleted.missionControls).toEqual([]);
+  });
+
   it('no-ops when a status/delete/edit target is missing (replay safety)', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'setStatus', id: 'ghost', status: 'DONE', now: NOW })).toEqual(doc);

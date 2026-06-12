@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Goal Board foundation: a `missionControlStations` lens (projects matching any of a board's tags,
+  de-duped to the top-most, with done-ratio roll-ups via a shared `projectRollup`) and
+  `createMissionControl` / `deleteMissionControl` mutations. Pure, tested. Closes #65.
 - Search surface: a new `/search` route (and **Search** nav entry) — a query box searching titles
   and tags (case-insensitive, excludes done), with results tagged Action / Project and their
   project path; opening an action edits it, opening a project drills into its workbench. Closes #58.
