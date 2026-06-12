@@ -12,6 +12,8 @@ interface NodeOpts {
   tags?: string[];
   description?: string | null;
   dueAt?: string | null;
+  /** Prerequisite node ids — the action is blocked until these are done. */
+  blockedBy?: string[];
   /** Parent node id. Defaults: actions under next-actions, projects under projects. */
   under?: string;
 }
@@ -25,7 +27,7 @@ function makeNode(id: string, title: string, project: boolean, opts: NodeOpts): 
     project,
     childIds: [],
     tags: opts.tags ?? [],
-    blockedBy: [],
+    blockedBy: opts.blockedBy ?? [],
     resources: [],
     createdAt: '2026-01-01T00:00:00',
     updatedAt: '2026-01-01T00:00:00',
