@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- E2E scaffold (Playwright): a `playwright.config.ts` that boots Vite on a dedicated port against
+  an isolated `e2e` workspace, signs in once (setup project → `storageState`), and runs a
+  happy-path smoke (capture → process → Next → mark done) in **Chromium and WebKit** (the iOS
+  Safari proxy) against the real local Supabase. Each browser project drives its own freshly
+  seeded workspace row for full isolation. New `npm run e2e` / `e2e:ui` scripts. Closes #60.
 - Apply template: an "Add from template…" picker in the project workbench instantiates a saved
   template's structure under the current project. The clone's fresh node ids are generated in the
   page and carried in the new `applyTemplate` intent, keeping it pure and replayable. Closes #68.
