@@ -28,6 +28,7 @@ export type Intent =
   | { type: 'deleteSavedView'; name: string }
   | { type: 'createMissionControl'; name: string; tags: string[] }
   | { type: 'deleteMissionControl'; name: string }
+  | { type: 'reorderView'; view: string; order: string[] }
   | { type: 'saveAsTemplate'; name: string; nodeId: string }
   | { type: 'deleteTemplate'; name: string }
   | { type: 'applyTemplate'; parentId: string; nodes: ClonedTemplateNode[]; now: string }
@@ -137,7 +138,8 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'deleteSavedView' ||
     intent.type === 'createMissionControl' ||
     intent.type === 'deleteMissionControl' ||
-    intent.type === 'deleteTemplate'
+    intent.type === 'deleteTemplate' ||
+    intent.type === 'reorderView'
   ) {
     return true; // operate on a document-level list, not a node
   }
@@ -298,6 +300,13 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'deleteSavedView': {
       next.savedViews = next.savedViews.filter((v) => v.name !== intent.name);
+      return next;
+    }
+    case 'reorderView': {
+      // Persist a per-view manual order (a list of node ids). The lens reconciles it with the
+      // live items at display time (new items appended, vanished ids ignored), so we just store
+      // the order verbatim — pure and replay-safe.
+      next.viewOrders = { ...next.viewOrders, [intent.view]: intent.order };
       return next;
     }
     case 'createMissionControl': {

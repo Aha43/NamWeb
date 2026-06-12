@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Manual reorder on the Next & Backlog lists: in **Unsorted** mode each row gets up/down controls to
+  hand-order actions; the order persists in the synced workspace document (`viewOrders`, mirroring
+  NamDesktop) and survives across devices. A pure `applyViewOrder` lens reconciles the saved order
+  with live items (new ones appended, vanished ids dropped); a `reorderView` intent stores it. The
+  Oldest/Newest sort modes stay computed (no manual controls). Tested (unit + a phone/desktop E2E
+  journey). Closes #39.
 - E2E mocked journeys — round two (Playwright): broadens the network-mocked suite to close out the
   testing base. **Triage breadth** (backlog status switch, due-date grouping, the blocked surface,
   and reshaping actions ↔ projects: Make project / Move to… / Convert to action); **Mission Control

@@ -306,3 +306,16 @@ describe('intentTargetExists', () => {
     expect(intentTargetExists(doc, { type: 'deleteLeaf', id: 'ghost' })).toBe(false);
   });
 });
+
+describe('reorderView', () => {
+  it('stores a per-view manual order without mutating the input', () => {
+    const doc = workspace([node('a', { status: 'NEXT' }), node('b', { status: 'NEXT' })]);
+    const next = applyIntent(doc, { type: 'reorderView', view: 'next', order: ['b', 'a'] });
+    expect(next.viewOrders.next).toEqual(['b', 'a']);
+    expect(doc.viewOrders.next).toBeUndefined(); // input untouched
+  });
+
+  it('is a document-level op (intentTargetExists is always true)', () => {
+    expect(intentTargetExists(workspace(), { type: 'reorderView', view: 'next', order: [] })).toBe(true);
+  });
+});

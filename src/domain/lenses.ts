@@ -57,6 +57,20 @@ export function nextActions(doc: WorkspaceDocument): NamNode[] {
 }
 
 /**
+ * Apply a saved per-view manual order to a list of nodes. Nodes whose id appears in `order`
+ * come first, in that order; any new nodes (not yet in `order`) keep their incoming order and
+ * are appended; ids no longer present are simply ignored. Pure; an empty/missing order is a
+ * no-op (returns the input order). The persisted order lives in `doc.viewOrders[view]`.
+ */
+export function applyViewOrder(nodes: NamNode[], order: string[] | undefined): NamNode[] {
+  if (!order || order.length === 0) return nodes;
+  const pos = new Map(order.map((id, i) => [id, i] as const));
+  const known = nodes.filter((n) => pos.has(n.id)).sort((a, b) => pos.get(a.id)! - pos.get(b.id)!);
+  const fresh = nodes.filter((n) => !pos.has(n.id));
+  return [...known, ...fresh];
+}
+
+/**
  * Ancestor nodes for a node, top-most first, excluding structural containers
  * (root/inbox/projects/actions) — the enclosing project chain, for breadcrumbs.
  * Empty when the node sits directly under a structural container. Mirrors
