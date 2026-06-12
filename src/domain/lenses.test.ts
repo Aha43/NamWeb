@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import {
+  allTags,
   backlogItems,
   blockedGroups,
   buildParentIndex,
   buildPath,
   canAddPrerequisite,
+  contextItems,
   doneItems,
   dueGroups,
   isBlocked,
+  searchResults,
   unblocks,
   effectiveTags,
   inboxItems,
@@ -173,6 +176,44 @@ describe('dueGroups', () => {
     expect(ids(g.today)).toEqual(['t']);
     expect(ids(g.thisWeek)).toEqual(['w']);
     expect(ids(g.later)).toEqual(['l']);
+  });
+});
+
+describe('tags & search', () => {
+  // projects/p1[home] / a[urgent](NEXT), b[home](BACKLOG, done? no), d[urgent](DONE)
+  function tagged() {
+    return workspace(
+      [
+        node('p1', { project: true, tags: ['home'], childIds: ['a', 'b', 'd'] }),
+        node('a', { title: 'Fix tap', status: 'NEXT', tags: ['urgent'] }),
+        node('b', { title: 'Buy paint', status: 'BACKLOG' }),
+        node('d', { title: 'Old', status: 'DONE', tags: ['urgent'] }),
+      ],
+      (w) => addChild(w, 'projects', 'p1'),
+    );
+  }
+
+  it('allTags is the sorted union of node + registered tags', () => {
+    const doc = tagged();
+    doc.registeredTags = ['waiting'];
+    expect(allTags(doc)).toEqual(['home', 'urgent', 'waiting']);
+  });
+
+  it('contextItems AND-matches effective tags, excludes done, honours nextOnly', () => {
+    const doc = tagged();
+    // 'home' is inherited by all of p1's children; 'a' and 'b' qualify (d is DONE)
+    expect(ids(contextItems(doc, ['home'])).sort()).toEqual(['a', 'b']);
+    // 'home' + 'urgent' → only 'a' (own urgent + inherited home)
+    expect(ids(contextItems(doc, ['home', 'urgent']))).toEqual(['a']);
+    // nextOnly drops the BACKLOG 'b'
+    expect(ids(contextItems(doc, ['home'], true))).toEqual(['a']);
+  });
+
+  it('searchResults matches titles/tags case-insensitively, excludes done', () => {
+    const doc = tagged();
+    expect(searchResults(doc, 'fix').map((r) => r.node.id)).toEqual(['a']);
+    expect(searchResults(doc, 'URGENT').map((r) => r.node.id)).toEqual(['a']); // d is DONE
+    expect(searchResults(doc, '')).toEqual([]);
   });
 });
 

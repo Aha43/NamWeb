@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Search surface: a new `/search` route (and **Search** nav entry) — a query box searching titles
+  and tags (case-insensitive, excludes done), with results tagged Action / Project and their
+  project path; opening an action edits it, opening a project drills into its workbench. Closes #58.
+- Saved Views: save the current tag filter as a named view and open / rename / delete saved views
+  from `/tags`, plus a **Next only** toggle so views round-trip fully. New `createSavedView` /
+  `renameSavedView` / `deleteSavedView` mutations over `doc.savedViews`. Closes #57.
+- Tag-filter surface: a new `/tags` route (and **Tags** nav entry) to filter active actions by
+  tags (AND) via toggle chips, with a live match count and the inline status menu / edit / rename.
+  Closes #56.
+- Tag & search selectors (`src/domain/lenses.ts`): `allTags`, `contextItems` (AND-match over
+  effective own+inherited tags, optional NEXT-only), and `searchResults` (case-insensitive
+  title/tag search). Pure foundation for the tag-filter and search surfaces. Closes #55.
 - Blockers in the Action dialog: a **Blocked by** section to add prerequisites (a cycle-safe
   candidate picker) and remove them, plus a **Would unblock: …** hint — dispatched live via the
   editor provider. Closes #53.

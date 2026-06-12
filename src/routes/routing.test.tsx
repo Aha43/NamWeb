@@ -27,7 +27,7 @@ function document(): WorkspaceDocument {
       projects: node('projects', { childIds: ['proj'] }),
       actions: node('actions', { childIds: ['nxt', 'bk', 'dn', 'due1', 'blk', 'bd'] }),
       cap: node('cap', { title: 'Capture me', status: 'BACKLOG' }),
-      nxt: node('nxt', { title: 'Do this', status: 'NEXT' }),
+      nxt: node('nxt', { title: 'Do this', status: 'NEXT', tags: ['home'] }),
       bk: node('bk', { title: 'Later thing', status: 'BACKLOG' }),
       dn: node('dn', { title: 'Old task', status: 'DONE' }),
       due1: node('due1', { title: 'Pay bill', status: 'NEXT', dueAt: '2020-01-01' }),
@@ -97,6 +97,17 @@ describe('routing', () => {
     renderAt('/blocked');
     expect(screen.getByText('Blocked by: Prep')).toBeInTheDocument();
     expect(screen.getByText('Wait task')).toBeInTheDocument();
+  });
+
+  it('renders the tag-filter surface at /tags', () => {
+    renderAt('/tags');
+    expect(screen.getByRole('button', { name: 'home' })).toBeInTheDocument();
+  });
+
+  it('searches at /search', () => {
+    renderAt('/search');
+    fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'road' } });
+    expect(screen.getByText('Roadmap')).toBeInTheDocument(); // the project node
   });
 
   it('renders the done surface at /done', () => {

@@ -6,6 +6,8 @@ import {
   Layers,
   ListTodo,
   Lock,
+  Search,
+  Tag,
   Target,
   type LucideIcon,
 } from 'lucide-react';
@@ -24,6 +26,8 @@ export const SURFACES: NavItem[] = [
   { to: '/backlog', label: 'Backlog', icon: Layers },
   { to: '/due', label: 'Due', icon: CalendarClock },
   { to: '/blocked', label: 'Blocked', icon: Lock },
+  { to: '/tags', label: 'Tags', icon: Tag },
+  { to: '/search', label: 'Search', icon: Search },
   { to: '/projects', label: 'Projects', icon: Folders },
   { to: '/done', label: 'Done', icon: CheckCircle2 },
   { to: '/focus', label: 'Focus', icon: Target },
