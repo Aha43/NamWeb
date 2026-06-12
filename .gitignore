@@ -20,6 +20,12 @@ out/
 .vite/
 coverage/
 
+# === Playwright (E2E) ===
+test-results/
+playwright-report/
+playwright/.cache/
+e2e/.auth/
+
 # === Env / secrets ===
 .env
 .env.local

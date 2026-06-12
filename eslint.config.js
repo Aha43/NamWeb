@@ -27,4 +27,9 @@ export default tseslint.config(
     files: ['src/components/ui/**/*.tsx'],
     rules: { 'react-refresh/only-export-components': 'off' },
   },
+  {
+    // Playwright E2E specs + config run in Node, not the browser.
+    files: ['e2e/**/*.ts', 'playwright.config.ts'],
+    languageOptions: { globals: globals.node },
+  },
 );
