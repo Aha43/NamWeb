@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- E2E network-mocked journeys (Playwright): a backend-free journey suite that intercepts the
+  Supabase auth + REST calls (`page.route`, `e2e/mocks/`) and seeds an in-memory workspace
+  document, so it runs fast and deterministically across a **desktop and a phone** viewport
+  (iPhone 13). A reusable `mockedTest` fixture auto-installs the mocks and a `DocBuilder` seeds
+  state per spec. First journeys: phone capture/focus/More navigation, projects workbench
+  (create → drill → add → breadcrumb), tag filter + saved view, search, and a nav + dark-mode
+  guardrail. Wired into CI as a PR gate (the real-Supabase smoke stays local). Closes #61.
 - E2E scaffold (Playwright): a `playwright.config.ts` that boots Vite on a dedicated port against
   an isolated `e2e` workspace, signs in once (setup project → `storageState`), and runs a
   happy-path smoke (capture → process → Next → mark done) in **Chromium and WebKit** (the iOS
