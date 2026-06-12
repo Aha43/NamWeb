@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Workbench reorder (Workspace parity, phase 1): a project's direct **actions** and its **sub-projects**
+  can now be hand-ordered with up/down controls in the workbench. Unlike the Next/Backlog reorder (which
+  uses `viewOrders`), this rewrites the parent's **`childIds`** — the structural order shared with
+  NamDesktop, so the order shows up there too. New `reorderChildren` intent and `projectActions` /
+  `subProjects` lenses (pure, tested), plus a desktop E2E journey. Closes #79.
 - Manual reorder on the Next & Backlog lists: in **Unsorted** mode each row gets up/down controls to
   hand-order actions; the order persists in the synced workspace document (`viewOrders`, mirroring
   NamDesktop) and survives across devices. A pure `applyViewOrder` lens reconciles the saved order
