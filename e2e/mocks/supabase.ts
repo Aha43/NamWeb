@@ -102,6 +102,15 @@ export async function installAuthMock(page: Page): Promise<void> {
   });
 }
 
+/** Optional failure modes, for the error/conflict journeys (J7). */
+export interface RestMockOptions {
+  /** The first pull (initial load) returns a 500, then recovers — drives the error + Retry path. */
+  failFirstGet?: boolean;
+  /** Every push reports a guard-miss, so a commit runs the full conflict → replay → give-up
+   *  and surfaces the "Reloaded" sync notice. */
+  alwaysConflict?: boolean;
+}
+
 /**
  * Install the REST mock over `/rest/v1/workspaces`, backed by an in-memory row seeded from
  * `initialDoc`. Returns a handle so a test can inspect the doc after pushes if it wants to.
@@ -109,9 +118,11 @@ export async function installAuthMock(page: Page): Promise<void> {
 export async function installRestMock(
   page: Page,
   initialDoc: WorkspaceDocument,
+  options: RestMockOptions = {},
 ): Promise<{ current(): WorkspaceDocument; version(): number }> {
   // The single mocked row. The app pulls it, then pushes guarded on its version.
   const row = { version: 1, document: structuredClone(initialDoc) as WorkspaceDocument };
+  let getCount = 0;
 
   await page.route('**/rest/v1/workspaces**', async (route) => {
     const method = route.request().method();
@@ -124,6 +135,15 @@ export async function installRestMock(
 
     // pull / existing-check: SELECT the row.
     if (method === 'GET') {
+      getCount += 1;
+      if (options.failFirstGet && getCount === 1) {
+        await route.fulfill({
+          status: 500,
+          headers: JSON_HEADERS,
+          body: JSON.stringify({ message: 'Simulated load failure' }),
+        });
+        return;
+      }
       const payload = { version: row.version, document: row.document };
       const body = wantsObject(route) ? JSON.stringify(payload) : JSON.stringify([payload]);
       await route.fulfill({ status: 200, headers: JSON_HEADERS, body });
@@ -134,7 +154,7 @@ export async function installRestMock(
     if (method === 'PATCH') {
       const guard = eqNumber(url, 'version');
       const update = route.request().postDataJSON() as { document: WorkspaceDocument; version: number };
-      if (guard !== null && guard === row.version) {
+      if (!options.alwaysConflict && guard !== null && guard === row.version) {
         row.version = update.version;
         row.document = update.document;
         await route.fulfill({ status: 200, headers: JSON_HEADERS, body: JSON.stringify([{ version: row.version }]) });
