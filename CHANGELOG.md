@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- E2E mocked journeys — round two (Playwright): broadens the network-mocked suite to close out the
+  testing base. **Triage breadth** (backlog status switch, due-date grouping, the blocked surface,
+  and reshaping actions ↔ projects: Make project / Move to… / Convert to action); **Mission Control
+  + templates** (create a Goal Board → station heat-map → drill, and the save-as-template /
+  apply-template round-trip); and **error / conflict / empty states** — the REST mock gains
+  `failFirstGet` (drives the load-error + Retry path) and `alwaysConflict` (forces a push conflict
+  so the dismissible "Reloaded" sync notice surfaces). Closes #72.
 - E2E network-mocked journeys (Playwright): a backend-free journey suite that intercepts the
   Supabase auth + REST calls (`page.route`, `e2e/mocks/`) and seeds an in-memory workspace
   document, so it runs fast and deterministically across a **desktop and a phone** viewport
