@@ -33,6 +33,13 @@ export function projectRollup(doc: WorkspaceDocument, projectId: string): Projec
   return { subProjectCount, done, total, ratio: total === 0 ? 1 : done / total };
 }
 
+/** Done-ratio border colour for a heat-map card: red < 34% ≤ amber < 67% ≤ green. */
+export function ratioBorderClass(ratio: number): string {
+  if (ratio < 0.34) return 'border-red-500/60';
+  if (ratio < 0.67) return 'border-amber-500/60';
+  return 'border-green-500/60';
+}
+
 /** Per-direct-sub-project roll-ups under `projectId`, for the workbench heat-map. */
 export function missionStats(doc: WorkspaceDocument, projectId: string): MissionStat[] {
   const project = doc.nodes[projectId];

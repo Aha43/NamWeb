@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Goal Boards surface: a new `/goals` route (and **Goals** nav entry) — create tag-grouped Goal
+  Boards (name + tags), open one to a heat-map of matching projects (done-ratio cards that drill
+  into the workbench), and delete boards. Closes #66.
 - Goal Board foundation: a `missionControlStations` lens (projects matching any of a board's tags,
   de-duped to the top-most, with done-ratio roll-ups via a shared `projectRollup`) and
   `createMissionControl` / `deleteMissionControl` mutations. Pure, tested. Closes #65.

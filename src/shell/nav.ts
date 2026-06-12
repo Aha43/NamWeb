@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   Folders,
   Inbox,
+  LayoutDashboard,
   Layers,
   ListTodo,
   Lock,
@@ -29,6 +30,7 @@ export const SURFACES: NavItem[] = [
   { to: '/tags', label: 'Tags', icon: Tag },
   { to: '/search', label: 'Search', icon: Search },
   { to: '/projects', label: 'Projects', icon: Folders },
+  { to: '/goals', label: 'Goals', icon: LayoutDashboard },
   { to: '/done', label: 'Done', icon: CheckCircle2 },
   { to: '/focus', label: 'Focus', icon: Target },
 ];

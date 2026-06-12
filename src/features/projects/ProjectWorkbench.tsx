@@ -5,14 +5,8 @@ import { cn } from '@/lib/utils';
 import { ActionList, ActionRow } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import type { ActionRowData } from '../actions/rows';
-import type { MissionStat } from './missionStats';
+import { ratioBorderClass, type MissionStat } from './missionStats';
 import type { NamNode, NodeStatus } from '../../domain/types';
-
-function ratioTone(ratio: number): string {
-  if (ratio < 0.34) return 'border-red-500/60';
-  if (ratio < 0.67) return 'border-amber-500/60';
-  return 'border-green-500/60';
-}
 
 export interface ProjectWorkbenchProps {
   project: NamNode;
@@ -119,7 +113,7 @@ export function ProjectWorkbench({
                   onClick={() => onOpenProject(stat.id)}
                   className={cn(
                     'flex flex-col gap-1 rounded-lg border-2 bg-card p-3 text-left hover:bg-accent',
-                    ratioTone(stat.ratio),
+                    ratioBorderClass(stat.ratio),
                   )}
                 >
                   <span className="truncate text-sm font-medium text-foreground">{stat.title}</span>
