@@ -18,5 +18,8 @@ export const E2E = {
   workspaceName: process.env.VITE_WORKSPACE_NAME ?? 'e2e',
 } as const;
 
-/** Where the signed-in session snapshot is stored for reuse across specs. */
+/** Where the real signed-in session snapshot is stored for reuse across the smoke spec. */
 export const STORAGE_STATE = 'e2e/.auth/user.json';
+
+/** Where the mocked-auth session snapshot is stored for reuse across the network-mocked journeys. */
+export const MOCK_STORAGE_STATE = 'e2e/.auth/mocked-user.json';

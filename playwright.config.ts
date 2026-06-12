@@ -1,9 +1,16 @@
 import { defineConfig, devices } from '@playwright/test';
-import { E2E, STORAGE_STATE } from './e2e/env';
+import { E2E, MOCK_STORAGE_STATE, STORAGE_STATE } from './e2e/env';
 
-// E2E config: boots Vite on a dedicated port against the isolated `e2e` workspace row,
-// signs in once (setup project → storageState), then runs the specs in Chromium and
-// WebKit (the iOS Safari proxy for our mobile-first target).
+// E2E config. Two suites share one Vite dev server (booted on a dedicated port):
+//
+//  • Real-backend smoke (smoke.spec.ts) — Chromium + WebKit against the LOCAL Supabase stack.
+//    Proves the live wire (routing + Supabase contract). Needs `make supabase-start`.
+//  • Network-mocked journeys (e2e/journeys/**) — the Supabase HTTP calls are intercepted
+//    (no backend), run fast + deterministically across a desktop and a phone viewport. These
+//    are the PR-gating breadth suite (#61).
+//
+// Each suite has its own one-time auth setup → storageState. Projects are scoped via testMatch
+// so the mocked journeys never hit the real backend and the smoke never loads the mocks.
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -15,16 +22,34 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
+    // --- Real-backend smoke ---
     { name: 'setup', testMatch: /auth\.setup\.ts/ },
     {
       name: 'chromium',
+      testMatch: /smoke\.spec\.ts/,
       use: { ...devices['Desktop Chrome'], storageState: STORAGE_STATE },
       dependencies: ['setup'],
     },
     {
       name: 'webkit',
+      testMatch: /smoke\.spec\.ts/,
       use: { ...devices['Desktop Safari'], storageState: STORAGE_STATE },
       dependencies: ['setup'],
+    },
+
+    // --- Network-mocked journeys ---
+    { name: 'mocked-setup', testMatch: /mocked\.setup\.ts/ },
+    {
+      name: 'mocked-desktop',
+      testMatch: '**/journeys/desktop/**/*.spec.ts',
+      use: { ...devices['Desktop Chrome'], storageState: MOCK_STORAGE_STATE },
+      dependencies: ['mocked-setup'],
+    },
+    {
+      name: 'mocked-phone',
+      testMatch: '**/journeys/phone/**/*.spec.ts',
+      use: { ...devices['iPhone 13'], storageState: MOCK_STORAGE_STATE },
+      dependencies: ['mocked-setup'],
     },
   ],
   webServer: {
