@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- The Action edit dialog (and any tall dialog) no longer overflows small/phone screens: the shared
+  `DialogContent` is now capped to the viewport (`max-h-[calc(100dvh-2rem)]`) and scrolls internally,
+  so the footer (Save/Cancel) stays reachable instead of being clipped off-screen. Guarded by a
+  phone-viewport E2E regression. Closes #74.
+
 ### Added
 
 - E2E mocked journeys — round two (Playwright): broadens the network-mocked suite to close out the
