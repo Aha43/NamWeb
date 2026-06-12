@@ -48,6 +48,19 @@ describe('ActionDialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('echoes a canonical ISO due date on blur, leaving invalid text untouched', () => {
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={vi.fn()} />);
+    const dueField = screen.getByLabelText('Due');
+
+    fireEvent.change(dueField, { target: { value: '26-7-4' } });
+    fireEvent.blur(dueField);
+    expect(dueField).toHaveValue('2026-07-04');
+
+    fireEvent.change(dueField, { target: { value: 'whenever' } });
+    fireEvent.blur(dueField);
+    expect(dueField).toHaveValue('whenever');
+  });
+
   it('blocks save and flags an invalid due date', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);

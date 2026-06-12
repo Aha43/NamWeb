@@ -97,6 +97,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- The Action dialog's **Due field now echoes a canonical date** on blur: relaxed entry like `26-7-4`
+  normalizes to the zero-padded ISO form `2026-07-04`, confirming exactly what was parsed (invalid
+  text is left untouched until save). The configurable date-format *setting* from #32 is deferred to
+  the Settings surface. Closes #32.
 - Due dates now match NamDesktop: the Action dialog accepts **flexible date entry** (`26-7-4`,
   `2026/6/15`, separators `- / .`, 2-digit year → `20YY`) via a ported `parseFlexibleDate`, with an
   inline error on bad input; and list rows show a compact, urgency-coloured hint (overdue / Today /
