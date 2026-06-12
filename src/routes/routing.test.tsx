@@ -33,10 +33,11 @@ function document(): WorkspaceDocument {
       due1: node('due1', { title: 'Pay bill', status: 'NEXT', dueAt: '2020-01-01' }),
       blk: node('blk', { title: 'Prep', status: 'NEXT' }),
       bd: node('bd', { title: 'Wait task', status: 'NEXT', blockedBy: ['blk'] }),
-      proj: node('proj', { title: 'Roadmap', project: true, childIds: ['t1'] }),
+      proj: node('proj', { title: 'Roadmap', project: true, tags: ['home'], childIds: ['t1'] }),
       t1: node('t1', { title: 'Task one', status: 'NEXT' }),
     },
-    registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
+    registeredTags: [], savedViews: [], missionControls: [{ name: 'Goals', tags: ['home'] }],
+    templates: [{ name: 'Starter', children: [{ title: 'Step', project: false, children: [] }] }], viewOrders: {},
   };
 }
 
@@ -108,6 +109,19 @@ describe('routing', () => {
     renderAt('/search');
     fireEvent.change(screen.getByLabelText('Search'), { target: { value: 'road' } });
     expect(screen.getByText('Roadmap')).toBeInTheDocument(); // the project node
+  });
+
+  it('renders goal boards at /goals and opens one to its stations', () => {
+    renderAt('/goals');
+    expect(screen.getByLabelText('Board name')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Open board Goals' }));
+    expect(screen.getByRole('button', { name: 'Open Roadmap' })).toBeInTheDocument(); // matching project card
+  });
+
+  it('renders templates at /templates', () => {
+    renderAt('/templates');
+    expect(screen.getByText('Starter')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete template Starter' })).toBeInTheDocument();
   });
 
   it('renders the done surface at /done', () => {

@@ -8,6 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Apply template: an "Add from template…" picker in the project workbench instantiates a saved
+  template's structure under the current project. The clone's fresh node ids are generated in the
+  page and carried in the new `applyTemplate` intent, keeping it pure and replayable. Closes #68.
+- Templates (save & manage): "Save as template…" in a project workbench captures its subtree as a
+  reusable template (`saveAsTemplate`), and a new `/templates` route (and **Templates** nav entry)
+  lists templates with item counts and delete (`deleteTemplate`). Closes #67.
+- Goal Boards surface: a new `/goals` route (and **Goals** nav entry) — create tag-grouped Goal
+  Boards (name + tags), open one to a heat-map of matching projects (done-ratio cards that drill
+  into the workbench), and delete boards. Closes #66.
+- Goal Board foundation: a `missionControlStations` lens (projects matching any of a board's tags,
+  de-duped to the top-most, with done-ratio roll-ups via a shared `projectRollup`) and
+  `createMissionControl` / `deleteMissionControl` mutations. Pure, tested. Closes #65.
 - Search surface: a new `/search` route (and **Search** nav entry) — a query box searching titles
   and tags (case-insensitive, excludes done), with results tagged Action / Project and their
   project path; opening an action edits it, opening a project drills into its workbench. Closes #58.

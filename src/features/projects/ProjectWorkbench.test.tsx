@@ -61,6 +61,13 @@ describe('ProjectWorkbench', () => {
     expect(screen.queryByText('1/4 done')).not.toBeInTheDocument();
   });
 
+  it('applies a template from the picker', () => {
+    const onApplyTemplate = vi.fn();
+    setup({ templateNames: ['Starter'], onApplyTemplate });
+    fireEvent.change(screen.getByLabelText('Add from template'), { target: { value: 'Starter' } });
+    expect(onApplyTemplate).toHaveBeenCalledWith('Starter');
+  });
+
   it('offers convert-to-action for a leaf project', () => {
     const onConvertToAction = vi.fn();
     setup({ actions: [], subProjects: [], onConvertToAction });

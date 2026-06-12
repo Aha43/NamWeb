@@ -232,6 +232,53 @@ describe('applyIntent', () => {
     expect(deleted.savedViews).toEqual([]);
   });
 
+  it('goal boards: create (replacing same name) and delete', () => {
+    const doc = workspace();
+    const created = applyIntent(doc, { type: 'createMissionControl', name: 'Q3', tags: ['goal'] });
+    expect(created.missionControls).toEqual([{ name: 'Q3', tags: ['goal'] }]);
+    const replaced = applyIntent(created, { type: 'createMissionControl', name: 'Q3', tags: ['q3'] });
+    expect(replaced.missionControls).toEqual([{ name: 'Q3', tags: ['q3'] }]);
+    const deleted = applyIntent(replaced, { type: 'deleteMissionControl', name: 'Q3' });
+    expect(deleted.missionControls).toEqual([]);
+  });
+
+  it('templates: saveAsTemplate captures the subtree; deleteTemplate removes it', () => {
+    const doc = workspace([
+      node('p', { project: true, title: 'Reno', childIds: ['s', 'a'] }),
+      node('s', { project: true, title: 'Plumbing', childIds: ['b'] }),
+      node('a', { title: 'Measure' }),
+      node('b', { title: 'Fit pipe' }),
+    ]);
+    doc.nodes['projects'].childIds.push('p');
+    const saved = applyIntent(doc, { type: 'saveAsTemplate', name: 'Reno', nodeId: 'p' });
+    expect(saved.templates).toEqual([
+      {
+        name: 'Reno',
+        children: [
+          { title: 'Plumbing', project: true, children: [{ title: 'Fit pipe', project: false, children: [] }] },
+          { title: 'Measure', project: false, children: [] },
+        ],
+      },
+    ]);
+    expect(applyIntent(saved, { type: 'deleteTemplate', name: 'Reno' }).templates).toEqual([]);
+  });
+
+  it('applyTemplate clones the provided subtree (with given ids) under the parent', () => {
+    const doc = workspace([node('p', { project: true })]);
+    doc.nodes['projects'].childIds.push('p');
+    const next = applyIntent(doc, {
+      type: 'applyTemplate',
+      parentId: 'p',
+      now: NOW,
+      nodes: [
+        { id: 's1', title: 'Plumbing', project: true, children: [{ id: 'a1', title: 'Fit pipe', project: false, children: [] }] },
+      ],
+    });
+    expect(next.nodes['p'].childIds).toEqual(['s1']);
+    expect(next.nodes['s1']).toMatchObject({ title: 'Plumbing', project: true, childIds: ['a1'], createdAt: NOW });
+    expect(next.nodes['a1']).toMatchObject({ title: 'Fit pipe', project: false });
+  });
+
   it('no-ops when a status/delete/edit target is missing (replay safety)', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'setStatus', id: 'ghost', status: 'DONE', now: NOW })).toEqual(doc);

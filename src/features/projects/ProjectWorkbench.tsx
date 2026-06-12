@@ -5,14 +5,8 @@ import { cn } from '@/lib/utils';
 import { ActionList, ActionRow } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import type { ActionRowData } from '../actions/rows';
-import type { MissionStat } from './missionStats';
+import { ratioBorderClass, type MissionStat } from './missionStats';
 import type { NamNode, NodeStatus } from '../../domain/types';
-
-function ratioTone(ratio: number): string {
-  if (ratio < 0.34) return 'border-red-500/60';
-  if (ratio < 0.67) return 'border-amber-500/60';
-  return 'border-green-500/60';
-}
 
 export interface ProjectWorkbenchProps {
   project: NamNode;
@@ -30,6 +24,9 @@ export interface ProjectWorkbenchProps {
   onRename: (id: string, title: string) => void;
   /** Provided only when the project is a leaf (no children) — convert it back to an action. */
   onConvertToAction?: () => void;
+  onSaveAsTemplate?: () => void;
+  templateNames?: string[];
+  onApplyTemplate?: (name: string) => void;
 }
 
 /** A project's workbench: breadcrumb, its direct actions, and its sub-project sections. */
@@ -47,6 +44,9 @@ export function ProjectWorkbench({
   onEdit,
   onRename,
   onConvertToAction,
+  onSaveAsTemplate,
+  templateNames,
+  onApplyTemplate,
 }: ProjectWorkbenchProps) {
   const [heatmap, setHeatmap] = useState(false);
   return (
@@ -70,6 +70,35 @@ export function ProjectWorkbench({
       <div className="space-y-2">
         <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
         <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
+        {onApplyTemplate && templateNames && templateNames.length > 0 && (
+          <select
+            aria-label="Add from template"
+            defaultValue=""
+            onChange={(e) => {
+              if (e.target.value) {
+                onApplyTemplate(e.target.value);
+                e.target.value = '';
+              }
+            }}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+          >
+            <option value="" disabled>
+              Add from template…
+            </option>
+            {templateNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        )}
+        {onSaveAsTemplate && (
+          <div className="flex justify-end">
+            <Button type="button" variant="ghost" size="sm" onClick={onSaveAsTemplate}>
+              Save as template…
+            </Button>
+          </div>
+        )}
       </div>
 
       {actions.length > 0 && (
@@ -119,7 +148,7 @@ export function ProjectWorkbench({
                   onClick={() => onOpenProject(stat.id)}
                   className={cn(
                     'flex flex-col gap-1 rounded-lg border-2 bg-card p-3 text-left hover:bg-accent',
-                    ratioTone(stat.ratio),
+                    ratioBorderClass(stat.ratio),
                   )}
                 >
                   <span className="truncate text-sm font-medium text-foreground">{stat.title}</span>

@@ -4,7 +4,7 @@
 // sync conflict-retry. All functions are pure: they return a new document and
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
-import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
+import type { NamNode, NodeStatus, TemplateNode, WorkspaceDocument } from './types';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 
 export type Intent =
@@ -26,6 +26,11 @@ export type Intent =
   | { type: 'createSavedView'; name: string; tags: string[]; nextOnly: boolean }
   | { type: 'renameSavedView'; oldName: string; newName: string }
   | { type: 'deleteSavedView'; name: string }
+  | { type: 'createMissionControl'; name: string; tags: string[] }
+  | { type: 'deleteMissionControl'; name: string }
+  | { type: 'saveAsTemplate'; name: string; nodeId: string }
+  | { type: 'deleteTemplate'; name: string }
+  | { type: 'applyTemplate'; parentId: string; nodes: ClonedTemplateNode[]; now: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
@@ -80,6 +85,41 @@ function parentOf(doc: WorkspaceDocument, id: string): string | undefined {
   return undefined;
 }
 
+/**
+ * A template subtree resolved to concrete node ids, built in the UI (one `newId`
+ * per template node) so `applyTemplate` stays pure and replayable.
+ */
+export interface ClonedTemplateNode {
+  id: string;
+  title: string;
+  project: boolean;
+  children: ClonedTemplateNode[];
+}
+
+/** Insert cloned template nodes (with their pre-assigned ids) under `parentId`. */
+function insertClones(
+  doc: WorkspaceDocument,
+  parentId: string,
+  clones: ClonedTemplateNode[],
+  now: string,
+): void {
+  for (const clone of clones) {
+    doc.nodes[clone.id] = { ...newNode(clone.id, clone.title, now), project: clone.project };
+    doc.nodes[parentId]?.childIds.push(clone.id);
+    insertClones(doc, clone.id, clone.children, now);
+  }
+}
+
+/** Capture a node's children (recursively) as a template subtree. */
+function toTemplateNodes(doc: WorkspaceDocument, parentId: string): TemplateNode[] {
+  const parent = doc.nodes[parentId];
+  if (!parent) return [];
+  return parent.childIds
+    .map((id) => doc.nodes[id])
+    .filter((n): n is NamNode => Boolean(n))
+    .map((n) => ({ title: n.title, project: n.project, children: toTemplateNodes(doc, n.id) }));
+}
+
 const structuralIds = (doc: WorkspaceDocument): Set<string> =>
   new Set([doc.rootNodeId, doc.inboxNodeId, doc.projectsNodeId, doc.nextActionsNodeId]);
 
@@ -94,10 +134,15 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
   if (
     intent.type === 'createSavedView' ||
     intent.type === 'renameSavedView' ||
-    intent.type === 'deleteSavedView'
+    intent.type === 'deleteSavedView' ||
+    intent.type === 'createMissionControl' ||
+    intent.type === 'deleteMissionControl' ||
+    intent.type === 'deleteTemplate'
   ) {
-    return true; // operate on the savedViews list, not a node
+    return true; // operate on a document-level list, not a node
   }
+  if (intent.type === 'saveAsTemplate') return Boolean(doc.nodes[intent.nodeId]);
+  if (intent.type === 'applyTemplate') return Boolean(doc.nodes[intent.parentId]);
   return Boolean(doc.nodes[intent.id]);
 }
 
@@ -253,6 +298,30 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'deleteSavedView': {
       next.savedViews = next.savedViews.filter((v) => v.name !== intent.name);
+      return next;
+    }
+    case 'createMissionControl': {
+      next.missionControls = next.missionControls.filter((m) => m.name !== intent.name);
+      next.missionControls.push({ name: intent.name, tags: intent.tags });
+      return next;
+    }
+    case 'deleteMissionControl': {
+      next.missionControls = next.missionControls.filter((m) => m.name !== intent.name);
+      return next;
+    }
+    case 'saveAsTemplate': {
+      if (!next.nodes[intent.nodeId]) return next;
+      next.templates = next.templates.filter((t) => t.name !== intent.name);
+      next.templates.push({ name: intent.name, children: toTemplateNodes(next, intent.nodeId) });
+      return next;
+    }
+    case 'deleteTemplate': {
+      next.templates = next.templates.filter((t) => t.name !== intent.name);
+      return next;
+    }
+    case 'applyTemplate': {
+      if (!next.nodes[intent.parentId]) return next;
+      insertClones(next, intent.parentId, intent.nodes, intent.now);
       return next;
     }
     case 'deleteRecursive': {

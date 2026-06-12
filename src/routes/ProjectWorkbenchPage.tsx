@@ -1,11 +1,18 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { buildPath } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
+import type { ClonedTemplateNode } from '@/domain/mutations';
+import type { TemplateNode } from '@/domain/types';
 import { toActionRow } from '@/features/actions/rows';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
 import { missionStats } from '@/features/projects/missionStats';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
+
+/** Resolve a template subtree to concrete nodes (fresh ids) for applyTemplate. */
+function cloneTemplateNodes(nodes: TemplateNode[]): ClonedTemplateNode[] {
+  return nodes.map((n) => ({ id: newId(), title: n.title, project: n.project, children: cloneTemplateNodes(n.children) }));
+}
 
 export function ProjectWorkbenchPage() {
   const { id = '' } = useParams();
@@ -47,6 +54,17 @@ export function ProjectWorkbenchPage() {
           ? () => dispatch({ type: 'convertProjectToAction', id, status: 'NEXT', now: nowIso() })
           : undefined
       }
+      onSaveAsTemplate={() => {
+        const name = window.prompt('Template name', project.title)?.trim();
+        if (name) dispatch({ type: 'saveAsTemplate', name, nodeId: id });
+      }}
+      templateNames={document.templates.map((t) => t.name)}
+      onApplyTemplate={(name) => {
+        const template = document.templates.find((t) => t.name === name);
+        if (template) {
+          dispatch({ type: 'applyTemplate', parentId: id, nodes: cloneTemplateNodes(template.children), now: nowIso() });
+        }
+      }}
     />
   );
 }
