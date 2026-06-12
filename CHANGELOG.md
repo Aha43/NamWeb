@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Workbench Column/Kanban view (Workspace parity, phase 2): the project workbench gains a
+  **List / Heat-map / Column** view switch (persisted per-project). **Column** mode (desktop-only)
+  shows a leading **Unsorted** column for the project's own actions plus one column per sub-project,
+  each with status menu, inline rename, **within-column up/down reorder** (via `reorderChildren`), and
+  a per-column quick-add; cross-column moves reuse the editor's **Move to…**. New `ColumnView` +
+  `useViewMode` hook. Desktop E2E journey. Advances #64; closes #81. (Drag-and-drop reparent/reorder,
+  lanes, and collapse land in later phases.)
 - Workbench reorder (Workspace parity, phase 1): a project's direct **actions** and its **sub-projects**
   can now be hand-ordered with up/down controls in the workbench. Unlike the Next/Backlog reorder (which
   uses `viewOrders`), this rewrites the parent's **`childIds`** — the structural order shared with
