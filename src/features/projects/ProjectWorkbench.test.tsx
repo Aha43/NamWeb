@@ -53,12 +53,21 @@ describe('ProjectWorkbench', () => {
     expect(onOpenProject).toHaveBeenCalledWith('s');
   });
 
-  it('toggles the sub-project heat-map when stats are provided', () => {
-    setup({ subProjectStats: [{ id: 's', title: 'Plumbing', subProjectCount: 0, done: 1, total: 4, ratio: 0.25 }] });
-    fireEvent.click(screen.getByRole('button', { name: /heat-map/i }));
-    expect(screen.getByText('1/4 done')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /list/i }));
+  it('renders the sub-project heat-map in heat-map mode', () => {
+    const stats = [{ id: 's', title: 'Plumbing', subProjectCount: 0, done: 1, total: 4, ratio: 0.25 }];
+    setup({ viewMode: 'list', subProjectStats: stats });
     expect(screen.queryByText('1/4 done')).not.toBeInTheDocument();
+    setup({ viewMode: 'heatmap', subProjectStats: stats });
+    expect(screen.getByText('1/4 done')).toBeInTheDocument();
+  });
+
+  it('the view switch reports the chosen mode (Column only when available)', () => {
+    const onSetViewMode = vi.fn();
+    setup({ columnAvailable: true, onSetViewMode });
+    fireEvent.click(screen.getByRole('button', { name: 'Heat-map' }));
+    expect(onSetViewMode).toHaveBeenCalledWith('heatmap');
+    fireEvent.click(screen.getByRole('button', { name: 'Column' }));
+    expect(onSetViewMode).toHaveBeenCalledWith('column');
   });
 
   it('applies a template from the picker', () => {
