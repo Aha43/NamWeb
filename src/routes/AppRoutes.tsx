@@ -12,6 +12,7 @@ import { BlockedPage } from './BlockedPage';
 import { TagsPage } from './TagsPage';
 import { SearchPage } from './SearchPage';
 import { GoalsPage } from './GoalsPage';
+import { TemplatesPage } from './TemplatesPage';
 import { NotFound } from './NotFound';
 
 // Code-split the immersive focus deck (pulls in framer-motion) off the main bundle.
@@ -48,6 +49,7 @@ export function AppRoutes() {
         <Route path="tags" element={<TagsPage />} />
         <Route path="search" element={<SearchPage />} />
         <Route path="goals" element={<GoalsPage />} />
+        <Route path="templates" element={<TemplatesPage />} />
         <Route path="*" element={<NotFound />} />
       </Route>
     </Routes>

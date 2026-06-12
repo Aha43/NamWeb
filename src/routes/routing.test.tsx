@@ -36,7 +36,8 @@ function document(): WorkspaceDocument {
       proj: node('proj', { title: 'Roadmap', project: true, tags: ['home'], childIds: ['t1'] }),
       t1: node('t1', { title: 'Task one', status: 'NEXT' }),
     },
-    registeredTags: [], savedViews: [], missionControls: [{ name: 'Goals', tags: ['home'] }], templates: [], viewOrders: {},
+    registeredTags: [], savedViews: [], missionControls: [{ name: 'Goals', tags: ['home'] }],
+    templates: [{ name: 'Starter', children: [{ title: 'Step', project: false, children: [] }] }], viewOrders: {},
   };
 }
 
@@ -115,6 +116,12 @@ describe('routing', () => {
     expect(screen.getByLabelText('Board name')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Open board Goals' }));
     expect(screen.getByRole('button', { name: 'Open Roadmap' })).toBeInTheDocument(); // matching project card
+  });
+
+  it('renders templates at /templates', () => {
+    renderAt('/templates');
+    expect(screen.getByText('Starter')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete template Starter' })).toBeInTheDocument();
   });
 
   it('renders the done surface at /done', () => {

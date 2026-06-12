@@ -4,7 +4,7 @@
 // sync conflict-retry. All functions are pure: they return a new document and
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
-import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
+import type { NamNode, NodeStatus, TemplateNode, WorkspaceDocument } from './types';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 
 export type Intent =
@@ -28,6 +28,8 @@ export type Intent =
   | { type: 'deleteSavedView'; name: string }
   | { type: 'createMissionControl'; name: string; tags: string[] }
   | { type: 'deleteMissionControl'; name: string }
+  | { type: 'saveAsTemplate'; name: string; nodeId: string }
+  | { type: 'deleteTemplate'; name: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
@@ -82,6 +84,16 @@ function parentOf(doc: WorkspaceDocument, id: string): string | undefined {
   return undefined;
 }
 
+/** Capture a node's children (recursively) as a template subtree. */
+function toTemplateNodes(doc: WorkspaceDocument, parentId: string): TemplateNode[] {
+  const parent = doc.nodes[parentId];
+  if (!parent) return [];
+  return parent.childIds
+    .map((id) => doc.nodes[id])
+    .filter((n): n is NamNode => Boolean(n))
+    .map((n) => ({ title: n.title, project: n.project, children: toTemplateNodes(doc, n.id) }));
+}
+
 const structuralIds = (doc: WorkspaceDocument): Set<string> =>
   new Set([doc.rootNodeId, doc.inboxNodeId, doc.projectsNodeId, doc.nextActionsNodeId]);
 
@@ -98,10 +110,12 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'renameSavedView' ||
     intent.type === 'deleteSavedView' ||
     intent.type === 'createMissionControl' ||
-    intent.type === 'deleteMissionControl'
+    intent.type === 'deleteMissionControl' ||
+    intent.type === 'deleteTemplate'
   ) {
     return true; // operate on a document-level list, not a node
   }
+  if (intent.type === 'saveAsTemplate') return Boolean(doc.nodes[intent.nodeId]);
   return Boolean(doc.nodes[intent.id]);
 }
 
@@ -266,6 +280,16 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'deleteMissionControl': {
       next.missionControls = next.missionControls.filter((m) => m.name !== intent.name);
+      return next;
+    }
+    case 'saveAsTemplate': {
+      if (!next.nodes[intent.nodeId]) return next;
+      next.templates = next.templates.filter((t) => t.name !== intent.name);
+      next.templates.push({ name: intent.name, children: toTemplateNodes(next, intent.nodeId) });
+      return next;
+    }
+    case 'deleteTemplate': {
+      next.templates = next.templates.filter((t) => t.name !== intent.name);
       return next;
     }
     case 'deleteRecursive': {

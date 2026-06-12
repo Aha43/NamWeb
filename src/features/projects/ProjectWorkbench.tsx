@@ -24,6 +24,7 @@ export interface ProjectWorkbenchProps {
   onRename: (id: string, title: string) => void;
   /** Provided only when the project is a leaf (no children) — convert it back to an action. */
   onConvertToAction?: () => void;
+  onSaveAsTemplate?: () => void;
 }
 
 /** A project's workbench: breadcrumb, its direct actions, and its sub-project sections. */
@@ -41,6 +42,7 @@ export function ProjectWorkbench({
   onEdit,
   onRename,
   onConvertToAction,
+  onSaveAsTemplate,
 }: ProjectWorkbenchProps) {
   const [heatmap, setHeatmap] = useState(false);
   return (
@@ -64,6 +66,13 @@ export function ProjectWorkbench({
       <div className="space-y-2">
         <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
         <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
+        {onSaveAsTemplate && (
+          <div className="flex justify-end">
+            <Button type="button" variant="ghost" size="sm" onClick={onSaveAsTemplate}>
+              Save as template…
+            </Button>
+          </div>
+        )}
       </div>
 
       {actions.length > 0 && (

@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Templates (save & manage): "Save as template…" in a project workbench captures its subtree as a
+  reusable template (`saveAsTemplate`), and a new `/templates` route (and **Templates** nav entry)
+  lists templates with item counts and delete (`deleteTemplate`). Closes #67.
 - Goal Boards surface: a new `/goals` route (and **Goals** nav entry) — create tag-grouped Goal
   Boards (name + tags), open one to a heat-map of matching projects (done-ratio cards that drill
   into the workbench), and delete boards. Closes #66.

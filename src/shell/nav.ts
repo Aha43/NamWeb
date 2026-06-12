@@ -7,6 +7,7 @@ import {
   Layers,
   ListTodo,
   Lock,
+  Copy,
   Search,
   Tag,
   Target,
@@ -31,6 +32,7 @@ export const SURFACES: NavItem[] = [
   { to: '/search', label: 'Search', icon: Search },
   { to: '/projects', label: 'Projects', icon: Folders },
   { to: '/goals', label: 'Goals', icon: LayoutDashboard },
+  { to: '/templates', label: 'Templates', icon: Copy },
   { to: '/done', label: 'Done', icon: CheckCircle2 },
   { to: '/focus', label: 'Focus', icon: Target },
 ];

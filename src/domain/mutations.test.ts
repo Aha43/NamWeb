@@ -242,6 +242,27 @@ describe('applyIntent', () => {
     expect(deleted.missionControls).toEqual([]);
   });
 
+  it('templates: saveAsTemplate captures the subtree; deleteTemplate removes it', () => {
+    const doc = workspace([
+      node('p', { project: true, title: 'Reno', childIds: ['s', 'a'] }),
+      node('s', { project: true, title: 'Plumbing', childIds: ['b'] }),
+      node('a', { title: 'Measure' }),
+      node('b', { title: 'Fit pipe' }),
+    ]);
+    doc.nodes['projects'].childIds.push('p');
+    const saved = applyIntent(doc, { type: 'saveAsTemplate', name: 'Reno', nodeId: 'p' });
+    expect(saved.templates).toEqual([
+      {
+        name: 'Reno',
+        children: [
+          { title: 'Plumbing', project: true, children: [{ title: 'Fit pipe', project: false, children: [] }] },
+          { title: 'Measure', project: false, children: [] },
+        ],
+      },
+    ]);
+    expect(applyIntent(saved, { type: 'deleteTemplate', name: 'Reno' }).templates).toEqual([]);
+  });
+
   it('no-ops when a status/delete/edit target is missing (replay safety)', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'setStatus', id: 'ghost', status: 'DONE', now: NOW })).toEqual(doc);
