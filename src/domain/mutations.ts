@@ -30,6 +30,7 @@ export type Intent =
   | { type: 'deleteMissionControl'; name: string }
   | { type: 'saveAsTemplate'; name: string; nodeId: string }
   | { type: 'deleteTemplate'; name: string }
+  | { type: 'applyTemplate'; parentId: string; nodes: ClonedTemplateNode[]; now: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
@@ -84,6 +85,31 @@ function parentOf(doc: WorkspaceDocument, id: string): string | undefined {
   return undefined;
 }
 
+/**
+ * A template subtree resolved to concrete node ids, built in the UI (one `newId`
+ * per template node) so `applyTemplate` stays pure and replayable.
+ */
+export interface ClonedTemplateNode {
+  id: string;
+  title: string;
+  project: boolean;
+  children: ClonedTemplateNode[];
+}
+
+/** Insert cloned template nodes (with their pre-assigned ids) under `parentId`. */
+function insertClones(
+  doc: WorkspaceDocument,
+  parentId: string,
+  clones: ClonedTemplateNode[],
+  now: string,
+): void {
+  for (const clone of clones) {
+    doc.nodes[clone.id] = { ...newNode(clone.id, clone.title, now), project: clone.project };
+    doc.nodes[parentId]?.childIds.push(clone.id);
+    insertClones(doc, clone.id, clone.children, now);
+  }
+}
+
 /** Capture a node's children (recursively) as a template subtree. */
 function toTemplateNodes(doc: WorkspaceDocument, parentId: string): TemplateNode[] {
   const parent = doc.nodes[parentId];
@@ -116,6 +142,7 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     return true; // operate on a document-level list, not a node
   }
   if (intent.type === 'saveAsTemplate') return Boolean(doc.nodes[intent.nodeId]);
+  if (intent.type === 'applyTemplate') return Boolean(doc.nodes[intent.parentId]);
   return Boolean(doc.nodes[intent.id]);
 }
 
@@ -290,6 +317,11 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'deleteTemplate': {
       next.templates = next.templates.filter((t) => t.name !== intent.name);
+      return next;
+    }
+    case 'applyTemplate': {
+      if (!next.nodes[intent.parentId]) return next;
+      insertClones(next, intent.parentId, intent.nodes, intent.now);
       return next;
     }
     case 'deleteRecursive': {

@@ -263,6 +263,22 @@ describe('applyIntent', () => {
     expect(applyIntent(saved, { type: 'deleteTemplate', name: 'Reno' }).templates).toEqual([]);
   });
 
+  it('applyTemplate clones the provided subtree (with given ids) under the parent', () => {
+    const doc = workspace([node('p', { project: true })]);
+    doc.nodes['projects'].childIds.push('p');
+    const next = applyIntent(doc, {
+      type: 'applyTemplate',
+      parentId: 'p',
+      now: NOW,
+      nodes: [
+        { id: 's1', title: 'Plumbing', project: true, children: [{ id: 'a1', title: 'Fit pipe', project: false, children: [] }] },
+      ],
+    });
+    expect(next.nodes['p'].childIds).toEqual(['s1']);
+    expect(next.nodes['s1']).toMatchObject({ title: 'Plumbing', project: true, childIds: ['a1'], createdAt: NOW });
+    expect(next.nodes['a1']).toMatchObject({ title: 'Fit pipe', project: false });
+  });
+
   it('no-ops when a status/delete/edit target is missing (replay safety)', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'setStatus', id: 'ghost', status: 'DONE', now: NOW })).toEqual(doc);

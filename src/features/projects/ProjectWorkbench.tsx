@@ -25,6 +25,8 @@ export interface ProjectWorkbenchProps {
   /** Provided only when the project is a leaf (no children) — convert it back to an action. */
   onConvertToAction?: () => void;
   onSaveAsTemplate?: () => void;
+  templateNames?: string[];
+  onApplyTemplate?: (name: string) => void;
 }
 
 /** A project's workbench: breadcrumb, its direct actions, and its sub-project sections. */
@@ -43,6 +45,8 @@ export function ProjectWorkbench({
   onRename,
   onConvertToAction,
   onSaveAsTemplate,
+  templateNames,
+  onApplyTemplate,
 }: ProjectWorkbenchProps) {
   const [heatmap, setHeatmap] = useState(false);
   return (
@@ -66,6 +70,28 @@ export function ProjectWorkbench({
       <div className="space-y-2">
         <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
         <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
+        {onApplyTemplate && templateNames && templateNames.length > 0 && (
+          <select
+            aria-label="Add from template"
+            defaultValue=""
+            onChange={(e) => {
+              if (e.target.value) {
+                onApplyTemplate(e.target.value);
+                e.target.value = '';
+              }
+            }}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+          >
+            <option value="" disabled>
+              Add from template…
+            </option>
+            {templateNames.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        )}
         {onSaveAsTemplate && (
           <div className="flex justify-end">
             <Button type="button" variant="ghost" size="sm" onClick={onSaveAsTemplate}>

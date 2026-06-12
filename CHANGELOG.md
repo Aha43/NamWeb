@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Apply template: an "Add from template…" picker in the project workbench instantiates a saved
+  template's structure under the current project. The clone's fresh node ids are generated in the
+  page and carried in the new `applyTemplate` intent, keeping it pure and replayable. Closes #68.
 - Templates (save & manage): "Save as template…" in a project workbench captures its subtree as a
   reusable template (`saveAsTemplate`), and a new `/templates` route (and **Templates** nav entry)
   lists templates with item counts and delete (`deleteTemplate`). Closes #67.
