@@ -41,6 +41,9 @@ export interface ProjectWorkbenchProps {
   onMoveSubProject?: (id: string, direction: MoveDirection) => void;
   /** Hand-order an action within a column (the column's node's childIds). */
   onMoveActionInColumn?: (columnId: string, id: string, direction: MoveDirection) => void;
+  /** Collapsed column ids + toggle (Column view; persisted per-project by the page). */
+  collapsedColumns?: Set<string>;
+  onToggleColumn?: (id: string) => void;
   /** Provided only when the project is a leaf (no children) — convert it back to an action. */
   onConvertToAction?: () => void;
   onSaveAsTemplate?: () => void;
@@ -71,6 +74,8 @@ export function ProjectWorkbench({
   onMoveAction,
   onMoveSubProject,
   onMoveActionInColumn = () => {},
+  collapsedColumns,
+  onToggleColumn,
   onConvertToAction,
   onSaveAsTemplate,
   templateNames,
@@ -142,6 +147,8 @@ export function ProjectWorkbench({
           onSetStatus={onSetStatus}
           onEdit={onEdit}
           onRename={onRename}
+          collapsed={collapsedColumns}
+          onToggleCollapse={onToggleColumn}
         />
       ) : (
         <>
