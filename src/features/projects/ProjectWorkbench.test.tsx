@@ -84,6 +84,41 @@ describe('ProjectWorkbench', () => {
     expect(onConvertToAction).toHaveBeenCalled();
   });
 
+  it('toggles the "Add to project" panel and hides its controls when collapsed', () => {
+    const onToggleAddPanel = vi.fn();
+    setup({ onToggleAddPanel });
+    // Expanded by default: the controls are visible and the header reports it.
+    expect(screen.getByLabelText('Add action')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add to project' })).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add to project' }));
+    expect(onToggleAddPanel).toHaveBeenCalled();
+  });
+
+  it('hides the add controls when the panel is collapsed', () => {
+    setup({ addPanelCollapsed: true });
+    expect(screen.queryByLabelText('Add action')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Add sub-project')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add to project' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('toggles the Actions and Sub-projects section headers', () => {
+    const onToggleSection = vi.fn();
+    setup({ onToggleSection });
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sub-projects' }));
+    expect(onToggleSection).toHaveBeenCalledWith('actions');
+    expect(onToggleSection).toHaveBeenCalledWith('subprojects');
+  });
+
+  it('hides a section body when it is collapsed', () => {
+    setup({ collapsedSections: new Set(['actions']) });
+    // The Actions header stays, but its rows are hidden; Sub-projects stays open.
+    expect(screen.getByRole('button', { name: 'Actions' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Get quotes')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Plumbing' })).toBeInTheDocument();
+  });
+
   it('adds actions and sub-projects', () => {
     const { onAddAction, onAddSubProject } = setup();
     fireEvent.change(screen.getByLabelText('Add action'), { target: { value: 'Measure' } });

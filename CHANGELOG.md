@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Wider desktop workspace: the surface panels (Inbox, Next, Backlog, Due, Blocked, Tags, Search, Projects,
+  Done, Templates, Goals, and the project workbench) were double-capped — the shell limits content to
+  `max-w-2xl` and each surface re-capped at `max-w-md` (~448px), leaving large left/right margins on desktop.
+  The shell + per-surface caps are now `max-w-4xl` (~896px), so content fills much more of the screen.
+  Short centered messages and the Focus deck keep their narrower widths; phone is unaffected. Closes #99.
+
 ### Fixed
 
 - The Action edit dialog (and any tall dialog) no longer overflows small/phone screens: the shared
@@ -15,6 +23,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Collapsible **Actions** and **Sub-projects** sections in the workbench **List** and **Heat-map** views:
+  each section now has a header (chevron + count) that collapses its body — matching the per-column collapse
+  in Column view. Collapsed state is persisted per-project (localStorage, via `useCollapsedSections`);
+  defaults to expanded. Closes #98.
+- Collapsible **Add to project** panel on the workbench: the add controls (Add action, Add sub-project,
+  Add from template, Save as template…) are now grouped in a panel with a header toggle, so they can be
+  tucked away on busy projects to free vertical space. Collapsed state is persisted per-project
+  (localStorage, via `useCollapsedAddPanel`); defaults to expanded. Closes #97.
+- Top toolbar strip on desktop: a full-width toolbar now carries the sidebar collapse/expand toggle and a
+  **live search box** on the left, and the **theme toggle + Sign out** on the right — moved out of the
+  sidebar. The toolbar search drives the Search surface via a `?q=` URL param (results update live) and
+  persists across routes, so it keeps focus while you type. Search is removed from the desktop sidebar nav
+  (still in the phone More sheet). `PhoneShell` is unchanged. Closes #96.
+- Resizable + collapsible desktop sidebar: the divider between the view list and the workspace can be
+  **dragged** to set the sidebar width (persisted to localStorage, clamped 180–480px; double-click resets,
+  arrow keys nudge for keyboard a11y), and the view list can be **collapsed** entirely via a toggle — a
+  small floating expand button restores it, maximizing workspace width. Desktop-only. Closes #95.
 - Reorder Kanban columns (Workspace parity): each sub-project column in the **Column** view gains
   **left/right** move buttons, so the columns can be rearranged without drag. The **Unsorted** column
   stays fixed first; moving a column reorders the project's sub-projects (the same `reorderChildren`

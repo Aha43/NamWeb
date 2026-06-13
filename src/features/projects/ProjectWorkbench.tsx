@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { ChevronRight, Pencil } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -66,6 +66,12 @@ export interface ProjectWorkbenchProps {
   onSaveAsTemplate?: () => void;
   templateNames?: string[];
   onApplyTemplate?: (name: string) => void;
+  /** Collapsed state of the "Add to project" panel + toggle (persisted per-project by the page). */
+  addPanelCollapsed?: boolean;
+  onToggleAddPanel?: () => void;
+  /** Collapsed sections (Actions / Sub-projects) for List & Heat-map + toggle (persisted by the page). */
+  collapsedSections?: Set<string>;
+  onToggleSection?: (section: 'actions' | 'subprojects') => void;
 }
 
 /** A project's workbench: breadcrumb, its direct actions, and its sub-projects — as a list, a
@@ -102,9 +108,14 @@ export function ProjectWorkbench({
   onSaveAsTemplate,
   templateNames,
   onApplyTemplate,
+  addPanelCollapsed = false,
+  onToggleAddPanel = () => {},
+  collapsedSections,
+  onToggleSection = () => {},
 }: ProjectWorkbenchProps) {
   const isColumn = viewMode === 'column';
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
+  const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
   const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => (
@@ -140,7 +151,7 @@ export function ProjectWorkbench({
     </li>
   );
   return (
-    <section className={cn('mx-auto space-y-4', isColumn ? 'w-full' : 'max-w-md')}>
+    <section className={cn('mx-auto space-y-4', isColumn ? 'w-full' : 'max-w-4xl')}>
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
         <button type="button" onClick={onOpenProjects} className="hover:text-foreground">
           Projects
@@ -157,36 +168,53 @@ export function ProjectWorkbench({
         <span className="font-medium text-foreground">{project.title}</span>
       </nav>
 
-      <div className="space-y-2">
-        <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
-        <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
-        {onApplyTemplate && templateNames && templateNames.length > 0 && (
-          <select
-            aria-label="Add from template"
-            defaultValue=""
-            onChange={(e) => {
-              if (e.target.value) {
-                onApplyTemplate(e.target.value);
-                e.target.value = '';
-              }
-            }}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-          >
-            <option value="" disabled>
-              Add from template…
-            </option>
-            {templateNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        )}
-        {onSaveAsTemplate && (
-          <div className="flex justify-end">
-            <Button type="button" variant="ghost" size="sm" onClick={onSaveAsTemplate}>
-              Save as template…
-            </Button>
+      <div className="rounded-lg border border-border">
+        <button
+          type="button"
+          aria-expanded={!addPanelCollapsed}
+          onClick={onToggleAddPanel}
+          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+        >
+          <span>Add to project</span>
+          {addPanelCollapsed ? (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+        {!addPanelCollapsed && (
+          <div className="space-y-2 border-t border-border p-3">
+            <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
+            <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
+            {onApplyTemplate && templateNames && templateNames.length > 0 && (
+              <select
+                aria-label="Add from template"
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    onApplyTemplate(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+              >
+                <option value="" disabled>
+                  Add from template…
+                </option>
+                {templateNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {onSaveAsTemplate && (
+              <div className="flex justify-end">
+                <Button type="button" variant="ghost" size="sm" onClick={onSaveAsTemplate}>
+                  Save as template…
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -213,35 +241,50 @@ export function ProjectWorkbench({
       ) : (
         <>
           {actions.length > 0 && (
-            <ReorderableActionList
-              rows={actions}
-              onEdit={onEdit}
-              onRename={onRename}
-              onReorder={onReorderActions}
-              dndEnabled={dndEnabled}
-              renderActions={(row, index) => (
-                <>
-                  {onMoveAction && (
-                    <ReorderControls
-                      title={row.title}
-                      onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
-                      onDown={index < actions.length - 1 ? () => onMoveAction(row.id, 'down') : undefined}
-                    />
+            <div className="space-y-1">
+              <SectionHeader
+                label="Actions"
+                count={actions.length}
+                collapsed={sectionCollapsed('actions')}
+                onToggle={() => onToggleSection('actions')}
+              />
+              {!sectionCollapsed('actions') && (
+                <ReorderableActionList
+                  rows={actions}
+                  onEdit={onEdit}
+                  onRename={onRename}
+                  onReorder={onReorderActions}
+                  dndEnabled={dndEnabled}
+                  renderActions={(row, index) => (
+                    <>
+                      {onMoveAction && (
+                        <ReorderControls
+                          title={row.title}
+                          onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
+                          onDown={index < actions.length - 1 ? () => onMoveAction(row.id, 'down') : undefined}
+                        />
+                      )}
+                      <StatusMenu
+                        status={row.status}
+                        title={row.title}
+                        onSetStatus={(status) => onSetStatus(row.id, status)}
+                      />
+                    </>
                   )}
-                  <StatusMenu
-                    status={row.status}
-                    title={row.title}
-                    onSetStatus={(status) => onSetStatus(row.id, status)}
-                  />
-                </>
+                />
               )}
-            />
+            </div>
           )}
 
           {subProjects.length > 0 && (
             <div className="space-y-1">
-              <p className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Sub-projects</p>
-              {viewMode === 'heatmap' && subProjectStats ? (
+              <SectionHeader
+                label="Sub-projects"
+                count={subProjects.length}
+                collapsed={sectionCollapsed('subprojects')}
+                onToggle={() => onToggleSection('subprojects')}
+              />
+              {sectionCollapsed('subprojects') ? null : viewMode === 'heatmap' && subProjectStats ? (
                 <div className="grid grid-cols-2 gap-2">
                   {subProjectStats.map((stat) => (
                     <button
@@ -335,6 +378,34 @@ function ViewSwitch({
         ))}
       </div>
     </div>
+  );
+}
+
+/** A collapsible section heading (Actions / Sub-projects) for the List & Heat-map views. */
+function SectionHeader({
+  label,
+  count,
+  collapsed,
+  onToggle,
+}: {
+  label: string;
+  count: number;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={!collapsed}
+      onClick={onToggle}
+      className="flex w-full items-center gap-1 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground"
+    >
+      {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      <span>{label}</span>
+      <span aria-hidden className="normal-case">
+        {count}
+      </span>
+    </button>
   );
 }
 

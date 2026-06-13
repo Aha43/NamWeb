@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { searchResults } from '@/domain/lenses';
 import { SearchPanel, type SearchResultRow } from '@/features/search/SearchPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
@@ -9,7 +8,10 @@ export function SearchPage() {
   const { document } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
+  // The `?q=` URL param is the source of truth, shared with the toolbar search box.
+  const [params, setParams] = useSearchParams();
+  const query = params.get('q') ?? '';
+  const setQuery = (q: string) => setParams(q ? { q } : {}, { replace: true });
 
   const results: SearchResultRow[] = document
     ? searchResults(document, query).map((r) => ({

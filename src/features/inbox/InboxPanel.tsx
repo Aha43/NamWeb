@@ -29,7 +29,7 @@ export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit, onRename
   }
 
   return (
-    <section className="mx-auto max-w-md space-y-4">
+    <section className="mx-auto max-w-4xl space-y-4">
       <form onSubmit={submit} className="flex gap-2">
         <input
           aria-label="Quick add"

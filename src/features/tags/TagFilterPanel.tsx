@@ -43,7 +43,7 @@ export function TagFilterPanel({
 }: TagFilterPanelProps) {
   const selectedSet = new Set(selected);
   return (
-    <section className="mx-auto max-w-md space-y-4">
+    <section className="mx-auto max-w-4xl space-y-4">
       {savedViews.length > 0 && (
         <div className="space-y-1">
           <p className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Saved views</p>

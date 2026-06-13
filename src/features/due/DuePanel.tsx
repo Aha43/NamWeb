@@ -29,14 +29,14 @@ export function DuePanel({ groups, onSetStatus, onEdit, onRename }: DuePanelProp
   const total = SECTIONS.reduce((n, s) => n + groups[s.key].length, 0);
   if (total === 0) {
     return (
-      <section className="mx-auto max-w-md">
+      <section className="mx-auto max-w-4xl">
         <EmptyState>Nothing due.</EmptyState>
       </section>
     );
   }
 
   return (
-    <section className="mx-auto max-w-md space-y-4">
+    <section className="mx-auto max-w-4xl space-y-4">
       {SECTIONS.map((section) => {
         const rows = groups[section.key];
         if (rows.length === 0) return null;
