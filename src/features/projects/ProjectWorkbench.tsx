@@ -56,6 +56,8 @@ export interface ProjectWorkbenchProps {
     toColumnId: string,
     targetActionIds: string[],
   ) => void;
+  /** Reorder the columns (sub-projects) with left/right buttons (Column view). */
+  onMoveColumn?: (columnId: string, direction: 'left' | 'right') => void;
   /** Collapsed column ids + toggle (Column view; persisted per-project by the page). */
   collapsedColumns?: Set<string>;
   onToggleColumn?: (id: string) => void;
@@ -93,6 +95,7 @@ export function ProjectWorkbench({
   dndEnabled,
   onMoveActionInColumn = () => {},
   onMoveActionToColumn,
+  onMoveColumn,
   collapsedColumns,
   onToggleColumn,
   onConvertToAction,
@@ -199,6 +202,7 @@ export function ProjectWorkbench({
           onAddAction={onAddActionToColumn}
           onMoveAction={onMoveActionInColumn}
           onMoveActionToColumn={onMoveActionToColumn}
+          onMoveColumn={onMoveColumn}
           dndEnabled={dndEnabled}
           onSetStatus={onSetStatus}
           onEdit={onEdit}

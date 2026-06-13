@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent, type ReactNode } from 'react';
-import { ChevronRight, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
@@ -58,6 +58,9 @@ export interface ColumnViewProps {
   ) => void;
   /** Mount drag-and-drop. Buttons + the editor's Move to… stay as fallbacks. */
   dndEnabled?: boolean;
+  /** Reorder the columns themselves (i.e. the sub-projects) with left/right buttons. The Unsorted
+   *  column is fixed first and is never moved. */
+  onMoveColumn?: (columnId: string, direction: 'left' | 'right') => void;
   /** Collapsed column ids + toggle (persisted per-project by the page). */
   collapsed?: Set<string>;
   onToggleCollapse?: (id: string) => void;
@@ -76,9 +79,12 @@ export function ColumnView({
   onRename,
   onMoveActionToColumn,
   dndEnabled,
+  onMoveColumn,
   collapsed,
   onToggleCollapse,
 }: ColumnViewProps) {
+  // Sub-project columns (everything but the fixed Unsorted column) — the ones that can be reordered.
+  const subColumnIds = columns.filter((c) => !c.isUnsorted).map((c) => c.id);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [activeId, setActiveId] = useState<string | null>(null);
   const dnd = Boolean(dndEnabled && onMoveActionToColumn);
@@ -146,6 +152,28 @@ export function ColumnView({
             </button>
           )}
           <div className="flex shrink-0 items-center gap-1">
+            {onMoveColumn && !col.isUnsorted && (
+              <>
+                <button
+                  type="button"
+                  aria-label={`Move ${col.title} left`}
+                  disabled={subColumnIds[0] === col.id}
+                  onClick={() => onMoveColumn(col.id, 'left')}
+                  className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label={`Move ${col.title} right`}
+                  disabled={subColumnIds[subColumnIds.length - 1] === col.id}
+                  onClick={() => onMoveColumn(col.id, 'right')}
+                  className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </>
+            )}
             <span className="text-xs text-muted-foreground">{col.actions.length}</span>
             {onToggleCollapse && (
               <button
