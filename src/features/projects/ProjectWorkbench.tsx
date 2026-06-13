@@ -1,10 +1,12 @@
-import { useState, type FormEvent } from 'react';
+import { Fragment, useState, type FormEvent } from 'react';
 import { ChevronRight, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ActionList, ActionRow } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
+import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
+import { SortableList } from '@/components/dnd/SortableList';
+import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
 import type { ActionRowData } from '../actions/rows';
 import { ratioBorderClass, type MissionStat } from './missionStats';
@@ -39,6 +41,12 @@ export interface ProjectWorkbenchProps {
   onMoveAction?: (id: string, direction: MoveDirection) => void;
   /** Hand-order a direct sub-project within the project. */
   onMoveSubProject?: (id: string, direction: MoveDirection) => void;
+  /** Commit a drag reorder of the project's direct actions (the full new id order). */
+  onReorderActions?: (ids: string[]) => void;
+  /** Commit a drag reorder of the project's direct sub-projects (the full new id order). */
+  onReorderSubProjects?: (ids: string[]) => void;
+  /** Whether drag-and-drop is mounted (desktop). Buttons remain regardless. */
+  dndEnabled?: boolean;
   /** Hand-order an action within a column (the column's node's childIds). */
   onMoveActionInColumn?: (columnId: string, id: string, direction: MoveDirection) => void;
   /** Collapsed column ids + toggle (Column view; persisted per-project by the page). */
@@ -73,6 +81,9 @@ export function ProjectWorkbench({
   onRename,
   onMoveAction,
   onMoveSubProject,
+  onReorderActions,
+  onReorderSubProjects,
+  dndEnabled,
   onMoveActionInColumn = () => {},
   collapsedColumns,
   onToggleColumn,
@@ -82,6 +93,41 @@ export function ProjectWorkbench({
   onApplyTemplate,
 }: ProjectWorkbenchProps) {
   const isColumn = viewMode === 'column';
+  const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
+
+  // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
+  const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => (
+    <li ref={drag?.setNodeRef} style={drag?.style} className="flex items-center gap-1 pr-2">
+      <button
+        type="button"
+        aria-label={`Open ${sub.title}`}
+        onClick={() => onOpenProject(sub.id)}
+        className="flex flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
+      >
+        <span className="flex-1 truncate text-sm text-foreground">{sub.title}</span>
+        {sub.childIds.length > 0 && (
+          <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
+        )}
+        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+      </button>
+      <button
+        type="button"
+        aria-label={`Edit ${sub.title}`}
+        onClick={() => onEdit(sub.id)}
+        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </button>
+      {drag?.handle}
+      {onMoveSubProject && (
+        <ReorderControls
+          title={sub.title}
+          onUp={index > 0 ? () => onMoveSubProject(sub.id, 'up') : undefined}
+          onDown={index < subProjects.length - 1 ? () => onMoveSubProject(sub.id, 'down') : undefined}
+        />
+      )}
+    </li>
+  );
   return (
     <section className={cn('mx-auto space-y-4', isColumn ? 'w-full' : 'max-w-md')}>
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
@@ -153,32 +199,29 @@ export function ProjectWorkbench({
       ) : (
         <>
           {actions.length > 0 && (
-            <ActionList>
-              {actions.map((row, index) => (
-                <ActionRow
-                  key={row.id}
-                  row={row}
-                  onEdit={() => onEdit(row.id)}
-                  onRename={(title) => onRename(row.id, title)}
-                  actions={
-                    <div className="flex items-center gap-1">
-                      {onMoveAction && (
-                        <ReorderControls
-                          title={row.title}
-                          onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
-                          onDown={index < actions.length - 1 ? () => onMoveAction(row.id, 'down') : undefined}
-                        />
-                      )}
-                      <StatusMenu
-                        status={row.status}
-                        title={row.title}
-                        onSetStatus={(status) => onSetStatus(row.id, status)}
-                      />
-                    </div>
-                  }
-                />
-              ))}
-            </ActionList>
+            <ReorderableActionList
+              rows={actions}
+              onEdit={onEdit}
+              onRename={onRename}
+              onReorder={onReorderActions}
+              dndEnabled={dndEnabled}
+              renderActions={(row, index) => (
+                <>
+                  {onMoveAction && (
+                    <ReorderControls
+                      title={row.title}
+                      onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
+                      onDown={index < actions.length - 1 ? () => onMoveAction(row.id, 'down') : undefined}
+                    />
+                  )}
+                  <StatusMenu
+                    status={row.status}
+                    title={row.title}
+                    onSetStatus={(status) => onSetStatus(row.id, status)}
+                  />
+                </>
+              )}
+            />
           )}
 
           {subProjects.length > 0 && (
@@ -206,39 +249,23 @@ export function ProjectWorkbench({
                   ))}
                 </div>
               ) : (
-                <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-                  {subProjects.map((sub, index) => (
-                    <li key={sub.id} className="flex items-center gap-1 pr-2">
-                      <button
-                        type="button"
-                        aria-label={`Open ${sub.title}`}
-                        onClick={() => onOpenProject(sub.id)}
-                        className="flex flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
-                      >
-                        <span className="flex-1 truncate text-sm text-foreground">{sub.title}</span>
-                        {sub.childIds.length > 0 && (
-                          <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
-                        )}
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label={`Edit ${sub.title}`}
-                        onClick={() => onEdit(sub.id)}
-                        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      {onMoveSubProject && (
-                        <ReorderControls
-                          title={sub.title}
-                          onUp={index > 0 ? () => onMoveSubProject(sub.id, 'up') : undefined}
-                          onDown={index < subProjects.length - 1 ? () => onMoveSubProject(sub.id, 'down') : undefined}
-                        />
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                <SortableList
+                  ids={subProjects.map((s) => s.id)}
+                  onReorder={onReorderSubProjects ?? (() => {})}
+                  disabled={!subDnd}
+                >
+                  <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+                    {subProjects.map((sub, index) =>
+                      subDnd ? (
+                        <SortableRow key={sub.id} id={sub.id} label={sub.title}>
+                          {(drag) => renderSub(sub, index, drag)}
+                        </SortableRow>
+                      ) : (
+                        <Fragment key={sub.id}>{renderSub(sub, index)}</Fragment>
+                      ),
+                    )}
+                  </ul>
+                </SortableList>
               )}
             </div>
           )}

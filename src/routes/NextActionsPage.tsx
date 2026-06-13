@@ -5,6 +5,7 @@ import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
 import { NextActionsPanel } from '@/features/next-actions/NextActionsPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
+import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 const VIEW = 'next';
@@ -13,6 +14,7 @@ export function NextActionsPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const [sortMode, cycleSort] = useSortMode(VIEW);
+  const isDesktop = useIsDesktop();
 
   // In "Unsorted" mode the saved manual order applies; oldest/newest are computed.
   const base = document ? nextActions(document) : [];
@@ -35,6 +37,8 @@ export function NextActionsPage() {
       onCycleSort={cycleSort}
       reorderable={sortMode === 'none'}
       onMove={move}
+      onReorder={(ids) => dispatch({ type: 'reorderView', view: VIEW, order: ids })}
+      dndEnabled={isDesktop}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
       onRename={(id, title) => {

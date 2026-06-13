@@ -20,6 +20,7 @@ import {
   projectActions,
   projectPath,
   projects,
+  reorderKindWithinChildren,
   structuralNodeIds,
   subProjects,
 } from './lenses';
@@ -373,6 +374,26 @@ describe('projectActions / subProjects', () => {
   it('is empty for an unknown node', () => {
     expect(projectActions(doc, 'ghost')).toEqual([]);
     expect(subProjects(doc, 'ghost')).toEqual([]);
+  });
+});
+
+describe('reorderKindWithinChildren', () => {
+  // childIds interleave two kinds: actions a1/a2 and sub-projects sp1/sp2.
+  const childIds = ['a1', 'sp1', 'a2', 'sp2'];
+
+  it('reorders one kind while the other kind keeps its slots', () => {
+    // Reverse the actions; sub-projects stay at indices 1 and 3.
+    expect(reorderKindWithinChildren(childIds, ['a2', 'a1'])).toEqual(['a2', 'sp1', 'a1', 'sp2']);
+    // Reverse the sub-projects; actions stay at indices 0 and 2.
+    expect(reorderKindWithinChildren(childIds, ['sp2', 'sp1'])).toEqual(['a1', 'sp2', 'a2', 'sp1']);
+  });
+
+  it('is a no-op when the new order is already the current order', () => {
+    expect(reorderKindWithinChildren(childIds, ['a1', 'a2'])).toEqual(childIds);
+  });
+
+  it('returns the original childIds if any id is not a current child (ignores stale input)', () => {
+    expect(reorderKindWithinChildren(childIds, ['a1', 'ghost'])).toEqual(childIds);
   });
 });
 
