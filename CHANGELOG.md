@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Wider desktop workspace: the surface panels (Inbox, Next, Backlog, Due, Blocked, Tags, Search, Projects,
+  Done, Templates, Goals, and the project workbench) were double-capped — the shell limits content to
+  `max-w-2xl` and each surface re-capped at `max-w-md` (~448px), leaving large left/right margins on desktop.
+  The per-surface cap is now `max-w-2xl` (~672px), so content fills the shell as a comfortable reading column.
+  Short centered messages and the Focus deck keep their narrower widths; phone is unaffected. Closes #99.
+
 ### Fixed
 
 - The Action edit dialog (and any tall dialog) no longer overflows small/phone screens: the shared

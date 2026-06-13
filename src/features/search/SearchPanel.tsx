@@ -17,7 +17,7 @@ export interface SearchPanelProps {
 /** Workspace search across titles and tags. Presentational. */
 export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPanelProps) {
   return (
-    <section className="mx-auto max-w-md space-y-4">
+    <section className="mx-auto max-w-2xl space-y-4">
       <input
         aria-label="Search"
         value={query}
