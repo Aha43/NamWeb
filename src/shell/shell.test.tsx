@@ -96,6 +96,16 @@ describe('adaptive shell', () => {
     expect(screen.getByRole('button', { name: 'Capture' })).toBeInTheDocument();
   });
 
+  it('desktop: top toolbar carries search, theme toggle and sign out (not the sidebar)', () => {
+    renderShell(true);
+    expect(screen.getByRole('searchbox', { name: 'Search workspace' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Toggle theme' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign out' })).toBeInTheDocument();
+    // Search moved out of the sidebar nav (still in SURFACES for phone's More sheet).
+    const sidebar = screen.getByRole('navigation', { name: 'Sidebar' });
+    expect(within(sidebar).queryByRole('link', { name: 'Search' })).not.toBeInTheDocument();
+  });
+
   it('desktop: a draggable divider separates the view list from the workspace', () => {
     renderShell(true);
     const divider = screen.getByRole('separator', { name: 'Resize sidebar' });

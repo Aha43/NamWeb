@@ -20,7 +20,6 @@ export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPan
     <section className="mx-auto max-w-md space-y-4">
       <input
         aria-label="Search"
-        autoFocus
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
         placeholder="Search titles & tags…"

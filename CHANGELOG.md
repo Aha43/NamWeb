@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Top toolbar strip on desktop: a full-width toolbar now carries the sidebar collapse/expand toggle and a
+  **live search box** on the left, and the **theme toggle + Sign out** on the right — moved out of the
+  sidebar. The toolbar search drives the Search surface via a `?q=` URL param (results update live) and
+  persists across routes, so it keeps focus while you type. Search is removed from the desktop sidebar nav
+  (still in the phone More sheet). `PhoneShell` is unchanged. Closes #96.
 - Resizable + collapsible desktop sidebar: the divider between the view list and the workspace can be
   **dragged** to set the sidebar width (persisted to localStorage, clamped 180–480px; double-click resets,
   arrow keys nudge for keyboard a11y), and the view list can be **collapsed** entirely via a toggle — a

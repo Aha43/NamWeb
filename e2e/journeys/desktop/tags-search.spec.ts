@@ -27,10 +27,12 @@ test.describe('tags + search', () => {
     await expect(page.getByRole('button', { name: 'Open view Work stuff' })).toBeVisible();
   });
 
-  test('search finds an action by title', async ({ page }) => {
-    await page.goto('/search');
+  test('search from the toolbar finds an action by title', async ({ page }) => {
+    // Start anywhere; typing in the toolbar search box drives the Search surface via ?q=.
+    await page.goto('/inbox');
 
-    await page.getByLabel('Search').fill('soil');
+    await page.getByRole('searchbox', { name: 'Search workspace' }).fill('soil');
+    await expect(page).toHaveURL(/\/search\?q=soil/);
     await expect(page.getByRole('button', { name: 'Open Buy soil' })).toBeVisible();
     await expect(page.getByText('Email Bob')).toHaveCount(0);
   });

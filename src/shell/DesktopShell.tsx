@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
-import { NavLink } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen, Plus } from 'lucide-react';
+import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useCapture } from '@/capture/capture-context';
@@ -16,7 +16,11 @@ import {
   useSidebarLayout,
 } from './useSidebarLayout';
 
-/** Laptop/desktop: resizable, collapsible sidebar with every surface (parity-ready) + content area. */
+// Search lives in the toolbar now; the rest of the surfaces stay in the sidebar nav.
+const SIDEBAR_SURFACES = SURFACES.filter((s) => s.to !== '/search');
+
+/** Laptop/desktop: a top toolbar (search + theme + sign out) over a resizable, collapsible
+ *  view-list sidebar and the workspace. */
 export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   const { openCapture } = useCapture();
   const { width, collapsed, setWidth, toggleCollapsed } = useSidebarLayout();
@@ -47,95 +51,115 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
     [width, setWidth],
   );
 
-  if (collapsed) {
-    return (
-      <div className="flex min-h-dvh bg-background text-foreground">
+  return (
+    <div className="flex h-dvh flex-col bg-background text-foreground">
+      <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            onClick={toggleCollapsed}
+          >
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </Button>
+          <ToolbarSearch />
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <ThemeToggle />
+          <Button variant="ghost" size="sm" onClick={onSignOut}>
+            Sign out
+          </Button>
+        </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1">
+        {!collapsed && (
+          <>
+            <aside style={{ width }} className="flex shrink-0 flex-col overflow-y-auto p-4">
+              <h1 className="px-2 text-lg font-semibold tracking-tight">{APP_NAME}</h1>
+
+              <Button className="mt-4 justify-start gap-2" onClick={openCapture}>
+                <Plus />
+                Capture
+              </Button>
+
+              <nav aria-label="Sidebar" className="mt-4 flex flex-col gap-1">
+                {SIDEBAR_SURFACES.map(({ to, label, icon: Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors',
+                        isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                      )
+                    }
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </NavLink>
+                ))}
+              </nav>
+            </aside>
+
+            {/* Draggable divider between the view list and the workspace. */}
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Resize sidebar"
+              aria-valuenow={width}
+              aria-valuemin={SIDEBAR_MIN_WIDTH}
+              aria-valuemax={SIDEBAR_MAX_WIDTH}
+              tabIndex={0}
+              onPointerDown={onResizeStart}
+              onKeyDown={onResizeKeyDown}
+              onDoubleClick={() => setWidth(SIDEBAR_DEFAULT_WIDTH)}
+              title="Drag to resize · double-click to reset"
+              className="w-1 shrink-0 cursor-col-resize bg-border transition-colors hover:bg-ring focus-visible:bg-ring focus-visible:outline-none"
+            />
+          </>
+        )}
+
         <div className="flex min-w-0 flex-1 flex-col">
           <SyncNotice />
           <main className="flex-1 overflow-y-auto px-6 py-8">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Expand sidebar"
-              onClick={toggleCollapsed}
-              className="fixed left-2 top-2 z-20"
-            >
-              <PanelLeftOpen className="h-4 w-4" />
-            </Button>
             <div className="mx-auto max-w-2xl">
               <ShellContent />
             </div>
           </main>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
+
+/** Toolbar search box: drives the Search surface via the `?q=` URL param so results show live.
+ *  The box persists across routes (it lives outside the routed Outlet), so focus is kept while typing. */
+function ToolbarSearch() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [params] = useSearchParams();
+  const onSearch = location.pathname === '/search';
+  const value = onSearch ? (params.get('q') ?? '') : '';
 
   return (
-    <div className="flex min-h-dvh bg-background text-foreground">
-      <aside style={{ width }} className="flex shrink-0 flex-col p-4">
-        <div className="flex items-center justify-between px-2">
-          <h1 className="text-lg font-semibold tracking-tight">{APP_NAME}</h1>
-          <Button variant="ghost" size="icon" aria-label="Collapse sidebar" onClick={toggleCollapsed}>
-            <PanelLeftClose className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <Button className="mt-4 justify-start gap-2" onClick={openCapture}>
-          <Plus />
-          Capture
-        </Button>
-
-        <nav aria-label="Sidebar" className="mt-4 flex flex-col gap-1">
-          {SURFACES.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors',
-                  isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                )
-              }
-            >
-              <Icon className="h-4 w-4" />
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="mt-auto flex items-center justify-between pt-4">
-          <ThemeToggle />
-          <Button variant="ghost" size="sm" onClick={onSignOut}>
-            Sign out
-          </Button>
-        </div>
-      </aside>
-
-      {/* Draggable divider between the view list and the workspace. */}
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Resize sidebar"
-        aria-valuenow={width}
-        aria-valuemin={SIDEBAR_MIN_WIDTH}
-        aria-valuemax={SIDEBAR_MAX_WIDTH}
-        tabIndex={0}
-        onPointerDown={onResizeStart}
-        onKeyDown={onResizeKeyDown}
-        onDoubleClick={() => setWidth(SIDEBAR_DEFAULT_WIDTH)}
-        title="Drag to resize · double-click to reset"
-        className="w-1 shrink-0 cursor-col-resize bg-border transition-colors hover:bg-ring focus-visible:bg-ring focus-visible:outline-none"
+    <div className="relative">
+      <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <input
+        type="search"
+        aria-label="Search workspace"
+        value={value}
+        onChange={(e) => {
+          const q = e.target.value;
+          navigate(
+            { pathname: '/search', search: q ? `?q=${encodeURIComponent(q)}` : '' },
+            { replace: onSearch },
+          );
+        }}
+        placeholder="Search…"
+        className="w-44 rounded-md border border-input bg-background py-1.5 pl-8 pr-2 text-sm outline-none focus:border-ring sm:w-64"
       />
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <SyncNotice />
-        <main className="flex-1 overflow-y-auto px-6 py-8">
-          <div className="mx-auto max-w-2xl">
-            <ShellContent />
-          </div>
-        </main>
-      </div>
     </div>
   );
 }
