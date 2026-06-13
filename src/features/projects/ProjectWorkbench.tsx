@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { ChevronRight, Pencil } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -66,6 +66,9 @@ export interface ProjectWorkbenchProps {
   onSaveAsTemplate?: () => void;
   templateNames?: string[];
   onApplyTemplate?: (name: string) => void;
+  /** Collapsed state of the "Add to project" panel + toggle (persisted per-project by the page). */
+  addPanelCollapsed?: boolean;
+  onToggleAddPanel?: () => void;
 }
 
 /** A project's workbench: breadcrumb, its direct actions, and its sub-projects — as a list, a
@@ -102,6 +105,8 @@ export function ProjectWorkbench({
   onSaveAsTemplate,
   templateNames,
   onApplyTemplate,
+  addPanelCollapsed = false,
+  onToggleAddPanel = () => {},
 }: ProjectWorkbenchProps) {
   const isColumn = viewMode === 'column';
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
@@ -157,36 +162,53 @@ export function ProjectWorkbench({
         <span className="font-medium text-foreground">{project.title}</span>
       </nav>
 
-      <div className="space-y-2">
-        <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
-        <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
-        {onApplyTemplate && templateNames && templateNames.length > 0 && (
-          <select
-            aria-label="Add from template"
-            defaultValue=""
-            onChange={(e) => {
-              if (e.target.value) {
-                onApplyTemplate(e.target.value);
-                e.target.value = '';
-              }
-            }}
-            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
-          >
-            <option value="" disabled>
-              Add from template…
-            </option>
-            {templateNames.map((name) => (
-              <option key={name} value={name}>
-                {name}
-              </option>
-            ))}
-          </select>
-        )}
-        {onSaveAsTemplate && (
-          <div className="flex justify-end">
-            <Button type="button" variant="ghost" size="sm" onClick={onSaveAsTemplate}>
-              Save as template…
-            </Button>
+      <div className="rounded-lg border border-border">
+        <button
+          type="button"
+          aria-expanded={!addPanelCollapsed}
+          onClick={onToggleAddPanel}
+          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+        >
+          <span>Add to project</span>
+          {addPanelCollapsed ? (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+        {!addPanelCollapsed && (
+          <div className="space-y-2 border-t border-border p-3">
+            <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
+            <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
+            {onApplyTemplate && templateNames && templateNames.length > 0 && (
+              <select
+                aria-label="Add from template"
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    onApplyTemplate(e.target.value);
+                    e.target.value = '';
+                  }
+                }}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+              >
+                <option value="" disabled>
+                  Add from template…
+                </option>
+                {templateNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            )}
+            {onSaveAsTemplate && (
+              <div className="flex justify-end">
+                <Button type="button" variant="ghost" size="sm" onClick={onSaveAsTemplate}>
+                  Save as template…
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>

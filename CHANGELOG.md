@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Collapsible **Add to project** panel on the workbench: the add controls (Add action, Add sub-project,
+  Add from template, Save as template…) are now grouped in a panel with a header toggle, so they can be
+  tucked away on busy projects to free vertical space. Collapsed state is persisted per-project
+  (localStorage, via `useCollapsedAddPanel`); defaults to expanded. Closes #97.
 - Top toolbar strip on desktop: a full-width toolbar now carries the sidebar collapse/expand toggle and a
   **live search box** on the left, and the **theme toggle + Sign out** on the right — moved out of the
   sidebar. The toolbar search drives the Search surface via a `?q=` URL param (results update live) and
