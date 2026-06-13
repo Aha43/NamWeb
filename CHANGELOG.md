@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Column drag-and-drop (Workspace parity, phase 6b): in the workbench **Column/Kanban** view (desktop)
+  you can now **drag actions within a column** to reorder them and **between columns** to reparent them
+  — including into an empty column — landing at the drop position. Reuses the existing `reorderChildren`
+  / `moveNode` intents (a cross-column drop runs `moveNode` then `reorderChildren`, computed from the
+  deterministic post-move `childIds`). The within-column up/down buttons and the editor's **Move to…**
+  stay as fallbacks. New `resolveColumnDrop` helper + multi-container dnd-kit wiring in `ColumnView`.
+  Unit + desktop E2E coverage. Closes #91.
 - Drag-and-drop reorder (Workspace parity, phase 6a): on desktop you can now **drag** rows by a grip
   handle to reorder them — the Next & Backlog lists (in "Unsorted" mode) and the workbench List view's
   direct actions and sub-projects. Reuses the existing `reorderView` / `reorderChildren` intents (a

@@ -1,8 +1,33 @@
-import { useState, type FormEvent } from 'react';
+import { Fragment, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronRight, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  pointerWithin,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { cn } from '@/lib/utils';
 import { ActionList, ActionRow } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
+import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
+import { COLUMN_DROPPABLE_PREFIX, columnDroppableId, resolveColumnDrop } from './columnDnd';
+
+// With a DragOverlay the source row stays put, so rect-based detection (closestCorners) can't reach
+// a distant column. Use the pointer instead, and prefer a row hit (precise insert) over the column
+// shell (which means "append / drop into empty space").
+const collisionDetection: CollisionDetection = (args) => {
+  const hits = pointerWithin(args);
+  const rowHit = hits.find((h) => !String(h.id).startsWith(COLUMN_DROPPABLE_PREFIX));
+  return rowHit ? [rowHit] : hits;
+};
 import type { ActionRowData } from '../actions/rows';
 import type { NodeStatus } from '../../domain/types';
 
@@ -23,13 +48,24 @@ export interface ColumnViewProps {
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  /** Commit a drag: reorder within a column (from === to) or reparent between columns.
+   *  `targetActionIds` is the target column's resulting action order (including the moved action). */
+  onMoveActionToColumn?: (
+    actionId: string,
+    fromColumnId: string,
+    toColumnId: string,
+    targetActionIds: string[],
+  ) => void;
+  /** Mount drag-and-drop. Buttons + the editor's Move to… stay as fallbacks. */
+  dndEnabled?: boolean;
   /** Collapsed column ids + toggle (persisted per-project by the page). */
   collapsed?: Set<string>;
   onToggleCollapse?: (id: string) => void;
 }
 
 /** Kanban-style columns: Unsorted (the project's own actions) + one per sub-project. Presentational.
- *  Columns can be collapsed to a narrow strip. Cross-column moves use the action editor's Move to…. */
+ *  Columns can be collapsed to a narrow strip. On desktop, actions can be dragged within and between
+ *  columns; the within-column buttons and the editor's Move to… stay as fallbacks. */
 export function ColumnView({
   columns,
   onOpenColumn,
@@ -38,105 +74,195 @@ export function ColumnView({
   onSetStatus,
   onEdit,
   onRename,
+  onMoveActionToColumn,
+  dndEnabled,
   collapsed,
   onToggleCollapse,
 }: ColumnViewProps) {
-  return (
-    <div className="flex items-start gap-3 overflow-x-auto pb-2">
-      {columns.map((col) => {
-        const label = col.isUnsorted ? 'Unsorted' : col.title;
-        if (collapsed?.has(col.id) && onToggleCollapse) {
-          return (
-            <div
-              key={col.id}
-              className="flex w-10 shrink-0 flex-col items-center gap-2 rounded-lg border border-border bg-card/40 p-2"
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const dnd = Boolean(dndEnabled && onMoveActionToColumn);
+
+  // One row; `drag` is supplied when the row is rendered inside a SortableContext.
+  const renderRow = (col: WorkbenchColumn, row: ActionRowData, index: number, drag?: SortableRowRender) => (
+    <ActionRow
+      row={row}
+      dragRef={drag?.setNodeRef}
+      dragStyle={drag?.style}
+      onEdit={() => onEdit(row.id)}
+      onRename={(title) => onRename(row.id, title)}
+      actions={
+        <div className="flex items-center gap-1">
+          {drag?.handle}
+          <ReorderControls
+            title={row.title}
+            onUp={index > 0 ? () => onMoveAction(col.id, row.id, 'up') : undefined}
+            onDown={index < col.actions.length - 1 ? () => onMoveAction(col.id, row.id, 'down') : undefined}
+          />
+          <StatusMenu
+            status={row.status}
+            title={row.title}
+            onSetStatus={(status) => onSetStatus(row.id, status)}
+          />
+        </div>
+      }
+    />
+  );
+
+  // The body of a full (non-collapsed) column: header, action rows, quick-add.
+  const columnBody = (col: WorkbenchColumn) => {
+    const label = col.isUnsorted ? 'Unsorted' : col.title;
+    const rows =
+      col.actions.length > 0 ? (
+        <ActionList>
+          {col.actions.map((row, index) =>
+            dnd ? (
+              <SortableRow key={row.id} id={row.id} label={row.title}>
+                {(drag) => renderRow(col, row, index, drag)}
+              </SortableRow>
+            ) : (
+              <Fragment key={row.id}>{renderRow(col, row, index)}</Fragment>
+            ),
+          )}
+        </ActionList>
+      ) : null;
+
+    return (
+      <>
+        <div className="flex items-center justify-between px-1">
+          {col.isUnsorted ? (
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Unsorted
+            </span>
+          ) : (
+            <button
+              type="button"
+              aria-label={`Open ${col.title}`}
+              onClick={() => onOpenColumn(col.id)}
+              className="flex min-w-0 items-center gap-1 truncate text-sm font-medium text-foreground hover:underline"
             >
+              <span className="truncate">{col.title}</span>
+              <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+            </button>
+          )}
+          <div className="flex shrink-0 items-center gap-1">
+            <span className="text-xs text-muted-foreground">{col.actions.length}</span>
+            {onToggleCollapse && (
               <button
                 type="button"
-                aria-label={`Expand ${label}`}
+                aria-label={`Collapse ${label}`}
                 onClick={() => onToggleCollapse(col.id)}
                 className="rounded-sm text-muted-foreground hover:text-foreground"
               >
-                <ChevronsLeftRight className="h-4 w-4" />
+                <ChevronsRightLeft className="h-4 w-4" />
               </button>
-              <span className="text-xs text-muted-foreground">{col.actions.length}</span>
-              <span className="max-h-40 truncate text-xs text-muted-foreground [writing-mode:vertical-rl]">
-                {label}
-              </span>
-            </div>
-          );
-        }
-        return (
-          <div
-            key={col.id}
-            className="flex w-64 shrink-0 flex-col gap-2 rounded-lg border border-border bg-card/40 p-2"
-          >
-            <div className="flex items-center justify-between px-1">
-              {col.isUnsorted ? (
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Unsorted
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  aria-label={`Open ${col.title}`}
-                  onClick={() => onOpenColumn(col.id)}
-                  className="flex min-w-0 items-center gap-1 truncate text-sm font-medium text-foreground hover:underline"
-                >
-                  <span className="truncate">{col.title}</span>
-                  <ChevronRight className="h-3.5 w-3.5 shrink-0" />
-                </button>
-              )}
-              <div className="flex shrink-0 items-center gap-1">
-                <span className="text-xs text-muted-foreground">{col.actions.length}</span>
-                {onToggleCollapse && (
-                  <button
-                    type="button"
-                    aria-label={`Collapse ${label}`}
-                    onClick={() => onToggleCollapse(col.id)}
-                    className="rounded-sm text-muted-foreground hover:text-foreground"
-                  >
-                    <ChevronsRightLeft className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {col.actions.length > 0 && (
-              <ActionList>
-                {col.actions.map((row, index) => (
-                  <ActionRow
-                    key={row.id}
-                    row={row}
-                    onEdit={() => onEdit(row.id)}
-                    onRename={(title) => onRename(row.id, title)}
-                    actions={
-                      <div className="flex items-center gap-1">
-                        <ReorderControls
-                          title={row.title}
-                          onUp={index > 0 ? () => onMoveAction(col.id, row.id, 'up') : undefined}
-                          onDown={
-                            index < col.actions.length - 1
-                              ? () => onMoveAction(col.id, row.id, 'down')
-                              : undefined
-                          }
-                        />
-                        <StatusMenu
-                          status={row.status}
-                          title={row.title}
-                          onSetStatus={(status) => onSetStatus(row.id, status)}
-                        />
-                      </div>
-                    }
-                  />
-                ))}
-              </ActionList>
             )}
-
-            <ColumnAdd label={label} onAdd={(title) => onAddAction(col.id, title)} />
           </div>
-        );
-      })}
+        </div>
+
+        {dnd && rows ? (
+          <SortableContext items={col.actions.map((a) => a.id)} strategy={verticalListSortingStrategy}>
+            {rows}
+          </SortableContext>
+        ) : (
+          rows
+        )}
+
+        <ColumnAdd label={label} onAdd={(title) => onAddAction(col.id, title)} />
+      </>
+    );
+  };
+
+  const renderColumn = (col: WorkbenchColumn) => {
+    const label = col.isUnsorted ? 'Unsorted' : col.title;
+    if (collapsed?.has(col.id) && onToggleCollapse) {
+      return (
+        <div
+          key={col.id}
+          className="flex w-10 shrink-0 flex-col items-center gap-2 rounded-lg border border-border bg-card/40 p-2"
+        >
+          <button
+            type="button"
+            aria-label={`Expand ${label}`}
+            onClick={() => onToggleCollapse(col.id)}
+            className="rounded-sm text-muted-foreground hover:text-foreground"
+          >
+            <ChevronsLeftRight className="h-4 w-4" />
+          </button>
+          <span className="text-xs text-muted-foreground">{col.actions.length}</span>
+          <span className="max-h-40 truncate text-xs text-muted-foreground [writing-mode:vertical-rl]">
+            {label}
+          </span>
+        </div>
+      );
+    }
+    const cardClass = 'flex w-64 shrink-0 flex-col gap-2 rounded-lg border border-border bg-card/40 p-2';
+    return dnd ? (
+      <DroppableColumn key={col.id} columnId={col.id} className={cardClass}>
+        {columnBody(col)}
+      </DroppableColumn>
+    ) : (
+      <div key={col.id} className={cardClass}>
+        {columnBody(col)}
+      </div>
+    );
+  };
+
+  const board = <div className="flex items-start gap-3 overflow-x-auto pb-2">{columns.map(renderColumn)}</div>;
+  if (!dnd) return board;
+
+  const activeRow = activeId
+    ? columns.flatMap((c) => c.actions).find((a) => a.id === activeId)
+    : null;
+
+  function onDragStart({ active }: DragStartEvent) {
+    setActiveId(String(active.id));
+  }
+  function onDragEnd({ active, over }: DragEndEvent) {
+    setActiveId(null);
+    if (!over) return;
+    const drop = resolveColumnDrop(
+      columns.map((c) => ({ id: c.id, actionIds: c.actions.map((a) => a.id) })),
+      String(active.id),
+      String(over.id),
+    );
+    if (drop) onMoveActionToColumn!(drop.actionId, drop.fromColumnId, drop.toColumnId, drop.targetActionIds);
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragCancel={() => setActiveId(null)}
+    >
+      {board}
+      <DragOverlay>
+        {activeRow ? (
+          <div className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground shadow-lg">
+            {activeRow.title}
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+/** A column shell that is itself a drop target (so an action can be dropped into empty space). */
+function DroppableColumn({
+  columnId,
+  className,
+  children,
+}: {
+  columnId: string;
+  className: string;
+  children: ReactNode;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: columnDroppableId(columnId) });
+  return (
+    <div ref={setNodeRef} className={cn(className, isOver && 'ring-2 ring-ring')}>
+      {children}
     </div>
   );
 }

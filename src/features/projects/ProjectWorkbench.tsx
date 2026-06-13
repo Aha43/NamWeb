@@ -49,6 +49,13 @@ export interface ProjectWorkbenchProps {
   dndEnabled?: boolean;
   /** Hand-order an action within a column (the column's node's childIds). */
   onMoveActionInColumn?: (columnId: string, id: string, direction: MoveDirection) => void;
+  /** Drag an action within / between columns (Column view). */
+  onMoveActionToColumn?: (
+    actionId: string,
+    fromColumnId: string,
+    toColumnId: string,
+    targetActionIds: string[],
+  ) => void;
   /** Collapsed column ids + toggle (Column view; persisted per-project by the page). */
   collapsedColumns?: Set<string>;
   onToggleColumn?: (id: string) => void;
@@ -85,6 +92,7 @@ export function ProjectWorkbench({
   onReorderSubProjects,
   dndEnabled,
   onMoveActionInColumn = () => {},
+  onMoveActionToColumn,
   collapsedColumns,
   onToggleColumn,
   onConvertToAction,
@@ -190,6 +198,8 @@ export function ProjectWorkbench({
           onOpenColumn={onOpenProject}
           onAddAction={onAddActionToColumn}
           onMoveAction={onMoveActionInColumn}
+          onMoveActionToColumn={onMoveActionToColumn}
+          dndEnabled={dndEnabled}
           onSetStatus={onSetStatus}
           onEdit={onEdit}
           onRename={onRename}

@@ -74,6 +74,28 @@ export function ProjectWorkbenchPage() {
       order: reorderKindWithinChildren(project.childIds, newKindOrder),
     });
 
+  // Column-view drag: reorder within a column, or reparent an action to another column then place
+  // it at the drop index. `moveNode` appends to the target's childIds, so the post-move order is
+  // deterministic; `reorderKindWithinChildren` keeps that column's sub-projects in place.
+  const moveActionToColumn = (
+    actionId: string,
+    fromColumnId: string,
+    toColumnId: string,
+    targetActionIds: string[],
+  ) => {
+    if (fromColumnId === toColumnId) {
+      const col = document.nodes[toColumnId];
+      if (col) dispatch({ type: 'reorderChildren', parentId: toColumnId, order: reorderKindWithinChildren(col.childIds, targetActionIds) });
+      return;
+    }
+    dispatch({ type: 'moveNode', id: actionId, newParentId: toColumnId, now: nowIso() });
+    const col = document.nodes[toColumnId];
+    if (col) {
+      const afterMove = [...col.childIds, actionId];
+      dispatch({ type: 'reorderChildren', parentId: toColumnId, order: reorderKindWithinChildren(afterMove, targetActionIds) });
+    }
+  };
+
   return (
     <ProjectWorkbench
       project={project}
@@ -95,6 +117,7 @@ export function ProjectWorkbenchPage() {
       onMoveActionInColumn={(columnId, actionId, direction) =>
         moveChild(columnId, projectActions(document, columnId), actionId, direction)
       }
+      onMoveActionToColumn={moveActionToColumn}
       collapsedColumns={collapsedColumns}
       onToggleColumn={toggleColumn}
       onAddAction={(title) =>
