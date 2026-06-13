@@ -4,12 +4,13 @@
 # Ensures everything NamWeb needs is in place, then starts the dev server:
 #   1. npm dependencies installed
 #   2. .env present (copied from .env.example)
-#   3. local Supabase stack up on 127.0.0.1:54321 — it lives in the sibling
+#   3. Docker daemon up (started in the background by docker-up.ps1 if needed)
+#   4. local Supabase stack up on 127.0.0.1:54321 — it lives in the sibling
 #      NamDesktop repo; started there with `supabase start` if not already running
-#   4. `npm run dev`
+#   5. `npm run dev`
 #
 # Cross-platform (PowerShell Core on macOS/Linux/Windows). Requires: node/npm,
-# the Supabase CLI, and Docker running (for the Supabase stack).
+# the Supabase CLI, and the Docker CLI (the daemon is started for you).
 
 $ErrorActionPreference = 'Stop'
 
@@ -44,7 +45,10 @@ if (-not (Test-Path $envFile)) {
     Copy-Item (Join-Path $root '.env.example') $envFile
 }
 
-# 3. Supabase stack.
+# 3. Docker daemon (Supabase needs it running).
+& (Join-Path $PSScriptRoot 'docker-up.ps1')
+
+# 4. Supabase stack.
 if (Test-Port -TargetHost $dbHost -Port $dbPort) {
     Write-Host "==> Supabase already running on ${dbHost}:${dbPort}." -ForegroundColor Green
 } else {
@@ -71,6 +75,6 @@ if (Test-Port -TargetHost $dbHost -Port $dbPort) {
     Write-Host '==> Supabase is up.' -ForegroundColor Green
 }
 
-# 4. Launch the UI.
+# 5. Launch the UI.
 Write-Host '==> Launching NamWeb dev server...' -ForegroundColor Cyan
 npm run dev
