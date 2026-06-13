@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ActionRowData } from '../actions/rows';
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
@@ -41,5 +41,32 @@ describe('ColumnView', () => {
     setup({ dndEnabled: false });
     expect(screen.queryByRole('button', { name: /Drag to reorder/i })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Move Alpha down/i })).toBeInTheDocument();
+  });
+
+  it('offers left/right column-move buttons on sub-projects (not Unsorted), with ends disabled', () => {
+    const onMoveColumn = vi.fn();
+    const threeColumns: WorkbenchColumn[] = [
+      { id: 'p', title: 'Project', isUnsorted: true, actions: [] },
+      { id: 's1', title: 'Phase 1', isUnsorted: false, actions: [] },
+      { id: 's2', title: 'Phase 2', isUnsorted: false, actions: [] },
+    ];
+    render(
+      <ColumnView
+        columns={threeColumns}
+        onOpenColumn={vi.fn()} onAddAction={vi.fn()} onMoveAction={vi.fn()}
+        onSetStatus={vi.fn()} onEdit={vi.fn()} onRename={vi.fn()}
+        onMoveColumn={onMoveColumn}
+      />,
+    );
+    // Unsorted has no move buttons.
+    expect(screen.queryByRole('button', { name: /Move Project (left|right)/i })).not.toBeInTheDocument();
+    // First sub-project: left disabled, right enabled.
+    expect(screen.getByRole('button', { name: 'Move Phase 1 left' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move Phase 1 right' })).toBeEnabled();
+    // Last sub-project: right disabled.
+    expect(screen.getByRole('button', { name: 'Move Phase 2 right' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move Phase 1 right' }));
+    expect(onMoveColumn).toHaveBeenCalledWith('s1', 'right');
   });
 });

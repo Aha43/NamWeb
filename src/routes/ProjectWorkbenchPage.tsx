@@ -118,6 +118,9 @@ export function ProjectWorkbenchPage() {
         moveChild(columnId, projectActions(document, columnId), actionId, direction)
       }
       onMoveActionToColumn={moveActionToColumn}
+      onMoveColumn={(columnId, direction) =>
+        moveChild(id, subProjectNodes, columnId, direction === 'left' ? 'up' : 'down')
+      }
       collapsedColumns={collapsedColumns}
       onToggleColumn={toggleColumn}
       onAddAction={(title) =>

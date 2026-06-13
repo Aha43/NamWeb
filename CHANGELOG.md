@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Reorder Kanban columns (Workspace parity): each sub-project column in the **Column** view gains
+  **left/right** move buttons, so the columns can be rearranged without drag. The **Unsorted** column
+  stays fixed first; moving a column reorders the project's sub-projects (the same `reorderChildren`
+  the List view's up/down buttons use). Unit + desktop E2E coverage. Closes #93.
 - Column drag-and-drop (Workspace parity, phase 6b): in the workbench **Column/Kanban** view (desktop)
   you can now **drag actions within a column** to reorder them and **between columns** to reparent them
   — including into an empty column — landing at the drop position. Reuses the existing `reorderChildren`
