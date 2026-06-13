@@ -11,6 +11,8 @@ export interface ActionRowData {
   dueAt: string | null;
   /** For the age hint — updatedAt falling back to createdAt. */
   touchedAt: string | null;
+  /** True when the node has attached resources (shows a paperclip). */
+  hasResources?: boolean;
 }
 
 export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowData {
@@ -22,5 +24,6 @@ export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowDat
     tags: node.tags,
     dueAt: node.dueAt,
     touchedAt: node.updatedAt ?? node.createdAt,
+    hasResources: node.resources.length > 0,
   };
 }

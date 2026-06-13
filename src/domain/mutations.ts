@@ -4,7 +4,7 @@
 // sync conflict-retry. All functions are pure: they return a new document and
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
-import type { NamNode, NodeStatus, TemplateNode, WorkspaceDocument } from './types';
+import type { NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 
 export type Intent =
@@ -16,6 +16,7 @@ export type Intent =
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
+  | { type: 'updateResources'; id: string; resources: Resource[]; now: string }
   | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; now: string }
   | { type: 'addSubProject'; parentId: string; id: string; title: string; now: string }
   | { type: 'moveNode'; id: string; newParentId: string; now: string }
@@ -218,6 +219,13 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const node = next.nodes[intent.id];
       if (!node) return next;
       node.tags = normalizeTags(intent.tags);
+      node.updatedAt = intent.now;
+      return next;
+    }
+    case 'updateResources': {
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      node.resources = intent.resources;
       node.updatedAt = intent.now;
       return next;
     }

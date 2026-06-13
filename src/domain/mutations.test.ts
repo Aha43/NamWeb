@@ -320,6 +320,17 @@ describe('reorderView', () => {
   });
 });
 
+describe('updateResources', () => {
+  it('replaces a node’s resources and stamps updatedAt', () => {
+    const doc = workspace([node('a')]);
+    const resources = [{ type: 'URI' as const, value: 'https://x.test', description: null }];
+    const next = applyIntent(doc, { type: 'updateResources', id: 'a', resources, now: NOW });
+    expect(next.nodes.a.resources).toEqual(resources);
+    expect(next.nodes.a.updatedAt).toBe(NOW);
+    expect(doc.nodes.a.resources).toEqual([]); // input untouched
+  });
+});
+
 describe('reorderChildren', () => {
   it("rewrites a parent's childIds order without mutating the input", () => {
     const doc = workspace([node('p', { project: true, childIds: ['a', 'b', 'c'] }), node('a'), node('b'), node('c')]);
