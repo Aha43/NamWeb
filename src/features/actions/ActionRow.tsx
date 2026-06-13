@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { Pencil } from 'lucide-react';
+import { Paperclip, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
 import { InlineRename } from './InlineRename';
@@ -48,8 +48,11 @@ export function ActionRow({
             {row.title}
           </p>
         )}
-        {(row.tags.length > 0 || due || age) && (
+        {(row.tags.length > 0 || due || age || row.hasResources) && (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
+            {row.hasResources && (
+              <Paperclip aria-label="Has resources" className="h-3 w-3 text-muted-foreground" />
+            )}
             {row.tags.map((tag) => (
               <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                 {tag}

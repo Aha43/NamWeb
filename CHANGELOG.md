@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Resources on actions & projects (Workspace parity, phase 5): the editor dialog gains a **Resources**
+  section to attach links/notes (type — URI/EMAIL/FILE/TEXT — + value) and remove them, and rows show a
+  **paperclip** when a node has resources. New `updateResources` intent (node-generic, replay-safe);
+  `ActionRowData` carries `hasResources`. FILE is link/metadata only (no upload). Unit + desktop E2E
+  coverage. Closes #87.
 - Collapsible workbench columns (Workspace parity, phase 4): in the Column view each column has a
   collapse toggle (→ a narrow strip showing its title + count); the set of collapsed columns is
   **persisted per-project** in localStorage (mirroring desktop), so it survives reloads. New

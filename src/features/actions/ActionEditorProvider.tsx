@@ -110,6 +110,9 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     if (edits.status !== node.status) {
       dispatch({ type: 'setStatus', id: node.id, status: edits.status, now });
     }
+    if (JSON.stringify(edits.resources) !== JSON.stringify(node.resources)) {
+      dispatch({ type: 'updateResources', id: node.id, resources: edits.resources, now });
+    }
   }
 
   return (

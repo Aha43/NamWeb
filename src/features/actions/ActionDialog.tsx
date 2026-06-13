@@ -13,7 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { parseFlexibleDate } from '@/lib/dates';
-import type { NamNode, NodeStatus } from '@/domain/types';
+import type { NamNode, NodeStatus, Resource, ResourceType } from '@/domain/types';
 
 /** The edited fields the dialog produces on save. Tags are raw (un-normalized). */
 export interface ActionEdits {
@@ -22,7 +22,10 @@ export interface ActionEdits {
   tags: string[];
   dueAt: string | null;
   status: NodeStatus;
+  resources: Resource[];
 }
+
+const RESOURCE_TYPES: ResourceType[] = ['URI', 'EMAIL', 'FILE', 'TEXT'];
 
 const STATUSES: { value: NodeStatus; label: string }[] = [
   { value: 'NEXT', label: 'Next' },
@@ -85,6 +88,7 @@ export function ActionDialog({
   const [due, setDue] = useState(node.dueAt ?? '');
   const [dueError, setDueError] = useState(false);
   const [status, setStatus] = useState<NodeStatus>(node.status);
+  const [resources, setResources] = useState<Resource[]>(node.resources);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -102,6 +106,7 @@ export function ActionDialog({
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       dueAt,
       status,
+      resources,
     });
     onOpenChange(false);
   }
@@ -186,6 +191,7 @@ export function ActionDialog({
               ))}
             </div>
           </fieldset>
+          <ResourcesEditor resources={resources} onChange={setResources} />
           {onAddPrerequisite && onRemovePrerequisite && (
             <div className="space-y-1.5 border-t border-border pt-3">
               <span className="text-sm font-medium text-foreground">Blocked by</span>
@@ -281,5 +287,80 @@ export function ActionDialog({
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Add/remove attached resources (links/files/notes). Local edits are reported via onChange and
+ *  committed with the dialog's Save. FILE is link/metadata only (no upload). */
+function ResourcesEditor({
+  resources,
+  onChange,
+}: {
+  resources: Resource[];
+  onChange: (resources: Resource[]) => void;
+}) {
+  const [type, setType] = useState<ResourceType>('URI');
+  const [value, setValue] = useState('');
+
+  function add() {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    onChange([...resources, { type, value: trimmed, description: null }]);
+    setValue('');
+  }
+
+  return (
+    <div className="space-y-1.5 border-t border-border pt-3">
+      <span className="text-sm font-medium text-foreground">Resources</span>
+      {resources.length > 0 ? (
+        <ul className="flex flex-col gap-1">
+          {resources.map((r, i) => (
+            <li key={i} className="flex items-center gap-2 text-sm">
+              <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{r.type}</span>
+              <span className="min-w-0 flex-1 truncate text-foreground">{r.value}</span>
+              <button
+                type="button"
+                aria-label={`Remove resource ${r.value}`}
+                onClick={() => onChange(resources.filter((_, idx) => idx !== i))}
+                className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-muted-foreground">No resources.</p>
+      )}
+      <div className="flex gap-2">
+        <select
+          aria-label="Resource type"
+          value={type}
+          onChange={(e) => setType(e.target.value as ResourceType)}
+          className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+        >
+          {RESOURCE_TYPES.map((t) => (
+            <option key={t} value={t}>
+              {t}
+            </option>
+          ))}
+        </select>
+        <Input
+          aria-label="Resource value"
+          placeholder="https://… or a note"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              add();
+            }
+          }}
+        />
+        <Button type="button" variant="outline" size="sm" onClick={add}>
+          Add
+        </Button>
+      </div>
+    </div>
   );
 }

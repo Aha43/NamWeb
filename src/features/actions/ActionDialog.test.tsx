@@ -44,6 +44,7 @@ describe('ActionDialog', () => {
       tags: ['Home', 'phone'],
       dueAt: '2026-08-15',
       status: 'NEXT',
+      resources: [],
     });
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
@@ -126,6 +127,34 @@ describe('ActionDialog', () => {
   it('omits the Delete button when not wired', () => {
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+  });
+
+  it('adds a resource and reports it on save', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('Resource value'), { target: { value: 'https://docs.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ resources: [{ type: 'URI', value: 'https://docs.test', description: null }] }),
+    );
+  });
+
+  it('seeds existing resources and removes one', () => {
+    const onSave = vi.fn();
+    render(
+      <ActionDialog
+        node={node({ resources: [{ type: 'URI', value: 'https://keep.test', description: null }, { type: 'TEXT', value: 'drop me', description: null }] })}
+        open
+        onOpenChange={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Remove resource drop me' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ resources: [{ type: 'URI', value: 'https://keep.test', description: null }] }),
+    );
   });
 
   it('does not save with an empty title', () => {
