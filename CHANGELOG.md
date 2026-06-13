@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Drag-and-drop reorder (Workspace parity, phase 6a): on desktop you can now **drag** rows by a grip
+  handle to reorder them — the Next & Backlog lists (in "Unsorted" mode) and the workbench List view's
+  direct actions and sub-projects. Reuses the existing `reorderView` / `reorderChildren` intents (a
+  new `reorderKindWithinChildren` lens splices one kind's new order back into the parent's `childIds`,
+  leaving the other kind in place). The up/down buttons stay as an a11y fallback and remain the only
+  control on phones; drag is skipped for single-item lists. New `SortableList` / `SortableRow` /
+  `ReorderableActionList` components (dnd-kit). Unit + desktop E2E coverage. Closes #89.
 - Resources on actions & projects (Workspace parity, phase 5): the editor dialog gains a **Resources**
   section to attach links/notes (type — URI/EMAIL/FILE/TEXT — + value) and remove them, and rows show a
   **paperclip** when a node has resources. New `updateResources` intent (node-generic, replay-safe);

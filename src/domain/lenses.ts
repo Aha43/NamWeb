@@ -123,6 +123,21 @@ export function subProjects(doc: WorkspaceDocument, projectId: string): NamNode[
 }
 
 /**
+ * Splice a new order for one *kind* of child (e.g. just the actions, or just the sub-projects)
+ * back into the parent's full `childIds`, leaving the other kind in their existing slots. The
+ * caller hand-orders one kind (via drag); we keep the interleaving stable. `kindOrder` must be a
+ * permutation of the kind's ids already present in `childIds`; ids not in `childIds` are ignored
+ * and the original order is returned if any are missing. Pure — feed the result to
+ * `reorderChildren`.
+ */
+export function reorderKindWithinChildren(childIds: string[], kindOrder: string[]): string[] {
+  const kindSet = new Set(kindOrder);
+  if (kindOrder.some((id) => !childIds.includes(id))) return childIds;
+  let k = 0;
+  return childIds.map((id) => (kindSet.has(id) ? kindOrder[k++] : id));
+}
+
+/**
  * A node's own tags plus tags inherited from its ancestor projects, de-duplicated
  * with own tags first. Mirrors NamDesktop's `effectiveTags`.
  */

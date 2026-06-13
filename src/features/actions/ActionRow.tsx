@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Paperclip, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
@@ -18,18 +18,23 @@ export function ActionRow({
   actions,
   onEdit,
   onRename,
+  dragRef,
+  dragStyle,
 }: {
   row: ActionRowData;
   actions: ReactNode;
   onEdit?: () => void;
   /** Commit an inline title rename (double-click the title to start). */
   onRename?: (title: string) => void;
+  /** Sortable wiring (drag-and-drop): ref + transform style for the row element. */
+  dragRef?: (el: HTMLElement | null) => void;
+  dragStyle?: CSSProperties;
 }) {
   const due = row.dueAt ? formatDueHint(row.dueAt) : null;
   const age = row.touchedAt ? formatAge(row.touchedAt) : null;
   const [renaming, setRenaming] = useState(false);
   return (
-    <li className="flex items-center gap-2 px-3 py-2">
+    <li ref={dragRef} style={dragStyle} className="flex items-center gap-2 px-3 py-2">
       <div className="min-w-0 flex-1">
         {row.path.length > 0 && (
           <p className="truncate text-xs text-muted-foreground">{row.path.join(' › ')}</p>

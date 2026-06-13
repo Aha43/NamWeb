@@ -1,5 +1,5 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { buildPath, projectActions, subProjects } from '@/domain/lenses';
+import { buildPath, projectActions, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import type { NamNode } from '@/domain/types';
 import type { ClonedTemplateNode } from '@/domain/mutations';
@@ -66,6 +66,14 @@ export function ProjectWorkbenchPage() {
     dispatch({ type: 'reorderChildren', parentId, order });
   };
 
+  // Drag reorder: splice one kind's new order back into the project's childIds (other kind stays put).
+  const reorderKind = (newKindOrder: string[]) =>
+    dispatch({
+      type: 'reorderChildren',
+      parentId: id,
+      order: reorderKindWithinChildren(project.childIds, newKindOrder),
+    });
+
   return (
     <ProjectWorkbench
       project={project}
@@ -81,6 +89,9 @@ export function ProjectWorkbenchPage() {
       onOpenProjects={() => navigate('/projects')}
       onMoveAction={(actionId, direction) => moveChild(id, actionNodes, actionId, direction)}
       onMoveSubProject={(pid, direction) => moveChild(id, subProjectNodes, pid, direction)}
+      onReorderActions={reorderKind}
+      onReorderSubProjects={reorderKind}
+      dndEnabled={isDesktop}
       onMoveActionInColumn={(columnId, actionId, direction) =>
         moveChild(columnId, projectActions(document, columnId), actionId, direction)
       }
