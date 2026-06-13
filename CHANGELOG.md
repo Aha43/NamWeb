@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Collapsible **Actions** and **Sub-projects** sections in the workbench **List** and **Heat-map** views:
+  each section now has a header (chevron + count) that collapses its body — matching the per-column collapse
+  in Column view. Collapsed state is persisted per-project (localStorage, via `useCollapsedSections`);
+  defaults to expanded. Closes #98.
 - Collapsible **Add to project** panel on the workbench: the add controls (Add action, Add sub-project,
   Add from template, Save as template…) are now grouped in a panel with a header toggle, so they can be
   tucked away on busy projects to free vertical space. Collapsed state is persisted per-project

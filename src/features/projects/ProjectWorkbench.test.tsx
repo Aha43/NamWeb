@@ -102,6 +102,23 @@ describe('ProjectWorkbench', () => {
     expect(screen.getByRole('button', { name: 'Add to project' })).toHaveAttribute('aria-expanded', 'false');
   });
 
+  it('toggles the Actions and Sub-projects section headers', () => {
+    const onToggleSection = vi.fn();
+    setup({ onToggleSection });
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Sub-projects' }));
+    expect(onToggleSection).toHaveBeenCalledWith('actions');
+    expect(onToggleSection).toHaveBeenCalledWith('subprojects');
+  });
+
+  it('hides a section body when it is collapsed', () => {
+    setup({ collapsedSections: new Set(['actions']) });
+    // The Actions header stays, but its rows are hidden; Sub-projects stays open.
+    expect(screen.getByRole('button', { name: 'Actions' })).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.queryByText('Get quotes')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open Plumbing' })).toBeInTheDocument();
+  });
+
   it('adds actions and sub-projects', () => {
     const { onAddAction, onAddSubProject } = setup();
     fireEvent.change(screen.getByLabelText('Add action'), { target: { value: 'Measure' } });

@@ -69,6 +69,9 @@ export interface ProjectWorkbenchProps {
   /** Collapsed state of the "Add to project" panel + toggle (persisted per-project by the page). */
   addPanelCollapsed?: boolean;
   onToggleAddPanel?: () => void;
+  /** Collapsed sections (Actions / Sub-projects) for List & Heat-map + toggle (persisted by the page). */
+  collapsedSections?: Set<string>;
+  onToggleSection?: (section: 'actions' | 'subprojects') => void;
 }
 
 /** A project's workbench: breadcrumb, its direct actions, and its sub-projects — as a list, a
@@ -107,9 +110,12 @@ export function ProjectWorkbench({
   onApplyTemplate,
   addPanelCollapsed = false,
   onToggleAddPanel = () => {},
+  collapsedSections,
+  onToggleSection = () => {},
 }: ProjectWorkbenchProps) {
   const isColumn = viewMode === 'column';
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
+  const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
   const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => (
@@ -235,35 +241,50 @@ export function ProjectWorkbench({
       ) : (
         <>
           {actions.length > 0 && (
-            <ReorderableActionList
-              rows={actions}
-              onEdit={onEdit}
-              onRename={onRename}
-              onReorder={onReorderActions}
-              dndEnabled={dndEnabled}
-              renderActions={(row, index) => (
-                <>
-                  {onMoveAction && (
-                    <ReorderControls
-                      title={row.title}
-                      onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
-                      onDown={index < actions.length - 1 ? () => onMoveAction(row.id, 'down') : undefined}
-                    />
+            <div className="space-y-1">
+              <SectionHeader
+                label="Actions"
+                count={actions.length}
+                collapsed={sectionCollapsed('actions')}
+                onToggle={() => onToggleSection('actions')}
+              />
+              {!sectionCollapsed('actions') && (
+                <ReorderableActionList
+                  rows={actions}
+                  onEdit={onEdit}
+                  onRename={onRename}
+                  onReorder={onReorderActions}
+                  dndEnabled={dndEnabled}
+                  renderActions={(row, index) => (
+                    <>
+                      {onMoveAction && (
+                        <ReorderControls
+                          title={row.title}
+                          onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
+                          onDown={index < actions.length - 1 ? () => onMoveAction(row.id, 'down') : undefined}
+                        />
+                      )}
+                      <StatusMenu
+                        status={row.status}
+                        title={row.title}
+                        onSetStatus={(status) => onSetStatus(row.id, status)}
+                      />
+                    </>
                   )}
-                  <StatusMenu
-                    status={row.status}
-                    title={row.title}
-                    onSetStatus={(status) => onSetStatus(row.id, status)}
-                  />
-                </>
+                />
               )}
-            />
+            </div>
           )}
 
           {subProjects.length > 0 && (
             <div className="space-y-1">
-              <p className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Sub-projects</p>
-              {viewMode === 'heatmap' && subProjectStats ? (
+              <SectionHeader
+                label="Sub-projects"
+                count={subProjects.length}
+                collapsed={sectionCollapsed('subprojects')}
+                onToggle={() => onToggleSection('subprojects')}
+              />
+              {sectionCollapsed('subprojects') ? null : viewMode === 'heatmap' && subProjectStats ? (
                 <div className="grid grid-cols-2 gap-2">
                   {subProjectStats.map((stat) => (
                     <button
@@ -357,6 +378,34 @@ function ViewSwitch({
         ))}
       </div>
     </div>
+  );
+}
+
+/** A collapsible section heading (Actions / Sub-projects) for the List & Heat-map views. */
+function SectionHeader({
+  label,
+  count,
+  collapsed,
+  onToggle,
+}: {
+  label: string;
+  count: number;
+  collapsed: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-expanded={!collapsed}
+      onClick={onToggle}
+      className="flex w-full items-center gap-1 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground"
+    >
+      {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      <span>{label}</span>
+      <span aria-hidden className="normal-case">
+        {count}
+      </span>
+    </button>
   );
 }
 

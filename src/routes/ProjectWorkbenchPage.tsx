@@ -11,6 +11,7 @@ import { missionStats } from '@/features/projects/missionStats';
 import { useViewMode } from '@/features/projects/useViewMode';
 import { useCollapsedColumns } from '@/features/projects/useCollapsedColumns';
 import { useCollapsedAddPanel } from '@/features/projects/useCollapsedAddPanel';
+import { useCollapsedSections } from '@/features/projects/useCollapsedSections';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -28,6 +29,7 @@ export function ProjectWorkbenchPage() {
   const [mode, setMode] = useViewMode(id);
   const [collapsedColumns, toggleColumn] = useCollapsedColumns(id);
   const [addPanelCollapsed, toggleAddPanel] = useCollapsedAddPanel(id);
+  const [collapsedSections, toggleSection] = useCollapsedSections(id);
   const isDesktop = useIsDesktop();
 
   if (!document) return null;
@@ -127,6 +129,8 @@ export function ProjectWorkbenchPage() {
       onToggleColumn={toggleColumn}
       addPanelCollapsed={addPanelCollapsed}
       onToggleAddPanel={toggleAddPanel}
+      collapsedSections={collapsedSections}
+      onToggleSection={toggleSection}
       onAddAction={(title) =>
         dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'NEXT', now: nowIso() })
       }
