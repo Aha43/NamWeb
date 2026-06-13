@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <!-- Mirrors src/components/brand/LogoMark.tsx. A favicon can't inherit the page's
+       text colour, so currentColor is driven by an embedded prefers-color-scheme style. -->
+  <style>
+    svg { color: #0f172a; }
+    @media (prefers-color-scheme: dark) { svg { color: #e2e8f0; } }
+  </style>
+  <g stroke="currentColor" stroke-width="11" stroke-linecap="round" opacity="0.42">
+    <path d="M128 74 L84 182" />
+    <path d="M128 74 L172 182" />
+  </g>
+  <g fill="none" stroke="#3FA463" stroke-width="7" stroke-linecap="round">
+    <path d="M130.6 44.1 A30 30 0 0 1 157.5 68.8" opacity="0.55" />
+    <path d="M131.7 32.2 A42 42 0 0 1 169.4 66.7" opacity="0.3" />
+  </g>
+  <circle cx="128" cy="74" r="18" fill="currentColor" />
+  <circle cx="84" cy="182" r="18" fill="currentColor" />
+  <circle cx="172" cy="182" r="27" fill="#3FA463" />
+  <path d="M159 183 l9 9 l18 -21" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

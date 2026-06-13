@@ -10,6 +10,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { LogoMark } from '@/components/brand/LogoMark';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { APP_NAME } from '@/lib/app';
@@ -24,7 +25,8 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b border-border bg-background px-4 py-3">
+      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-4 py-3">
+        <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
         <h1 className="text-lg font-semibold tracking-tight">{APP_NAME}</h1>
       </header>
 
