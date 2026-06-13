@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Paperclip, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
+import { useSettings } from '@/components/settings/settings-context';
 import { InlineRename } from './InlineRename';
 import type { ActionRowData } from './rows';
 
@@ -30,7 +31,8 @@ export function ActionRow({
   dragRef?: (el: HTMLElement | null) => void;
   dragStyle?: CSSProperties;
 }) {
-  const due = row.dueAt ? formatDueHint(row.dueAt) : null;
+  const { dateFormat } = useSettings();
+  const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat) : null;
   const age = row.touchedAt ? formatAge(row.touchedAt) : null;
   const [renaming, setRenaming] = useState(false);
   return (

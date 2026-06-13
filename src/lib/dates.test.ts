@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatAge, formatDueHint, parseFlexibleDate } from './dates';
+import { formatAge, formatDate, formatDueHint, parseFlexibleDate } from './dates';
 
 describe('parseFlexibleDate', () => {
   it('expands 2-digit years and zero-pads month/day', () => {
@@ -23,11 +23,25 @@ describe('parseFlexibleDate', () => {
   });
 });
 
+describe('formatDate', () => {
+  it('renders each format', () => {
+    expect(formatDate('2026-06-14', 'medium')).toBe('Jun 14, 2026');
+    expect(formatDate('2026-06-14', 'iso')).toBe('2026-06-14');
+    expect(formatDate('2026-06-14', 'dmy')).toBe('14/06/2026');
+    expect(formatDate('2026-06-14', 'mdy')).toBe('06/14/2026');
+  });
+
+  it('defaults to medium and passes non-ISO input through unchanged', () => {
+    expect(formatDate('2026-06-14')).toBe('Jun 14, 2026');
+    expect(formatDate('not a date', 'iso')).toBe('not a date');
+  });
+});
+
 describe('formatDueHint', () => {
   const now = new Date(2026, 5, 11); // 2026-06-11
 
-  it('labels overdue dates with the short date (overdue tone)', () => {
-    expect(formatDueHint('2026-06-01', now)).toEqual({ label: 'Jun 1', tone: 'overdue' });
+  it('labels overdue dates with the date (overdue tone), defaulting to medium', () => {
+    expect(formatDueHint('2026-06-01', now)).toEqual({ label: 'Jun 1, 2026', tone: 'overdue' });
   });
 
   it('labels today and near dates', () => {
@@ -36,8 +50,13 @@ describe('formatDueHint', () => {
     expect(formatDueHint('2026-06-18', now)).toEqual({ label: '7d', tone: 'soon' });
   });
 
-  it('labels far dates with the short date (later tone)', () => {
-    expect(formatDueHint('2026-07-15', now)).toEqual({ label: 'Jul 15', tone: 'later' });
+  it('labels far dates with the date (later tone)', () => {
+    expect(formatDueHint('2026-07-15', now)).toEqual({ label: 'Jul 15, 2026', tone: 'later' });
+  });
+
+  it('renders the date branches in the chosen format', () => {
+    expect(formatDueHint('2026-07-15', now, 'iso')).toEqual({ label: '2026-07-15', tone: 'later' });
+    expect(formatDueHint('2026-06-01', now, 'dmy')).toEqual({ label: '01/06/2026', tone: 'overdue' });
   });
 
   it('returns null for a non-ISO string', () => {

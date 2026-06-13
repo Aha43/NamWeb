@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- A **Settings** dialog (the first one — Sprint 7), reachable from a gear button in the desktop
+  toolbar and the phone **More** sheet. It holds a **Date format** preference (Medium `Jun 14, 2026`
+  by default, plus ISO `2026-06-14`, Day/Month/Year, and Month/Day/Year), persisted per device to
+  `localStorage` via a new `SettingsProvider`. The chosen format drives how due dates display
+  (`formatDueHint`/`formatDate`); date entry still echoes canonical ISO, which round-trips through
+  `parseFlexibleDate`. Closes #76.
 - The brand `LogoMark` now appears next to the **Next Action Master** wordmark in the desktop sidebar
   header and the phone header, and a `favicon.svg` (mirroring the logo, light/dark-adaptive via
   `prefers-color-scheme`) is shown in the browser tab. Closes #101.

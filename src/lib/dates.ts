@@ -5,6 +5,34 @@
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** User-selectable date display format (Settings → Date format). `parseFlexibleDate` and the Due
+ *  input echo stay ISO regardless — this governs display only. */
+export type DateFormat = 'medium' | 'iso' | 'dmy' | 'mdy';
+
+export const DEFAULT_DATE_FORMAT: DateFormat = 'medium';
+
+/**
+ * Render an ISO `yyyy-MM-dd` date for display in the chosen format:
+ * `medium` → "Jun 14, 2026", `iso` → "2026-06-14", `dmy` → "14/06/2026", `mdy` → "06/14/2026".
+ * Returns the input unchanged if it isn't an ISO date.
+ */
+export function formatDate(iso: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!match) return iso;
+  const [, ys, ms, ds] = match;
+  switch (format) {
+    case 'iso':
+      return `${ys}-${ms}-${ds}`;
+    case 'dmy':
+      return `${ds}/${ms}/${ys}`;
+    case 'mdy':
+      return `${ms}/${ds}/${ys}`;
+    case 'medium':
+    default:
+      return `${MONTHS[Number(ms) - 1]} ${Number(ds)}, ${ys}`;
+  }
+}
+
 /**
  * Parse a flexible due-date string to ISO `yyyy-MM-dd`. Accepts YY or YYYY year
  * and single- or double-digit month/day, separated by `-`, `/`, or `.`
@@ -39,24 +67,26 @@ export interface DueHint {
 
 /**
  * A compact due label + urgency tone for an ISO `yyyy-MM-dd` date, à la NamDesktop:
- * overdue → short date (red), today → "Today" (amber), within a week → "Nd" (blue),
- * else short date (muted). Returns `null` if the input isn't an ISO date.
+ * overdue → date (red), today → "Today" (amber), within a week → "Nd" (blue),
+ * else date (muted). The date branches render in the chosen `format` (default `medium`).
+ * Returns `null` if the input isn't an ISO date.
  */
-export function formatDueHint(dueAt: string, now: Date = new Date()): DueHint | null {
+export function formatDueHint(
+  dueAt: string,
+  now: Date = new Date(),
+  format: DateFormat = DEFAULT_DATE_FORMAT,
+): DueHint | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueAt);
   if (!match) return null;
   const [, ys, ms, ds] = match;
-  const month = Number(ms);
-  const day = Number(ds);
-  const due = new Date(Number(ys), month - 1, day);
+  const due = new Date(Number(ys), Number(ms) - 1, Number(ds));
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
-  const shortDate = `${MONTHS[month - 1]} ${day}`;
 
-  if (days < 0) return { label: shortDate, tone: 'overdue' };
+  if (days < 0) return { label: formatDate(dueAt, format), tone: 'overdue' };
   if (days === 0) return { label: 'Today', tone: 'today' };
   if (days <= 7) return { label: `${days}d`, tone: 'soon' };
-  return { label: shortDate, tone: 'later' };
+  return { label: formatDate(dueAt, format), tone: 'later' };
 }
 
 export interface AgeHint {
