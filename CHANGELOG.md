@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Collapsible workbench columns (Workspace parity, phase 4): in the Column view each column has a
+  collapse toggle (→ a narrow strip showing its title + count); the set of collapsed columns is
+  **persisted per-project** in localStorage (mirroring desktop), so it survives reloads. New
+  `useCollapsedColumns` hook; desktop E2E journey. Advances #64; closes #85.
 - Workbench delete & project editing (Workspace parity, phase 3): the editor dialog gains a **Delete**
   button (confirms with the subtree size, then `deleteLeaf` or `deleteRecursive`), and now opens for
   **project** nodes too (title/description/tags/due/status, relabelled "Edit project"; action-only

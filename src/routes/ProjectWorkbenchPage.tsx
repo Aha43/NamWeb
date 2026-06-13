@@ -9,6 +9,7 @@ import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
 import type { WorkbenchColumn } from '@/features/projects/ColumnView';
 import { missionStats } from '@/features/projects/missionStats';
 import { useViewMode } from '@/features/projects/useViewMode';
+import { useCollapsedColumns } from '@/features/projects/useCollapsedColumns';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -24,6 +25,7 @@ export function ProjectWorkbenchPage() {
   const { openEditor } = useActionEditor();
   const navigate = useNavigate();
   const [mode, setMode] = useViewMode(id);
+  const [collapsedColumns, toggleColumn] = useCollapsedColumns(id);
   const isDesktop = useIsDesktop();
 
   if (!document) return null;
@@ -82,6 +84,8 @@ export function ProjectWorkbenchPage() {
       onMoveActionInColumn={(columnId, actionId, direction) =>
         moveChild(columnId, projectActions(document, columnId), actionId, direction)
       }
+      collapsedColumns={collapsedColumns}
+      onToggleColumn={toggleColumn}
       onAddAction={(title) =>
         dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'NEXT', now: nowIso() })
       }
