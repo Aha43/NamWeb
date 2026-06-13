@@ -113,6 +113,21 @@ describe('ActionDialog', () => {
     expect(onAddPrerequisite).toHaveBeenCalledWith('c1');
   });
 
+  it('shows a Delete button (when wired) and an "Edit project" title for projects', () => {
+    const onDelete = vi.fn();
+    render(
+      <ActionDialog node={node({ project: true, title: 'Roof' })} open onOpenChange={vi.fn()} onSave={vi.fn()} onDelete={onDelete} />,
+    );
+    expect(screen.getByText('Edit project')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(onDelete).toHaveBeenCalled();
+  });
+
+  it('omits the Delete button when not wired', () => {
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
+  });
+
   it('does not save with an empty title', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);

@@ -65,6 +65,19 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     setEditingId(null);
   }
 
+  function remove() {
+    if (!node || !document) return;
+    const descendants = subtreeIds(document, node.id).size - 1;
+    const label = node.project ? 'project' : 'action';
+    const message =
+      descendants > 0
+        ? `Delete the "${node.title}" ${label} and its ${descendants} item${descendants === 1 ? '' : 's'}?`
+        : `Delete the "${node.title}" ${label}?`;
+    if (!window.confirm(message)) return;
+    dispatch(descendants > 0 ? { type: 'deleteRecursive', id: node.id } : { type: 'deleteLeaf', id: node.id });
+    setEditingId(null);
+  }
+
   function addPrerequisite(prereqId: string) {
     if (!node) return;
     dispatch({ type: 'addPrerequisite', actionId: node.id, prereqId, now: nowIso() });
@@ -119,6 +132,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           wouldUnblock={wouldUnblock}
           onAddPrerequisite={node.project ? undefined : addPrerequisite}
           onRemovePrerequisite={node.project ? undefined : removePrerequisite}
+          onDelete={remove}
         />
       )}
     </ActionEditorContext.Provider>

@@ -15,6 +15,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Workbench delete & project editing (Workspace parity, phase 3): the editor dialog gains a **Delete**
+  button (confirms with the subtree size, then `deleteLeaf` or `deleteRecursive`), and now opens for
+  **project** nodes too (title/description/tags/due/status, relabelled "Edit project"; action-only
+  bits stay hidden). Sub-project rows in the workbench gain an **edit** affordance. Unit + desktop E2E
+  coverage. Closes #83.
 - Workbench Column/Kanban view (Workspace parity, phase 2): the project workbench gains a
   **List / Heat-map / Column** view switch (persisted per-project). **Column** mode (desktop-only)
   shows a leading **Unsorted** column for the project's own actions plus one column per sub-project,

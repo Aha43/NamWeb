@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ActionList, ActionRow } from '../actions/ActionRow';
@@ -213,6 +213,14 @@ export function ProjectWorkbench({
                           <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
                         )}
                         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Edit ${sub.title}`}
+                        onClick={() => onEdit(sub.id)}
+                        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
                       </button>
                       {onMoveSubProject && (
                         <ReorderControls
