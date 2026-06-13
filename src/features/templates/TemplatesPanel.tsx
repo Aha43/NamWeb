@@ -12,7 +12,7 @@ export interface TemplatesPanelProps {
 /** List of saved project templates with delete. Presentational. */
 export function TemplatesPanel({ templates, onDelete }: TemplatesPanelProps) {
   return (
-    <section className="mx-auto max-w-2xl">
+    <section className="mx-auto max-w-4xl">
       {templates.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">No templates yet.</p>
       ) : (

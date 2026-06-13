@@ -124,7 +124,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <SyncNotice />
           <main className="flex-1 overflow-y-auto px-6 py-8">
-            <div className="mx-auto max-w-2xl">
+            <div className="mx-auto max-w-4xl">
               <ShellContent />
             </div>
           </main>

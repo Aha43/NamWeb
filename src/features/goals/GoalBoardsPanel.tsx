@@ -39,7 +39,7 @@ export function GoalBoardsPanel({
   }
 
   return (
-    <section className="mx-auto max-w-2xl space-y-4">
+    <section className="mx-auto max-w-4xl space-y-4">
       <form onSubmit={submit} className="space-y-2 rounded-lg border border-border bg-card p-3">
         <input
           aria-label="Board name"

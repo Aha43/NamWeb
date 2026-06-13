@@ -38,7 +38,7 @@ export function NextActionsPanel({
   dndEnabled,
 }: NextActionsPanelProps) {
   return (
-    <section className="mx-auto max-w-2xl">
+    <section className="mx-auto max-w-4xl">
       {sortMode && onCycleSort && rows.length > 0 && (
         <div className="mb-2 flex justify-end">
           <SortButton mode={sortMode} onCycle={onCycleSort} />

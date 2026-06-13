@@ -151,7 +151,7 @@ export function ProjectWorkbench({
     </li>
   );
   return (
-    <section className={cn('mx-auto space-y-4', isColumn ? 'w-full' : 'max-w-2xl')}>
+    <section className={cn('mx-auto space-y-4', isColumn ? 'w-full' : 'max-w-4xl')}>
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
         <button type="button" onClick={onOpenProjects} className="hover:text-foreground">
           Projects
