@@ -61,6 +61,7 @@ export function ActionDialog({
   wouldUnblock,
   onAddPrerequisite,
   onRemovePrerequisite,
+  onDelete,
 }: {
   node: NamNode;
   open: boolean;
@@ -74,7 +75,10 @@ export function ActionDialog({
   wouldUnblock?: string[];
   onAddPrerequisite?: (prereqId: string) => void;
   onRemovePrerequisite?: (prereqId: string) => void;
+  /** Delete this node (the provider confirms + chooses leaf vs recursive). */
+  onDelete?: () => void;
 }) {
+  const isProject = node.project;
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
   const [tags, setTags] = useState(node.tags.join(', '));
@@ -106,7 +110,7 @@ export function ActionDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit action</DialogTitle>
+          <DialogTitle>{isProject ? 'Edit project' : 'Edit action'}</DialogTitle>
           <DialogDescription>Update the title, notes, tags, due date, and status.</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
@@ -259,6 +263,16 @@ export function ActionDialog({
             </div>
           )}
           <DialogFooter>
+            {onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={onDelete}
+                className="text-destructive hover:text-destructive sm:mr-auto"
+              >
+                Delete
+              </Button>
+            )}
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
