@@ -16,6 +16,8 @@ async function dragHandleOntoRow(page: Page, handleLabel: string, targetRow: Loc
   // Nudge past the PointerSensor activation distance, then settle over the target's lower half.
   await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2 + 10, { steps: 4 });
   await page.mouse.move(to.x + to.width / 2, to.y + to.height - 4, { steps: 10 });
+  // A final settle move so dnd-kit registers `over` before we release (avoids a drop/up race).
+  await page.mouse.move(to.x + to.width / 2, to.y + to.height - 3, { steps: 2 });
   await page.mouse.up();
 }
 
