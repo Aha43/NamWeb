@@ -23,7 +23,10 @@ function setViewport(isDesktop: boolean) {
     }) as unknown as MediaQueryList;
 }
 
-afterEach(() => setViewport(false));
+afterEach(() => {
+  setViewport(false);
+  localStorage.clear();
+});
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -91,5 +94,23 @@ describe('adaptive shell', () => {
     expect(within(sidebar).getByRole('link', { name: 'Inbox' })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Capture' })).toBeInTheDocument();
+  });
+
+  it('desktop: a draggable divider separates the view list from the workspace', () => {
+    renderShell(true);
+    const divider = screen.getByRole('separator', { name: 'Resize sidebar' });
+    expect(divider).toHaveAttribute('aria-orientation', 'vertical');
+  });
+
+  it('desktop: collapsing hides the view list, leaving an expand button', () => {
+    renderShell(true);
+    expect(screen.getByRole('navigation', { name: 'Sidebar' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }));
+    expect(screen.queryByRole('navigation', { name: 'Sidebar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('separator', { name: 'Resize sidebar' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }));
+    expect(screen.getByRole('navigation', { name: 'Sidebar' })).toBeInTheDocument();
   });
 });

@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Resizable + collapsible desktop sidebar: the divider between the view list and the workspace can be
+  **dragged** to set the sidebar width (persisted to localStorage, clamped 180–480px; double-click resets,
+  arrow keys nudge for keyboard a11y), and the view list can be **collapsed** entirely via a toggle — a
+  small floating expand button restores it, maximizing workspace width. Desktop-only. Closes #95.
 - Reorder Kanban columns (Workspace parity): each sub-project column in the **Column** view gains
   **left/right** move buttons, so the columns can be rearranged without drag. The **Unsorted** column
   stays fixed first; moving a column reorders the project's sub-projects (the same `reorderChildren`
