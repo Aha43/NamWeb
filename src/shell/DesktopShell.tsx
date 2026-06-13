@@ -4,6 +4,7 @@ import { PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useCapture } from '@/capture/capture-context';
+import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_NAME } from '@/lib/app';
 import { SURFACES } from './nav';
@@ -77,7 +78,10 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
         {!collapsed && (
           <>
             <aside style={{ width }} className="flex shrink-0 flex-col overflow-y-auto p-4">
-              <h1 className="px-2 text-lg font-semibold tracking-tight">{APP_NAME}</h1>
+              <div className="flex items-center gap-2 px-2">
+                <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
+                <h1 className="truncate text-lg font-semibold tracking-tight">{APP_NAME}</h1>
+              </div>
 
               <Button className="mt-4 justify-start gap-2" onClick={openCapture}>
                 <Plus />

@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- The brand `LogoMark` now appears next to the **Next Action Master** wordmark in the desktop sidebar
+  header and the phone header, and a `favicon.svg` (mirroring the logo, light/dark-adaptive via
+  `prefers-color-scheme`) is shown in the browser tab. Closes #101.
+
 ### Changed
 
 - Wider desktop workspace: the surface panels (Inbox, Next, Backlog, Due, Blocked, Tags, Search, Projects,
