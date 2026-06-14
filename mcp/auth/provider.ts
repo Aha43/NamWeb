@@ -1,0 +1,248 @@
+// OAuth 2.1 Authorization Server provider, backed by Supabase identity (P1, #107).
+//
+// Implements the SDK's OAuthServerProvider so `mcpAuthRouter` can expose the full
+// AS surface (metadata, /authorize, /token, /register DCR, /revoke). We issue
+// opaque tokens (looked up in the AuthStore — no JWT signing to own) that map to a
+// Supabase session, so each MCP request runs under that user's RLS.
+//
+// The whole auth concern is contained here + ./stores + ./supabaseIdentity, behind
+// the OAuthServerProvider seam — so swapping to a managed AS later (Option 2/3 in
+// the design doc) stays a provider replacement, not a rewrite.
+
+import { randomBytes } from 'node:crypto';
+import type { Request, Response } from 'express';
+import type { OAuthRegisteredClientsStore } from '@modelcontextprotocol/sdk/server/auth/clients.js';
+import type {
+  AuthorizationParams,
+  OAuthServerProvider,
+} from '@modelcontextprotocol/sdk/server/auth/provider.js';
+import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
+import {
+  InvalidGrantError,
+  InvalidRequestError,
+  InvalidTokenError,
+} from '@modelcontextprotocol/sdk/server/auth/errors.js';
+import type {
+  OAuthClientInformationFull,
+  OAuthTokenRevocationRequest,
+  OAuthTokens,
+} from '@modelcontextprotocol/sdk/shared/auth.js';
+import type { AuthSession, SupabaseClient } from '@supabase/supabase-js';
+
+import { AuthStore, InMemoryAuthStore } from './stores';
+import { clientForSession, signInWithPassword } from './supabaseIdentity';
+import { renderLoginPage } from './loginPage';
+
+const AUTH_CODE_TTL_SECONDS = 600; // 10 min — time to complete the code exchange
+
+function opaqueToken(): string {
+  return randomBytes(32).toString('base64url');
+}
+
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000);
+}
+
+export interface SupabaseOAuthProviderOptions {
+  accessTokenTtlSeconds?: number;
+  store?: AuthStore;
+}
+
+export class SupabaseOAuthProvider implements OAuthServerProvider {
+  private readonly store: AuthStore;
+  private readonly accessTtl: number;
+
+  constructor(opts: SupabaseOAuthProviderOptions = {}) {
+    this.store = opts.store ?? new InMemoryAuthStore();
+    // Keep our access-token TTL under Supabase's ~1h JWT so refreshes line up.
+    this.accessTtl = opts.accessTokenTtlSeconds ?? 50 * 60;
+  }
+
+  get clientsStore(): OAuthRegisteredClientsStore {
+    return {
+      getClient: (clientId) => this.store.getClient(clientId),
+      // DCR: the register handler generates client_id/secret; we persist + echo back.
+      registerClient: async (client) => {
+        const full = client as OAuthClientInformationFull;
+        await this.store.saveClient(full);
+        return full;
+      },
+    };
+  }
+
+  /** Step 1: show the Supabase login page, carrying the OAuth params through to the POST. */
+  async authorize(
+    client: OAuthClientInformationFull,
+    params: AuthorizationParams,
+    res: Response,
+  ): Promise<void> {
+    res.setHeader('Content-Type', 'text/html');
+    res.send(
+      renderLoginPage({
+        clientId: client.client_id,
+        redirectUri: params.redirectUri,
+        codeChallenge: params.codeChallenge,
+        state: params.state,
+        scope: params.scopes?.join(' '),
+      }),
+    );
+  }
+
+  /**
+   * Step 2 (our own route, not part of OAuthServerProvider): the login form POST.
+   * Authenticates against Supabase, then completes the OAuth redirect with a code.
+   */
+  handleLogin = async (req: Request, res: Response): Promise<void> => {
+    const { email, password, client_id, redirect_uri, code_challenge, state, scope } =
+      req.body ?? {};
+
+    if (!client_id || !redirect_uri || !code_challenge) {
+      res.status(400).send('Missing OAuth parameters');
+      return;
+    }
+    const client = await this.store.getClient(client_id);
+    if (!client || !client.redirect_uris.includes(redirect_uri)) {
+      res.status(400).send('Unknown client or redirect_uri');
+      return;
+    }
+
+    let session;
+    try {
+      session = await signInWithPassword(String(email ?? ''), String(password ?? ''));
+    } catch {
+      // Re-show the form with an error rather than failing the whole flow.
+      res.status(401).setHeader('Content-Type', 'text/html');
+      res.send(
+        renderLoginPage({
+          clientId: client_id,
+          redirectUri: redirect_uri,
+          codeChallenge: code_challenge,
+          state,
+          scope,
+          error: 'Sign-in failed — check your email and password.',
+        }),
+      );
+      return;
+    }
+
+    const code = opaqueToken();
+    await this.store.saveCode(code, {
+      clientId: client_id,
+      codeChallenge: code_challenge,
+      redirectUri: redirect_uri,
+      scopes: scope ? String(scope).split(' ').filter(Boolean) : [],
+      session,
+      expiresAt: nowSeconds() + AUTH_CODE_TTL_SECONDS,
+    });
+
+    const target = new URL(redirect_uri);
+    target.searchParams.set('code', code);
+    if (state) target.searchParams.set('state', String(state));
+    res.redirect(target.toString());
+  };
+
+  /** PKCE: the SDK token handler validates the verifier against this challenge. */
+  async challengeForAuthorizationCode(
+    _client: OAuthClientInformationFull,
+    authorizationCode: string,
+  ): Promise<string> {
+    const data = await this.store.getCode(authorizationCode);
+    if (!data) throw new InvalidGrantError('Invalid or expired authorization code');
+    return data.codeChallenge;
+  }
+
+  async exchangeAuthorizationCode(
+    client: OAuthClientInformationFull,
+    authorizationCode: string,
+    _codeVerifier?: string,
+    redirectUri?: string,
+  ): Promise<OAuthTokens> {
+    const data = await this.store.getCode(authorizationCode);
+    if (!data || data.clientId !== client.client_id) {
+      throw new InvalidGrantError('Invalid authorization code');
+    }
+    await this.store.deleteCode(authorizationCode); // single use
+    if (data.expiresAt < nowSeconds()) {
+      throw new InvalidGrantError('Authorization code expired');
+    }
+    if (redirectUri && redirectUri !== data.redirectUri) {
+      throw new InvalidGrantError('redirect_uri mismatch');
+    }
+    return this.issueTokens(client.client_id, data.scopes, data.session);
+  }
+
+  async exchangeRefreshToken(
+    client: OAuthClientInformationFull,
+    refreshToken: string,
+    scopes?: string[],
+  ): Promise<OAuthTokens> {
+    const data = await this.store.takeRefreshToken(refreshToken); // rotate
+    if (!data || data.clientId !== client.client_id) {
+      throw new InvalidGrantError('Invalid refresh token');
+    }
+    // Refresh the Supabase session too, so the two token lifetimes stay aligned.
+    const { session } = await clientForSession(data.session);
+    return this.issueTokens(client.client_id, scopes?.length ? scopes : data.scopes, session);
+  }
+
+  /** Verify an MCP access token and resolve the per-user Supabase client (in `extra`). */
+  async verifyAccessToken(token: string): Promise<AuthInfo> {
+    const data = await this.store.getAccessToken(token);
+    if (!data) throw new InvalidTokenError('Invalid access token');
+    if (data.expiresAt < nowSeconds()) {
+      await this.store.deleteAccessToken(token);
+      throw new InvalidTokenError('Access token expired');
+    }
+    // Build the user's Supabase client now, refreshing the session if needed, and
+    // persist any rotation so the next call starts from the live session.
+    const { client, session } = await clientForSession(data.session);
+    if (session !== data.session) await this.store.updateAccessSession(token, session);
+
+    return {
+      token,
+      clientId: data.clientId,
+      scopes: data.scopes,
+      expiresAt: data.expiresAt,
+      extra: { supabase: client },
+    };
+  }
+
+  async revokeToken(
+    _client: OAuthClientInformationFull,
+    request: OAuthTokenRevocationRequest,
+  ): Promise<void> {
+    if (!request.token) throw new InvalidRequestError('Missing token');
+    await this.store.deleteAccessToken(request.token);
+    await this.store.takeRefreshToken(request.token);
+  }
+
+  private async issueTokens(
+    clientId: string,
+    scopes: string[],
+    session: AuthSession,
+  ): Promise<OAuthTokens> {
+    const accessToken = opaqueToken();
+    const refreshToken = opaqueToken();
+    await this.store.saveAccessToken(accessToken, {
+      clientId,
+      scopes,
+      session,
+      expiresAt: nowSeconds() + this.accessTtl,
+    });
+    await this.store.saveRefreshToken(refreshToken, { clientId, scopes, session });
+    return {
+      access_token: accessToken,
+      token_type: 'bearer',
+      expires_in: this.accessTtl,
+      refresh_token: refreshToken,
+      scope: scopes.join(' '),
+    };
+  }
+}
+
+/** Pull the per-user Supabase client that verifyAccessToken stashed on req.auth. */
+export function supabaseClientFromAuth(auth: AuthInfo | undefined): SupabaseClient {
+  const client = auth?.extra?.supabase as SupabaseClient | undefined;
+  if (!client) throw new Error('No authenticated Supabase client on request');
+  return client;
+}

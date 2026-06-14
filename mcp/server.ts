@@ -1,12 +1,14 @@
-// NamWeb remote MCP server — P0 read-only prototype (issue #105).
+// NamWeb remote MCP server — read-only, OAuth-gated (issues #105 P0, #107 P1).
 //
 // Standalone Node entry (run via `tsx`, NOT bundled by Vite). It reuses NamWeb's
 // React-free core directly: `pull()` from the Supabase `workspaces` row + the
 // `domain/lenses` projections. The AI↔app contract is that row — exactly what the
 // SPA and NamDesktop cloud-sync share.
 //
-// P0 scope: NO auth (signs in once with dev credentials), NO writes, local-only.
-// Phasing → P1 OAuth 2.1/PKCE, P2 write tools, P3 Realtime, P4 hosting.
+// P1: this server is the OAuth 2.1/PKCE Authorization Server (Supabase-backed,
+// see ./auth/*); each request runs under the authenticated user's Supabase JWT and
+// RLS. `NAM_MCP_DEV_NOAUTH=1` keeps the P0 shared-session path for local/Inspector.
+// Still read-only (writes are P2). Phasing → P2 writes, P3 Realtime, P4 hosting.
 // See docs/features/remote-mcp/design.md.
 
 import express, { type Request, type Response } from 'express';
@@ -14,7 +16,14 @@ import { pathToFileURL } from 'node:url';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import {
+  getOAuthProtectedResourceMetadataUrl,
+  mcpAuthRouter,
+} from '@modelcontextprotocol/sdk/server/auth/router.js';
+import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js';
 import { z } from 'zod';
+
+import { SupabaseOAuthProvider, supabaseClientFromAuth } from './auth/provider';
 
 import { pull } from '../src/sync/workspaceClient';
 import type { NamNode, Resource, WorkspaceDocument } from '../src/domain/types';
@@ -222,15 +231,15 @@ export function buildServer(client: SupabaseClient): McpServer {
 
 // ---- HTTP (stateless Streamable HTTP at POST /mcp) -----------------------
 
-async function main() {
-  const port = Number(process.env.NAM_MCP_PORT ?? 3333);
-  const client = await signedInClient();
-  const app = express();
-  app.use(express.json());
-
-  app.post('/mcp', async (req: Request, res: Response) => {
+/**
+ * The shared `POST /mcp` handler. `resolveClient` provides the Supabase client to
+ * run the request under — the OAuth-resolved per-user client in normal mode, or a
+ * single shared client in dev-no-auth mode.
+ */
+function mcpHandler(resolveClient: (req: Request) => SupabaseClient) {
+  return async (req: Request, res: Response) => {
     // Stateless: a fresh server + transport per request (no session reuse).
-    const server = buildServer(client);
+    const server = buildServer(resolveClient(req));
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
@@ -252,7 +261,40 @@ async function main() {
         });
       }
     }
-  });
+  };
+}
+
+async function main() {
+  const port = Number(process.env.NAM_MCP_PORT ?? 3333);
+  const app = express();
+
+  if (process.env.NAM_MCP_DEV_NOAUTH === '1') {
+    // Dev/Inspector escape hatch: no OAuth, one shared signed-in client. Never deploy.
+    const client = await signedInClient();
+    app.post('/mcp', express.json(), mcpHandler(() => client));
+    console.warn('⚠  NAM_MCP_DEV_NOAUTH=1 — OAuth disabled, shared dev session (local only).');
+  } else {
+    // Normal: this server is the OAuth 2.1 Authorization Server (Supabase-backed).
+    const issuerUrl = new URL(process.env.NAM_MCP_ISSUER_URL ?? `http://127.0.0.1:${port}`);
+    const provider = new SupabaseOAuthProvider();
+    app.use(
+      mcpAuthRouter({
+        provider,
+        issuerUrl,
+        scopesSupported: ['nam.read'],
+        resourceName: 'NamWeb',
+      }),
+    );
+    app.post('/nam/login', express.urlencoded({ extended: false }), provider.handleLogin);
+
+    const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(issuerUrl);
+    app.post(
+      '/mcp',
+      express.json(),
+      requireBearerAuth({ verifier: provider, resourceMetadataUrl }),
+      mcpHandler((req) => supabaseClientFromAuth(req.auth)),
+    );
+  }
 
   // Stateless mode does not support server-initiated SSE streams or sessions.
   const methodNotAllowed = (_req: Request, res: Response) =>
@@ -265,8 +307,9 @@ async function main() {
   app.delete('/mcp', methodNotAllowed);
 
   app.listen(port, () => {
-    console.log(`NamWeb MCP (read-only, P0) on http://127.0.0.1:${port}/mcp`);
-    console.log(`Workspace row: "${workspaceName()}"  ·  signed in as ${process.env.NAM_MCP_EMAIL}`);
+    const mode = process.env.NAM_MCP_DEV_NOAUTH === '1' ? 'DEV no-auth' : 'OAuth';
+    console.log(`NamWeb MCP (read-only, ${mode}) on http://127.0.0.1:${port}/mcp`);
+    console.log(`Workspace row: "${workspaceName()}"`);
   });
 }
 
