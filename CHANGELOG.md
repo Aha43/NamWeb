@@ -14,6 +14,42 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `localStorage` via a new `SettingsProvider`. The chosen format drives how due dates display
   (`formatDueHint`/`formatDate`); date entry still echoes canonical ISO, which round-trips through
   `parseFlexibleDate`. Closes #76.
+- Remote MCP server — **P3 Realtime live updates**. An open SPA tab now reflects writes made by the
+  MCP server (or NamDesktop, or another tab) without a reload. A new `src/sync/realtime.ts`
+  (`subscribeToWorkspace`) subscribes to `postgres_changes` UPDATEs on the user's `workspaces` rows and
+  `useWorkspace` reconciles **signal-then-pull**: a change event is only a nudge to re-`pull()`, and the
+  remote snapshot is adopted only when it is strictly newer than the confirmed base *and* no local write
+  is in flight — so own-write echoes and stale events are no-ops, and in-flight commits self-reconcile
+  via the existing version guard (no new merge path). A catch-up `pull()` fires when the subscription
+  first goes live, so a write landing in the brief window between the initial load and the channel
+  activating isn't missed. RLS still scopes deliveries to the owner. Requires the `workspaces` table in
+  the `supabase_realtime` publication (migration lives in NamDesktop). Verified end-to-end in a real
+  browser against the local stack (external write → item appears live in the open tab, no reload).
+  Closes #111.
+- Remote MCP server — **P2 write tools**. The `mcp/` server can now *act on* the workspace, not just
+  read it: `add_inbox_item`, `create_project` (top-level or nested), `add_action`, `add_next_action`,
+  `mark_next`/`mark_done`/`mark_backlog`, `update_node`, `update_tags`, `move_node`, `delete_node`
+  (leaf or recursive), `add_blocked_by`/`remove_blocked_by`, and `add_resource`/`remove_resource`/
+  `edit_resource`. Each maps to a domain `Intent` committed via `commitIntent` (version guard +
+  conflict-replay), runs under the signed-in user's RLS, and reuses the domain mutation invariants
+  (the four structural containers are refused). Human control is connector-side per-write confirmation.
+  Verified end-to-end against the local stack (write → read-back → delete). Closes #109.
+- Remote MCP server — **P1 OAuth 2.1/PKCE**. The `mcp/` server is now its own OAuth 2.1 Authorization
+  Server (`mcp/auth/`), backed by Supabase identity: a connector does the authorization-code + PKCE
+  flow, signs in on a Supabase login page, and the server issues opaque access/refresh tokens mapped
+  to that user's Supabase session — so every MCP request runs under their JWT and `owner_user_id` RLS,
+  exactly like the SPA. Dynamic Client Registration is supported; tokens/clients are held in-memory for
+  now (re-auth on restart). `NAM_MCP_DEV_NOAUTH=1` keeps the old no-auth shared-session path for the
+  Inspector/local curl. The `mcp/` tree is now covered by `npm run typecheck` (`tsconfig.mcp.json`).
+  Verified end-to-end against the local stack (DCR → PKCE → login → token → gated `/mcp`). Closes #107.
+- Remote MCP server — **P0 read-only prototype**. A standalone `mcp/` server (`npm run mcp`, run via
+  `tsx`, not bundled by Vite) exposes the Nam workspace over MCP (Streamable HTTP at `POST /mcp`) so the
+  ChatGPT / Claude web surfaces can read it. It reuses the React-free core directly — `pull()` over the
+  Supabase `workspaces` row plus the `domain/lenses` projections — behind ten desktop-parity read tools
+  (`get_workspace_context`, `list_inbox`, `list_projects`, `list_next_actions`, `list_backlog`,
+  `list_done`, `list_saved_views`, `list_project_children`, `find_node`, `list_resources`). No auth and
+  no writes yet (later phases: P1 OAuth, P2 writes, P3 Realtime, P4 hosting). Design doc at
+  `docs/features/remote-mcp/design.md`; usage in `mcp/README.md`. Closes #105.
 - The brand `LogoMark` now appears next to the **Next Action Master** wordmark in the desktop sidebar
   header and the phone header, and a `favicon.svg` (mirroring the logo, light/dark-adaptive via
   `prefers-color-scheme`) is shown in the browser tab. Closes #101.
