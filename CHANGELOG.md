@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Remote MCP server — **P0 read-only prototype**. A standalone `mcp/` server (`npm run mcp`, run via
+  `tsx`, not bundled by Vite) exposes the Nam workspace over MCP (Streamable HTTP at `POST /mcp`) so the
+  ChatGPT / Claude web surfaces can read it. It reuses the React-free core directly — `pull()` over the
+  Supabase `workspaces` row plus the `domain/lenses` projections — behind ten desktop-parity read tools
+  (`get_workspace_context`, `list_inbox`, `list_projects`, `list_next_actions`, `list_backlog`,
+  `list_done`, `list_saved_views`, `list_project_children`, `find_node`, `list_resources`). No auth and
+  no writes yet (later phases: P1 OAuth, P2 writes, P3 Realtime, P4 hosting). Design doc at
+  `docs/features/remote-mcp/design.md`; usage in `mcp/README.md`. Closes #105.
 - The brand `LogoMark` now appears next to the **Next Action Master** wordmark in the desktop sidebar
   header and the phone header, and a `favicon.svg` (mirroring the logo, light/dark-adaptive via
   `prefers-color-scheme`) is shown in the browser tab. Closes #101.
