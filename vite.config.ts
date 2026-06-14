@@ -16,8 +16,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: false,
-    // Unit/component tests live under src; e2e/ is Playwright's, not Vitest's.
-    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Unit/component tests live under src (plus the standalone mcp/ server);
+    // e2e/ is Playwright's, not Vitest's.
+    include: ['src/**/*.{test,spec}.{ts,tsx}', 'mcp/**/*.{test,spec}.ts'],
     // Deterministic Supabase env so modules importing the client don't throw under test.
     env: {
       VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
