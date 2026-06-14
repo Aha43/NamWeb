@@ -24,8 +24,8 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('Get quotes')).toBeInTheDocument();
     expect(screen.getByText('Home › Kitchen')).toBeInTheDocument();
     expect(screen.getByText('@phone')).toBeInTheDocument();
-    // 2026-03-20 is well in the past → overdue short-date label, not raw ISO.
-    expect(screen.getByText('Due Mar 20')).toBeInTheDocument();
+    // 2026-03-20 is well in the past → overdue date label (default Medium format).
+    expect(screen.getByText('Due Mar 20, 2026')).toBeInTheDocument();
   });
 
   it('renders a status control for each row', () => {

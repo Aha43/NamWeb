@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- A **Settings** dialog (the first one — Sprint 7), reachable from a gear button in the desktop
+  toolbar and the phone **More** sheet. It holds a **Date format** preference (Medium `Jun 14, 2026`
+  by default, plus ISO `2026-06-14`, Day/Month/Year, and Month/Day/Year), persisted per device to
+  `localStorage` via a new `SettingsProvider`. The chosen format drives how due dates display
+  (`formatDueHint`/`formatDate`); date entry still echoes canonical ISO, which round-trips through
+  `parseFlexibleDate`. Closes #76.
 - Remote MCP server — **P3 Realtime live updates**. An open SPA tab now reflects writes made by the
   MCP server (or NamDesktop, or another tab) without a reload. A new `src/sync/realtime.ts`
   (`subscribeToWorkspace`) subscribes to `postgres_changes` UPDATEs on the user's `workspaces` rows and
