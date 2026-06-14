@@ -14,7 +14,10 @@ const TABLE = 'workspaces';
 
 /**
  * Subscribe to UPDATEs of the user's workspace rows. Calls `onSignal` once per
- * change event (no payload — the caller re-pulls). Returns an unsubscribe fn.
+ * change event (no payload — the caller re-pulls), and once more when the channel
+ * first goes live: a write landing between the caller's initial load and the
+ * subscription activating would otherwise be missed (signal-then-pull has no
+ * periodic resync), so the catch-up reconciles that gap. Returns an unsubscribe fn.
  */
 export function subscribeToWorkspace(
   client: SupabaseClient,
@@ -33,7 +36,9 @@ export function subscribeToWorkspace(
       },
       () => onSignal(),
     )
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'SUBSCRIBED') onSignal();
+    });
 
   return () => {
     void client.removeChannel(channel);

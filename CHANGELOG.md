@@ -14,9 +14,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `useWorkspace` reconciles **signal-then-pull**: a change event is only a nudge to re-`pull()`, and the
   remote snapshot is adopted only when it is strictly newer than the confirmed base *and* no local write
   is in flight — so own-write echoes and stale events are no-ops, and in-flight commits self-reconcile
-  via the existing version guard (no new merge path). RLS still scopes deliveries to the owner.
-  Requires the `workspaces` table in the `supabase_realtime` publication (migration lives in NamDesktop).
-  Verified end-to-end against the local stack (MCP/row write → live event delivered under RLS). Closes #111.
+  via the existing version guard (no new merge path). A catch-up `pull()` fires when the subscription
+  first goes live, so a write landing in the brief window between the initial load and the channel
+  activating isn't missed. RLS still scopes deliveries to the owner. Requires the `workspaces` table in
+  the `supabase_realtime` publication (migration lives in NamDesktop). Verified end-to-end in a real
+  browser against the local stack (external write → item appears live in the open tab, no reload).
+  Closes #111.
 - Remote MCP server — **P2 write tools**. The `mcp/` server can now *act on* the workspace, not just
   read it: `add_inbox_item`, `create_project` (top-level or nested), `add_action`, `add_next_action`,
   `mark_next`/`mark_done`/`mark_backlog`, `update_node`, `update_tags`, `move_node`, `delete_node`

@@ -9,6 +9,7 @@ function makeClient() {
   let channelName = '';
   let onConfig: unknown = null;
   let handler: Handler = () => {};
+  let statusCb: (status: string) => void = () => {};
   let subscribed = false;
   const removed: unknown[] = [];
 
@@ -18,8 +19,9 @@ function makeClient() {
       handler = cb;
       return channel;
     },
-    subscribe() {
+    subscribe(cb: (status: string) => void) {
       subscribed = true;
+      statusCb = cb;
       return channel;
     },
   };
@@ -39,6 +41,7 @@ function makeClient() {
     client,
     channel,
     fire: () => handler(),
+    fireStatus: (status: string) => statusCb(status),
     get channelName() {
       return channelName;
     },
@@ -78,6 +81,18 @@ describe('subscribeToWorkspace', () => {
     m.fire();
 
     expect(onSignal).toHaveBeenCalledTimes(2);
+  });
+
+  it('fires a catch-up onSignal when the channel goes live, but not on other statuses', () => {
+    const m = makeClient();
+    const onSignal = vi.fn();
+    subscribeToWorkspace(m.client, 'user-1', onSignal);
+
+    m.fireStatus('TIMED_OUT');
+    expect(onSignal).not.toHaveBeenCalled();
+
+    m.fireStatus('SUBSCRIBED');
+    expect(onSignal).toHaveBeenCalledTimes(1);
   });
 
   it('removes the channel on unsubscribe', () => {
