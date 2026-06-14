@@ -26,6 +26,9 @@ import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middlew
 import { z } from 'zod';
 
 import { SupabaseOAuthProvider, supabaseClientFromAuth } from './auth/provider';
+import type { AuthStore } from './auth/stores';
+import { PostgresAuthStore } from './auth/postgresStore';
+import { ensureSchema, getPool } from './db/pool';
 
 import { pull } from '../src/sync/workspaceClient';
 import { commitIntent, type CommitOutcome, type WorkspaceSnapshot } from '../src/store/commit';
@@ -593,7 +596,20 @@ async function main() {
   } else {
     // Normal: this server is the OAuth 2.1 Authorization Server (Supabase-backed).
     const issuerUrl = new URL(process.env.NAM_MCP_ISSUER_URL ?? `http://127.0.0.1:${port}`);
-    const provider = new SupabaseOAuthProvider();
+
+    // Persist OAuth state to the MCP-owned `mcp` Postgres schema when configured,
+    // so clients/tokens survive a restart; otherwise fall back to in-memory.
+    let store: AuthStore | undefined;
+    if (process.env.NAM_MCP_DATABASE_URL) {
+      await ensureSchema();
+      store = new PostgresAuthStore(getPool());
+      console.log('OAuth store: Postgres (mcp schema) — persists across restarts.');
+    } else {
+      console.warn(
+        'OAuth store: in-memory — set NAM_MCP_DATABASE_URL to persist clients/tokens across restarts.',
+      );
+    }
+    const provider = new SupabaseOAuthProvider({ store });
     app.use(
       mcpAuthRouter({
         provider,
