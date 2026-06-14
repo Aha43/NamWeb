@@ -1,4 +1,4 @@
-// NamWeb remote MCP server — read-only, OAuth-gated (issues #105 P0, #107 P1).
+// NamWeb remote MCP server — read + write, OAuth-gated (issues #105 P0, #107 P1, #109 P2).
 //
 // Standalone Node entry (run via `tsx`, NOT bundled by Vite). It reuses NamWeb's
 // React-free core directly: `pull()` from the Supabase `workspaces` row + the
@@ -8,8 +8,10 @@
 // P1: this server is the OAuth 2.1/PKCE Authorization Server (Supabase-backed,
 // see ./auth/*); each request runs under the authenticated user's Supabase JWT and
 // RLS. `NAM_MCP_DEV_NOAUTH=1` keeps the P0 shared-session path for local/Inspector.
-// Still read-only (writes are P2). Phasing → P2 writes, P3 Realtime, P4 hosting.
-// See docs/features/remote-mcp/design.md.
+// P2: write tools — each maps to a domain `Intent` committed via `commitIntent`
+// (version guard + conflict-replay), so concurrent SPA/device edits never clobber.
+// Human control is connector-side per-write confirmation. Phasing → P3 Realtime,
+// P4 hosting. See docs/features/remote-mcp/design.md.
 
 import express, { type Request, type Response } from 'express';
 import { pathToFileURL } from 'node:url';
@@ -26,7 +28,10 @@ import { z } from 'zod';
 import { SupabaseOAuthProvider, supabaseClientFromAuth } from './auth/provider';
 
 import { pull } from '../src/sync/workspaceClient';
-import type { NamNode, Resource, WorkspaceDocument } from '../src/domain/types';
+import { commitIntent, type CommitOutcome, type WorkspaceSnapshot } from '../src/store/commit';
+import { normalizeTags, type Intent } from '../src/domain/mutations';
+import { newId, nowIso } from '../src/lib/local';
+import type { NamNode, NodeStatus, Resource, WorkspaceDocument } from '../src/domain/types';
 import {
   allTags,
   backlogItems,
@@ -90,15 +95,52 @@ function errorResult(message: string): TextResult & { isError: true } {
   return { isError: true, content: [{ type: 'text', text: message }] };
 }
 
-/** Pull the current workspace document, or throw a message suitable for a tool error. */
-async function loadDoc(client: SupabaseClient): Promise<WorkspaceDocument> {
+/** Pull the current snapshot (document + version), or throw a tool-friendly message. */
+async function loadSnapshot(client: SupabaseClient): Promise<WorkspaceSnapshot> {
   const name = workspaceName();
   const result = await pull(client, name);
-  if (result.kind === 'ok') return result.document;
+  if (result.kind === 'ok') return { document: result.document, version: result.version };
   if (result.kind === 'noRemote') {
     throw new Error(`No workspace row named "${name}" for this user yet.`);
   }
   throw new Error(`Failed to read workspace: ${result.message}`);
+}
+
+/** Pull just the current document (reads), or throw a message suitable for a tool error. */
+async function loadDoc(client: SupabaseClient): Promise<WorkspaceDocument> {
+  return (await loadSnapshot(client)).document;
+}
+
+// ---- Write helpers (P2) --------------------------------------------------
+
+const NODE_STATUSES = ['NEXT', 'BACKLOG', 'DONE', 'CANCELLED', 'ARCHIVED'] as const;
+const RESOURCE_TYPES = ['TEXT', 'EMAIL', 'URI', 'FILE'] as const;
+
+/** Look a node up for a write, throwing a tool-friendly error if it is missing. */
+function requireNode(doc: WorkspaceDocument, id: string): NamNode {
+  const node = getNode(doc, id);
+  if (!node) throw new Error(`No node with id ${id}.`);
+  return node;
+}
+
+/** Reject writes that target the four structural container nodes. */
+function assertNotContainer(doc: WorkspaceDocument, id: string): void {
+  if ([doc.rootNodeId, doc.inboxNodeId, doc.projectsNodeId, doc.nextActionsNodeId].includes(id)) {
+    throw new Error(`Node ${id} is a structural container and cannot be modified.`);
+  }
+}
+
+/** The compact result a write tool returns: the commit outcome + any new node id. */
+function writeSummary(outcome: CommitOutcome, message: string | undefined, intent: Intent) {
+  const summary: { ok: boolean; outcome: CommitOutcome; id?: string; message?: string } = {
+    ok: true,
+    outcome,
+  };
+  if (intent.type === 'addInboxItem' || intent.type === 'addAction' || intent.type === 'addSubProject') {
+    summary.id = intent.id;
+  }
+  if (message) summary.message = message;
+  return summary;
 }
 
 // Compact node projections — small, AI-friendly shapes (not the whole NamNode).
@@ -138,6 +180,21 @@ export function buildServer(client: SupabaseClient): McpServer {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
     });
+
+  // Run a write: pull a fresh snapshot, build the intent from it, then commit it
+  // (version guard + conflict-replay). Build-time errors (missing node, structural
+  // guard) and push failures surface as tool errors, not throws.
+  const commit = async (build: (doc: WorkspaceDocument) => Intent): Promise<TextResult> => {
+    try {
+      const snapshot = await loadSnapshot(client);
+      const intent = build(snapshot.document);
+      const result = await commitIntent(client, workspaceName(), snapshot, intent);
+      if (result.outcome === 'error') return errorResult(result.message ?? 'Write failed.');
+      return json(writeSummary(result.outcome, result.message, intent));
+    } catch (err) {
+      return errorResult(err instanceof Error ? err.message : String(err));
+    }
+  };
 
   read(
     'get_workspace_context',
@@ -226,6 +283,266 @@ export function buildServer(client: SupabaseClient): McpServer {
     },
   );
 
+  // ---- Write tools (P2) ----------------------------------------------------
+  // Each maps to a domain Intent committed via `commit`. Human confirmation is
+  // connector-side (both ChatGPT and Claude prompt before a tool call).
+
+  server.registerTool(
+    'add_inbox_item',
+    {
+      description: 'Capture a new item into the Inbox for later triage.',
+      inputSchema: { title: z.string().describe('The item text') },
+    },
+    ({ title }) => commit(() => ({ type: 'addInboxItem', id: newId(), title, now: nowIso() })),
+  );
+
+  server.registerTool(
+    'create_project',
+    {
+      description:
+        'Create a project. With no parent_id it becomes a top-level project; with parent_id it nests under that project.',
+      inputSchema: {
+        title: z.string().describe('Project title'),
+        parent_id: z.string().optional().describe('UUID of the parent project; omit for top-level'),
+      },
+    },
+    ({ title, parent_id }) =>
+      commit((doc) => {
+        if (parent_id) requireNode(doc, parent_id);
+        const parentId = parent_id ?? doc.projectsNodeId;
+        return { type: 'addSubProject', parentId, id: newId(), title, now: nowIso() };
+      }),
+  );
+
+  server.registerTool(
+    'add_action',
+    {
+      description: 'Add an action to a project. Defaults to status NEXT.',
+      inputSchema: {
+        project_id: z.string().describe('UUID of the project to add the action to'),
+        title: z.string().describe('Action title'),
+        status: z.enum(NODE_STATUSES).optional().describe('Defaults to NEXT'),
+      },
+    },
+    ({ project_id, title, status }) =>
+      commit((doc) => {
+        requireNode(doc, project_id);
+        return {
+          type: 'addAction',
+          parentId: project_id,
+          id: newId(),
+          title,
+          status: status ?? 'NEXT',
+          now: nowIso(),
+        };
+      }),
+  );
+
+  server.registerTool(
+    'add_next_action',
+    {
+      description: 'Add a free-standing NEXT action, not attached to any project.',
+      inputSchema: { title: z.string().describe('Action title') },
+    },
+    ({ title }) =>
+      commit((doc) => ({
+        type: 'addAction',
+        parentId: doc.nextActionsNodeId,
+        id: newId(),
+        title,
+        status: 'NEXT',
+        now: nowIso(),
+      })),
+  );
+
+  const markStatus = (toolName: string, status: NodeStatus) =>
+    server.registerTool(
+      toolName,
+      {
+        description: `Set a node's status to ${status}.`,
+        inputSchema: { node_id: z.string().describe('UUID of the node') },
+      },
+      ({ node_id }) =>
+        commit((doc) => {
+          assertNotContainer(doc, node_id);
+          requireNode(doc, node_id);
+          return { type: 'setStatus', id: node_id, status, now: nowIso() };
+        }),
+    );
+  markStatus('mark_next', 'NEXT');
+  markStatus('mark_done', 'DONE');
+  markStatus('mark_backlog', 'BACKLOG');
+
+  server.registerTool(
+    'update_node',
+    {
+      description: 'Update a node title and/or description. Omitted fields are left unchanged.',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the node'),
+        title: z.string().optional().describe('New title'),
+        description: z.string().nullable().optional().describe('New description, or null to clear'),
+      },
+    },
+    ({ node_id, title, description }) =>
+      commit((doc) => {
+        const node = requireNode(doc, node_id);
+        assertNotContainer(doc, node_id);
+        return {
+          type: 'updateNode',
+          id: node_id,
+          title: title ?? node.title,
+          description: description !== undefined ? description : node.description,
+          now: nowIso(),
+        };
+      }),
+  );
+
+  server.registerTool(
+    'update_tags',
+    {
+      description:
+        'Replace the full tag list on a node (tags are normalized: trimmed, lowercased, de-duplicated).',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the node'),
+        tags: z.array(z.string()).describe('The complete new tag list'),
+      },
+    },
+    ({ node_id, tags }) =>
+      commit((doc) => {
+        assertNotContainer(doc, node_id);
+        requireNode(doc, node_id);
+        return { type: 'updateTags', id: node_id, tags: normalizeTags(tags), now: nowIso() };
+      }),
+  );
+
+  server.registerTool(
+    'move_node',
+    {
+      description:
+        'Move a node under a new parent. Structural cycles and container moves are rejected.',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the node to move'),
+        new_parent_id: z.string().describe('UUID of the new parent'),
+      },
+    },
+    ({ node_id, new_parent_id }) =>
+      commit((doc) => {
+        assertNotContainer(doc, node_id);
+        requireNode(doc, node_id);
+        requireNode(doc, new_parent_id);
+        return { type: 'moveNode', id: node_id, newParentId: new_parent_id, now: nowIso() };
+      }),
+  );
+
+  server.registerTool(
+    'delete_node',
+    {
+      description:
+        'Delete a node. A node with children is deleted recursively; a leaf is removed directly.',
+      inputSchema: { node_id: z.string().describe('UUID of the node to delete') },
+    },
+    ({ node_id }) =>
+      commit((doc) => {
+        const node = requireNode(doc, node_id);
+        assertNotContainer(doc, node_id);
+        return node.childIds.length > 0
+          ? { type: 'deleteRecursive', id: node_id }
+          : { type: 'deleteLeaf', id: node_id };
+      }),
+  );
+
+  const prerequisite = (
+    toolName: string,
+    type: 'addPrerequisite' | 'removePrerequisite',
+    verb: string,
+  ) =>
+    server.registerTool(
+      toolName,
+      {
+        description: `${verb} a blocked-by dependency: node_id is blocked by blocked_by_id.`,
+        inputSchema: {
+          node_id: z.string().describe('UUID of the dependent (blocked) action'),
+          blocked_by_id: z.string().describe('UUID of the prerequisite action'),
+        },
+      },
+      ({ node_id, blocked_by_id }) =>
+        commit((doc) => {
+          requireNode(doc, node_id);
+          requireNode(doc, blocked_by_id);
+          return { type, actionId: node_id, prereqId: blocked_by_id, now: nowIso() };
+        }),
+    );
+  prerequisite('add_blocked_by', 'addPrerequisite', 'Add');
+  prerequisite('remove_blocked_by', 'removePrerequisite', 'Remove');
+
+  server.registerTool(
+    'add_resource',
+    {
+      description: 'Attach a resource (link, file, note) to a node.',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the node'),
+        type: z.enum(RESOURCE_TYPES).describe('Resource type'),
+        value: z.string().describe('The resource value (URL, path, or text)'),
+        description: z.string().nullable().optional().describe('Optional label'),
+      },
+    },
+    ({ node_id, type, value, description }) =>
+      commit((doc) => {
+        const node = requireNode(doc, node_id);
+        const resources: Resource[] = [
+          ...node.resources,
+          { type, value, description: description ?? null },
+        ];
+        return { type: 'updateResources', id: node_id, resources, now: nowIso() };
+      }),
+  );
+
+  server.registerTool(
+    'remove_resource',
+    {
+      description:
+        'Remove the resource at the given index from a node (see list_resources for indexes).',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the node'),
+        index: z.number().int().nonnegative().describe('Index of the resource to remove'),
+      },
+    },
+    ({ node_id, index }) =>
+      commit((doc) => {
+        const node = requireNode(doc, node_id);
+        if (index >= node.resources.length) throw new Error(`No resource at index ${index}.`);
+        const resources = node.resources.filter((_, i) => i !== index);
+        return { type: 'updateResources', id: node_id, resources, now: nowIso() };
+      }),
+  );
+
+  server.registerTool(
+    'edit_resource',
+    {
+      description: 'Edit the resource at the given index. Omitted fields are left unchanged.',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the node'),
+        index: z.number().int().nonnegative().describe('Index of the resource to edit'),
+        type: z.enum(RESOURCE_TYPES).optional().describe('New type'),
+        value: z.string().optional().describe('New value'),
+        description: z.string().nullable().optional().describe('New label, or null to clear'),
+      },
+    },
+    ({ node_id, index, type, value, description }) =>
+      commit((doc) => {
+        const node = requireNode(doc, node_id);
+        const current = node.resources[index];
+        if (!current) throw new Error(`No resource at index ${index}.`);
+        const updated: Resource = {
+          type: type ?? current.type,
+          value: value ?? current.value,
+          description: description !== undefined ? description : current.description,
+        };
+        const resources = node.resources.map((r, i) => (i === index ? updated : r));
+        return { type: 'updateResources', id: node_id, resources, now: nowIso() };
+      }),
+  );
+
   return server;
 }
 
@@ -308,7 +625,7 @@ async function main() {
 
   app.listen(port, () => {
     const mode = process.env.NAM_MCP_DEV_NOAUTH === '1' ? 'DEV no-auth' : 'OAuth';
-    console.log(`NamWeb MCP (read-only, ${mode}) on http://127.0.0.1:${port}/mcp`);
+    console.log(`NamWeb MCP (read + write, ${mode}) on http://127.0.0.1:${port}/mcp`);
     console.log(`Workspace row: "${workspaceName()}"`);
   });
 }

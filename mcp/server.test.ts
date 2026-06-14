@@ -75,7 +75,7 @@ function firstText(result: { content: { type: string; text?: string }[] }): stri
   return block?.text ?? '';
 }
 
-const EXPECTED_TOOLS = [
+const EXPECTED_READ_TOOLS = [
   'get_workspace_context',
   'list_inbox',
   'list_projects',
@@ -88,17 +88,38 @@ const EXPECTED_TOOLS = [
   'list_resources',
 ];
 
-describe('NamWeb MCP read-only server', () => {
+const EXPECTED_WRITE_TOOLS = [
+  'add_inbox_item',
+  'create_project',
+  'add_action',
+  'add_next_action',
+  'mark_next',
+  'mark_done',
+  'mark_backlog',
+  'update_node',
+  'update_tags',
+  'move_node',
+  'delete_node',
+  'add_blocked_by',
+  'remove_blocked_by',
+  'add_resource',
+  'remove_resource',
+  'edit_resource',
+];
+
+describe('NamWeb MCP server (read surface)', () => {
   beforeEach(() => {
     pull.mockReset();
     pull.mockResolvedValue({ kind: 'ok', document: makeDoc(), version: 1 });
   });
   afterEach(() => vi.restoreAllMocks());
 
-  it('advertises exactly the desktop-parity read tool surface', async () => {
+  it('advertises exactly the desktop-parity read + write tool surface', async () => {
     const { client, server } = await connectedClient();
     const { tools } = await client.listTools();
-    expect(tools.map((t) => t.name).sort()).toEqual([...EXPECTED_TOOLS].sort());
+    expect(tools.map((t) => t.name).sort()).toEqual(
+      [...EXPECTED_READ_TOOLS, ...EXPECTED_WRITE_TOOLS].sort(),
+    );
     await server.close();
   });
 

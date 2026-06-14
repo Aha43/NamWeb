@@ -123,8 +123,8 @@ React-free core — reads by a `domain/lenses` projection, writes by an `Intent`
 | `find_node(title)` | `searchResults()` (case-insensitive substring) |
 | `list_resources(node_id)` | `getNode().resources` |
 
-**Write tools** (P2) — each maps to an existing `Intent`, committed via `commitIntent` (version
-guard + conflict-replay):
+**Write tools** (P2 — implemented, #109) — each maps to an existing `Intent`, committed via
+`commitIntent` (version guard + conflict-replay):
 
 | Tool | Intent |
 |---|---|
@@ -133,7 +133,8 @@ guard + conflict-replay):
 | `add_action(project_id, title, …)` | `addAction` |
 | `add_next_action(title, …)` | `addAction` with status `NEXT`¹ |
 | `mark_next/mark_done/mark_backlog(node_id)` | `setStatus` |
-| `update_node(node_id, title?, description?, tags?)` | `updateNode` (+ `updateTags` for the tag list) |
+| `update_node(node_id, title?, description?)` | `updateNode` (omitted fields keep current value) |
+| `update_tags(node_id, tags)` | `updateTags` (normalized, whole-list replace) |
 | `move_node(node_id, new_parent_id?)` | `moveNode` |
 | `delete_node(node_id)` | `deleteLeaf` (childless) / `deleteRecursive` |
 | `add_blocked_by/remove_blocked_by(node_id, blocked_by_id)` | `addPrerequisite` / `removePrerequisite` |
@@ -143,10 +144,13 @@ guard + conflict-replay):
 state, which the row contract eliminates. Its role (knowing writes are safe to apply) is replaced
 by the version guard + (P3) Realtime, so there is no web equivalent.
 
-**Two mappings need a P2 implementation decision, not a new `Intent`:** `create_project` at
-*top-level* and `add_next_action` both lack a parent, but `addSubProject` / `addAction` require a
-`parentId`. Resolve how NamWeb roots top-level/next nodes (a root container vs. a dedicated intent)
-during P2 — flagged here so the mapping isn't mistaken for frictionless.
+**Rooting decision (resolved in P2):** `create_project` at *top-level* and `add_next_action` both
+lack a parent, but `addSubProject` / `addAction` require a `parentId`. Resolved **without a new
+`Intent`**: the four container node ids already live on the document, so the server reads them off
+the pulled doc — top-level `create_project` → `addSubProject` with `parentId = doc.projectsNodeId`;
+`add_next_action` → `addAction` with `parentId = doc.nextActionsNodeId`, status `NEXT`. This is
+exactly how the SPA roots them (`ProjectsPage.tsx`), so the existing invariant is reused, not
+re-implemented. `add_action` defaults to status `NEXT` (matching the SPA workbench).
 
 **Beyond parity (not desktop tools, available "for free"):** NamWeb's `Intent` set is a superset of
 the desktop's — due dates (`setDue`), saved-view / mission-control / template CRUD, and reordering
@@ -182,7 +186,7 @@ Today the SPA pulls on mount and on conflict. To get the NamDesktop "watch it la
 
 - **P0** — Design doc (this) + local **read-only** prototype (`mcp/`, no auth, tunnel-connectable). ← #105
 - **P1** — OAuth 2.1/PKCE + authorized-user → Supabase-identity mapping. ← #107 ✅
-- **P2** — Write tools (the `Intent`-mapped set above) with per-write confirmation.
+- **P2** — Write tools (the `Intent`-mapped set above) with connector-side per-write confirmation. ← #109 ✅
 - **P3** — Supabase Realtime live updates in the SPA.
 - **P4** — Hosting/deploy (Edge Functions vs Workers decision) + the core-extraction refactor.
 
