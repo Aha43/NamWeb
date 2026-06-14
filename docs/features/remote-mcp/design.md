@@ -181,7 +181,7 @@ Today the SPA pulls on mount and on conflict. To get the NamDesktop "watch it la
 ## Issue breakdown (phased)
 
 - **P0** — Design doc (this) + local **read-only** prototype (`mcp/`, no auth, tunnel-connectable). ← #105
-- **P1** — OAuth 2.1/PKCE + authorized-user → Supabase-identity mapping.
+- **P1** — OAuth 2.1/PKCE + authorized-user → Supabase-identity mapping. ← #107 ✅
 - **P2** — Write tools (the `Intent`-mapped set above) with per-write confirmation.
 - **P3** — Supabase Realtime live updates in the SPA.
 - **P4** — Hosting/deploy (Edge Functions vs Workers decision) + the core-extraction refactor.
@@ -190,8 +190,17 @@ Today the SPA pulls on mount and on conflict. To get the NamDesktop "watch it la
 - Contract is the Supabase `workspaces` row, not a file; no monitoring/staging mode needed.
 - One OAuth-gated Streamable-HTTP server serves both Claude and ChatGPT.
 - P0 is read-only, unauthenticated, local + tunnel — prove connectivity before OAuth/writes.
+- **P1 OAuth (#107):** rather than a managed provider, the server implements the MCP SDK's
+  `OAuthServerProvider` itself (`mcp/auth/`), backed by **Supabase identity** for the actual login.
+  It issues **opaque** access/refresh tokens that map to a Supabase session (no JWT signing owned
+  here), so every MCP request runs under the user's JWT/RLS — no second identity domain. The whole
+  auth concern sits behind the `OAuthServerProvider` + `AuthStore` seams, so the "managed provider"
+  question below stays a provider swap, not a rewrite. Tokens/clients are in-memory for now
+  (re-auth on restart); persistence is P4. Verified end-to-end (DCR → PKCE → login → token →
+  gated `/mcp`) against the local stack.
 
 ## Open (for design review)
 - Hosting target (Edge Functions vs Cloudflare Workers).
-- OAuth provider choice.
+- OAuth provider choice — **P1 hand-rolls a Supabase-backed `OAuthServerProvider`**; revisit whether
+  to adopt a managed provider (Cloudflare `workers-oauth-provider`, etc.) at P4 hosting.
 - Whether to add a drafts/review mode or rely on connector-side confirmation only.

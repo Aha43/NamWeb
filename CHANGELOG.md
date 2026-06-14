@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Remote MCP server — **P1 OAuth 2.1/PKCE**. The `mcp/` server is now its own OAuth 2.1 Authorization
+  Server (`mcp/auth/`), backed by Supabase identity: a connector does the authorization-code + PKCE
+  flow, signs in on a Supabase login page, and the server issues opaque access/refresh tokens mapped
+  to that user's Supabase session — so every MCP request runs under their JWT and `owner_user_id` RLS,
+  exactly like the SPA. Dynamic Client Registration is supported; tokens/clients are held in-memory for
+  now (re-auth on restart). `NAM_MCP_DEV_NOAUTH=1` keeps the old no-auth shared-session path for the
+  Inspector/local curl. The `mcp/` tree is now covered by `npm run typecheck` (`tsconfig.mcp.json`).
+  Verified end-to-end against the local stack (DCR → PKCE → login → token → gated `/mcp`). Closes #107.
 - Remote MCP server — **P0 read-only prototype**. A standalone `mcp/` server (`npm run mcp`, run via
   `tsx`, not bundled by Vite) exposes the Nam workspace over MCP (Streamable HTTP at `POST /mcp`) so the
   ChatGPT / Claude web surfaces can read it. It reuses the React-free core directly — `pull()` over the

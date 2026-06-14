@@ -1,0 +1,11 @@
+// Typecheck config for the standalone `mcp/` server (run via `tsx`, not bundled by
+// Vite, so it is outside the app's `tsconfig.json` "include": ["src"]). Without this
+// the OAuth/auth code would ship unchecked. The src modules `mcp/` imports are pulled
+// into the program transitively and checked too. `npm run typecheck` runs both.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["mcp"]
+}
