@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Remote MCP server — **P4a persistent OAuth store**. The `mcp/` server can now persist registered
+  clients and issued access/refresh tokens to an **MCP-owned `mcp` Postgres schema** (`db/schema.sql`,
+  created idempotently on startup; `pg`-backed `PostgresAuthStore` injected behind the existing
+  `AuthStore` seam), so connectors no longer re-authorize on every restart. Enabled by setting
+  `NAM_MCP_DATABASE_URL`; unset keeps the in-memory store (zero-config local path unchanged). The
+  schema is the Authorization Server's own bookkeeping — reached via a direct service-level connection
+  (not the user-JWT/RLS data plane) and not exposed to PostgREST, so the at-rest sessions stay off the
+  public API surface. Verified against the local stack: OAuth state written by one server instance is
+  read back by a fresh instance (simulated restart), with expiry-pruning and refresh single-use.
+  Closes #113.
+
 - A **Settings** dialog (the first one — Sprint 7), reachable from a gear button in the desktop
   toolbar and the phone **More** sheet. It holds a **Date format** preference (Medium `Jun 14, 2026`
   by default, plus ISO `2026-06-14`, Day/Month/Year, and Month/Day/Year), persisted per device to

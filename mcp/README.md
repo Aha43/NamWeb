@@ -34,9 +34,22 @@ to that user's Supabase session. Every MCP request then runs under their JWT, so
 by `owner_user_id` RLS exactly as the SPA is. Dynamic Client Registration is supported, so
 connectors self-register.
 
-Tokens and registered clients live in an **in-memory store** (`auth/stores.ts`) — a restart drops
-them and connectors re-authorize. Persistence and a hardened login page (CSRF, branding) ride along
-with P4 hosting.
+### OAuth state persistence (P4a)
+
+By default, tokens and registered clients live in an **in-memory store** (`auth/stores.ts`) — a
+restart drops them and connectors re-authorize. Set **`NAM_MCP_DATABASE_URL`** to persist them to an
+**MCP-owned `mcp` Postgres schema** (`db/schema.sql`, created idempotently on startup; `pg`-backed
+`PostgresAuthStore`) so clients/tokens survive restarts:
+
+```bash
+NAM_MCP_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm run mcp
+# → "OAuth store: Postgres (mcp schema) — persists across restarts."
+```
+
+The `mcp` schema is the AS's own bookkeeping, reached via a direct service-level connection (not the
+user-JWT/RLS data plane) and **not exposed to PostgREST**, so these rows — which hold the user's
+Supabase session at rest — stay off the public API surface. A hardened login page (CSRF, branding)
+and the actual deploy/host ride along with **P4b**.
 
 ## Run it
 
@@ -84,7 +97,7 @@ login — no shared secret on the tunnel.
 
 ## Out of scope here
 
-No Realtime (P3), no hosting/deploy (P4). The "beyond parity" intents (due dates, saved-view /
-mission-control / template CRUD, reordering) are not surfaced as tools yet. The server is
-host-agnostic (plain Node + `tsx`); the Edge Functions vs. Cloudflare Workers decision — and swapping
-the in-memory OAuth store for a persistent one — is P4.
+Realtime live updates landed in the SPA (P3). OAuth-store persistence landed (P4a, above). Still out:
+hosting/deploy (**P4b** — the Edge Functions vs. Cloudflare Workers decision). The "beyond parity"
+intents (due dates, saved-view / mission-control / template CRUD, reordering) are not surfaced as
+tools yet. The server stays host-agnostic (plain Node + `tsx`).
