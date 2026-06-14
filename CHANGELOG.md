@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Remote MCP server — **P2 write tools**. The `mcp/` server can now *act on* the workspace, not just
+  read it: `add_inbox_item`, `create_project` (top-level or nested), `add_action`, `add_next_action`,
+  `mark_next`/`mark_done`/`mark_backlog`, `update_node`, `update_tags`, `move_node`, `delete_node`
+  (leaf or recursive), `add_blocked_by`/`remove_blocked_by`, and `add_resource`/`remove_resource`/
+  `edit_resource`. Each maps to a domain `Intent` committed via `commitIntent` (version guard +
+  conflict-replay), runs under the signed-in user's RLS, and reuses the domain mutation invariants
+  (the four structural containers are refused). Human control is connector-side per-write confirmation.
+  Verified end-to-end against the local stack (write → read-back → delete). Closes #109.
 - Remote MCP server — **P1 OAuth 2.1/PKCE**. The `mcp/` server is now its own OAuth 2.1 Authorization
   Server (`mcp/auth/`), backed by Supabase identity: a connector does the authorization-code + PKCE
   flow, signs in on a Supabase login page, and the server issues opaque access/refresh tokens mapped

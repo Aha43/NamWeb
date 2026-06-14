@@ -1,17 +1,29 @@
-# NamWeb remote MCP server — read-only, OAuth-gated
+# NamWeb remote MCP server — read + write, OAuth-gated
 
-Lets the **ChatGPT / Claude web** surfaces read your Nam workspace over MCP. This is the
-**P0 + P1** slice of the [remote-MCP epic](../docs/features/remote-mcp/design.md): **read-only**,
-now **OAuth 2.1/PKCE-gated** so each request runs as the signed-in user under Supabase RLS. It
-reuses NamWeb's React-free core directly — `pull()` over the Supabase `workspaces` row plus the
-`domain/lenses` projections.
+Lets the **ChatGPT / Claude web** surfaces read *and act on* your Nam workspace over MCP. This is the
+**P0–P2** slice of the [remote-MCP epic](../docs/features/remote-mcp/design.md): read tools,
+write tools, all **OAuth 2.1/PKCE-gated** so each request runs as the signed-in user under Supabase
+RLS. It reuses NamWeb's React-free core directly — `pull()` + `domain/lenses` for reads, and domain
+`Intent`s committed via `commitIntent` (version guard + conflict-replay) for writes.
 
-> Phasing: P0 read-only · **P1 OAuth 2.1/PKCE (here)** · P2 write tools · P3 Realtime · P4 hosting.
+> Phasing: P0 read-only · P1 OAuth 2.1/PKCE · **P2 write tools (here)** · P3 Realtime · P4 hosting.
 
-## Tools (read-only)
+## Read tools
 
 `get_workspace_context`, `list_inbox`, `list_projects`, `list_next_actions`, `list_backlog`,
 `list_done`, `list_saved_views`, `list_project_children`, `find_node`, `list_resources`.
+
+## Write tools
+
+`add_inbox_item`, `create_project` (top-level, or nested with `parent_id`), `add_action`,
+`add_next_action`, `mark_next` / `mark_done` / `mark_backlog`, `update_node`, `update_tags`,
+`move_node`, `delete_node` (leaf or recursive), `add_blocked_by` / `remove_blocked_by`,
+`add_resource` / `remove_resource` / `edit_resource`.
+
+Each maps to a domain `Intent` committed via `commitIntent`, so concurrent edits from the SPA or
+another device never silently clobber. Human control is **connector-side per-write confirmation**
+(both ChatGPT and Claude prompt before a tool runs); the server reuses the domain mutation invariants
+(cycle/structural guards) and refuses to touch the four structural container nodes.
 
 ## Authentication (P1)
 
@@ -72,6 +84,7 @@ login — no shared secret on the tunnel.
 
 ## Out of scope here
 
-No writes (P2), no Realtime (P3), no hosting/deploy (P4). The server is host-agnostic (plain Node +
-`tsx`); the Edge Functions vs. Cloudflare Workers decision — and swapping the in-memory store for a
-persistent one — is P4.
+No Realtime (P3), no hosting/deploy (P4). The "beyond parity" intents (due dates, saved-view /
+mission-control / template CRUD, reordering) are not surfaced as tools yet. The server is
+host-agnostic (plain Node + `tsx`); the Edge Functions vs. Cloudflare Workers decision — and swapping
+the in-memory OAuth store for a persistent one — is P4.
