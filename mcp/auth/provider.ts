@@ -30,6 +30,7 @@ import type {
 import type { AuthSession, SupabaseClient } from '@supabase/supabase-js';
 
 import { AuthStore, InMemoryAuthStore } from './stores';
+import { resolveGrantedScopes } from './scopes';
 import { clientForSession, signInWithPassword } from './supabaseIdentity';
 import { renderLoginPage } from './loginPage';
 
@@ -130,7 +131,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       clientId: client_id,
       codeChallenge: code_challenge,
       redirectUri: redirect_uri,
-      scopes: scope ? String(scope).split(' ').filter(Boolean) : [],
+      scopes: resolveGrantedScopes(scope ? String(scope).split(' ').filter(Boolean) : []),
       session,
       expiresAt: nowSeconds() + AUTH_CODE_TTL_SECONDS,
     });

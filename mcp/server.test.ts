@@ -62,8 +62,8 @@ function makeDoc(): WorkspaceDocument {
 // A typed-but-unused stand-in: tools that read go through the mocked `pull`.
 const fakeClient = {} as SupabaseClient;
 
-async function connectedClient() {
-  const server = buildServer(fakeClient);
+async function connectedClient(opts?: { canWrite?: boolean }) {
+  const server = buildServer(fakeClient, opts);
   const client = new Client({ name: 'test', version: '0.0.0' });
   const [clientT, serverT] = InMemoryTransport.createLinkedPair();
   await Promise.all([client.connect(clientT), server.connect(serverT)]);
@@ -120,6 +120,14 @@ describe('NamWeb MCP server (read surface)', () => {
     expect(tools.map((t) => t.name).sort()).toEqual(
       [...EXPECTED_READ_TOOLS, ...EXPECTED_WRITE_TOOLS].sort(),
     );
+    await server.close();
+  });
+
+  it('exposes only read tools when the token lacks nam.write', async () => {
+    const { client, server } = await connectedClient({ canWrite: false });
+    const names = (await client.listTools()).tools.map((t) => t.name);
+    expect(names.sort()).toEqual([...EXPECTED_READ_TOOLS].sort());
+    for (const write of EXPECTED_WRITE_TOOLS) expect(names).not.toContain(write);
     await server.close();
   });
 
