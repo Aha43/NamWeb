@@ -30,19 +30,32 @@ function fakeSession(over: Partial<AuthSession> = {}): AuthSession {
 
 const fakeSupabase = { __brand: 'supabase' } as unknown as SupabaseClient;
 
+const CSRF = 'csrf-token';
+
+/** A request body + matching CSRF cookie header (double-submit pair). */
+function reqWith(body: Record<string, string>, csrf: string = CSRF) {
+  return { body: { ...body, _csrf: csrf }, headers: { cookie: `nam_csrf=${CSRF}` } };
+}
+
 /** Minimal Express-like response that records what the provider does to it. */
 function fakeRes() {
   return {
     statusCode: 200,
     headers: {} as Record<string, string>,
+    cookies: {} as Record<string, string>,
     body: undefined as string | undefined,
     redirectUrl: undefined as string | undefined,
+    req: { secure: false },
     status(code: number) {
       this.statusCode = code;
       return this;
     },
     setHeader(key: string, value: string) {
       this.headers[key] = value;
+      return this;
+    },
+    cookie(name: string, value: string) {
+      this.cookies[name] = value;
       return this;
     },
     send(body: string) {
@@ -89,18 +102,16 @@ describe('SupabaseOAuthProvider', () => {
   async function login(body: Record<string, string> = {}): Promise<string> {
     const res = fakeRes();
     await provider.handleLogin(
-      {
-        body: {
-          email: 'me@nam.local',
-          password: 'pw',
-          client_id: client.client_id,
-          redirect_uri: REDIRECT_URI,
-          code_challenge: CODE_CHALLENGE,
-          state: 'xyz',
-          scope: 'nam.read',
-          ...body,
-        },
-      } as never,
+      reqWith({
+        email: 'me@nam.local',
+        password: 'pw',
+        client_id: client.client_id,
+        redirect_uri: REDIRECT_URI,
+        code_challenge: CODE_CHALLENGE,
+        state: 'xyz',
+        scope: 'nam.read',
+        ...body,
+      }) as never,
       res as never,
     );
     expect(res.redirectUrl, 'login should redirect with a code').toBeDefined();
@@ -172,22 +183,41 @@ describe('SupabaseOAuthProvider', () => {
     signInWithPassword.mockRejectedValueOnce(new Error('bad creds'));
     const res = fakeRes();
     await provider.handleLogin(
-      {
-        body: {
-          email: 'me@nam.local',
-          password: 'wrong',
-          client_id: client.client_id,
-          redirect_uri: REDIRECT_URI,
-          code_challenge: CODE_CHALLENGE,
-          state: 'xyz',
-          scope: 'nam.read',
-        },
-      } as never,
+      reqWith({
+        email: 'me@nam.local',
+        password: 'wrong',
+        client_id: client.client_id,
+        redirect_uri: REDIRECT_URI,
+        code_challenge: CODE_CHALLENGE,
+        state: 'xyz',
+        scope: 'nam.read',
+      }) as never,
       res as never,
     );
     expect(res.redirectUrl).toBeUndefined();
     expect(res.statusCode).toBe(401);
     expect(res.body).toContain('Sign-in failed');
+  });
+
+  it('rejects a login POST with a missing/mismatched CSRF token', async () => {
+    const res = fakeRes();
+    await provider.handleLogin(
+      {
+        body: {
+          email: 'me@nam.local',
+          password: 'pw',
+          client_id: client.client_id,
+          redirect_uri: REDIRECT_URI,
+          code_challenge: CODE_CHALLENGE,
+          _csrf: 'wrong',
+        },
+        headers: { cookie: `nam_csrf=${CSRF}` },
+      } as never,
+      res as never,
+    );
+    expect(res.statusCode).toBe(403);
+    expect(res.redirectUrl).toBeUndefined();
+    expect(signInWithPassword).not.toHaveBeenCalled();
   });
 
   it('rejects login for an unknown client or redirect_uri', async () => {
@@ -243,7 +273,7 @@ describe('SupabaseOAuthProvider', () => {
 
       const res = fakeRes();
       await provider.handleSelectWorkspace(
-        { body: { pending_id: pendingId, workspace: 'dev' } } as never,
+        reqWith({ pending_id: pendingId, workspace: 'dev' }) as never,
         res as never,
       );
       const code = new URL(res.redirectUrl!).searchParams.get('code')!;
@@ -260,7 +290,7 @@ describe('SupabaseOAuthProvider', () => {
 
       const res = fakeRes();
       await provider.handleSelectWorkspace(
-        { body: { pending_id: pendingId, workspace: 'someone-else' } } as never,
+        reqWith({ pending_id: pendingId, workspace: 'someone-else' }) as never,
         res as never,
       );
       expect(res.statusCode).toBe(400);
@@ -272,21 +302,19 @@ describe('SupabaseOAuthProvider', () => {
       const res = fakeRes();
       await provider.handleLogin(loginBody() as never, res as never);
       expect(res.redirectUrl).toBeUndefined();
-      expect(res.body).toContain('No workspace yet');
+      expect(res.body).toContain('create one first');
     });
   });
 
   function loginBody() {
-    return {
-      body: {
-        email: 'me@nam.local',
-        password: 'pw',
-        client_id: client.client_id,
-        redirect_uri: REDIRECT_URI,
-        code_challenge: CODE_CHALLENGE,
-        state: 'xyz',
-        scope: 'nam.read',
-      },
-    };
+    return reqWith({
+      email: 'me@nam.local',
+      password: 'pw',
+      client_id: client.client_id,
+      redirect_uri: REDIRECT_URI,
+      code_challenge: CODE_CHALLENGE,
+      state: 'xyz',
+      scope: 'nam.read',
+    });
   }
 });

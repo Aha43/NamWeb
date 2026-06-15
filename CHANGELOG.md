@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Remote MCP server — **P4b hardened + branded consent page**. The OAuth login / workspace-picker /
+  no-workspace pages are now Nam-branded (logo, card layout, light/dark) and security-hardened:
+  **CSRF** protection on both form POSTs (`/nam/login`, `/nam/select-workspace`) via a double-submit
+  cookie (httpOnly `nam_csrf` set at render, echoed as a hidden field, verified on POST), and an
+  in-memory per-IP **rate limit** (10 sign-ins / 5 min → 429) to blunt credential stuffing. The server
+  now trusts the proxy so `req.ip`/`req.secure` reflect the real client behind a tunnel/LB. New
+  `mcp/auth/csrf.ts` + `mcp/auth/rateLimit.ts` (+ tests). Verified end-to-end against the local stack
+  (CSRF cookie/field on `/authorize`; bad token → 403; full picker flow under valid CSRF; rate-limit
+  → 429). This completes the onboarding-readiness work; only the deploy remains. Closes #119.
+
 - Remote MCP server — **P4b per-user workspace (choose-at-consent)**. A connector now acts on a
   workspace the user **picks during sign-in**, instead of a single server-wide `VITE_WORKSPACE_NAME`
   env — required for a multi-user deploy. After authenticating, the consent flow lists the user's

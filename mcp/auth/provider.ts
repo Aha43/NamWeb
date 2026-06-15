@@ -33,6 +33,7 @@ import { AuthStore, InMemoryAuthStore } from './stores';
 import { resolveGrantedScopes } from './scopes';
 import { clientForSession, listWorkspaceNames, signInWithPassword } from './supabaseIdentity';
 import { renderLoginPage, renderNoWorkspacePage, renderWorkspacePicker } from './loginPage';
+import { issueCsrf, verifyCsrf } from './csrf';
 
 const AUTH_CODE_TTL_SECONDS = 600; // 10 min — time to complete the code exchange
 const PENDING_LOGIN_TTL_SECONDS = 600; // 10 min — time to pick a workspace after sign-in
@@ -86,6 +87,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
         codeChallenge: params.codeChallenge,
         state: params.state,
         scope: params.scopes?.join(' '),
+        csrfToken: issueCsrf(res),
       }),
     );
   }
@@ -107,6 +109,10 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       res.status(400).send('Unknown client or redirect_uri');
       return;
     }
+    if (!verifyCsrf(req)) {
+      res.status(403).send('Invalid or missing CSRF token — reload the sign-in page and retry.');
+      return;
+    }
 
     let session;
     try {
@@ -121,6 +127,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
           codeChallenge: code_challenge,
           state,
           scope,
+          csrfToken: issueCsrf(res),
           error: 'Sign-in failed — check your email and password.',
         }),
       );
@@ -156,7 +163,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       expiresAt: nowSeconds() + PENDING_LOGIN_TTL_SECONDS,
     });
     res.setHeader('Content-Type', 'text/html');
-    res.send(renderWorkspacePicker({ pendingId, workspaces }));
+    res.send(renderWorkspacePicker({ pendingId, workspaces, csrfToken: issueCsrf(res) }));
   };
 
   /**
@@ -167,6 +174,10 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     const { pending_id, workspace } = req.body ?? {};
     if (!pending_id || !workspace) {
       res.status(400).send('Missing workspace selection');
+      return;
+    }
+    if (!verifyCsrf(req)) {
+      res.status(403).send('Invalid or missing CSRF token — reload and retry.');
       return;
     }
     const pending = await this.store.takePendingLogin(String(pending_id));

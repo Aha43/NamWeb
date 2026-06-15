@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { renderLoginPage } from './loginPage';
 import { SCOPE_READ } from './scopes';
 
-const base = { clientId: 'c1', redirectUri: 'https://x/cb', codeChallenge: 'ch' };
+const base = { clientId: 'c1', redirectUri: 'https://x/cb', codeChallenge: 'ch', csrfToken: 'tok' };
 
 describe('renderLoginPage consent copy', () => {
   it('warns the connector can modify when write is granted (default, no scope requested)', () => {
@@ -15,5 +15,11 @@ describe('renderLoginPage consent copy', () => {
     const html = renderLoginPage({ ...base, scope: SCOPE_READ });
     expect(html).toContain('but not change them');
     expect(html).not.toContain('and modify');
+  });
+
+  it('embeds the CSRF token and the brand mark', () => {
+    const html = renderLoginPage(base);
+    expect(html).toContain('name="_csrf" value="tok"');
+    expect(html).toContain('<svg'); // branded logo
   });
 });

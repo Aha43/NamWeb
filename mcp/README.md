@@ -53,8 +53,9 @@ NAM_MCP_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm
 
 The `mcp` schema is the AS's own bookkeeping, reached via a direct service-level connection (not the
 user-JWT/RLS data plane) and **not exposed to PostgREST**, so these rows — which hold the user's
-Supabase session at rest — stay off the public API surface. A hardened login page (CSRF, branding)
-and the actual deploy/host ride along with **P4b**.
+Supabase session at rest — stay off the public API surface. The consent pages are Nam-branded and
+hardened (CSRF double-submit cookie on both form POSTs; in-memory per-IP rate limit on sign-in). The
+actual deploy/host is the remaining **P4b** step.
 
 ## Run it
 
