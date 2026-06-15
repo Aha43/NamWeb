@@ -26,6 +26,7 @@ import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middlew
 import { z } from 'zod';
 
 import { SupabaseOAuthProvider, supabaseClientFromAuth } from './auth/provider';
+import { SCOPE_WRITE, SUPPORTED_SCOPES } from './auth/scopes';
 import type { AuthStore } from './auth/stores';
 import { PostgresAuthStore } from './auth/postgresStore';
 import { ensureSchema, getPool } from './db/pool';
@@ -168,7 +169,10 @@ function resourceBrief(r: Resource, index: number) {
  * shared authenticated `client`. A new instance is created per HTTP request (the
  * canonical stateless Streamable-HTTP pattern); registration is cheap.
  */
-export function buildServer(client: SupabaseClient): McpServer {
+export function buildServer(
+  client: SupabaseClient,
+  { canWrite = true }: { canWrite?: boolean } = {},
+): McpServer {
   const server = new McpServer({ name: 'namweb', version: '0.1.0' });
 
   const read = (
@@ -288,7 +292,9 @@ export function buildServer(client: SupabaseClient): McpServer {
 
   // ---- Write tools (P2) ----------------------------------------------------
   // Each maps to a domain Intent committed via `commit`. Human confirmation is
-  // connector-side (both ChatGPT and Claude prompt before a tool call).
+  // connector-side (both ChatGPT and Claude prompt before a tool call). Gated on
+  // the `nam.write` scope: a read-only token never sees these tools at all.
+  if (!canWrite) return server;
 
   server.registerTool(
     'add_inbox_item',
@@ -556,10 +562,11 @@ export function buildServer(client: SupabaseClient): McpServer {
  * run the request under — the OAuth-resolved per-user client in normal mode, or a
  * single shared client in dev-no-auth mode.
  */
-function mcpHandler(resolveClient: (req: Request) => SupabaseClient) {
+function mcpHandler(resolve: (req: Request) => { client: SupabaseClient; canWrite: boolean }) {
   return async (req: Request, res: Response) => {
     // Stateless: a fresh server + transport per request (no session reuse).
-    const server = buildServer(resolveClient(req));
+    const { client, canWrite } = resolve(req);
+    const server = buildServer(client, { canWrite });
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
@@ -591,7 +598,8 @@ async function main() {
   if (process.env.NAM_MCP_DEV_NOAUTH === '1') {
     // Dev/Inspector escape hatch: no OAuth, one shared signed-in client. Never deploy.
     const client = await signedInClient();
-    app.post('/mcp', express.json(), mcpHandler(() => client));
+    // Dev shared session has full access (no scopes in play).
+    app.post('/mcp', express.json(), mcpHandler(() => ({ client, canWrite: true })));
     console.warn('⚠  NAM_MCP_DEV_NOAUTH=1 — OAuth disabled, shared dev session (local only).');
   } else {
     // Normal: this server is the OAuth 2.1 Authorization Server (Supabase-backed).
@@ -614,7 +622,7 @@ async function main() {
       mcpAuthRouter({
         provider,
         issuerUrl,
-        scopesSupported: ['nam.read'],
+        scopesSupported: [...SUPPORTED_SCOPES],
         resourceName: 'NamWeb',
       }),
     );
@@ -625,7 +633,10 @@ async function main() {
       '/mcp',
       express.json(),
       requireBearerAuth({ verifier: provider, resourceMetadataUrl }),
-      mcpHandler((req) => supabaseClientFromAuth(req.auth)),
+      mcpHandler((req) => ({
+        client: supabaseClientFromAuth(req.auth),
+        canWrite: req.auth?.scopes?.includes(SCOPE_WRITE) ?? false,
+      })),
     );
   }
 

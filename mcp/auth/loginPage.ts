@@ -1,8 +1,11 @@
-// Minimal Supabase login page shown during the OAuth authorize step (P1).
+// Supabase login / consent page shown during the OAuth authorize step.
 //
-// Local-grade only: unstyled, no CSRF token, posts credentials to /nam/login over
-// the same origin. Hardening (CSRF, branding, rate-limit) rides along with P4
-// hosting; for a local + tunnel prototype this is deliberately small.
+// The copy is honest about what is being granted: it reflects the resolved scopes
+// (read vs read+write), so a user signing in knows the connector can modify their
+// workspace, not just read it (P4b consent fix). Full hardening — CSRF token,
+// rate-limit, branding — still rides along with the P4b hardened-page work.
+
+import { resolveGrantedScopes, SCOPE_WRITE } from './scopes';
 
 function esc(value: string): string {
   return value
@@ -37,13 +40,20 @@ export function renderLoginPage(p: LoginPageParams): string {
     ? `<p style="color:#b00">${esc(p.error)}</p>`
     : '';
 
+  // Honest consent: describe exactly what the granted scopes allow.
+  const granted = resolveGrantedScopes(p.scope ? p.scope.split(' ').filter(Boolean) : []);
+  const canWrite = granted.includes(SCOPE_WRITE);
+  const access = canWrite
+    ? 'read <strong>and modify</strong> your workspace — it can view your projects, inbox, and actions, and create, edit, and delete them on your behalf.'
+    : 'read your workspace — it can view your projects, inbox, and actions, but not change them.';
+
   return `<!doctype html>
 <html lang="en">
 <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Sign in to Nam</title></head>
 <body style="font-family:system-ui,sans-serif;max-width:22rem;margin:4rem auto;padding:0 1rem">
   <h1 style="font-size:1.25rem">Connect to Nam</h1>
-  <p style="color:#555">Sign in with your Nam (Supabase) account to let this assistant read your workspace.</p>
+  <p style="color:#555">Sign in with your Nam (Supabase) account to let this assistant ${access}</p>
   ${error}
   <form method="post" action="/nam/login">
       ${hidden}

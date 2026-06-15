@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Remote MCP server — **P4b honest read+write consent**. The OAuth server now advertises both
+  `nam.read` and `nam.write` (was `nam.read` only, while 16 write tools shipped in P2), and **enforces**
+  the distinction: a token granted only `nam.read` sees just the read tools — the write tools aren't
+  registered for it at all. Granted scopes resolve to the client's requested∩supported set, or the full
+  set when none is requested (the connector is read+write by nature). The sign-in/consent page copy now
+  states honestly whether the assistant can **read** or **read and modify** your workspace, matching the
+  scopes actually being granted. First of the P4b go-live readiness items (#115). New `mcp/auth/scopes.ts`
+  (+ tests); write tools gated in `buildServer`.
+
 - Remote MCP server — **P4a persistent OAuth store**. The `mcp/` server can now persist registered
   clients and issued access/refresh tokens to an **MCP-owned `mcp` Postgres schema** (`db/schema.sql`,
   created idempotently on startup; `pg`-backed `PostgresAuthStore` injected behind the existing
