@@ -27,6 +27,7 @@ import { z } from 'zod';
 
 import { SupabaseOAuthProvider, supabaseClientFromAuth } from './auth/provider';
 import { SCOPE_WRITE, SUPPORTED_SCOPES } from './auth/scopes';
+import { createRateLimiter } from './auth/rateLimit';
 import type { AuthStore } from './auth/stores';
 import { PostgresAuthStore } from './auth/postgresStore';
 import { ensureSchema, getPool } from './db/pool';
@@ -595,6 +596,8 @@ function mcpHandler(
 async function main() {
   const port = Number(process.env.NAM_MCP_PORT ?? 3333);
   const app = express();
+  // Behind a tunnel/proxy in deploy, so req.ip / req.secure reflect the real client.
+  app.set('trust proxy', true);
 
   if (process.env.NAM_MCP_DEV_NOAUTH === '1') {
     // Dev/Inspector escape hatch: no OAuth, one shared signed-in client. Never deploy.
@@ -631,7 +634,13 @@ async function main() {
         resourceName: 'NamWeb',
       }),
     );
-    app.post('/nam/login', express.urlencoded({ extended: false }), provider.handleLogin);
+    const loginLimiter = createRateLimiter({ windowMs: 5 * 60_000, max: 10 });
+    app.post(
+      '/nam/login',
+      loginLimiter.middleware,
+      express.urlencoded({ extended: false }),
+      provider.handleLogin,
+    );
     app.post(
       '/nam/select-workspace',
       express.urlencoded({ extended: false }),
