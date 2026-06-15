@@ -1,6 +1,6 @@
 # Web account onboarding — design
 
-> Status: **draft / for design review.** Planning only — no implementation has started.
+> Status: **P0 scope settled (2026-06-15); ready to implement.** See *Decisions settled* below.
 > Promotes a topic that surfaced while finishing the remote-MCP epic (see
 > [`../remote-mcp/design.md`](../remote-mcp/design.md)).
 
@@ -57,6 +57,7 @@ The **Account page** is the single home for everything identity/security:
 - change password,
 - connected social logins (when added),
 - **invites** (send one, see pending),
+- **export my data** (download a JSON copy — available anytime, not just at deletion),
 - **delete account**,
 - and — *only if it ever exists* — plan / billing.
 
@@ -116,30 +117,45 @@ touches desktop in a few places:
 5. **Unaffected:** the core `workspaces` sync contract (one JSONB doc + version) is untouched; desktop
    cloud sync keeps working exactly as today.
 
-## Open questions (to settle before/within implementation)
-- **Account-deletion semantics** — cloud-everywhere vs web-only; fate of local desktop data; grace
-  period / soft-delete vs hard-delete.
-- **Does NamDesktop honor entitlements**, or stay all-features?
-- **Email sender (SMTP)** for production verification/reset mail — which provider.
-- **Bot protection** choice (Turnstile vs hCaptcha vs none-at-MVP).
-- **Where sign-up surfaces** — SPA only, or also a hook from the MCP connector's login page (so a
-  brand-new connector user isn't dead-ended)? At minimum the connector login page should *link* to
-  web sign-up.
-- **Social-login timing** — MVP+1, or fold Google in at MVP since Supabase makes it cheap.
-- **Invites** — do we track an invite token (for attribution / future referral rewards) or just send a
-  plain sign-up link? Per-user cap and whether invites need the inviter's email verified first.
-- **Account surface shape** — Account as a routed page vs a dialog/panel; and whether Account folds
-  into the existing Settings dialog (`#104`) with tabs or stays a separate top-right menu entry.
+## Decisions settled (2026-06-15)
+- **Account deletion** — **hard delete behind a strong confirm** (no soft-delete / grace period for
+  MVP). Before deleting, offer a one-click **JSON export** of the user's data ("download a copy
+  first"); also expose **Export my data** *anytime* on the account page. Export is near-free — a
+  workspace is already a JSON document — and deletion + export are the data-portability pair. Local
+  desktop files on disk are untouched; cloud data is removed, so that account's desktop *cloud sync*
+  empties.
+- **Account surface** — a single **routed Settings/Account page** reached from a **top-right user-icon
+  menu** (menu: *Account · Settings · Sign out*), organised in **tabs**: *Account* (identity, security,
+  data, delete) · *Preferences* (date format, …) · later *Billing*. The existing date-format **dialog
+  (`#104`) migrates** into the Preferences tab.
+- **Invites** — MVP is **dead-simple: a plain sign-up link, no tracking**. Guards only: **verified
+  users** can invite, plus a **per-user cap + rate-limit**. Tracked-token attribution, a pending-invites
+  list, and referral rewards are a clearly-flagged **later** add (provisioned in spirit, not built).
+- **Entitlements & desktop** — **deferred.** Entitlements default to `free` = everything (no gating
+  exists yet), so **NamDesktop is unaffected** and stays all-features by default; revisit only if real
+  plans ever appear.
 
-## Phasing (rough — refine at review)
-- **P0** — email+password sign-up + email verification + sign-in; password reset; the `can(feature)` /
-  entitlements seam defaulting to `free`. SPA surfaces; abuse controls (rate-limit + captcha).
-- **P1** — account deletion (privileged server action) with the agreed semantics; **invites** (reuses
-  the P0 email path; add per-user caps).
-- **P2** — social login (Google) once email/password is solid.
-- **Later** — concrete plans + billing, *if/when* there's an actual monetization decision.
+## Still open (not MVP blockers — local Inbucket covers email in dev)
+- **SMTP sender** for production verification / reset / invite mail — pick at public-launch time (local
+  dev uses **Inbucket**, http://127.0.0.1:54324).
+- **Bot protection** (Turnstile / hCaptcha) — add at public launch; off for local dev.
+- **Social-login timing** — P2, after email/password is solid.
+- **Sign-up entry points** — proposed default: the **SPA is the primary** sign-up surface, and the MCP
+  connector login page **links out** to web sign-up so a brand-new connector user isn't dead-ended.
+  (Confirm at build.)
+
+## Phasing
+- **P0** — email+password **sign-up + email verification + sign-in**; **password reset**; the
+  `can(feature)` / entitlements seam defaulting to `free`; the **Settings/Account page shell**
+  (user-icon menu + tabs) with the `#104` preferences migrated in; **Export my data** (JSON). All
+  testable on the local stack (Supabase Auth + Inbucket).
+- **P1** — **account deletion** (privileged server action — service role / RPC / Edge Function) behind
+  the confirm + export nudge; **invites** (plain link, verified-only, capped).
+- **P2** — social login (Google).
+- **Later** — concrete plans + billing, *if/when* there's a real monetization decision.
 
 ## Process note
-This doc is the handoff, mirroring the repo's design-doc practice. It is **not approved for
-implementation** — it captures direction + the open questions so the account model is ironed out on
-paper (and in memory) rather than only in chat. Resume by settling the open questions above.
+Direction and the P0 open questions are **settled** (2026-06-15) — see *Decisions settled* above. The
+doc is ready to become an epic + a concrete P0 build plan; the whole MVP is **local-stack testable**
+(Supabase Auth + the Inbucket email catcher). The remaining *Still open* items are launch-time / infra,
+not MVP blockers.
