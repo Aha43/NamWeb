@@ -1,9 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen, Plus, Search, Settings } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { SettingsDialog } from '@/components/settings/SettingsDialog';
+import { AccountMenu } from './AccountMenu';
 import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
@@ -26,7 +26,6 @@ const SIDEBAR_SURFACES = SURFACES.filter((s) => s.to !== '/search');
 export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   const { openCapture } = useCapture();
   const { width, collapsed, setWidth, toggleCollapsed } = useSidebarLayout();
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Drag the divider: track the pointer on the document until release, then clean up.
   const onResizeStart = useCallback(
@@ -70,21 +69,9 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Settings"
-            onClick={() => setSettingsOpen(true)}
-          >
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onSignOut}>
-            Sign out
-          </Button>
+          <AccountMenu onSignOut={onSignOut} />
         </div>
       </header>
-
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
 
       <div className="flex min-h-0 flex-1">
         {!collapsed && (
