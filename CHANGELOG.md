@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Remote MCP server — **P4b per-user workspace (choose-at-consent)**. A connector now acts on a
+  workspace the user **picks during sign-in**, instead of a single server-wide `VITE_WORKSPACE_NAME`
+  env — required for a multi-user deploy. After authenticating, the consent flow lists the user's
+  workspaces: one → used automatically; several → a picker page; none → "create one first". The choice
+  is carried in the issued access/refresh token (`req.auth.extra.workspace`) and read per request in
+  place of the global workspace name (the dev no-auth path still uses the env). The session is held
+  between the credential and pick steps in a server-side, single-use **pending login** (new `AuthStore`
+  method + `mcp.oauth_pending_logins` table), so it never travels through the browser. One workspace per
+  connection; to switch, reconnect. Verified end-to-end against the local stack (DCR → login → picker →
+  pick `dev` → token → MCP `list_inbox` returns `dev`'s inbox). Part of the P4b onboarding work (#117).
+
 - Remote MCP server — **P4b honest read+write consent**. The OAuth server now advertises both
   `nam.read` and `nam.write` (was `nam.read` only, while 16 write tools shipped in P2), and **enforces**
   the distinction: a token granted only `nam.read` sees just the read tools — the write tools aren't

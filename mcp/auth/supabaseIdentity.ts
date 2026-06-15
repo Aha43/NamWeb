@@ -29,6 +29,18 @@ export async function signInWithPassword(email: string, password: string): Promi
   return data.session;
 }
 
+/** The names of the workspace rows the user behind `session` owns (RLS-scoped). */
+export async function listWorkspaceNames(session: AuthSession): Promise<string[]> {
+  const { client } = await clientForSession(session);
+  const { data, error } = await client
+    .from('workspaces')
+    .select('name')
+    .eq('owner_user_id', session.user.id)
+    .order('name');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((row) => row.name as string);
+}
+
 const EXPIRY_SKEW_SECONDS = 60;
 
 function isExpired(session: AuthSession): boolean {

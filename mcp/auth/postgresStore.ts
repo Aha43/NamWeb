@@ -11,7 +11,13 @@
 import type pg from 'pg';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { AuthSession } from '@supabase/supabase-js';
-import type { AccessTokenData, AuthCodeData, AuthStore, RefreshTokenData } from './stores';
+import type {
+  AccessTokenData,
+  AuthCodeData,
+  AuthStore,
+  PendingLoginData,
+  RefreshTokenData,
+} from './stores';
 
 const nowSeconds = () => Math.floor(Date.now() / 1000);
 
@@ -110,9 +116,28 @@ export class PostgresAuthStore implements AuthStore {
     return rows[0]?.data;
   }
 
-  /** Best-effort removal of expired codes/access tokens (refresh tokens never expire here). */
+  async savePendingLogin(id: string, data: PendingLoginData): Promise<void> {
+    await this.pool.query(
+      `insert into mcp.oauth_pending_logins (id, data, expires_at) values ($1, $2, to_timestamp($3))
+       on conflict (id) do update set data = excluded.data, expires_at = excluded.expires_at`,
+      [id, data, data.expiresAt],
+    );
+  }
+
+  async takePendingLogin(id: string): Promise<PendingLoginData | undefined> {
+    const { rows } = await this.pool.query<{ data: PendingLoginData }>(
+      'delete from mcp.oauth_pending_logins where id = $1 returning data',
+      [id],
+    );
+    const data = rows[0]?.data;
+    if (!data) return undefined;
+    return data.expiresAt <= nowSeconds() ? undefined : data;
+  }
+
+  /** Best-effort removal of expired codes/access tokens/pending logins. */
   async pruneExpired(): Promise<void> {
     await this.pool.query('delete from mcp.oauth_codes where expires_at <= now()');
     await this.pool.query('delete from mcp.oauth_access_tokens where expires_at <= now()');
+    await this.pool.query('delete from mcp.oauth_pending_logins where expires_at <= now()');
   }
 }
