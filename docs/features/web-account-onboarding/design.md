@@ -46,6 +46,25 @@ connector, for instance, simply consumes whatever account model NamWeb has.
 - Teams / orgs / multi-user workspaces.
 - SSO / enterprise.
 
+## Account surface (where it lives in the UI)
+
+All account *view/change* lives behind a **user-icon menu** in the top-right (avatar / initials).
+Clicking it opens a small menu → **Account**, **Settings**, **Sign out** (sign-out already lives
+top-right today; this generalises it into a proper account menu).
+
+The **Account page** is the single home for everything identity/security:
+- profile (display name, email),
+- change password,
+- connected social logins (when added),
+- **invites** (send one, see pending),
+- **delete account**,
+- and — *only if it ever exists* — plan / billing.
+
+**Relationship to the existing Settings dialog** (`#104`, the date-format preference): decide whether
+Account and app Settings are one surface with tabs or two menu entries. Sensible split — **Settings =
+app/display preferences; Account = identity, security, invites, deletion** — but that's an open
+question (below).
+
 ## Approach — lean on Supabase Auth
 
 Supabase Auth already provides the primitives, so this is mostly **UX + wiring + policy**, not
@@ -109,6 +128,8 @@ touches desktop in a few places:
 - **Social-login timing** — MVP+1, or fold Google in at MVP since Supabase makes it cheap.
 - **Invites** — do we track an invite token (for attribution / future referral rewards) or just send a
   plain sign-up link? Per-user cap and whether invites need the inviter's email verified first.
+- **Account surface shape** — Account as a routed page vs a dialog/panel; and whether Account folds
+  into the existing Settings dialog (`#104`) with tabs or stays a separate top-right menu entry.
 
 ## Phasing (rough — refine at review)
 - **P0** — email+password sign-up + email verification + sign-in; password reset; the `can(feature)` /
