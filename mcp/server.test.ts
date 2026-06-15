@@ -62,7 +62,7 @@ function makeDoc(): WorkspaceDocument {
 // A typed-but-unused stand-in: tools that read go through the mocked `pull`.
 const fakeClient = {} as SupabaseClient;
 
-async function connectedClient(opts?: { canWrite?: boolean }) {
+async function connectedClient(opts?: { canWrite?: boolean; workspace?: string }) {
   const server = buildServer(fakeClient, opts);
   const client = new Client({ name: 'test', version: '0.0.0' });
   const [clientT, serverT] = InMemoryTransport.createLinkedPair();
@@ -120,6 +120,13 @@ describe('NamWeb MCP server (read surface)', () => {
     expect(tools.map((t) => t.name).sort()).toEqual(
       [...EXPECTED_READ_TOOLS, ...EXPECTED_WRITE_TOOLS].sort(),
     );
+    await server.close();
+  });
+
+  it('reads from the workspace the token selected', async () => {
+    const { client, server } = await connectedClient({ workspace: 'dev' });
+    await client.callTool({ name: 'list_inbox', arguments: {} });
+    expect(pull).toHaveBeenCalledWith(fakeClient, 'dev');
     await server.close();
   });
 

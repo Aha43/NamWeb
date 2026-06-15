@@ -48,7 +48,8 @@ describe('PostgresAuthStore', () => {
 
   it('returns a live code and drops an expired one', async () => {
     const live: AuthCodeData = {
-      clientId: 'c1', codeChallenge: 'x', redirectUri: 'r', scopes: [], session, expiresAt: future,
+      clientId: 'c1', codeChallenge: 'x', redirectUri: 'r', scopes: [], session,
+      workspace: 'default', expiresAt: future,
     };
     const expired: AuthCodeData = { ...live, expiresAt: past };
 
@@ -64,7 +65,9 @@ describe('PostgresAuthStore', () => {
   });
 
   it('drops an expired access token on read', async () => {
-    const expired: AccessTokenData = { clientId: 'c1', scopes: [], session, expiresAt: past };
+    const expired: AccessTokenData = {
+      clientId: 'c1', scopes: [], session, workspace: 'default', expiresAt: past,
+    };
     const { pool, calls } = makePool([{ rows: [{ data: expired }] }, { rows: [] }]);
     const store = new PostgresAuthStore(pool);
 

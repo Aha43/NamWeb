@@ -31,10 +31,11 @@ import type { AuthSession, SupabaseClient } from '@supabase/supabase-js';
 
 import { AuthStore, InMemoryAuthStore } from './stores';
 import { resolveGrantedScopes } from './scopes';
-import { clientForSession, signInWithPassword } from './supabaseIdentity';
-import { renderLoginPage } from './loginPage';
+import { clientForSession, listWorkspaceNames, signInWithPassword } from './supabaseIdentity';
+import { renderLoginPage, renderNoWorkspacePage, renderWorkspacePicker } from './loginPage';
 
 const AUTH_CODE_TTL_SECONDS = 600; // 10 min — time to complete the code exchange
+const PENDING_LOGIN_TTL_SECONDS = 600; // 10 min — time to pick a workspace after sign-in
 
 function opaqueToken(): string {
   return randomBytes(32).toString('base64url');
@@ -126,21 +127,90 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       return;
     }
 
+    const scopes = resolveGrantedScopes(scope ? String(scope).split(' ').filter(Boolean) : []);
+    const base = {
+      clientId: client_id,
+      redirectUri: redirect_uri,
+      codeChallenge: code_challenge,
+      state,
+      scopes,
+      session,
+    };
+
+    // Resolve which workspace this connection acts on (choose-at-consent).
+    const workspaces = await listWorkspaceNames(session);
+    if (workspaces.length === 0) {
+      res.setHeader('Content-Type', 'text/html');
+      res.send(renderNoWorkspacePage());
+      return;
+    }
+    if (workspaces.length === 1) {
+      await this.issueCodeAndRedirect(res, { ...base, workspace: workspaces[0] });
+      return;
+    }
+
+    // Several workspaces → hold the session server-side and let the user pick.
+    const pendingId = opaqueToken();
+    await this.store.savePendingLogin(pendingId, {
+      ...base,
+      expiresAt: nowSeconds() + PENDING_LOGIN_TTL_SECONDS,
+    });
+    res.setHeader('Content-Type', 'text/html');
+    res.send(renderWorkspacePicker({ pendingId, workspaces }));
+  };
+
+  /**
+   * Step 2b (our own route): the workspace-pick POST. Completes the flow for a user
+   * who has more than one workspace, using the session held in the pending login.
+   */
+  handleSelectWorkspace = async (req: Request, res: Response): Promise<void> => {
+    const { pending_id, workspace } = req.body ?? {};
+    if (!pending_id || !workspace) {
+      res.status(400).send('Missing workspace selection');
+      return;
+    }
+    const pending = await this.store.takePendingLogin(String(pending_id));
+    if (!pending || pending.expiresAt < nowSeconds()) {
+      res.status(400).send('Sign-in expired — please reconnect.');
+      return;
+    }
+    // The choice must be one the user actually owns (don't trust the form).
+    const workspaces = await listWorkspaceNames(pending.session);
+    if (!workspaces.includes(String(workspace))) {
+      res.status(400).send('Unknown workspace.');
+      return;
+    }
+    await this.issueCodeAndRedirect(res, { ...pending, workspace: String(workspace) });
+  };
+
+  /** Mint a single-use auth code carrying the chosen workspace, then redirect back. */
+  private async issueCodeAndRedirect(
+    res: Response,
+    data: {
+      clientId: string;
+      redirectUri: string;
+      codeChallenge: string;
+      state?: string;
+      scopes: string[];
+      session: AuthSession;
+      workspace: string;
+    },
+  ): Promise<void> {
     const code = opaqueToken();
     await this.store.saveCode(code, {
-      clientId: client_id,
-      codeChallenge: code_challenge,
-      redirectUri: redirect_uri,
-      scopes: resolveGrantedScopes(scope ? String(scope).split(' ').filter(Boolean) : []),
-      session,
+      clientId: data.clientId,
+      codeChallenge: data.codeChallenge,
+      redirectUri: data.redirectUri,
+      scopes: data.scopes,
+      session: data.session,
+      workspace: data.workspace,
       expiresAt: nowSeconds() + AUTH_CODE_TTL_SECONDS,
     });
-
-    const target = new URL(redirect_uri);
+    const target = new URL(data.redirectUri);
     target.searchParams.set('code', code);
-    if (state) target.searchParams.set('state', String(state));
+    if (data.state) target.searchParams.set('state', String(data.state));
     res.redirect(target.toString());
-  };
+  }
 
   /** PKCE: the SDK token handler validates the verifier against this challenge. */
   async challengeForAuthorizationCode(
@@ -169,7 +239,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     if (redirectUri && redirectUri !== data.redirectUri) {
       throw new InvalidGrantError('redirect_uri mismatch');
     }
-    return this.issueTokens(client.client_id, data.scopes, data.session);
+    return this.issueTokens(client.client_id, data.scopes, data.session, data.workspace);
   }
 
   async exchangeRefreshToken(
@@ -183,7 +253,12 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     }
     // Refresh the Supabase session too, so the two token lifetimes stay aligned.
     const { session } = await clientForSession(data.session);
-    return this.issueTokens(client.client_id, scopes?.length ? scopes : data.scopes, session);
+    return this.issueTokens(
+      client.client_id,
+      scopes?.length ? scopes : data.scopes,
+      session,
+      data.workspace,
+    );
   }
 
   /** Verify an MCP access token and resolve the per-user Supabase client (in `extra`). */
@@ -204,7 +279,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       clientId: data.clientId,
       scopes: data.scopes,
       expiresAt: data.expiresAt,
-      extra: { supabase: client },
+      extra: { supabase: client, workspace: data.workspace },
     };
   }
 
@@ -221,6 +296,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     clientId: string,
     scopes: string[],
     session: AuthSession,
+    workspace: string,
   ): Promise<OAuthTokens> {
     const accessToken = opaqueToken();
     const refreshToken = opaqueToken();
@@ -228,9 +304,10 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       clientId,
       scopes,
       session,
+      workspace,
       expiresAt: nowSeconds() + this.accessTtl,
     });
-    await this.store.saveRefreshToken(refreshToken, { clientId, scopes, session });
+    await this.store.saveRefreshToken(refreshToken, { clientId, scopes, session, workspace });
     return {
       access_token: accessToken,
       token_type: 'bearer',

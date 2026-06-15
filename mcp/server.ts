@@ -100,8 +100,7 @@ function errorResult(message: string): TextResult & { isError: true } {
 }
 
 /** Pull the current snapshot (document + version), or throw a tool-friendly message. */
-async function loadSnapshot(client: SupabaseClient): Promise<WorkspaceSnapshot> {
-  const name = workspaceName();
+async function loadSnapshot(client: SupabaseClient, name: string): Promise<WorkspaceSnapshot> {
   const result = await pull(client, name);
   if (result.kind === 'ok') return { document: result.document, version: result.version };
   if (result.kind === 'noRemote') {
@@ -111,8 +110,8 @@ async function loadSnapshot(client: SupabaseClient): Promise<WorkspaceSnapshot> 
 }
 
 /** Pull just the current document (reads), or throw a message suitable for a tool error. */
-async function loadDoc(client: SupabaseClient): Promise<WorkspaceDocument> {
-  return (await loadSnapshot(client)).document;
+async function loadDoc(client: SupabaseClient, name: string): Promise<WorkspaceDocument> {
+  return (await loadSnapshot(client, name)).document;
 }
 
 // ---- Write helpers (P2) --------------------------------------------------
@@ -171,7 +170,7 @@ function resourceBrief(r: Resource, index: number) {
  */
 export function buildServer(
   client: SupabaseClient,
-  { canWrite = true }: { canWrite?: boolean } = {},
+  { canWrite = true, workspace = workspaceName() }: { canWrite?: boolean; workspace?: string } = {},
 ): McpServer {
   const server = new McpServer({ name: 'namweb', version: '0.1.0' });
 
@@ -182,7 +181,7 @@ export function buildServer(
   ) =>
     server.registerTool(name, { description }, async () => {
       try {
-        return json(handler(await loadDoc(client)));
+        return json(handler(await loadDoc(client, workspace)));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -193,9 +192,9 @@ export function buildServer(
   // guard) and push failures surface as tool errors, not throws.
   const commit = async (build: (doc: WorkspaceDocument) => Intent): Promise<TextResult> => {
     try {
-      const snapshot = await loadSnapshot(client);
+      const snapshot = await loadSnapshot(client, workspace);
       const intent = build(snapshot.document);
-      const result = await commitIntent(client, workspaceName(), snapshot, intent);
+      const result = await commitIntent(client, workspace, snapshot, intent);
       if (result.outcome === 'error') return errorResult(result.message ?? 'Write failed.');
       return json(writeSummary(result.outcome, result.message, intent));
     } catch (err) {
@@ -242,7 +241,7 @@ export function buildServer(
     },
     async ({ project_id }) => {
       try {
-        const doc = await loadDoc(client);
+        const doc = await loadDoc(client, workspace);
         return json({
           actions: projectActions(doc, project_id).map(briefNode),
           subProjects: subProjects(doc, project_id).map((p) => projectBrief(doc, p)),
@@ -262,7 +261,7 @@ export function buildServer(
     },
     async ({ title }) => {
       try {
-        const doc = await loadDoc(client);
+        const doc = await loadDoc(client, workspace);
         return json(
           searchResults(doc, title).map(({ node, path }) => ({ ...briefNode(node), path })),
         );
@@ -280,7 +279,7 @@ export function buildServer(
     },
     async ({ node_id }) => {
       try {
-        const doc = await loadDoc(client);
+        const doc = await loadDoc(client, workspace);
         const node = getNode(doc, node_id);
         if (!node) return errorResult(`No node with id ${node_id}.`);
         return json(node.resources.map(resourceBrief));
@@ -562,11 +561,13 @@ export function buildServer(
  * run the request under — the OAuth-resolved per-user client in normal mode, or a
  * single shared client in dev-no-auth mode.
  */
-function mcpHandler(resolve: (req: Request) => { client: SupabaseClient; canWrite: boolean }) {
+function mcpHandler(
+  resolve: (req: Request) => { client: SupabaseClient; canWrite: boolean; workspace: string },
+) {
   return async (req: Request, res: Response) => {
     // Stateless: a fresh server + transport per request (no session reuse).
-    const { client, canWrite } = resolve(req);
-    const server = buildServer(client, { canWrite });
+    const { client, canWrite, workspace } = resolve(req);
+    const server = buildServer(client, { canWrite, workspace });
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
       enableJsonResponse: true,
@@ -598,8 +599,12 @@ async function main() {
   if (process.env.NAM_MCP_DEV_NOAUTH === '1') {
     // Dev/Inspector escape hatch: no OAuth, one shared signed-in client. Never deploy.
     const client = await signedInClient();
-    // Dev shared session has full access (no scopes in play).
-    app.post('/mcp', express.json(), mcpHandler(() => ({ client, canWrite: true })));
+    // Dev shared session has full access; workspace from the env (no consent step).
+    app.post(
+      '/mcp',
+      express.json(),
+      mcpHandler(() => ({ client, canWrite: true, workspace: workspaceName() })),
+    );
     console.warn('⚠  NAM_MCP_DEV_NOAUTH=1 — OAuth disabled, shared dev session (local only).');
   } else {
     // Normal: this server is the OAuth 2.1 Authorization Server (Supabase-backed).
@@ -627,6 +632,11 @@ async function main() {
       }),
     );
     app.post('/nam/login', express.urlencoded({ extended: false }), provider.handleLogin);
+    app.post(
+      '/nam/select-workspace',
+      express.urlencoded({ extended: false }),
+      provider.handleSelectWorkspace,
+    );
 
     const resourceMetadataUrl = getOAuthProtectedResourceMetadataUrl(issuerUrl);
     app.post(
@@ -636,6 +646,7 @@ async function main() {
       mcpHandler((req) => ({
         client: supabaseClientFromAuth(req.auth),
         canWrite: req.auth?.scopes?.includes(SCOPE_WRITE) ?? false,
+        workspace: (req.auth?.extra?.workspace as string | undefined) ?? workspaceName(),
       })),
     );
   }

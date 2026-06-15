@@ -9,7 +9,8 @@ import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/share
 
 const signInWithPassword = vi.fn();
 const clientForSession = vi.fn();
-vi.mock('./supabaseIdentity', () => ({ signInWithPassword, clientForSession }));
+const listWorkspaceNames = vi.fn();
+vi.mock('./supabaseIdentity', () => ({ signInWithPassword, clientForSession, listWorkspaceNames }));
 
 // Imported after the mock is registered.
 const { SupabaseOAuthProvider, supabaseClientFromAuth } = await import('./provider');
@@ -77,6 +78,8 @@ describe('SupabaseOAuthProvider', () => {
       client: fakeSupabase,
       session,
     }));
+    // Default: a single workspace, so the login flow completes in one step.
+    listWorkspaceNames.mockReset().mockResolvedValue(['default']);
     provider = new SupabaseOAuthProvider();
     client = registeredClient();
     await provider.clientsStore.registerClient!(client);
@@ -213,4 +216,77 @@ describe('SupabaseOAuthProvider', () => {
   it('supabaseClientFromAuth throws when no client was attached', () => {
     expect(() => supabaseClientFromAuth(undefined)).toThrow(/No authenticated Supabase client/);
   });
+
+  describe('workspace selection (choose-at-consent)', () => {
+    it('carries the single workspace through code → token → verify', async () => {
+      const code = await login(); // single workspace 'default'
+      const tokens = await provider.exchangeAuthorizationCode(client, code, 'v', REDIRECT_URI);
+      const info = await provider.verifyAccessToken(tokens.access_token);
+      expect(info.extra?.workspace).toBe('default');
+    });
+
+    it('shows a picker (no code) when the user has several workspaces', async () => {
+      listWorkspaceNames.mockResolvedValue(['default', 'dev']);
+      const res = fakeRes();
+      await provider.handleLogin(loginBody() as never, res as never);
+
+      expect(res.redirectUrl).toBeUndefined();
+      expect(res.body).toContain('Choose a workspace');
+      expect(res.body).toContain('dev');
+    });
+
+    it('issues a code for the picked workspace via select-workspace', async () => {
+      listWorkspaceNames.mockResolvedValue(['default', 'dev']);
+      const loginRes = fakeRes();
+      await provider.handleLogin(loginBody() as never, loginRes as never);
+      const pendingId = /name="pending_id" value="([^"]+)"/.exec(loginRes.body!)![1];
+
+      const res = fakeRes();
+      await provider.handleSelectWorkspace(
+        { body: { pending_id: pendingId, workspace: 'dev' } } as never,
+        res as never,
+      );
+      const code = new URL(res.redirectUrl!).searchParams.get('code')!;
+      const tokens = await provider.exchangeAuthorizationCode(client, code, 'v', REDIRECT_URI);
+      const info = await provider.verifyAccessToken(tokens.access_token);
+      expect(info.extra?.workspace).toBe('dev');
+    });
+
+    it('rejects a workspace the user does not own', async () => {
+      listWorkspaceNames.mockResolvedValue(['default', 'dev']);
+      const loginRes = fakeRes();
+      await provider.handleLogin(loginBody() as never, loginRes as never);
+      const pendingId = /name="pending_id" value="([^"]+)"/.exec(loginRes.body!)![1];
+
+      const res = fakeRes();
+      await provider.handleSelectWorkspace(
+        { body: { pending_id: pendingId, workspace: 'someone-else' } } as never,
+        res as never,
+      );
+      expect(res.statusCode).toBe(400);
+      expect(res.redirectUrl).toBeUndefined();
+    });
+
+    it('shows a no-workspace page when the user has none', async () => {
+      listWorkspaceNames.mockResolvedValue([]);
+      const res = fakeRes();
+      await provider.handleLogin(loginBody() as never, res as never);
+      expect(res.redirectUrl).toBeUndefined();
+      expect(res.body).toContain('No workspace yet');
+    });
+  });
+
+  function loginBody() {
+    return {
+      body: {
+        email: 'me@nam.local',
+        password: 'pw',
+        client_id: client.client_id,
+        redirect_uri: REDIRECT_URI,
+        code_challenge: CODE_CHALLENGE,
+        state: 'xyz',
+        scope: 'nam.read',
+      },
+    };
+  }
 });

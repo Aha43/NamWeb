@@ -34,6 +34,11 @@ to that user's Supabase session. Every MCP request then runs under their JWT, so
 by `owner_user_id` RLS exactly as the SPA is. Dynamic Client Registration is supported, so
 connectors self-register.
 
+After sign-in the user **picks which workspace** the connection acts on (P4b): one workspace is used
+automatically, several show a picker, none shows a "create one first" prompt. The choice is baked into
+the token and used per request, so a connector is scoped to one workspace — reconnect to switch. (The
+dev no-auth path still uses the `VITE_WORKSPACE_NAME` env.)
+
 ### OAuth state persistence (P4a)
 
 By default, tokens and registered clients live in an **in-memory store** (`auth/stores.ts`) — a

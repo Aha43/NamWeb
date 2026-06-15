@@ -18,6 +18,8 @@ export interface AuthCodeData {
   redirectUri: string;
   scopes: string[];
   session: AuthSession;
+  /** Workspace row this connection acts on (chosen at consent). */
+  workspace: string;
   expiresAt: number; // epoch seconds
 }
 
@@ -26,6 +28,7 @@ export interface AccessTokenData {
   clientId: string;
   scopes: string[];
   session: AuthSession;
+  workspace: string;
   expiresAt: number; // epoch seconds (our MCP token TTL)
 }
 
@@ -34,6 +37,22 @@ export interface RefreshTokenData {
   clientId: string;
   scopes: string[];
   session: AuthSession;
+  workspace: string;
+}
+
+/**
+ * A login that has authenticated but not yet picked a workspace — held server-side
+ * between the credential POST and the workspace-selection POST (so the Supabase
+ * session never travels through the browser). Short-lived, single use.
+ */
+export interface PendingLoginData {
+  clientId: string;
+  redirectUri: string;
+  codeChallenge: string;
+  state?: string;
+  scopes: string[];
+  session: AuthSession;
+  expiresAt: number; // epoch seconds
 }
 
 export interface AuthStore {
@@ -55,6 +74,10 @@ export interface AuthStore {
   // --- Refresh tokens (single use — Supabase rotates them) ---
   saveRefreshToken(token: string, data: RefreshTokenData): Promise<void>;
   takeRefreshToken(token: string): Promise<RefreshTokenData | undefined>;
+
+  // --- Pending logins (authenticated, awaiting workspace pick; single use) ---
+  savePendingLogin(id: string, data: PendingLoginData): Promise<void>;
+  takePendingLogin(id: string): Promise<PendingLoginData | undefined>;
 }
 
 /** Process-local, non-persistent store. Fine for local P1; replace at P4. */
@@ -63,6 +86,7 @@ export class InMemoryAuthStore implements AuthStore {
   private codes = new Map<string, AuthCodeData>();
   private accessTokens = new Map<string, AccessTokenData>();
   private refreshTokens = new Map<string, RefreshTokenData>();
+  private pendingLogins = new Map<string, PendingLoginData>();
 
   async getClient(clientId: string) {
     return this.clients.get(clientId);
@@ -101,6 +125,15 @@ export class InMemoryAuthStore implements AuthStore {
   async takeRefreshToken(token: string) {
     const data = this.refreshTokens.get(token);
     this.refreshTokens.delete(token);
+    return data;
+  }
+
+  async savePendingLogin(id: string, data: PendingLoginData) {
+    this.pendingLogins.set(id, data);
+  }
+  async takePendingLogin(id: string) {
+    const data = this.pendingLogins.get(id);
+    this.pendingLogins.delete(id);
     return data;
   }
 }
