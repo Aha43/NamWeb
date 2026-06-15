@@ -8,6 +8,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Account onboarding P0a — self-serve auth.** The sign-in-only login is now a full `AuthScreen`
+  (`src/auth/`) with **sign up** (email + password, requiring **email verification**), **forgot /
+  reset password**, and sign in — the first step of NamWeb standing on its own as the primary product
+  (see `docs/features/web-account-onboarding/design.md`, #123). `useSession` now catches the
+  password-recovery redirect (`PASSWORD_RECOVERY`) and shows a set-new-password form. Sign-up and reset
+  stay **neutral** (no account-enumeration leak). Verified end-to-end against the local Supabase stack
+  (sign up → confirm link in the local mail catcher → sign in; reset email delivered). Requires the
+  NamDesktop config change enabling email confirmations + the `:5173` redirect (Aha43/NamDesktop#374).
+
 - Remote MCP server — **P4b hardened + branded consent page**. The OAuth login / workspace-picker /
   no-workspace pages are now Nam-branded (logo, card layout, light/dark) and security-hardened:
   **CSRF** protection on both form POSTs (`/nam/login`, `/nam/select-workspace`) via a double-submit
