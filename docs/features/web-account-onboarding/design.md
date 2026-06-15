@@ -57,6 +57,7 @@ The **Account page** is the single home for everything identity/security:
 - change password,
 - connected social logins (when added),
 - **invites** (send one, see pending),
+- **export my data** (download a JSON copy — available anytime, not just at deletion),
 - **delete account**,
 - and — *only if it ever exists* — plan / billing.
 
