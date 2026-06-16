@@ -1,13 +1,14 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { getUser, signOut, updateUser } = vi.hoisted(() => ({
+const { getUser, signOut, updateUser, rpc } = vi.hoisted(() => ({
   getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'me@nam.local' } } }),
-  signOut: vi.fn(),
+  signOut: vi.fn().mockResolvedValue({ error: null }),
   updateUser: vi.fn().mockResolvedValue({ error: null }),
+  rpc: vi.fn().mockResolvedValue({ error: null }),
 }));
-vi.mock('@/lib/supabase', () => ({ supabase: { auth: { getUser, signOut, updateUser } } }));
+vi.mock('@/lib/supabase', () => ({ supabase: { auth: { getUser, signOut, updateUser }, rpc } }));
 
 const { buildUserExport, downloadJson } = vi.hoisted(() => ({
   buildUserExport: vi.fn().mockResolvedValue({ exportedAt: '2026-06-16T00:00:00Z', user: {}, workspaces: [] }),
@@ -66,6 +67,25 @@ describe('AccountPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /update password/i }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/don't match/i);
     expect(updateUser).not.toHaveBeenCalled();
+  });
+
+  it('deletes the account only after typing DELETE', async () => {
+    renderAt();
+    await screen.findByText('me@nam.local');
+    fireEvent.click(screen.getByRole('button', { name: /delete account/i }));
+
+    const dialog = await screen.findByRole('dialog');
+    const confirm = within(dialog).getByRole('button', { name: /^delete account$/i });
+    expect(confirm).toBeDisabled();
+
+    fireEvent.change(within(dialog).getByLabelText(/type delete to confirm/i), {
+      target: { value: 'DELETE' },
+    });
+    expect(confirm).toBeEnabled();
+
+    fireEvent.click(confirm);
+    await waitFor(() => expect(rpc).toHaveBeenCalledWith('delete_my_account'));
+    await waitFor(() => expect(signOut).toHaveBeenCalled());
   });
 
   it('signs out from the Account tab', async () => {
