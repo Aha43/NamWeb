@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Ops docs — production topology + go-live playbook.** New `docs/ops/`: a living
+  **`production-topology.md`** (the map — every service in prod NamWeb and how they relate,
+  with a Mermaid diagram, inventory table, data/deploy flows, trust boundaries) and a
+  **`go-live-playbook.md`** (the journey — ordered steps to take a Vite SPA + Supabase live on
+  Cloudflare Pages, with the gotchas we actually hit, reusable for future web projects). First
+  artifacts of the DevOps 1 sprint. Closes #139, closes #140.
+
 ### Fixed
 
 - **Web no longer depends on the desktop app to get started (launch blocker).** A brand-new,
