@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Account onboarding P1b — invite a friend (copy link).** The Account tab gains a **Copy invite link**
+  button that copies a sign-up URL (`?invite`) to share however the user likes; the link opens the app
+  **straight to sign-up** (`AuthScreen` reads the param). Client-only MVP — the send-from-the-app email
+  version is deferred to when email infra (SMTP + an Edge Function) lands. Part of #123.
+
 - **Account onboarding P1a — delete account.** The Account tab gains a **Danger zone → Delete account**
   flow: a confirm dialog (honest about removing your account + all cloud workspaces, on the web and any
   synced device; local desktop files untouched) that **nudges export first** and requires typing

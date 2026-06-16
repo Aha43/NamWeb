@@ -94,6 +94,16 @@ describe('AccountPage', () => {
     expect(signOut).toHaveBeenCalled();
   });
 
+  it('copies an invite link', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderAt();
+    await screen.findByText('me@nam.local');
+    fireEvent.click(screen.getByRole('button', { name: /copy invite link/i }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(expect.stringContaining('invite')));
+    expect(await screen.findByText(/link copied/i)).toBeInTheDocument();
+  });
+
   it('shows the date-format preference on the Preferences tab (deep-linked)', () => {
     renderAt('/account?tab=preferences');
     const select = screen.getByLabelText('Date format') as HTMLSelectElement;
