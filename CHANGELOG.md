@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Account onboarding P1a — delete account.** The Account tab gains a **Danger zone → Delete account**
+  flow: a confirm dialog (honest about removing your account + all cloud workspaces, on the web and any
+  synced device; local desktop files untouched) that **nudges export first** and requires typing
+  `DELETE`, then calls a privileged `delete_my_account()` RPC and signs out. The RPC (Aha43/NamDesktop#378
+  — `SECURITY DEFINER`, scoped to `auth.uid()`) deletes the caller's workspaces then their auth user;
+  verified end-to-end against the local stack. Part of #123.
+
 - **Account onboarding P0d — change password.** The Account tab gains a **Change password** form (new
   password + confirm → `supabase.auth.updateUser`), reusing a shared `validateNewPassword` helper
   (`src/lib/password.ts`: match + ≥8 chars) that the sign-up/reset forms now also use. This completes

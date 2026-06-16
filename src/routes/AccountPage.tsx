@@ -1,8 +1,17 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, KeyRound, LogOut } from 'lucide-react';
+import { Download, KeyRound, LogOut, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { buildUserExport, downloadJson } from '@/lib/exportData';
@@ -104,7 +113,106 @@ function AccountTab() {
         <LogOut className="h-4 w-4" />
         Sign out
       </Button>
-      <p className="text-xs text-muted-foreground">Deleting your account lands here next.</p>
+
+      <DeleteAccount />
+    </div>
+  );
+}
+
+function DeleteAccount() {
+  const [open, setOpen] = useState(false);
+  const [confirmText, setConfirmText] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function exportFirst() {
+    try {
+      downloadJson(await buildUserExport(supabase));
+    } catch {
+      // best-effort nudge; the dedicated Export button surfaces errors
+    }
+  }
+
+  async function onDelete() {
+    setBusy(true);
+    setError(null);
+    const { error: e } = await supabase.rpc('delete_my_account');
+    if (e) {
+      setError(e.message);
+      setBusy(false);
+      return;
+    }
+    await supabase.auth.signOut(); // App reacts → back to the auth screen
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-destructive/40 p-4">
+      <p className="text-sm font-medium text-destructive">Danger zone</p>
+      <p className="text-xs text-muted-foreground">
+        Permanently delete your account and all your cloud data. This can't be undone.
+      </p>
+      <Button variant="destructive" onClick={() => setOpen(true)} className="gap-2">
+        <Trash2 className="h-4 w-4" />
+        Delete account
+      </Button>
+
+      <Dialog
+        open={open}
+        onOpenChange={(o) => {
+          setOpen(o);
+          if (!o) {
+            setConfirmText('');
+            setError(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete your account?</DialogTitle>
+            <DialogDescription>
+              This permanently removes your account and all your workspaces from the cloud — on the web
+              and any synced device. Local desktop files on your own machine are not affected. This
+              can't be undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <Button variant="outline" onClick={exportFirst} className="gap-2">
+              <Download className="h-4 w-4" />
+              Export my data first
+            </Button>
+            <div>
+              <Label htmlFor="confirm-delete" className="text-xs text-muted-foreground">
+                Type DELETE to confirm
+              </Label>
+              <input
+                id="confirm-delete"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+              />
+            </div>
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              disabled={busy || confirmText !== 'DELETE'}
+              onClick={onDelete}
+            >
+              {busy ? 'Deleting…' : 'Delete account'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
