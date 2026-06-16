@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Account onboarding P0d — change password.** The Account tab gains a **Change password** form (new
+  password + confirm → `supabase.auth.updateUser`), reusing a shared `validateNewPassword` helper
+  (`src/lib/password.ts`: match + ≥8 chars) that the sign-up/reset forms now also use. This completes
+  the P0 account surface (sign-up · verify · reset · account page · export · change password). Part of #123.
+
 - **Account onboarding P0c — Export my data.** The Account tab gains an **Export my data** button that
   downloads a JSON copy of all your workspaces (`src/lib/exportData.ts`: `buildUserExport` gathers the
   user's RLS-scoped `workspaces` rows; `downloadJson` saves them). Available anytime — the GDPR

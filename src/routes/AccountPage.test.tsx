@@ -2,11 +2,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { getUser, signOut } = vi.hoisted(() => ({
+const { getUser, signOut, updateUser } = vi.hoisted(() => ({
   getUser: vi.fn().mockResolvedValue({ data: { user: { email: 'me@nam.local' } } }),
   signOut: vi.fn(),
+  updateUser: vi.fn().mockResolvedValue({ error: null }),
 }));
-vi.mock('@/lib/supabase', () => ({ supabase: { auth: { getUser, signOut } } }));
+vi.mock('@/lib/supabase', () => ({ supabase: { auth: { getUser, signOut, updateUser } } }));
 
 const { buildUserExport, downloadJson } = vi.hoisted(() => ({
   buildUserExport: vi.fn().mockResolvedValue({ exportedAt: '2026-06-16T00:00:00Z', user: {}, workspaces: [] }),
@@ -45,6 +46,26 @@ describe('AccountPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /export my data/i }));
     await waitFor(() => expect(buildUserExport).toHaveBeenCalled());
     await waitFor(() => expect(downloadJson).toHaveBeenCalled());
+  });
+
+  it('changes the password when valid', async () => {
+    renderAt();
+    await screen.findByText('me@nam.local');
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'longenough' } });
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'longenough' } });
+    fireEvent.click(screen.getByRole('button', { name: /update password/i }));
+    await waitFor(() => expect(updateUser).toHaveBeenCalledWith({ password: 'longenough' }));
+    expect(await screen.findByText(/password updated/i)).toBeInTheDocument();
+  });
+
+  it('blocks a password change on mismatch', async () => {
+    renderAt();
+    await screen.findByText('me@nam.local');
+    fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'longenough' } });
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'different1' } });
+    fireEvent.click(screen.getByRole('button', { name: /update password/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/don't match/i);
+    expect(updateUser).not.toHaveBeenCalled();
   });
 
   it('signs out from the Account tab', async () => {

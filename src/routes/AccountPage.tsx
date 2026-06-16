@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, LogOut } from 'lucide-react';
+import { Download, KeyRound, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { buildUserExport, downloadJson } from '@/lib/exportData';
+import { validateNewPassword } from '@/lib/password';
 import { formatDate, type DateFormat } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
 
@@ -97,14 +98,88 @@ function AccountTab() {
         )}
       </div>
 
+      <ChangePassword />
+
       <Button variant="outline" onClick={() => void supabase.auth.signOut()} className="gap-2">
         <LogOut className="h-4 w-4" />
         Sign out
       </Button>
-      <p className="text-xs text-muted-foreground">
-        Change password and delete your account land here next.
-      </p>
+      <p className="text-xs text-muted-foreground">Deleting your account lands here next.</p>
     </div>
+  );
+}
+
+function ChangePassword() {
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault();
+    setError(null);
+    setDone(false);
+    const pwError = validateNewPassword(password, confirm);
+    if (pwError) {
+      setError(pwError);
+      return;
+    }
+    setBusy(true);
+    const { error: e } = await supabase.auth.updateUser({ password });
+    setBusy(false);
+    if (e) {
+      setError(e.message);
+    } else {
+      setDone(true);
+      setPassword('');
+      setConfirm('');
+    }
+  }
+
+  const field =
+    'mt-1 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring';
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-2">
+      <p className="text-sm font-medium text-foreground">Change password</p>
+      <div>
+        <Label htmlFor="new-password" className="text-xs text-muted-foreground">
+          New password
+        </Label>
+        <input
+          id="new-password"
+          type="password"
+          autoComplete="new-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={field}
+        />
+      </div>
+      <div>
+        <Label htmlFor="confirm-password" className="text-xs text-muted-foreground">
+          Confirm new password
+        </Label>
+        <input
+          id="confirm-password"
+          type="password"
+          autoComplete="new-password"
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
+          className={field}
+        />
+      </div>
+      <Button type="submit" variant="secondary" disabled={busy} className="gap-2">
+        <KeyRound className="h-4 w-4" />
+        {busy ? 'Saving…' : 'Update password'}
+      </Button>
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+      {done && <p className="text-sm text-muted-foreground">Password updated.</p>}
+    </form>
   );
 }
 

@@ -4,12 +4,11 @@ import { LogoMark } from '@/components/brand/LogoMark';
 import { supabase } from '../lib/supabase';
 import { APP_NAME } from '../lib/app';
 import { DEV_WORKSPACE, isDevWorkspaceSelected, setWorkspaceName } from '../lib/workspace';
+import { MIN_PASSWORD, validateNewPassword } from '../lib/password';
 
 // TODO(dev-only): prefill the local test credentials to speed manual testing.
 const DEV_EMAIL = import.meta.env.DEV ? 'test@namdesktop.local' : '';
 const DEV_PASSWORD = import.meta.env.DEV ? 'namdesktop-local' : '';
-
-const MIN_PASSWORD = 8; // mirrors the Supabase minimum_password_length backstop
 
 type Mode = 'signin' | 'signup' | 'forgot' | 'reset';
 
@@ -62,12 +61,9 @@ export function AuthScreen({ initialMode = 'signin', onResetDone }: AuthScreenPr
 
     // Sanity-check a freshly chosen password before hitting the server.
     if (SETS_PASSWORD(mode)) {
-      if (password.length < MIN_PASSWORD) {
-        setError(`Use at least ${MIN_PASSWORD} characters.`);
-        return;
-      }
-      if (password !== confirm) {
-        setError("Passwords don't match.");
+      const pwError = validateNewPassword(password, confirm);
+      if (pwError) {
+        setError(pwError);
         return;
       }
     }
