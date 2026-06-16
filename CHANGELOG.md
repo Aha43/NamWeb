@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Sign-up/reset password safety.** The `AuthScreen` sign-up and password-reset forms now have a
+  **Confirm password** field and a client-side **sanity check** (passwords must match and be at least
+  8 characters, with inline errors), so typos in a masked field don't slip through. Backed server-side
+  by Supabase `minimum_password_length = 8` (Aha43/NamDesktop#376). Part of #123.
+
 - **Account onboarding P0b — Settings/Account page + user-icon menu.** A top-right **account menu**
   (`AccountMenu`, replacing the gear + inline Sign out) opens to **Account · Settings · Sign out**, and a
   new routed **`/account`** page (`AccountPage`) hosts them as tabs: *Account* (signed-in email + sign
