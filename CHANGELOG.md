@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Sign-up consent gate (launch / GDPR).** Sign-up now requires ticking an **age (13+) + Terms &
+  Privacy Policy acceptance** checkbox (links to draft `public/privacy.html` / `public/terms.html` —
+  real copy + legal review pending), and supports **Cloudflare Turnstile** bot protection: an env-gated
+  widget (`src/auth/Turnstile.tsx`, active only when `VITE_TURNSTILE_SITE_KEY` is set) whose token is
+  passed to `signUp` for server-side verification. Inert in local dev. First slice of the launch
+  go-live gate (`docs/features/launch/design.md`, `docs/compliance/gdpr.md`).
+
 - **Account onboarding P1b — invite a friend (copy link).** The Account tab gains a **Copy invite link**
   button that copies a sign-up URL (`?invite`) to share however the user likes; the link opens the app
   **straight to sign-up** (`AuthScreen` reads the param). Client-only MVP — the send-from-the-app email
