@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Inbox, ListTodo, MoreHorizontal, Plus, Settings, Target, type LucideIcon } from 'lucide-react';
+import { Inbox, ListTodo, MoreHorizontal, Plus, Settings, Target, User, type LucideIcon } from 'lucide-react';
 import { useCapture } from '@/capture/capture-context';
 import {
   Sheet,
@@ -9,7 +9,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,6 @@ import { SyncNotice } from './SyncNotice';
 /** Phone: capture + execution pushed to the front; everything else lives in the More sheet. */
 export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
   const [moreOpen, setMoreOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const { openCapture } = useCapture();
 
   return (
@@ -95,17 +93,22 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
             ))}
           </nav>
 
-          <button
-            type="button"
-            onClick={() => {
-              setMoreOpen(false);
-              setSettingsOpen(true);
-            }}
+          <NavLink
+            to="/account"
+            onClick={() => setMoreOpen(false)}
             className="mt-1 flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
+          >
+            <User className="h-4 w-4" />
+            Account
+          </NavLink>
+          <NavLink
+            to="/account?tab=preferences"
+            onClick={() => setMoreOpen(false)}
+            className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
           >
             <Settings className="h-4 w-4" />
             Settings
-          </button>
+          </NavLink>
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
             <ThemeToggle />
@@ -115,8 +118,6 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
           </div>
         </SheetContent>
       </Sheet>
-
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }

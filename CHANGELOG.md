@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Account onboarding P0b — Settings/Account page + user-icon menu.** A top-right **account menu**
+  (`AccountMenu`, replacing the gear + inline Sign out) opens to **Account · Settings · Sign out**, and a
+  new routed **`/account`** page (`AccountPage`) hosts them as tabs: *Account* (signed-in email + sign
+  out; password/export/delete land here in later slices) and *Preferences*. The date-format dialog
+  (#104) is **absorbed** into the Preferences tab and the standalone `SettingsDialog` is removed. The
+  phone **More** sheet gains the same Account / Settings entries. Part of #123.
+
 - **Account onboarding P0a — self-serve auth.** The sign-in-only login is now a full `AuthScreen`
   (`src/auth/`) with **sign up** (email + password, requiring **email verification**), **forgot /
   reset password**, and sign in — the first step of NamWeb standing on its own as the primary product
