@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download, KeyRound, LogOut, Trash2 } from 'lucide-react';
+import { Copy, Download, KeyRound, LogOut, Trash2, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
@@ -107,6 +107,8 @@ function AccountTab() {
         )}
       </div>
 
+      <InviteFriend />
+
       <ChangePassword />
 
       <Button variant="outline" onClick={() => void supabase.auth.signOut()} className="gap-2">
@@ -115,6 +117,34 @@ function AccountTab() {
       </Button>
 
       <DeleteAccount />
+    </div>
+  );
+}
+
+function InviteFriend() {
+  const [copied, setCopied] = useState(false);
+  const link = `${window.location.origin}/?invite=1`;
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // clipboard may be unavailable; the link is shown so the user can copy manually
+    }
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <p className="text-sm font-medium text-foreground">Invite a friend</p>
+      <Button variant="secondary" onClick={copy} className="gap-2">
+        {copied ? <Copy className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
+        {copied ? 'Link copied!' : 'Copy invite link'}
+      </Button>
+      <p className="text-xs text-muted-foreground">
+        Share this link to invite someone to Nam — it opens straight to sign-up.
+      </p>
     </div>
   );
 }

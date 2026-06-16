@@ -19,11 +19,18 @@ describe('AuthScreen', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    window.history.replaceState({}, '', '/');
   });
 
   it('shows the brand logo', () => {
     render(<AuthScreen />);
     expect(screen.getByRole('img', { name: /next action master/i })).toBeInTheDocument();
+  });
+
+  it('opens in sign-up mode from an invite link', () => {
+    window.history.replaceState({}, '', '/?invite=1');
+    render(<AuthScreen />);
+    expect(screen.getByRole('button', { name: /^create account$/i })).toBeInTheDocument();
   });
 
   it('signs in with the entered credentials', async () => {

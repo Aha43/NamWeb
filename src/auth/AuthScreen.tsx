@@ -29,9 +29,18 @@ export interface AuthScreenProps {
   onResetDone?: () => void;
 }
 
+/** True when the URL carries an `?invite` param (an invite link → open on sign-up). */
+function hasInviteParam(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).has('invite');
+  } catch {
+    return false;
+  }
+}
+
 /** Email/password auth: sign in, sign up (+ email verification), forgot/reset password. */
-export function AuthScreen({ initialMode = 'signin', onResetDone }: AuthScreenProps) {
-  const [mode, setMode] = useState<Mode>(initialMode);
+export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
+  const [mode, setMode] = useState<Mode>(initialMode ?? (hasInviteParam() ? 'signup' : 'signin'));
   const [email, setEmail] = useState(DEV_EMAIL);
   const [password, setPassword] = useState(DEV_PASSWORD);
   const [confirm, setConfirm] = useState('');
