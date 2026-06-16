@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
+import { buildUserExport, downloadJson } from '@/lib/exportData';
 import { formatDate, type DateFormat } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
 
@@ -54,9 +55,24 @@ export function AccountPage() {
 
 function AccountTab() {
   const [email, setEmail] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+
   useEffect(() => {
     void supabase.auth.getUser().then(({ data }) => setEmail(data.user?.email ?? null));
   }, []);
+
+  async function onExport() {
+    setExporting(true);
+    setExportError(null);
+    try {
+      downloadJson(await buildUserExport(supabase));
+    } catch (err) {
+      setExportError(err instanceof Error ? err.message : 'Export failed.');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -64,11 +80,26 @@ function AccountTab() {
         <Label>Email</Label>
         <p className="text-sm text-foreground">{email ?? '…'}</p>
       </div>
+
+      <div className="space-y-1.5">
+        <Button variant="outline" onClick={onExport} disabled={exporting}>
+          {exporting ? 'Preparing…' : 'Export my data'}
+        </Button>
+        <p className="text-xs text-muted-foreground">
+          Download a JSON copy of all your workspaces.
+        </p>
+        {exportError && (
+          <p role="alert" className="text-sm text-destructive">
+            {exportError}
+          </p>
+        )}
+      </div>
+
       <Button variant="outline" onClick={() => void supabase.auth.signOut()}>
         Sign out
       </Button>
       <p className="text-xs text-muted-foreground">
-        Change password, export your data, and delete your account land here next.
+        Change password and delete your account land here next.
       </p>
     </div>
   );

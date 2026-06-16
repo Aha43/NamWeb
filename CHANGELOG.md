@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Account onboarding P0c — Export my data.** The Account tab gains an **Export my data** button that
+  downloads a JSON copy of all your workspaces (`src/lib/exportData.ts`: `buildUserExport` gathers the
+  user's RLS-scoped `workspaces` rows; `downloadJson` saves them). Available anytime — the GDPR
+  access/portability right, and what the future delete flow will nudge first. Part of #123.
+
 - **Account onboarding P0b — Settings/Account page + user-icon menu.** A top-right **account menu**
   (`AccountMenu`, replacing the gear + inline Sign out) opens to **Account · Settings · Sign out**, and a
   new routed **`/account`** page (`AccountPage`) hosts them as tabs: *Account* (signed-in email + sign
