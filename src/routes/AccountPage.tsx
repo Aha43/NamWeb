@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Download, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -82,7 +83,8 @@ function AccountTab() {
       </div>
 
       <div className="space-y-1.5">
-        <Button variant="outline" onClick={onExport} disabled={exporting}>
+        <Button variant="secondary" onClick={onExport} disabled={exporting} className="gap-2">
+          <Download className="h-4 w-4" />
           {exporting ? 'Preparing…' : 'Export my data'}
         </Button>
         <p className="text-xs text-muted-foreground">
@@ -95,7 +97,8 @@ function AccountTab() {
         )}
       </div>
 
-      <Button variant="outline" onClick={() => void supabase.auth.signOut()}>
+      <Button variant="outline" onClick={() => void supabase.auth.signOut()} className="gap-2">
+        <LogOut className="h-4 w-4" />
         Sign out
       </Button>
       <p className="text-xs text-muted-foreground">
