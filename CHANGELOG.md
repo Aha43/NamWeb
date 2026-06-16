@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Cloudflare Pages deploy config (launch).** Added `public/_redirects`
+  (`/* /index.html 200`) so the SPA's client-side routes survive deep links and hard
+  refreshes on the static host instead of 404ing. First piece of standing up public
+  hosting on Cloudflare Pages at `usenam.app` (`docs/features/launch/design.md` §2);
+  the rest (connect-to-Git build, prod env vars, custom domain) is dashboard config.
+  Closes #135.
+
 - **Sign-up consent gate (launch / GDPR).** Sign-up now requires ticking an **age (13+) + Terms &
   Privacy Policy acceptance** checkbox (links to draft `public/privacy.html` / `public/terms.html` —
   real copy + legal review pending), and supports **Cloudflare Turnstile** bot protection: an env-gated
