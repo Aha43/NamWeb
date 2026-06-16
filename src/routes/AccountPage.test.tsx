@@ -8,6 +8,12 @@ const { getUser, signOut } = vi.hoisted(() => ({
 }));
 vi.mock('@/lib/supabase', () => ({ supabase: { auth: { getUser, signOut } } }));
 
+const { buildUserExport, downloadJson } = vi.hoisted(() => ({
+  buildUserExport: vi.fn().mockResolvedValue({ exportedAt: '2026-06-16T00:00:00Z', user: {}, workspaces: [] }),
+  downloadJson: vi.fn(),
+}));
+vi.mock('@/lib/exportData', () => ({ buildUserExport, downloadJson }));
+
 import { AccountPage } from './AccountPage';
 import { SettingsProvider } from '@/components/settings/SettingsProvider';
 import { DATE_FORMAT_STORAGE_KEY } from '@/components/settings/settings-context';
@@ -32,6 +38,13 @@ describe('AccountPage', () => {
     renderAt();
     expect(await screen.findByText('me@nam.local')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+  });
+
+  it('exports the user data as a JSON download', async () => {
+    renderAt();
+    fireEvent.click(await screen.findByRole('button', { name: /export my data/i }));
+    await waitFor(() => expect(buildUserExport).toHaveBeenCalled());
+    await waitFor(() => expect(downloadJson).toHaveBeenCalled());
   });
 
   it('signs out from the Account tab', async () => {

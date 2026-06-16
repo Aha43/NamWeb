@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Account onboarding P0c — Export my data.** The Account tab gains an **Export my data** button that
+  downloads a JSON copy of all your workspaces (`src/lib/exportData.ts`: `buildUserExport` gathers the
+  user's RLS-scoped `workspaces` rows; `downloadJson` saves them). Available anytime — the GDPR
+  access/portability right, and what the future delete flow will nudge first. Part of #123.
+
 - **Sign-up/reset password safety.** The `AuthScreen` sign-up and password-reset forms now have a
   **Confirm password** field and a client-side **sanity check** (passwords must match and be at least
   8 characters, with inline errors), so typos in a masked field don't slip through. Backed server-side
