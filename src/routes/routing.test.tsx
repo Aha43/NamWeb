@@ -43,7 +43,8 @@ function document(): WorkspaceDocument {
 
 function workspace(overrides: Partial<UseWorkspace> = {}): UseWorkspace {
   return {
-    document: document(), loading: false, error: null, noRemote: false, notice: null,
+    document: document(), loading: false, error: null, noRemote: false, creating: false,
+    createWorkspace: vi.fn(), notice: null,
     clearNotice: vi.fn(), retry: vi.fn(), dispatch: vi.fn(), ...overrides,
   };
 }
