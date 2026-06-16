@@ -7,8 +7,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { getWorkspaceName } from '../lib/workspace';
-import { pull } from '../sync/workspaceClient';
+import { pull, push } from '../sync/workspaceClient';
 import { subscribeToWorkspace } from '../sync/realtime';
+import { createDefaultWorkspace } from '../domain/createWorkspace';
 import { applyIntent, type Intent } from '../domain/mutations';
 import { commitIntent, type WorkspaceSnapshot } from './commit';
 import type { WorkspaceDocument } from '../domain/types';
@@ -18,8 +19,12 @@ export interface UseWorkspace {
   loading: boolean;
   /** Load error (failed initial pull). */
   error: string | null;
-  /** No workspace row yet — the desktop must push one first. */
+  /** No workspace row yet — offer to bootstrap one (createWorkspace). */
   noRemote: boolean;
+  /** A createWorkspace() bootstrap is in flight. */
+  creating: boolean;
+  /** Bootstrap an empty workspace for a brand-new (web-only) user. */
+  createWorkspace: () => void;
   /** Transient sync notice (conflict reloaded / sync failed); auto-dismisses, or clearNotice. */
   notice: string | null;
   clearNotice: () => void;
@@ -35,6 +40,7 @@ export function useWorkspace(): UseWorkspace {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [noRemote, setNoRemote] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
 
   // Last server-confirmed snapshot — the base every commit guards against.
@@ -65,6 +71,27 @@ export function useWorkspace(): UseWorkspace {
 
   useEffect(() => {
     void load();
+  }, [load]);
+
+  // Bootstrap an empty workspace for a brand-new user (no desktop app needed).
+  // Inserts a fresh row (push at guard version 0). A concurrent create from
+  // another device surfaces as a conflict — adopt it by reloading.
+  const createWorkspace = useCallback(async () => {
+    setCreating(true);
+    setNotice(null);
+    const document = createDefaultWorkspace();
+    const result = await push(supabase, workspaceNameRef.current, document, 0);
+    if (result.kind === 'ok') {
+      const snap = { document, version: result.version };
+      committedRef.current = snap;
+      setSnapshot(snap);
+      setNoRemote(false);
+    } else if (result.kind === 'conflict') {
+      await load();
+    } else {
+      setNotice(result.message ?? 'Could not create workspace');
+    }
+    setCreating(false);
   }, [load]);
 
   // Signal-then-pull: a Realtime UPDATE on our workspace row is just a nudge to
@@ -137,6 +164,8 @@ export function useWorkspace(): UseWorkspace {
     loading,
     error,
     noRemote,
+    creating,
+    createWorkspace: () => void createWorkspace(),
     notice,
     clearNotice,
     retry,

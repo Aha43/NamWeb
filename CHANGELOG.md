@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Web no longer depends on the desktop app to get started (launch blocker).** A brand-new,
+  web-only user used to sign up, verify, sign in… and hit a dead end: *"No workspace yet — sync
+  from the desktop app first."* The web app now **bootstraps its own empty workspace** — the
+  no-workspace state offers a **Create workspace** button (`createDefaultWorkspace()` builds a
+  document matching NamDesktop's `NamWorkspace.createDefault()` — root "NAM" → Inbox/Projects/Actions,
+  `formatVersion: 1` — so desktop cloud-sync can still read the same row). Makes self-serve web
+  sign-up actually usable. Closes #137.
+
 ### Added
 
 - **Cloudflare Pages deploy config (launch).** Added `public/_redirects`

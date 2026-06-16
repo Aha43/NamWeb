@@ -18,7 +18,17 @@ export function ShellContent() {
       </Centered>
     );
   }
-  if (ws.noRemote) return <Centered>No workspace yet — sync from the desktop app first.</Centered>;
+  if (ws.noRemote) {
+    return (
+      <Centered>
+        <p className="text-foreground">Welcome to Nam 👋</p>
+        <p className="mt-1">Let's set up your workspace — it takes a second.</p>
+        <Button className="mt-4" onClick={ws.createWorkspace} disabled={ws.creating}>
+          {ws.creating ? 'Creating…' : 'Create workspace'}
+        </Button>
+      </Centered>
+    );
+  }
   return <Outlet />;
 }
 
