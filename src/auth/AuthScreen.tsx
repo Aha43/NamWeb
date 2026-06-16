@@ -5,6 +5,10 @@ import { supabase } from '../lib/supabase';
 import { APP_NAME } from '../lib/app';
 import { DEV_WORKSPACE, isDevWorkspaceSelected, setWorkspaceName } from '../lib/workspace';
 import { MIN_PASSWORD, validateNewPassword } from '../lib/password';
+import { Turnstile } from './Turnstile';
+
+// Bot protection is active only when a Turnstile site key is configured (production).
+const turnstileEnabled = Boolean(import.meta.env.VITE_TURNSTILE_SITE_KEY);
 
 // TODO(dev-only): prefill the local test credentials to speed manual testing.
 const DEV_EMAIL = import.meta.env.DEV ? 'test@namdesktop.local' : '';
@@ -44,6 +48,8 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
   const [email, setEmail] = useState(DEV_EMAIL);
   const [password, setPassword] = useState(DEV_PASSWORD);
   const [confirm, setConfirm] = useState('');
+  const [accepted, setAccepted] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [devWorkspace, setDevWorkspace] = useState(isDevWorkspaceSelected());
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -56,6 +62,8 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
     setError(null);
     setInfo(null);
     setConfirm('');
+    setAccepted(false);
+    setCaptchaToken(null);
   }
 
   function toggleDevWorkspace(checked: boolean) {
@@ -77,6 +85,18 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
       }
     }
 
+    // Sign-up consent gate (GDPR): age + terms acceptance, and bot check if enabled.
+    if (mode === 'signup') {
+      if (!accepted) {
+        setError('Please confirm you are 13+ and accept the Terms and Privacy Policy.');
+        return;
+      }
+      if (turnstileEnabled && !captchaToken) {
+        setError('Please complete the verification.');
+        return;
+      }
+    }
+
     setBusy(true);
     if (mode === 'signin') {
       const { error: e } = await supabase.auth.signInWithPassword({ email, password });
@@ -85,7 +105,7 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
       const { error: e } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: { emailRedirectTo: window.location.origin, captchaToken: captchaToken ?? undefined },
       });
       // Neutral on success (don't reveal whether the email already exists).
       if (e) setError(e.message);
@@ -163,6 +183,31 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
               className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
             />
           </label>
+        )}
+
+        {mode === 'signup' && (
+          <>
+            <label className="flex items-start gap-2 text-sm text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={accepted}
+                onChange={(e) => setAccepted(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span>
+                I'm 13 or older and agree to the{' '}
+                <a href="/terms.html" target="_blank" rel="noreferrer" className="text-foreground underline">
+                  Terms
+                </a>{' '}
+                and{' '}
+                <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-foreground underline">
+                  Privacy Policy
+                </a>
+                .
+              </span>
+            </label>
+            {turnstileEnabled && <Turnstile onToken={setCaptchaToken} />}
+          </>
         )}
 
         {import.meta.env.DEV && mode === 'signin' && (

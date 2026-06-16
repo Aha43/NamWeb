@@ -66,6 +66,7 @@ describe('AuthScreen', () => {
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'new@b.c' } });
     fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret12' } });
     fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'secret12' } });
+    fireEvent.click(screen.getByRole('checkbox')); // accept terms (13+)
     fireEvent.click(screen.getByRole('button', { name: /^create account$/i }));
     await waitFor(() =>
       expect(signUp).toHaveBeenCalledWith(
@@ -73,6 +74,16 @@ describe('AuthScreen', () => {
       ),
     );
     expect(await screen.findByText(/check your email to confirm/i)).toBeInTheDocument();
+  });
+
+  it('blocks sign-up until the terms are accepted', async () => {
+    render(<AuthScreen />);
+    fireEvent.click(screen.getByRole('button', { name: /create an account/i }));
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret12' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'secret12' } });
+    fireEvent.click(screen.getByRole('button', { name: /^create account$/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/accept the terms/i);
+    expect(signUp).not.toHaveBeenCalled();
   });
 
   it('blocks sign-up when the passwords do not match', async () => {
