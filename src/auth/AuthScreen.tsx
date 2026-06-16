@@ -9,7 +9,12 @@ import { DEV_WORKSPACE, isDevWorkspaceSelected, setWorkspaceName } from '../lib/
 const DEV_EMAIL = import.meta.env.DEV ? 'test@namdesktop.local' : '';
 const DEV_PASSWORD = import.meta.env.DEV ? 'namdesktop-local' : '';
 
+const MIN_PASSWORD = 8; // mirrors the Supabase minimum_password_length backstop
+
 type Mode = 'signin' | 'signup' | 'forgot' | 'reset';
+
+/** Modes where the user is choosing a new password (confirm + sanity-check it). */
+const SETS_PASSWORD = (m: Mode) => m === 'signup' || m === 'reset';
 
 const COPY: Record<Mode, { title: string; sub: string; submit: string }> = {
   signin: { title: APP_NAME, sub: 'Sign in to your workspace.', submit: 'Sign in' },
@@ -30,6 +35,7 @@ export function AuthScreen({ initialMode = 'signin', onResetDone }: AuthScreenPr
   const [mode, setMode] = useState<Mode>(initialMode);
   const [email, setEmail] = useState(DEV_EMAIL);
   const [password, setPassword] = useState(DEV_PASSWORD);
+  const [confirm, setConfirm] = useState('');
   const [devWorkspace, setDevWorkspace] = useState(isDevWorkspaceSelected());
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -41,6 +47,7 @@ export function AuthScreen({ initialMode = 'signin', onResetDone }: AuthScreenPr
     setMode(next);
     setError(null);
     setInfo(null);
+    setConfirm('');
   }
 
   function toggleDevWorkspace(checked: boolean) {
@@ -50,10 +57,22 @@ export function AuthScreen({ initialMode = 'signin', onResetDone }: AuthScreenPr
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
-    setBusy(true);
     setError(null);
     setInfo(null);
 
+    // Sanity-check a freshly chosen password before hitting the server.
+    if (SETS_PASSWORD(mode)) {
+      if (password.length < MIN_PASSWORD) {
+        setError(`Use at least ${MIN_PASSWORD} characters.`);
+        return;
+      }
+      if (password !== confirm) {
+        setError("Passwords don't match.");
+        return;
+      }
+    }
+
+    setBusy(true);
     if (mode === 'signin') {
       const { error: e } = await supabase.auth.signInWithPassword({ email, password });
       if (e) setError(e.message);
@@ -114,9 +133,28 @@ export function AuthScreen({ initialMode = 'signin', onResetDone }: AuthScreenPr
               type="password"
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
               required
-              minLength={6}
+              minLength={mode === 'signin' ? undefined : MIN_PASSWORD}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+            />
+          </label>
+        )}
+
+        {SETS_PASSWORD(mode) && (
+          <p className="-mt-2 text-xs text-muted-foreground">At least {MIN_PASSWORD} characters.</p>
+        )}
+
+        {SETS_PASSWORD(mode) && (
+          <label className="block text-sm font-medium text-foreground">
+            Confirm password
+            <input
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={MIN_PASSWORD}
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
               className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
             />
           </label>

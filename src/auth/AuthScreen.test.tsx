@@ -57,14 +57,35 @@ describe('AuthScreen', () => {
     render(<AuthScreen />);
     fireEvent.click(screen.getByRole('button', { name: /create an account/i }));
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'new@b.c' } });
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'secret1' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret12' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'secret12' } });
     fireEvent.click(screen.getByRole('button', { name: /^create account$/i }));
     await waitFor(() =>
       expect(signUp).toHaveBeenCalledWith(
-        expect.objectContaining({ email: 'new@b.c', password: 'secret1' }),
+        expect.objectContaining({ email: 'new@b.c', password: 'secret12' }),
       ),
     );
     expect(await screen.findByText(/check your email to confirm/i)).toBeInTheDocument();
+  });
+
+  it('blocks sign-up when the passwords do not match', async () => {
+    render(<AuthScreen />);
+    fireEvent.click(screen.getByRole('button', { name: /create an account/i }));
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'secret12' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'secret99' } });
+    fireEvent.click(screen.getByRole('button', { name: /^create account$/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/don't match/i);
+    expect(signUp).not.toHaveBeenCalled();
+  });
+
+  it('blocks sign-up for a too-short password', async () => {
+    render(<AuthScreen />);
+    fireEvent.click(screen.getByRole('button', { name: /create an account/i }));
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'short' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'short' } });
+    fireEvent.click(screen.getByRole('button', { name: /^create account$/i }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/at least 8/i);
+    expect(signUp).not.toHaveBeenCalled();
   });
 
   it('requests a password reset and stays neutral', async () => {
@@ -82,7 +103,8 @@ describe('AuthScreen', () => {
     const onResetDone = vi.fn();
     render(<AuthScreen initialMode="reset" onResetDone={onResetDone} />);
     expect(screen.queryByLabelText(/email/i)).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'newpass1' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'newpass1' } });
+    fireEvent.change(screen.getByLabelText('Confirm password'), { target: { value: 'newpass1' } });
     fireEvent.click(screen.getByRole('button', { name: /save password/i }));
     await waitFor(() => expect(updateUser).toHaveBeenCalledWith({ password: 'newpass1' }));
     expect(onResetDone).toHaveBeenCalled();
