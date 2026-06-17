@@ -7,7 +7,7 @@ import { AccountMenu } from './AccountMenu';
 import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
-import { APP_NAME } from '@/lib/app';
+import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
 import { SURFACES } from './nav';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -79,7 +79,9 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             <aside style={{ width }} className="flex shrink-0 flex-col overflow-y-auto p-4">
               <div className="flex items-center gap-2 px-2">
                 <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
-                <h1 className="truncate text-lg font-semibold tracking-tight">{APP_NAME}</h1>
+                <h1 className="truncate text-lg font-semibold tracking-tight" title={APP_NAME}>
+                  {APP_SHORT_NAME}
+                </h1>
               </div>
 
               <Button className="mt-4 justify-start gap-2" onClick={openCapture}>
