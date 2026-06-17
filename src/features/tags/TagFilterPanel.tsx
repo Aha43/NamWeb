@@ -1,3 +1,4 @@
+import { useState, type FormEvent } from 'react';
 import { Pencil } from 'lucide-react';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -13,6 +14,8 @@ export interface TagFilterPanelProps {
   rows: ActionRowData[];
   savedViews: SavedView[];
   onToggleTag: (tag: string) => void;
+  /** Create a standalone tag (without having to tag an item first). */
+  onAddTag?: (tag: string) => void;
   onToggleNextOnly: () => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
@@ -32,6 +35,7 @@ export function TagFilterPanel({
   rows,
   savedViews,
   onToggleTag,
+  onAddTag,
   onToggleNextOnly,
   onSetStatus,
   onEdit,
@@ -42,8 +46,30 @@ export function TagFilterPanel({
   onDeleteView,
 }: TagFilterPanelProps) {
   const selectedSet = new Set(selected);
+  const [newTag, setNewTag] = useState('');
+
+  function submitAddTag(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = newTag.trim();
+    if (!trimmed || !onAddTag) return;
+    onAddTag(trimmed);
+    setNewTag('');
+  }
+
   return (
     <section className="mx-auto max-w-4xl space-y-4">
+      {onAddTag && (
+        <form onSubmit={submitAddTag} className="flex gap-2">
+          <input
+            aria-label="Create tag"
+            value={newTag}
+            onChange={(e) => setNewTag(e.target.value)}
+            placeholder="Create a tag…"
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+          />
+          <Button type="submit">Add</Button>
+        </form>
+      )}
       {savedViews.length > 0 && (
         <div className="space-y-1">
           <p className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Saved views</p>

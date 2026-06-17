@@ -29,6 +29,7 @@ export function TagsPage() {
       onToggleTag={(tag) =>
         setSelected((cur) => (cur.includes(tag) ? cur.filter((t) => t !== tag) : [...cur, tag]))
       }
+      onAddTag={(tag) => dispatch({ type: 'registerTag', tag })}
       onToggleNextOnly={() => setNextOnly((on) => !on)}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
