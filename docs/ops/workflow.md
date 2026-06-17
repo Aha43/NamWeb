@@ -73,9 +73,29 @@ prod manually. Rules:
 This model fits *now* — solo, soft-launch-bound, low stakes. It is **not permanent.** As real users
 and real data responsibility arrive, graduate toward a more robust setup, e.g.:
 
-- A **staging** Supabase project to rehearse migrations against prod-like data.
 - **Migrations in CI** (apply on merge, with review) instead of a manual laptop push.
 - Tighter release gates / change review as the team or user base grows.
+
+### Planned: a staging environment (schema-only)
+
+The intended next step is a **staging Supabase project**, with a deliberately narrow scope:
+
+- **Used only for schema/DB changes — not frontend work.** Pure-frontend changes already have a
+  pre-prod surface (the **Cloudflare PR preview** *is* "staging for the frontend"). Staging's one
+  unique job is **rehearsing migrations against a prod-like database** before they touch prod. So
+  the rule becomes: **previews for frontend, staging for schema.**
+- **Low overhead because migrations are rare in NAM.** The workspace is a single JSONB document +
+  version counter, so almost all product change happens *inside* the document via client-side
+  intents (pure frontend, no SQL). Actual migrations are infrequent — which is also exactly why a
+  rare migration is *higher*-stakes (no muscle memory, and it's **shared with NamDesktop**), so the
+  rehearsal earns its keep precisely when it's needed.
+- **Must hold prod-like data to be worth anything.** Staging only beats the empty local stack if it
+  has realistic data — the migration bugs we fear are data-shaped (a new `UNIQUE`/`NOT NULL` that
+  passes on an empty DB but fails on prod's existing rows). **Seed staging from a sanitized prod
+  dump**, or it's just another empty database.
+- **Not technically gated by Pro.** Staging is simply a *second* Supabase project (the free tier
+  allows two); it can even stay on free while prod is Pro. We tie its *introduction* to the
+  go-serious moment for timing, not because Pro unlocks it.
 
 The natural trigger is the same as the **Supabase free → Pro** graduation: *before* the soft launch /
 before other people's data is the thing at stake. Revisit this doc then.
