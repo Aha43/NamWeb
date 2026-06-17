@@ -345,3 +345,22 @@ describe('reorderChildren', () => {
     expect(intentTargetExists(doc, { type: 'reorderChildren', parentId: 'ghost', order: [] })).toBe(false);
   });
 });
+
+describe('registerTag', () => {
+  it('adds a standalone tag (normalized) to registeredTags', () => {
+    const doc = workspace();
+    const next = applyIntent(doc, { type: 'registerTag', tag: '  Home  ' });
+    expect(next.registeredTags).toEqual(['home']);
+    expect(doc.registeredTags).toEqual([]); // input untouched
+  });
+
+  it('de-duplicates against existing registered tags', () => {
+    const doc = { ...workspace(), registeredTags: ['home'] };
+    const next = applyIntent(doc, { type: 'registerTag', tag: 'HOME' });
+    expect(next.registeredTags).toEqual(['home']);
+  });
+
+  it('is a document-level intent (no node target required)', () => {
+    expect(intentTargetExists(workspace(), { type: 'registerTag', tag: 'x' })).toBe(true);
+  });
+});

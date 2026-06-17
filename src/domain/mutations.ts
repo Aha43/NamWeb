@@ -16,6 +16,7 @@ export type Intent =
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
+  | { type: 'registerTag'; tag: string }
   | { type: 'updateResources'; id: string; resources: Resource[]; now: string }
   | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; now: string }
   | { type: 'addSubProject'; parentId: string; id: string; title: string; now: string }
@@ -141,7 +142,8 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'createMissionControl' ||
     intent.type === 'deleteMissionControl' ||
     intent.type === 'deleteTemplate' ||
-    intent.type === 'reorderView'
+    intent.type === 'reorderView' ||
+    intent.type === 'registerTag'
   ) {
     return true; // operate on a document-level list, not a node
   }
@@ -220,6 +222,11 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!node) return next;
       node.tags = normalizeTags(intent.tags);
       node.updatedAt = intent.now;
+      return next;
+    }
+    case 'registerTag': {
+      // Add a standalone tag to the registered list (create-without-tagging).
+      next.registeredTags = normalizeTags([...next.registeredTags, intent.tag]);
       return next;
     }
     case 'updateResources': {

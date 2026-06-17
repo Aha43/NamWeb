@@ -57,4 +57,19 @@ describe('TagFilterPanel', () => {
     expect(onOpenView).toHaveBeenCalledWith(view);
     expect(onDeleteView).toHaveBeenCalledWith('Errands');
   });
+
+  it('creates a tag via the input and clears it (even with no tags yet)', () => {
+    const onAddTag = vi.fn();
+    setup({ allTags: [], onAddTag });
+    const input = screen.getByLabelText('Create tag');
+    fireEvent.change(input, { target: { value: '@phone' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onAddTag).toHaveBeenCalledWith('@phone');
+    expect((input as HTMLInputElement).value).toBe('');
+  });
+
+  it('has no create-tag input when onAddTag is not provided', () => {
+    setup();
+    expect(screen.queryByLabelText('Create tag')).not.toBeInTheDocument();
+  });
 });

@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Create tags directly in the Tags view.** The Tags view gains a "Create a tag…" input that
+  registers a standalone tag (new `registerTag` mutation → `registeredTags`, normalized/de-duped),
+  so you can set up tags you have in mind without first finding an item to tag. On-the-fly tagging
+  is unchanged. Closes #151.
+
 - **Add a next action directly in the Next view.** The Next view gains a quick-add input (mirroring
   Inbox's) that creates a `NEXT` action under the structural Actions node — no need to capture to the
   inbox and process it first when you already know it's a next action. Closes #152.
