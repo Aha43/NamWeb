@@ -1,5 +1,5 @@
 import { applyViewOrder, nextActions } from '@/domain/lenses';
-import { nowIso } from '@/lib/local';
+import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
@@ -33,6 +33,19 @@ export function NextActionsPage() {
   return (
     <NextActionsPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
+      onAdd={
+        document
+          ? (title) =>
+              dispatch({
+                type: 'addAction',
+                parentId: document.nextActionsNodeId,
+                id: newId(),
+                title,
+                status: 'NEXT',
+                now: nowIso(),
+              })
+          : undefined
+      }
       sortMode={sortMode}
       onCycleSort={cycleSort}
       reorderable={sortMode === 'none'}

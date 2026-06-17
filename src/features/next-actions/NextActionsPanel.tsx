@@ -1,3 +1,5 @@
+import { useState, type FormEvent } from 'react';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -9,6 +11,8 @@ import type { NodeStatus } from '@/domain/types';
 
 export interface NextActionsPanelProps {
   rows: ActionRowData[];
+  /** Quick-add a next action directly from this view. */
+  onAdd?: (title: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
@@ -27,6 +31,7 @@ export interface NextActionsPanelProps {
  *  Presentational. */
 export function NextActionsPanel({
   rows,
+  onAdd,
   onSetStatus,
   onEdit,
   onRename,
@@ -37,8 +42,30 @@ export function NextActionsPanel({
   onReorder,
   dndEnabled,
 }: NextActionsPanelProps) {
+  const [title, setTitle] = useState('');
+
+  function submitAdd(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = title.trim();
+    if (!trimmed || !onAdd) return;
+    onAdd(trimmed);
+    setTitle('');
+  }
+
   return (
     <section className="mx-auto max-w-4xl">
+      {onAdd && (
+        <form onSubmit={submitAdd} className="mb-4 flex gap-2">
+          <input
+            aria-label="Add a next action"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Add a next action…"
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+          />
+          <Button type="submit">Add</Button>
+        </form>
+      )}
       {sortMode && onCycleSort && rows.length > 0 && (
         <div className="mb-2 flex justify-end">
           <SortButton mode={sortMode} onCycle={onCycleSort} />

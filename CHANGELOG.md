@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Add a next action directly in the Next view.** The Next view gains a quick-add input (mirroring
+  Inbox's) that creates a `NEXT` action under the structural Actions node — no need to capture to the
+  inbox and process it first when you already know it's a next action. Closes #152.
+
 ### Changed
 
 - **Project workbench: header stays put while the lists scroll.** The breadcrumb, "Add to
