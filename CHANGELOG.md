@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Environment-aware favicon (dev cue).** Outside production the browser tab shows a yellow
+  "working" favicon (`public/favicon-dev.svg`) and an env-tagged title (e.g. `… [development]`),
+  so you can tell at a glance whether a tab is local/dev vs the real `usenam.app`. Driven by a new
+  `APP_ENV` (`src/lib/env.ts`: `VITE_ENV` → else dev/prod from the build); prod is untouched.
+  Closes #163.
+
 - **Manage tags — rename & delete in the Tags view.** The Tags view gains a "Manage tags" list
   showing each tag with its **usage count** and rename / delete controls, mirroring NamDesktop's
   tag management. **Rename** (`renameTag`) rewrites the tag across every item and the registered
