@@ -24,7 +24,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
   const { openCapture } = useCapture();
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+    <div className="flex h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-4 py-3">
         <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
         <h1 className="text-lg font-semibold tracking-tight" title={APP_NAME}>{APP_SHORT_NAME}</h1>
@@ -32,7 +32,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
 
       <SyncNotice />
 
-      <main className="flex-1 overflow-y-auto px-4 py-6">
+      <main className="min-h-0 flex-1 overflow-auto px-4 py-6">
         <ShellContent />
       </main>
 
