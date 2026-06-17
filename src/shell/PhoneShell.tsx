@@ -13,7 +13,7 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { APP_NAME } from '@/lib/app';
+import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
 import { SURFACES } from './nav';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -27,7 +27,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-4 py-3">
         <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
-        <h1 className="text-lg font-semibold tracking-tight">{APP_NAME}</h1>
+        <h1 className="text-lg font-semibold tracking-tight" title={APP_NAME}>{APP_SHORT_NAME}</h1>
       </header>
 
       <SyncNotice />

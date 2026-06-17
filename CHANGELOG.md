@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Brand label shortened to "NAM" in the app chrome.** The logo in the desktop sidebar and the
+  phone header now reads **"NAM"** instead of the long "Next Action Master" (which crowded the
+  logo), with the full name kept in a hover tooltip (`title`) and on the sign-in screen. New
+  `APP_SHORT_NAME` in `src/lib/app.ts`. Closes #148.
+
 ### Added
 
 - **Ops docs — production topology + go-live playbook.** New `docs/ops/`: a living
