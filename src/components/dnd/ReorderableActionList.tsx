@@ -11,6 +11,8 @@ export interface ReorderableActionListProps {
   renderActions: (row: ActionRowData, index: number) => ReactNode;
   onEdit?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
+  /** Delete a row inline (the caller confirms). Renders a trailing trash button. */
+  onDelete?: (id: string) => void;
   /** Commit a drag reorder (the full new id order). */
   onReorder?: (ids: string[]) => void;
   /** Mount drag-and-drop (desktop). When false, rows render with their buttons only. */
@@ -24,6 +26,7 @@ export function ReorderableActionList({
   renderActions,
   onEdit,
   onRename,
+  onDelete,
   onReorder,
   dndEnabled,
 }: ReorderableActionListProps) {
@@ -39,6 +42,7 @@ export function ReorderableActionList({
             dragRef={drag.setNodeRef}
             dragStyle={drag.style}
             onEdit={onEdit && (() => onEdit(data.id))}
+            onDelete={onDelete && (() => onDelete(data.id))}
             onRename={onRename && ((title) => onRename(data.id, title))}
             actions={
               <div className="flex items-center gap-1">
@@ -54,6 +58,7 @@ export function ReorderableActionList({
         <ActionRow
           row={data}
           onEdit={onEdit && (() => onEdit(data.id))}
+          onDelete={onDelete && (() => onDelete(data.id))}
           onRename={onRename && ((title) => onRename(data.id, title))}
           actions={<div className="flex items-center gap-1">{renderActions(data, index)}</div>}
         />

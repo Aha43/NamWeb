@@ -14,6 +14,7 @@ import { useCollapsedAddPanel } from '@/features/projects/useCollapsedAddPanel';
 import { useCollapsedSections } from '@/features/projects/useCollapsedSections';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useActionEditor } from '@/features/actions/action-editor-context';
+import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 /** Resolve a template subtree to concrete nodes (fresh ids) for applyTemplate. */
@@ -25,6 +26,7 @@ export function ProjectWorkbenchPage() {
   const { id = '' } = useParams();
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
+  const deleteNode = useDeleteNode();
   const navigate = useNavigate();
   const [mode, setMode] = useViewMode(id);
   const [collapsedColumns, toggleColumn] = useCollapsedColumns(id);
@@ -142,6 +144,7 @@ export function ProjectWorkbenchPage() {
       }
       onSetStatus={(actionId, status) => dispatch({ type: 'setStatus', id: actionId, status, now: nowIso() })}
       onEdit={openEditor}
+      onDeleteAction={deleteNode}
       onRename={(actionId, title) => {
         const node = document.nodes[actionId];
         if (node) dispatch({ type: 'updateNode', id: actionId, title, description: node.description, now: nowIso() });

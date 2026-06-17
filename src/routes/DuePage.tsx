@@ -3,6 +3,7 @@ import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { DuePanel, type DueRowGroups } from '@/features/due/DuePanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
+import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 const EMPTY: DueRowGroups = { overdue: [], today: [], thisWeek: [], later: [] };
@@ -10,6 +11,7 @@ const EMPTY: DueRowGroups = { overdue: [], today: [], thisWeek: [], later: [] };
 export function DuePage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
+  const deleteNode = useDeleteNode();
 
   let groups = EMPTY;
   if (document) {
@@ -23,6 +25,7 @@ export function DuePage() {
       groups={groups}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
+      onDelete={deleteNode}
       onRename={(id, title) => {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });

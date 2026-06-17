@@ -11,6 +11,8 @@ export interface BacklogPanelProps {
   rows: ActionRowData[];
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
+  /** Inline delete (with confirm) per row. */
+  onDelete?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
   sortMode?: SortMode;
   onCycleSort?: () => void;
@@ -29,6 +31,7 @@ export function BacklogPanel({
   rows,
   onSetStatus,
   onEdit,
+  onDelete,
   onRename,
   sortMode,
   onCycleSort,
@@ -50,6 +53,7 @@ export function BacklogPanel({
         <ReorderableActionList
           rows={rows}
           onEdit={onEdit}
+          onDelete={onDelete}
           onRename={onRename}
           onReorder={reorderable ? onReorder : undefined}
           dndEnabled={dndEnabled}

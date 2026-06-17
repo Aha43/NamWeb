@@ -36,6 +36,8 @@ export interface ProjectWorkbenchProps {
   onAddActionToColumn?: (columnId: string, title: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit: (id: string) => void;
+  /** Inline delete (with confirm) for a direct action row. */
+  onDeleteAction?: (id: string) => void;
   onRename: (id: string, title: string) => void;
   /** Hand-order a direct action within the project (reorders the project's childIds). */
   onMoveAction?: (id: string, direction: MoveDirection) => void;
@@ -93,6 +95,7 @@ export function ProjectWorkbench({
   onAddActionToColumn = () => {},
   onSetStatus,
   onEdit,
+  onDeleteAction,
   onRename,
   onMoveAction,
   onMoveSubProject,
@@ -256,6 +259,7 @@ export function ProjectWorkbench({
                 <ReorderableActionList
                   rows={actions}
                   onEdit={onEdit}
+                  onDelete={onDeleteAction}
                   onRename={onRename}
                   onReorder={onReorderActions}
                   dndEnabled={dndEnabled}

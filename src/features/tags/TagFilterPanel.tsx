@@ -25,6 +25,8 @@ export interface TagFilterPanelProps {
   onToggleNextOnly: () => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
+  /** Inline delete (with confirm) for a result action row. */
+  onDeleteAction?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
   /** Provided when the current selection can be saved as a view. */
   onSaveView?: () => void;
@@ -48,6 +50,7 @@ export function TagFilterPanel({
   onToggleNextOnly,
   onSetStatus,
   onEdit,
+  onDeleteAction,
   onRename,
   onSaveView,
   onOpenView,
@@ -207,6 +210,7 @@ export function TagFilterPanel({
                   key={row.id}
                   row={row}
                   onEdit={onEdit && (() => onEdit(row.id))}
+                  onDelete={onDeleteAction && (() => onDeleteAction(row.id))}
                   onRename={onRename && ((title) => onRename(row.id, title))}
                   actions={
                     <StatusMenu

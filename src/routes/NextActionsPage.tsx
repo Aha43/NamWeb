@@ -5,6 +5,7 @@ import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
 import { NextActionsPanel } from '@/features/next-actions/NextActionsPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
+import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
@@ -13,6 +14,7 @@ const VIEW = 'next';
 export function NextActionsPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
+  const deleteNode = useDeleteNode();
   const [sortMode, cycleSort] = useSortMode(VIEW);
   const isDesktop = useIsDesktop();
 
@@ -46,6 +48,7 @@ export function NextActionsPage() {
               })
           : undefined
       }
+      onDelete={deleteNode}
       sortMode={sortMode}
       onCycleSort={cycleSort}
       reorderable={sortMode === 'none'}

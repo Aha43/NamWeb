@@ -22,6 +22,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onEdit }: Done
               key={row.id}
               row={row}
               onEdit={onEdit && (() => onEdit(row.id))}
+              onDelete={() => onDelete(row.id)}
               actions={
                 <>
                   <button
@@ -39,14 +40,6 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onEdit }: Done
                     className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
                     Backlog
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`Delete ${row.title}`}
-                    onClick={() => onDelete(row.id)}
-                    className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-destructive"
-                  >
-                    Delete
                   </button>
                 </>
               }
