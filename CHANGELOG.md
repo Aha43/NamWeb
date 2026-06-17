@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Project workbench: header stays put while the lists scroll.** The breadcrumb, "Add to
+  project" panel and view switch are now pinned (sticky) to the top of the content pane, so a long
+  actions / sub-projects list scrolls beneath them instead of pushing them off-screen. First view
+  converted to per-view local scroll (part of #149).
+
 - **Lists scroll locally, in both directions.** The main content area is now a self-contained
   scroll region (both axes) with the app chrome — top bar, sidebar, phone header + bottom nav —
   pinned, so a long or wide list scrolls *within the pane* instead of scrolling the whole surface.

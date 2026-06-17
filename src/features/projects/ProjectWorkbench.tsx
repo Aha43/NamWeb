@@ -151,7 +151,9 @@ export function ProjectWorkbench({
     </li>
   );
   return (
-    <section className={cn('mx-auto space-y-4', isColumn ? 'w-full' : 'max-w-4xl')}>
+    <section className={cn('mx-auto', isColumn ? 'w-full' : 'max-w-4xl')}>
+      {/* Pinned header: breadcrumb + add-panel + view switch stay put while the lists scroll. */}
+      <div className="sticky top-0 z-20 space-y-3 bg-background pb-2 pt-1">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
         <button type="button" onClick={onOpenProjects} className="hover:text-foreground">
           Projects
@@ -222,7 +224,9 @@ export function ProjectWorkbench({
       {subProjects.length > 0 && (
         <ViewSwitch mode={viewMode} onSet={onSetViewMode} columnAvailable={columnAvailable} />
       )}
+      </div>
 
+      <div className="space-y-4 pt-4">
       {isColumn ? (
         <ColumnView
           columns={columns}
@@ -339,6 +343,7 @@ export function ProjectWorkbench({
           )}
         </>
       )}
+      </div>
     </section>
   );
 }
