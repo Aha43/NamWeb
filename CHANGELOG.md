@@ -18,6 +18,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Ops runbooks — cross-product workspace setup (`docs/ops/runbooks.md`).** A "when X, do Y"
+  companion to the topology map and go-live playbook. First entries cover sharing one workspace
+  between web and desktop in both directions (desktop adopts a web-created workspace via Pull;
+  web adopts a desktop-created workspace via Push + reload), with the shared rules (one account,
+  the `default` row, accounts are web-only, whole-workspace replace — no merge) and the footguns.
+  Cross-links the related fixes: NamDesktop #380 / #381 and NamWeb #143. Closes #144.
+
 - **Cloudflare Pages deploy config (launch).** Added `public/_redirects`
   (`/* /index.html 200`) so the SPA's client-side routes survive deep links and hard
   refreshes on the static host instead of 404ing. First piece of standing up public
