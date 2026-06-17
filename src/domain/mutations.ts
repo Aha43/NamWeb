@@ -17,6 +17,8 @@ export type Intent =
   | { type: 'setDue'; id: string; dueAt: string | null; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
   | { type: 'registerTag'; tag: string }
+  | { type: 'renameTag'; from: string; to: string }
+  | { type: 'deleteTag'; tag: string }
   | { type: 'updateResources'; id: string; resources: Resource[]; now: string }
   | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; now: string }
   | { type: 'addSubProject'; parentId: string; id: string; title: string; now: string }
@@ -143,7 +145,9 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'deleteMissionControl' ||
     intent.type === 'deleteTemplate' ||
     intent.type === 'reorderView' ||
-    intent.type === 'registerTag'
+    intent.type === 'registerTag' ||
+    intent.type === 'renameTag' ||
+    intent.type === 'deleteTag'
   ) {
     return true; // operate on a document-level list, not a node
   }
@@ -227,6 +231,30 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'registerTag': {
       // Add a standalone tag to the registered list (create-without-tagging).
       next.registeredTags = normalizeTags([...next.registeredTags, intent.tag]);
+      return next;
+    }
+    case 'renameTag': {
+      // Rewrite a tag across the registered list AND every node that uses it
+      // (normalize merges it into the target if that already exists). Mirrors
+      // NamDesktop's renameTag.
+      const from = intent.from.trim().toLowerCase();
+      const to = intent.to.trim().toLowerCase();
+      if (!from || !to || from === to) return next;
+      next.registeredTags = normalizeTags(next.registeredTags.map((t) => (t === from ? to : t)));
+      for (const node of Object.values(next.nodes)) {
+        if (node.tags.includes(from)) node.tags = normalizeTags(node.tags.map((t) => (t === from ? to : t)));
+      }
+      return next;
+    }
+    case 'deleteTag': {
+      // Remove a tag from the registered list AND from every node that uses it.
+      // Mirrors NamDesktop's deleteTag (the UI confirms with the usage count).
+      const tag = intent.tag.trim().toLowerCase();
+      if (!tag) return next;
+      next.registeredTags = next.registeredTags.filter((t) => t !== tag);
+      for (const node of Object.values(next.nodes)) {
+        if (node.tags.includes(tag)) node.tags = node.tags.filter((t) => t !== tag);
+      }
       return next;
     }
     case 'updateResources': {

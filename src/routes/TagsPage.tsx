@@ -13,6 +13,12 @@ export function TagsPage() {
   const [nextOnly, setNextOnly] = useState(false);
 
   const tags = document ? allTags(document) : [];
+  const tagCounts: Record<string, number> = {};
+  if (document) {
+    for (const node of Object.values(document.nodes)) {
+      for (const t of node.tags) tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+    }
+  }
   // Only filter once at least one tag is chosen — an empty selection matches everything.
   const rows =
     document && selected.length > 0
@@ -30,6 +36,26 @@ export function TagsPage() {
         setSelected((cur) => (cur.includes(tag) ? cur.filter((t) => t !== tag) : [...cur, tag]))
       }
       onAddTag={(tag) => dispatch({ type: 'registerTag', tag })}
+      tagCounts={tagCounts}
+      onRenameTag={(tag) => {
+        const to = window.prompt('Rename tag', tag)?.trim();
+        const norm = to?.toLowerCase();
+        if (norm && norm !== tag) {
+          dispatch({ type: 'renameTag', from: tag, to: norm });
+          setSelected((cur) => cur.map((t) => (t === tag ? norm : t)));
+        }
+      }}
+      onDeleteTag={(tag) => {
+        const count = tagCounts[tag] ?? 0;
+        const message =
+          count === 0
+            ? `Remove "${tag}" from the tag list?`
+            : `Delete "${tag}" from ${count} item${count === 1 ? '' : 's'}? This cannot be undone.`;
+        if (window.confirm(message)) {
+          dispatch({ type: 'deleteTag', tag });
+          setSelected((cur) => cur.filter((t) => t !== tag));
+        }
+      }}
       onToggleNextOnly={() => setNextOnly((on) => !on)}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}

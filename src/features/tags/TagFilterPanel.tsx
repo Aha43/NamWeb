@@ -16,6 +16,12 @@ export interface TagFilterPanelProps {
   onToggleTag: (tag: string) => void;
   /** Create a standalone tag (without having to tag an item first). */
   onAddTag?: (tag: string) => void;
+  /** Per-tag usage counts (how many items carry each tag). */
+  tagCounts?: Record<string, number>;
+  /** Rename a tag everywhere it's used. */
+  onRenameTag?: (tag: string) => void;
+  /** Delete a tag (from the list and every item using it). */
+  onDeleteTag?: (tag: string) => void;
   onToggleNextOnly: () => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
@@ -36,6 +42,9 @@ export function TagFilterPanel({
   savedViews,
   onToggleTag,
   onAddTag,
+  tagCounts,
+  onRenameTag,
+  onDeleteTag,
   onToggleNextOnly,
   onSetStatus,
   onEdit,
@@ -69,6 +78,42 @@ export function TagFilterPanel({
           />
           <Button type="submit">Add</Button>
         </form>
+      )}
+
+      {(onRenameTag || onDeleteTag) && allTags.length > 0 && (
+        <div className="space-y-1">
+          <p className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Manage tags</p>
+          <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+            {allTags.map((tag) => (
+              <li key={tag} className="flex items-center gap-2 px-3 py-2">
+                <span className="flex-1 truncate text-sm text-foreground">{tag}</span>
+                {tagCounts && (
+                  <span className="text-xs text-muted-foreground">{tagCounts[tag] ?? 0}</span>
+                )}
+                {onRenameTag && (
+                  <button
+                    type="button"
+                    aria-label={`Rename tag ${tag}`}
+                    onClick={() => onRenameTag(tag)}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                {onDeleteTag && (
+                  <button
+                    type="button"
+                    aria-label={`Delete tag ${tag}`}
+                    onClick={() => onDeleteTag(tag)}
+                    className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
+                  >
+                    ×
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {savedViews.length > 0 && (
         <div className="space-y-1">
