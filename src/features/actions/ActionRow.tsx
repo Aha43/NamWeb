@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Paperclip, Pencil } from 'lucide-react';
+import { Paperclip, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
@@ -18,6 +18,7 @@ export function ActionRow({
   row,
   actions,
   onEdit,
+  onDelete,
   onRename,
   dragRef,
   dragStyle,
@@ -25,6 +26,8 @@ export function ActionRow({
   row: ActionRowData;
   actions: ReactNode;
   onEdit?: () => void;
+  /** Delete this row inline (the caller confirms). Renders a trailing trash button. */
+  onDelete?: () => void;
   /** Commit an inline title rename (double-click the title to start). */
   onRename?: (title: string) => void;
   /** Sortable wiring (drag-and-drop): ref + transform style for the row element. */
@@ -93,6 +96,16 @@ export function ActionRow({
           </button>
         )}
         {actions}
+        {onDelete && (
+          <button
+            type="button"
+            aria-label={`Delete ${row.title}`}
+            onClick={onDelete}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
     </li>
   );

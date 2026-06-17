@@ -4,11 +4,13 @@ import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
+import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 export function TagsPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
+  const deleteNode = useDeleteNode();
   const [selected, setSelected] = useState<string[]>([]);
   const [nextOnly, setNextOnly] = useState(false);
 
@@ -59,6 +61,7 @@ export function TagsPage() {
       onToggleNextOnly={() => setNextOnly((on) => !on)}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
+      onDeleteAction={deleteNode}
       onRename={(id, title) => {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });

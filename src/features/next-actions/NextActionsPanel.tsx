@@ -13,6 +13,8 @@ export interface NextActionsPanelProps {
   rows: ActionRowData[];
   /** Quick-add a next action directly from this view. */
   onAdd?: (title: string) => void;
+  /** Inline delete (with confirm) per row. */
+  onDelete?: (id: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
@@ -32,6 +34,7 @@ export interface NextActionsPanelProps {
 export function NextActionsPanel({
   rows,
   onAdd,
+  onDelete,
   onSetStatus,
   onEdit,
   onRename,
@@ -77,6 +80,7 @@ export function NextActionsPanel({
         <ReorderableActionList
           rows={rows}
           onEdit={onEdit}
+          onDelete={onDelete}
           onRename={onRename}
           onReorder={reorderable ? onReorder : undefined}
           dndEnabled={dndEnabled}

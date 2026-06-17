@@ -14,6 +14,8 @@ export interface DuePanelProps {
   groups: DueRowGroups;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
+  /** Inline delete (with confirm) per row. */
+  onDelete?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
 }
 
@@ -25,7 +27,7 @@ const SECTIONS: { key: keyof DueRowGroups; label: string; tone: string }[] = [
 ];
 
 /** Due actions grouped by urgency; empty sections are hidden. Presentational. */
-export function DuePanel({ groups, onSetStatus, onEdit, onRename }: DuePanelProps) {
+export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename }: DuePanelProps) {
   const total = SECTIONS.reduce((n, s) => n + groups[s.key].length, 0);
   if (total === 0) {
     return (
@@ -49,6 +51,7 @@ export function DuePanel({ groups, onSetStatus, onEdit, onRename }: DuePanelProp
                   key={row.id}
                   row={row}
                   onEdit={onEdit && (() => onEdit(row.id))}
+                  onDelete={onDelete && (() => onDelete(row.id))}
                   onRename={onRename && ((title) => onRename(row.id, title))}
                   actions={
                     <StatusMenu

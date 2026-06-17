@@ -13,11 +13,13 @@ export interface BlockedPanelProps {
   onOpenBlocker: (id: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
+  /** Inline delete (with confirm) per row. */
+  onDelete?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
 }
 
 /** Blocked actions grouped under each active prerequisite. Presentational. */
-export function BlockedPanel({ groups, onOpenBlocker, onSetStatus, onEdit, onRename }: BlockedPanelProps) {
+export function BlockedPanel({ groups, onOpenBlocker, onSetStatus, onEdit, onDelete, onRename }: BlockedPanelProps) {
   if (groups.length === 0) {
     return (
       <section className="mx-auto max-w-4xl">
@@ -44,6 +46,7 @@ export function BlockedPanel({ groups, onOpenBlocker, onSetStatus, onEdit, onRen
                 key={row.id}
                 row={row}
                 onEdit={onEdit && (() => onEdit(row.id))}
+                onDelete={onDelete && (() => onDelete(row.id))}
                 onRename={onRename && ((title) => onRename(row.id, title))}
                 actions={
                   <StatusMenu

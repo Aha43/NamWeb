@@ -5,6 +5,7 @@ import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
 import { BacklogPanel } from '@/features/backlog/BacklogPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
+import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
@@ -13,6 +14,7 @@ const VIEW = 'backlog';
 export function BacklogPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
+  const deleteNode = useDeleteNode();
   const [sortMode, cycleSort] = useSortMode(VIEW);
   const isDesktop = useIsDesktop();
 
@@ -39,6 +41,7 @@ export function BacklogPage() {
       onMove={move}
       onReorder={(ids) => dispatch({ type: 'reorderView', view: VIEW, order: ids })}
       dndEnabled={isDesktop}
+      onDelete={deleteNode}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
       onRename={(id, title) => {

@@ -4,6 +4,7 @@ import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog'
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
 import { allTags, canAddPrerequisite, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
+import { useDeleteNode } from './useDeleteNode';
 import { nowIso } from '@/lib/local';
 
 /** Same tag list (already normalized) — avoids dispatching a no-op tag update. */
@@ -65,17 +66,9 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     setEditingId(null);
   }
 
+  const deleteNode = useDeleteNode();
   function remove() {
-    if (!node || !document) return;
-    const descendants = subtreeIds(document, node.id).size - 1;
-    const label = node.project ? 'project' : 'action';
-    const message =
-      descendants > 0
-        ? `Delete the "${node.title}" ${label} and its ${descendants} item${descendants === 1 ? '' : 's'}?`
-        : `Delete the "${node.title}" ${label}?`;
-    if (!window.confirm(message)) return;
-    dispatch(descendants > 0 ? { type: 'deleteRecursive', id: node.id } : { type: 'deleteLeaf', id: node.id });
-    setEditingId(null);
+    if (node && deleteNode(node.id)) setEditingId(null);
   }
 
   function addPrerequisite(prereqId: string) {
