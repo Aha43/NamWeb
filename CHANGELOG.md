@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Pick existing tags when tagging (autocomplete).** The action/project editor's tag field is now
+  an autocomplete (`TagsInput`) that suggests existing tags as you type (↑/↓ + Enter/Tab, or click),
+  mirroring NamDesktop's `TagsField` — so you select a known tag instead of retyping it, avoiding
+  `@phone`/`phone` fragmentation. New tags can still be typed freely. Closes #158.
+
 - **Create tags directly in the Tags view.** The Tags view gains a "Create a tag…" input that
   registers a standalone tag (new `registerTag` mutation → `registeredTags`, normalized/de-duped),
   so you can set up tags you have in mind without first finding an item to tag. On-the-fly tagging

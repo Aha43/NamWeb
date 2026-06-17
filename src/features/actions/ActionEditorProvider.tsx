@@ -3,7 +3,7 @@ import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
-import { canAddPrerequisite, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
+import { allTags, canAddPrerequisite, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 
 /** Same tag list (already normalized) — avoids dispatching a no-op tag update. */
@@ -127,6 +127,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
             if (!open) setEditingId(null);
           }}
           onSave={save}
+          availableTags={document ? allTags(document) : []}
           onMakeProject={node.project ? undefined : makeProject}
           moveTargets={moveTargets}
           onMove={move}
