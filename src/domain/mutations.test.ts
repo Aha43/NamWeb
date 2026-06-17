@@ -364,3 +364,39 @@ describe('registerTag', () => {
     expect(intentTargetExists(workspace(), { type: 'registerTag', tag: 'x' })).toBe(true);
   });
 });
+
+describe('renameTag', () => {
+  it('rewrites the tag across nodes and the registered list', () => {
+    const doc = { ...workspace([node('a', { tags: ['home'] }), node('b', { tags: ['home', 'work'] })]), registeredTags: ['home'] };
+    const next = applyIntent(doc, { type: 'renameTag', from: 'home', to: 'House' });
+    expect(next.registeredTags).toEqual(['house']);
+    expect(next.nodes.a.tags).toEqual(['house']);
+    expect(next.nodes.b.tags).toEqual(['house', 'work']);
+  });
+
+  it('merges (de-dups) when the target tag already exists on a node', () => {
+    const doc = workspace([node('a', { tags: ['home', 'house'] })]);
+    const next = applyIntent(doc, { type: 'renameTag', from: 'home', to: 'house' });
+    expect(next.nodes.a.tags).toEqual(['house']);
+  });
+
+  it('no-ops on empty or identical names', () => {
+    const doc = workspace([node('a', { tags: ['home'] })]);
+    expect(applyIntent(doc, { type: 'renameTag', from: 'home', to: 'home' })).toEqual(doc);
+  });
+});
+
+describe('deleteTag', () => {
+  it('removes the tag from every node and the registered list', () => {
+    const doc = { ...workspace([node('a', { tags: ['home', 'work'] }), node('b', { tags: ['home'] })]), registeredTags: ['home', 'work'] };
+    const next = applyIntent(doc, { type: 'deleteTag', tag: 'home' });
+    expect(next.registeredTags).toEqual(['work']);
+    expect(next.nodes.a.tags).toEqual(['work']);
+    expect(next.nodes.b.tags).toEqual([]);
+  });
+
+  it('is a document-level intent', () => {
+    expect(intentTargetExists(workspace(), { type: 'deleteTag', tag: 'x' })).toBe(true);
+    expect(intentTargetExists(workspace(), { type: 'renameTag', from: 'a', to: 'b' })).toBe(true);
+  });
+});

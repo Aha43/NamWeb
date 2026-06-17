@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Manage tags — rename & delete in the Tags view.** The Tags view gains a "Manage tags" list
+  showing each tag with its **usage count** and rename / delete controls, mirroring NamDesktop's
+  tag management. **Rename** (`renameTag`) rewrites the tag across every item and the registered
+  list (merging if the target exists); **delete** (`deleteTag`) removes it from the list and every
+  item, with a confirm that names the count (`"Remove … from the tag list?"` when unused, else
+  `"Delete … from N item(s)? This cannot be undone."`). Closes #159, closes #160.
+
 - **Pick existing tags when tagging (autocomplete).** The action/project editor's tag field is now
   an autocomplete (`TagsInput`) that suggests existing tags as you type (↑/↓ + Enter/Tab, or click),
   mirroring NamDesktop's `TagsField` — so you select a known tag instead of retyping it, avoiding

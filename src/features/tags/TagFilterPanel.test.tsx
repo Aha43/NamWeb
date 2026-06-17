@@ -72,4 +72,16 @@ describe('TagFilterPanel', () => {
     setup();
     expect(screen.queryByLabelText('Create tag')).not.toBeInTheDocument();
   });
+
+  it('lists tags with counts and fires rename/delete from the manage list', () => {
+    const onRenameTag = vi.fn();
+    const onDeleteTag = vi.fn();
+    setup({ allTags: ['home'], tagCounts: { home: 3 }, onRenameTag, onDeleteTag });
+    expect(screen.getByText('Manage tags')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Rename tag home' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete tag home' }));
+    expect(onRenameTag).toHaveBeenCalledWith('home');
+    expect(onDeleteTag).toHaveBeenCalledWith('home');
+  });
 });
