@@ -8,6 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Lists scroll locally, in both directions.** The main content area is now a self-contained
+  scroll region (both axes) with the app chrome — top bar, sidebar, phone header + bottom nav —
+  pinned, so a long or wide list scrolls *within the pane* instead of scrolling the whole surface.
+  Horizontal content (e.g. the column view) gets a horizontal scrollbar in its pane rather than
+  stretching the page. Closes #149.
+
+- **Thin, themed scrollbars across platforms.** Custom scrollbar styling (`src/index.css`) so
+  Windows' chunky native scrollbars match the slim macOS overlay look and follow light/dark via the
+  `muted-foreground` theme token (`::-webkit-scrollbar` for Chromium/Edge/Safari, `scrollbar-*` for
+  Firefox). Closes #150.
+
 - **Brand label shortened to "NAM" in the app chrome.** The logo in the desktop sidebar and the
   phone header now reads **"NAM"** instead of the long "Next Action Master" (which crowded the
   logo), with the full name kept in a hover tooltip (`title`) and on the sign-in screen. New
