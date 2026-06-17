@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <!-- Dev/local "working" favicon: the logo on a yellow background so a non-prod tab
+       is visually distinct from prod. Swapped in by src/lib/favicon.ts when the app
+       isn't running in production. Logo colour is forced dark for contrast on yellow. -->
+  <rect width="256" height="256" rx="48" fill="#F2C200" />
+  <g stroke="#0f172a" stroke-width="11" stroke-linecap="round" opacity="0.42">
+    <path d="M128 74 L84 182" />
+    <path d="M128 74 L172 182" />
+  </g>
+  <g fill="none" stroke="#3FA463" stroke-width="7" stroke-linecap="round">
+    <path d="M130.6 44.1 A30 30 0 0 1 157.5 68.8" opacity="0.55" />
+    <path d="M131.7 32.2 A42 42 0 0 1 169.4 66.7" opacity="0.3" />
+  </g>
+  <circle cx="128" cy="74" r="18" fill="#0f172a" />
+  <circle cx="84" cy="182" r="18" fill="#0f172a" />
+  <circle cx="172" cy="182" r="27" fill="#3FA463" />
+  <path d="M159 183 l9 9 l18 -21" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" />
+</svg>
