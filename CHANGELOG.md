@@ -13,15 +13,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   logo), with the full name kept in a hover tooltip (`title`) and on the sign-in screen. New
   `APP_SHORT_NAME` in `src/lib/app.ts`. Closes #148.
 
-### Added
-
-- **Ops docs — production topology + go-live playbook.** New `docs/ops/`: a living
-  **`production-topology.md`** (the map — every service in prod NamWeb and how they relate,
-  with a Mermaid diagram, inventory table, data/deploy flows, trust boundaries) and a
-  **`go-live-playbook.md`** (the journey — ordered steps to take a Vite SPA + Supabase live on
-  Cloudflare Pages, with the gotchas we actually hit, reusable for future web projects). First
-  artifacts of the DevOps 1 sprint. Closes #139, closes #140.
-
 ### Fixed
 
 - **Web no longer depends on the desktop app to get started (launch blocker).** A brand-new,
@@ -33,6 +24,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   sign-up actually usable. Closes #137.
 
 ### Added
+
+- **Development & change-management workflow (`docs/ops/workflow.md`).** Documents the current
+  working model now that prod exists: a **short line to prod** (no dev/staging — develop locally
+  against the local Supabase stack, then push to prod), built on the principle that **risk is
+  asymmetric** — frontend deploys are reversible (auto-deploy + PR previews + one-click rollback)
+  so move fast, while schema migrations are irreversible and shared with NamDesktop so they get
+  guardrails (backup-first, additive/expand-then-contract, review the SQL, migrate-before-code).
+  Explicitly not permanent — graduates toward staging / migration-CI before the soft launch.
+  Closes #146.
+
+- **Ops docs — production topology + go-live playbook.** New `docs/ops/`: a living
+  **`production-topology.md`** (the map — every service in prod NamWeb and how they relate,
+  with a Mermaid diagram, inventory table, data/deploy flows, trust boundaries) and a
+  **`go-live-playbook.md`** (the journey — ordered steps to take a Vite SPA + Supabase live on
+  Cloudflare Pages, with the gotchas we actually hit, reusable for future web projects). First
+  artifacts of the DevOps 1 sprint. Closes #139, closes #140.
 
 - **Ops runbooks — cross-product workspace setup (`docs/ops/runbooks.md`).** A "when X, do Y"
   companion to the topology map and go-live playbook. First entries cover sharing one workspace
