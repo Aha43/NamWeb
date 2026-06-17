@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TagsInput } from './TagsInput';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -65,11 +66,14 @@ export function ActionDialog({
   onAddPrerequisite,
   onRemovePrerequisite,
   onDelete,
+  availableTags = [],
 }: {
   node: NamNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (edits: ActionEdits) => void;
+  /** Existing tags to suggest in the tag field (registered + in-use). */
+  availableTags?: string[];
   onMakeProject?: () => void;
   moveTargets?: MoveTarget[];
   onMove?: (targetId: string) => void;
@@ -134,12 +138,7 @@ export function ActionDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="action-tags">Tags</Label>
-              <Input
-                id="action-tags"
-                placeholder="comma, separated"
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-              />
+              <TagsInput id="action-tags" value={tags} onChange={setTags} suggestions={availableTags} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="action-due">Due</Label>
