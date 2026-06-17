@@ -42,6 +42,21 @@ describe('NextActionsPanel', () => {
     expect(onCycleSort).toHaveBeenCalledOnce();
   });
 
+  it('quick-adds a next action via the input (trimmed) and clears it', () => {
+    const onAdd = vi.fn();
+    render(<NextActionsPanel rows={[]} onSetStatus={vi.fn()} onAdd={onAdd} />);
+    const input = screen.getByLabelText('Add a next action');
+    fireEvent.change(input, { target: { value: '  Call plumber  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onAdd).toHaveBeenCalledWith('Call plumber');
+    expect((input as HTMLInputElement).value).toBe('');
+  });
+
+  it('has no add input when onAdd is not provided', () => {
+    setup([row()]);
+    expect(screen.queryByLabelText('Add a next action')).not.toBeInTheDocument();
+  });
+
   it('renames inline on double-click + Enter', () => {
     const { onRename } = setup([row({ id: 'x', title: 'Buy milk' })]);
     fireEvent.doubleClick(screen.getByText('Buy milk'));
