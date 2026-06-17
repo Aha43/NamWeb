@@ -15,8 +15,9 @@ test.describe('tags + search', () => {
   test('filter by a tag and save the selection as a view', async ({ page }) => {
     await page.goto('/tags');
 
-    // Toggle the `work` chip → only the work-tagged action matches.
-    await page.getByRole('button', { name: 'work' }).click();
+    // Toggle the `work` filter chip → only the work-tagged action matches.
+    // Exact match: the "Manage tags" list also has "Rename/Delete tag work" buttons.
+    await page.getByRole('button', { name: 'work', exact: true }).click();
     await expect(page.getByText('Email Bob')).toBeVisible();
     await expect(page.getByText('Buy soil')).toHaveCount(0);
     await expect(page.getByText('1 match', { exact: true })).toBeVisible();
