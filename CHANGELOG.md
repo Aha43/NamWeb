@@ -12,7 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Due, Blocked, Tags results, project-workbench actions) now has a **trash button on each row** to
   delete without opening the editor — always behind the count-aware confirm (shared `useDeleteNode`
   hook, also now used by the editor's Delete). Done's old no-confirm "Delete" link is replaced by the
-  confirmed trash. Closes #164.
+  confirmed trash, and the **Inbox** delete is now the same trash icon (kept instant — quick triage).
+  Closes #164.
 
 - **Environment-aware favicon (dev cue).** Outside production the browser tab shows a yellow
   "working" favicon (`public/favicon-dev.svg`) and an env-tagged title (e.g. `… [development]`),

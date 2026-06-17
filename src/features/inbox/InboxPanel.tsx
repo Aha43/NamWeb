@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatAge } from '@/lib/dates';
@@ -98,9 +98,9 @@ export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit, onRename
                 type="button"
                 aria-label={`Delete ${item.title}`}
                 onClick={() => onDelete(item.id)}
-                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-destructive"
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
               >
-                Delete
+                <Trash2 className="h-3.5 w-3.5" />
               </button>
             </li>
           ))}
