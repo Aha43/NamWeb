@@ -58,9 +58,19 @@ describe('TagFilterPanel', () => {
     expect(onDeleteView).toHaveBeenCalledWith('Errands');
   });
 
+  it('keeps the manage section collapsed by default, expandable via the disclosure', () => {
+    const onAddTag = vi.fn();
+    setup({ allTags: [], onAddTag });
+    // Collapsed: the create input is hidden until you expand "Manage tags".
+    expect(screen.queryByLabelText('Create tag')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Manage tags/ }));
+    expect(screen.getByLabelText('Create tag')).toBeInTheDocument();
+  });
+
   it('creates a tag via the input and clears it (even with no tags yet)', () => {
     const onAddTag = vi.fn();
     setup({ allTags: [], onAddTag });
+    fireEvent.click(screen.getByRole('button', { name: /Manage tags/ }));
     const input = screen.getByLabelText('Create tag');
     fireEvent.change(input, { target: { value: '@phone' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
@@ -68,16 +78,17 @@ describe('TagFilterPanel', () => {
     expect((input as HTMLInputElement).value).toBe('');
   });
 
-  it('has no create-tag input when onAddTag is not provided', () => {
+  it('has no manage section at all when no manage handlers are provided', () => {
     setup();
+    expect(screen.queryByRole('button', { name: /Manage tags/ })).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Create tag')).not.toBeInTheDocument();
   });
 
-  it('lists tags with counts and fires rename/delete from the manage list', () => {
+  it('lists tags with counts and fires rename/delete from the manage list (once expanded)', () => {
     const onRenameTag = vi.fn();
     const onDeleteTag = vi.fn();
     setup({ allTags: ['home'], tagCounts: { home: 3 }, onRenameTag, onDeleteTag });
-    expect(screen.getByText('Manage tags')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Manage tags/ }));
     expect(screen.getByText('3')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Rename tag home' }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete tag home' }));
