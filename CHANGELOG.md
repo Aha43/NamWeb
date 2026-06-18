@@ -8,9 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Editor delete now confirms inline in the dialog (no native dialog left).** Deleting an
+  action/project from inside the edit dialog asks for confirmation right in the dialog footer
+  (count-aware message + Cancel / Delete) instead of `window.confirm`. This retires the last native
+  dialog in the app — every confirm/prompt is now on-design. Closes #173.
+
 - **Saved-view & template naming use anchored prompts.** "Save as view", saved-view rename, and
   "Save as template" now use the anchored `PromptButton` (themed inline input, Enter to save) instead
-  of `window.prompt`. Only the editor's delete confirm remains native. Part of #173.
+  of `window.prompt`. Part of #173.
 
 - **Tags view: rename/delete use anchored popovers (no native dialogs).** Deleting a tag now uses the
   anchored confirm popover, and renaming a tag uses a new anchored **`PromptButton`** (themed inline

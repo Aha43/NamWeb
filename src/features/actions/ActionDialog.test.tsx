@@ -117,11 +117,35 @@ describe('ActionDialog', () => {
   it('shows a Delete button (when wired) and an "Edit project" title for projects', () => {
     const onDelete = vi.fn();
     render(
-      <ActionDialog node={node({ project: true, title: 'Roof' })} open onOpenChange={vi.fn()} onSave={vi.fn()} onDelete={onDelete} />,
+      <ActionDialog
+        node={node({ project: true, title: 'Roof' })}
+        open
+        onOpenChange={vi.fn()}
+        onSave={vi.fn()}
+        onDelete={onDelete}
+        deleteConfirmMessage="Delete the Roof project?"
+      />,
     );
     expect(screen.getByText('Edit project')).toBeInTheDocument();
+    // First click arms the inline confirm; it does not delete yet.
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByText(/Delete the/)).toBeInTheDocument();
+    // Second click (the confirm) deletes.
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalled();
+  });
+
+  it('cancels the inline delete confirm without deleting', () => {
+    const onDelete = vi.fn();
+    render(
+      <ActionDialog node={node({ project: true, title: 'Roof' })} open onOpenChange={vi.fn()} onSave={vi.fn()} onDelete={onDelete} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onDelete).not.toHaveBeenCalled();
+    // Back to the normal footer: Delete is available again.
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 
   it('omits the Delete button when not wired', () => {

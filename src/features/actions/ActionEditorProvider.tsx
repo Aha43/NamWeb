@@ -66,16 +66,19 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     setEditingId(null);
   }
 
-  const deleteNode = useDeleteNode();
-  function remove() {
-    if (!node || !document) return;
+  // Count-aware confirm message for the dialog's inline delete confirm.
+  const deleteMessage = useMemo(() => {
+    if (!node || !document) return undefined;
     const descendants = subtreeIds(document, node.id).size - 1;
     const label = node.project ? 'project' : 'action';
-    const message =
-      descendants > 0
-        ? `Delete the "${node.title}" ${label} and its ${descendants} item${descendants === 1 ? '' : 's'}?`
-        : `Delete the "${node.title}" ${label}?`;
-    if (!window.confirm(message)) return;
+    return descendants > 0
+      ? `Delete the "${node.title}" ${label} and its ${descendants} item${descendants === 1 ? '' : 's'}? This cannot be undone.`
+      : `Delete the "${node.title}" ${label}? This cannot be undone.`;
+  }, [node, document]);
+
+  const deleteNode = useDeleteNode();
+  function remove() {
+    if (!node) return;
     deleteNode(node.id);
     setEditingId(null);
   }
@@ -139,6 +142,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           onAddPrerequisite={node.project ? undefined : addPrerequisite}
           onRemovePrerequisite={node.project ? undefined : removePrerequisite}
           onDelete={remove}
+          deleteConfirmMessage={deleteMessage}
         />
       )}
     </ActionEditorContext.Provider>
