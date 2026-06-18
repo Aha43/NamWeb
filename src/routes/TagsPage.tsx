@@ -39,24 +39,16 @@ export function TagsPage() {
       }
       onAddTag={(tag) => dispatch({ type: 'registerTag', tag })}
       tagCounts={tagCounts}
-      onRenameTag={(tag) => {
-        const to = window.prompt('Rename tag', tag)?.trim();
-        const norm = to?.toLowerCase();
+      onRenameTag={(tag, newName) => {
+        const norm = newName.trim().toLowerCase();
         if (norm && norm !== tag) {
           dispatch({ type: 'renameTag', from: tag, to: norm });
           setSelected((cur) => cur.map((t) => (t === tag ? norm : t)));
         }
       }}
       onDeleteTag={(tag) => {
-        const count = tagCounts[tag] ?? 0;
-        const message =
-          count === 0
-            ? `Remove "${tag}" from the tag list?`
-            : `Delete "${tag}" from ${count} item${count === 1 ? '' : 's'}? This cannot be undone.`;
-        if (window.confirm(message)) {
-          dispatch({ type: 'deleteTag', tag });
-          setSelected((cur) => cur.filter((t) => t !== tag));
-        }
+        dispatch({ type: 'deleteTag', tag });
+        setSelected((cur) => cur.filter((t) => t !== tag));
       }}
       onToggleNextOnly={() => setNextOnly((on) => !on)}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
