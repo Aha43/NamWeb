@@ -57,6 +57,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Quick-added actions land first in Next & Backlog too.** Extends #174 to the flat lists: a quick-add
+  in Next/Backlog now seeds the view's order so the new action appears at the top (those lists order by
+  their own lens, not `childIds`, so #174 didn't cover them). Closes #181.
+
 - **Newly added actions land first, not last.** `addAction` now prepends the new action to its
   parent's `childIds`, so a fresh action shows at the top of a project's actions / a column instead
   of at the bottom of a long list (childIds is the shared display order, so it shows first on desktop

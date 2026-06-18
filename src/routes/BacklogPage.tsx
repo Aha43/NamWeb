@@ -43,15 +43,19 @@ export function BacklogPage() {
       dndEnabled={isDesktop}
       onAdd={
         document
-          ? (title) =>
+          ? (title) => {
+              const id = newId();
               dispatch({
                 type: 'addAction',
                 parentId: document.nextActionsNodeId,
-                id: newId(),
+                id,
                 title,
                 status: 'BACKLOG',
                 now: nowIso(),
-              })
+              });
+              // Land it first in this view's order (the flat lens otherwise puts new items last).
+              dispatch({ type: 'reorderView', view: VIEW, order: [id, ...ordered.map((n) => n.id)] });
+            }
           : undefined
       }
       onDelete={deleteNode}

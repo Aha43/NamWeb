@@ -37,15 +37,19 @@ export function NextActionsPage() {
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
       onAdd={
         document
-          ? (title) =>
+          ? (title) => {
+              const id = newId();
               dispatch({
                 type: 'addAction',
                 parentId: document.nextActionsNodeId,
-                id: newId(),
+                id,
                 title,
                 status: 'NEXT',
                 now: nowIso(),
-              })
+              });
+              // Land it first in this view's order (the flat lens otherwise puts new items last).
+              dispatch({ type: 'reorderView', view: VIEW, order: [id, ...ordered.map((n) => n.id)] });
+            }
           : undefined
       }
       onDelete={deleteNode}
