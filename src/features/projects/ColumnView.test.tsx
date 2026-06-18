@@ -40,10 +40,11 @@ describe('ColumnView', () => {
     expect(onRename).toHaveBeenCalledWith('s1', 'Phase one');
   });
 
-  it('shows a delete (trash) button per card and fires onDelete', () => {
+  it('shows a delete (trash) button per card and fires onDelete after confirm', () => {
     const onDelete = vi.fn();
     setup({ onDelete });
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Alpha' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Alpha' })); // open confirm popover
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // confirm
     expect(onDelete).toHaveBeenCalledWith('a');
   });
 

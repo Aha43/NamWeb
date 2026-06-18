@@ -68,7 +68,16 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
 
   const deleteNode = useDeleteNode();
   function remove() {
-    if (node && deleteNode(node.id)) setEditingId(null);
+    if (!node || !document) return;
+    const descendants = subtreeIds(document, node.id).size - 1;
+    const label = node.project ? 'project' : 'action';
+    const message =
+      descendants > 0
+        ? `Delete the "${node.title}" ${label} and its ${descendants} item${descendants === 1 ? '' : 's'}?`
+        : `Delete the "${node.title}" ${label}?`;
+    if (!window.confirm(message)) return;
+    deleteNode(node.id);
+    setEditingId(null);
   }
 
   function addPrerequisite(prereqId: string) {

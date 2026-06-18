@@ -2,24 +2,16 @@ import { subtreeIds } from '@/domain/lenses';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 /**
- * Confirm-and-delete a node (leaf or whole subtree) — shared by the action editor's
- * Delete and the inline row trash. Confirms via the count-aware message (mirrors the
- * editor's existing dialog) and returns whether the delete actually happened.
+ * Delete a node — a leaf (`deleteLeaf`) or a whole subtree (`deleteRecursive`), chosen by
+ * whether it has descendants. **No confirmation here** — callers confirm first (the inline row
+ * trash uses an anchored `ConfirmButton`; the editor uses its own dialog).
  */
-export function useDeleteNode(): (id: string) => boolean {
+export function useDeleteNode(): (id: string) => void {
   const { document, dispatch } = useWorkspaceContext();
   return (id: string) => {
-    if (!document) return false;
-    const node = document.nodes[id];
-    if (!node) return false;
+    if (!document) return;
+    if (!document.nodes[id]) return;
     const descendants = subtreeIds(document, id).size - 1;
-    const label = node.project ? 'project' : 'action';
-    const message =
-      descendants > 0
-        ? `Delete the "${node.title}" ${label} and its ${descendants} item${descendants === 1 ? '' : 's'}?`
-        : `Delete the "${node.title}" ${label}?`;
-    if (!window.confirm(message)) return false;
     dispatch(descendants > 0 ? { type: 'deleteRecursive', id } : { type: 'deleteLeaf', id });
-    return true;
   };
 }

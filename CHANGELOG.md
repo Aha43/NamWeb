@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Confirm deletes in an anchored popover (no more native dialog for row deletes).** Deleting an
+  action/project from a row's trash now asks in a small **themed popover anchored to the trash
+  button** — confirm is right where you clicked (no mouse-travel across the screen), Enter confirms /
+  Esc cancels. New reusable `ConfirmButton` (`src/components/ui/confirm-button.tsx`, Radix Popover).
+  Replaces `window.confirm` for the row trash across every list + column cards. First slice of #173
+  (the editor delete, delete-tag, and the prompt cases follow).
+
 - **Inline-rename a project in the Projects list.** Each project row gets a deliberate **rename**
   button (pencil) that flips the name to an inline editor (Enter commits, Esc cancels) — fast rename
   without opening the full dialog, and no accidental edits. Matches NamDesktop's double-click rename
