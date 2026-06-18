@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal, Target } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,8 @@ export interface ProjectWorkbenchProps {
   onAddActionToColumn?: (columnId: string, title: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit: (id: string) => void;
+  /** Enter Focus mode over this project's open direct actions. */
+  onFocus?: () => void;
   /** Inline delete (with confirm) for a direct action row. */
   onDeleteAction?: (id: string) => void;
   onRename: (id: string, title: string) => void;
@@ -96,6 +98,7 @@ export function ProjectWorkbench({
   onAddActionToColumn = () => {},
   onSetStatus,
   onEdit,
+  onFocus,
   onDeleteAction,
   onRename,
   onMoveAction,
@@ -196,6 +199,15 @@ export function ProjectWorkbench({
         <ChevronRight className="h-3 w-3" />
         <span className="font-medium text-foreground">{project.title}</span>
       </nav>
+
+      {onFocus && actions.length > 0 && (
+        <div className="flex justify-end">
+          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onFocus}>
+            <Target className="h-4 w-4" />
+            Focus
+          </Button>
+        </div>
+      )}
 
       <div className="rounded-lg border border-border">
         <button
