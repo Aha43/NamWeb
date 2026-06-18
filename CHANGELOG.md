@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Add an action directly in the Backlog view.** The Backlog view gains a quick-add input (like
+  Next's) that creates a `BACKLOG` action under the structural Actions node — no need to capture to
+  the inbox first when you already know it's for later. Closes #169.
+
 - **Inline delete (trash) on action rows, with confirm.** Every action list (Next, Backlog, Done,
   Due, Blocked, Tags results, project-workbench actions) now has a **trash button on each row** to
   delete without opening the editor — always behind the count-aware confirm (shared `useDeleteNode`
