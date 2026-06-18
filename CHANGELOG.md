@@ -63,6 +63,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **CI: e2e-mocked is no longer a PR gate.** It can be slow on busy runners and was bottlenecking the
+  one-PR-per-lap flow, so it now runs **post-merge on `main`, nightly, and on demand** — the PR gate is
+  `check` (typecheck/lint/test/build) + GitGuardian + the Cloudflare preview, and e2e is run locally
+  before pushing. Every merge is still e2e-covered; it just never blocks a merge. `docs/ops/workflow.md`
+  updated. Closes #187.
+
 - **Quick-added actions land first in Next & Backlog too.** Extends #174 to the flat lists: a quick-add
   in Next/Backlog now seeds the view's order so the new action appears at the top (those lists order by
   their own lens, not `childIds`, so #174 didn't cover them). Closes #181.
