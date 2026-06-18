@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Saved-view & template naming use anchored prompts.** "Save as view", saved-view rename, and
+  "Save as template" now use the anchored `PromptButton` (themed inline input, Enter to save) instead
+  of `window.prompt`. Only the editor's delete confirm remains native. Part of #173.
+
 - **Tags view: rename/delete use anchored popovers (no native dialogs).** Deleting a tag now uses the
   anchored confirm popover, and renaming a tag uses a new anchored **`PromptButton`** (themed inline
   input, Enter to save) instead of `window.prompt` — both right at the button, on-design. Part of #173.

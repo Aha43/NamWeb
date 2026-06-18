@@ -155,10 +155,7 @@ export function ProjectWorkbenchPage() {
           ? () => dispatch({ type: 'convertProjectToAction', id, status: 'NEXT', now: nowIso() })
           : undefined
       }
-      onSaveAsTemplate={() => {
-        const name = window.prompt('Template name', project.title)?.trim();
-        if (name) dispatch({ type: 'saveAsTemplate', name, nodeId: id });
-      }}
+      onSaveAsTemplate={(name) => dispatch({ type: 'saveAsTemplate', name, nodeId: id })}
       templateNames={document.templates.map((t) => t.name)}
       onApplyTemplate={(name) => {
         const template = document.templates.find((t) => t.name === name);

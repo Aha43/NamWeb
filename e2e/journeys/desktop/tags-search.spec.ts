@@ -22,9 +22,10 @@ test.describe('tags + search', () => {
     await expect(page.getByText('Buy soil')).toHaveCount(0);
     await expect(page.getByText('1 match', { exact: true })).toBeVisible();
 
-    // Save the current selection as a named view (the panel uses window.prompt).
-    page.once('dialog', (dialog) => dialog.accept('Work stuff'));
+    // Save the current selection as a named view (anchored prompt popover).
     await page.getByRole('button', { name: 'Save as view…' }).click();
+    await page.getByLabel('View name').fill('Work stuff');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Open view Work stuff' })).toBeVisible();
   });
 

@@ -2,6 +2,7 @@ import { Fragment, useState, type FormEvent } from 'react';
 import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal, Target } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
+import { PromptButton } from '@/components/ui/prompt-button';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
@@ -68,7 +69,7 @@ export interface ProjectWorkbenchProps {
   onToggleColumn?: (id: string) => void;
   /** Provided only when the project is a leaf (no children) — convert it back to an action. */
   onConvertToAction?: () => void;
-  onSaveAsTemplate?: () => void;
+  onSaveAsTemplate?: (name: string) => void;
   templateNames?: string[];
   onApplyTemplate?: (name: string) => void;
   /** Collapsed state of the "Add to project" panel + toggle (persisted per-project by the page). */
@@ -242,9 +243,15 @@ export function ProjectWorkbench({
             )}
             {onSaveAsTemplate && (
               <div className="flex justify-end">
-                <Button type="button" variant="ghost" size="sm" onClick={onSaveAsTemplate}>
+                <PromptButton
+                  label="Template name"
+                  initialValue={project.title}
+                  submitLabel="Save"
+                  onSubmit={onSaveAsTemplate}
+                  className="rounded-md px-2.5 py-1 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
                   Save as template…
-                </Button>
+                </PromptButton>
               </div>
             )}
           </div>
