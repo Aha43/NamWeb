@@ -144,6 +144,12 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ title: 'Do', project: false, status: 'NEXT', createdAt: NOW, statusChangedAt: NOW });
   });
 
+  it('addAction prepends — a new action lands first in the list', () => {
+    const doc = workspace([node('p', { project: true, childIds: ['x'] }), node('x')]);
+    const next = applyIntent(doc, { type: 'addAction', parentId: 'p', id: 'a', title: 'Do', status: 'NEXT', now: NOW });
+    expect(next.nodes['p'].childIds).toEqual(['a', 'x']);
+  });
+
   it('addSubProject creates a project under the parent (no-op if parent gone)', () => {
     const doc = workspace([node('p', { project: true })]);
     doc.nodes['projects'].childIds.push('p');
