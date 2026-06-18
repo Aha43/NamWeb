@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **An action's project path is now clickable.** The ancestor-project breadcrumb shown on action
+  rows (Next / Backlog / Due / Blocked / Done / Tags / workbench) links each project — click a
+  segment to jump to it — matching the project workbench breadcrumb. New shared `ProjectPathLinks`
+  component; `ActionRowData.path` now carries project ids. Closes #167. (Parity issue filed for
+  NamDesktop: Aha43/NamDesktop#382. Focus/Search paths can adopt the same component as a follow-up.)
+
 - **Add an action directly in the Backlog view.** The Backlog view gains a quick-add input (like
   Next's) that creates a `BACKLOG` action under the structural Actions node — no need to capture to
   the inbox first when you already know it's for later. Closes #169.
