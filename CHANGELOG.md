@@ -57,6 +57,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Newly added actions land first, not last.** `addAction` now prepends the new action to its
+  parent's `childIds`, so a fresh action shows at the top of a project's actions / a column instead
+  of at the bottom of a long list (childIds is the shared display order, so it shows first on desktop
+  too once synced). Closes #174. (Parity issue filed for NamDesktop: Aha43/NamDesktop#386. The flat
+  Next/Backlog lists order by their own lens, not childIds — unaffected here.)
+
 - **Tags view: the manage controls are collapsible (collapsed by default).** The "Create a tag…"
   input and the "Manage tags" list (counts + rename/delete) now sit behind a **"Manage tags"**
   disclosure that's collapsed by default — so the filter chips + results have room when you're just

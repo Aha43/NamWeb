@@ -271,7 +271,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
         status: intent.status,
         statusChangedAt: intent.now,
       };
-      next.nodes[intent.parentId].childIds.push(intent.id);
+      // Prepend: a freshly added action lands first, so it's visible without
+      // scrolling a long list (childIds is the shared display order).
+      next.nodes[intent.parentId].childIds.unshift(intent.id);
       return next;
     }
     case 'addSubProject': {
