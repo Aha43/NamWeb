@@ -241,6 +241,7 @@ export function ProjectWorkbench({
           dndEnabled={dndEnabled}
           onSetStatus={onSetStatus}
           onEdit={onEdit}
+          onDelete={onDeleteAction}
           onRename={onRename}
           collapsed={collapsedColumns}
           onToggleCollapse={onToggleColumn}

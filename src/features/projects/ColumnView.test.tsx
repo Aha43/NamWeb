@@ -30,6 +30,18 @@ describe('ColumnView', () => {
     expect(screen.getByLabelText('Add action to Phase 1')).toBeInTheDocument();
   });
 
+  it('shows a delete (trash) button per card and fires onDelete', () => {
+    const onDelete = vi.fn();
+    setup({ onDelete });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Alpha' }));
+    expect(onDelete).toHaveBeenCalledWith('a');
+  });
+
+  it('has no delete button when onDelete is not provided', () => {
+    setup();
+    expect(screen.queryByRole('button', { name: 'Delete Alpha' })).not.toBeInTheDocument();
+  });
+
   it('offers drag handles alongside the up/down buttons when drag is enabled', () => {
     setup({ dndEnabled: true, onMoveActionToColumn: vi.fn() });
     expect(screen.getByRole('button', { name: /Drag to reorder Alpha/i })).toBeInTheDocument();
