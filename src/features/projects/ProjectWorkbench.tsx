@@ -200,15 +200,6 @@ export function ProjectWorkbench({
         <span className="font-medium text-foreground">{project.title}</span>
       </nav>
 
-      {onFocus && actions.length > 0 && (
-        <div className="flex justify-end">
-          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onFocus}>
-            <Target className="h-4 w-4" />
-            Focus
-          </Button>
-        </div>
-      )}
-
       <div className="rounded-lg border border-border">
         <button
           type="button"
@@ -267,7 +258,16 @@ export function ProjectWorkbench({
 
       <div className="space-y-4 pt-4">
       {isColumn ? (
-        <ColumnView
+        <>
+          {onFocus && actions.length > 0 && (
+            <div className="flex justify-end">
+              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onFocus}>
+                <Target className="h-4 w-4" />
+                Focus
+              </Button>
+            </div>
+          )}
+          <ColumnView
           columns={columns}
           onOpenColumn={onOpenProject}
           onAddAction={onAddActionToColumn}
@@ -282,16 +282,32 @@ export function ProjectWorkbench({
           collapsed={collapsedColumns}
           onToggleCollapse={onToggleColumn}
         />
+        </>
       ) : (
         <>
           {actions.length > 0 && (
             <div className="space-y-1">
-              <SectionHeader
-                label="Actions"
-                count={actions.length}
-                collapsed={sectionCollapsed('actions')}
-                onToggle={() => onToggleSection('actions')}
-              />
+              <div className="flex items-center gap-1">
+                <div className="flex-1">
+                  <SectionHeader
+                    label="Actions"
+                    count={actions.length}
+                    collapsed={sectionCollapsed('actions')}
+                    onToggle={() => onToggleSection('actions')}
+                  />
+                </div>
+                {onFocus && (
+                  <button
+                    type="button"
+                    aria-label="Focus actions"
+                    title="Focus this project's actions"
+                    onClick={onFocus}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <Target className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
               {!sectionCollapsed('actions') && (
                 <ReorderableActionList
                   rows={actions}
