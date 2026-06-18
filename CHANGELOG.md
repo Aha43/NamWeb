@@ -54,6 +54,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Tags view: the manage controls are collapsible (collapsed by default).** The "Create a tag…"
+  input and the "Manage tags" list (counts + rename/delete) now sit behind a **"Manage tags"**
+  disclosure that's collapsed by default — so the filter chips + results have room when you're just
+  filtering. Expand it to create/rename/delete. Closes #171.
+
 - **Project workbench: header stays put while the lists scroll.** The breadcrumb, "Add to
   project" panel and view switch are now pinned (sticky) to the top of the content pane, so a long
   actions / sub-projects list scrolls beneath them instead of pushing them off-screen. First view

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Pencil } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import { Button } from '@/components/ui/button';
@@ -59,6 +59,8 @@ export function TagFilterPanel({
 }: TagFilterPanelProps) {
   const selectedSet = new Set(selected);
   const [newTag, setNewTag] = useState('');
+  // Manage (create / rename / delete) is collapsed by default so it's out of the way when filtering.
+  const [manageOpen, setManageOpen] = useState(false);
 
   function submitAddTag(event: FormEvent) {
     event.preventDefault();
@@ -70,52 +72,65 @@ export function TagFilterPanel({
 
   return (
     <section className="mx-auto max-w-4xl space-y-4">
-      {onAddTag && (
-        <form onSubmit={submitAddTag} className="flex gap-2">
-          <input
-            aria-label="Create tag"
-            value={newTag}
-            onChange={(e) => setNewTag(e.target.value)}
-            placeholder="Create a tag…"
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
-          />
-          <Button type="submit">Add</Button>
-        </form>
-      )}
-
-      {(onRenameTag || onDeleteTag) && allTags.length > 0 && (
-        <div className="space-y-1">
-          <p className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Manage tags</p>
-          <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-            {allTags.map((tag) => (
-              <li key={tag} className="flex items-center gap-2 px-3 py-2">
-                <span className="flex-1 truncate text-sm text-foreground">{tag}</span>
-                {tagCounts && (
-                  <span className="text-xs text-muted-foreground">{tagCounts[tag] ?? 0}</span>
-                )}
-                {onRenameTag && (
-                  <button
-                    type="button"
-                    aria-label={`Rename tag ${tag}`}
-                    onClick={() => onRenameTag(tag)}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                )}
-                {onDeleteTag && (
-                  <button
-                    type="button"
-                    aria-label={`Delete tag ${tag}`}
-                    onClick={() => onDeleteTag(tag)}
-                    className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
-                  >
-                    ×
-                  </button>
-                )}
-              </li>
-            ))}
-          </ul>
+      {(onAddTag || onRenameTag || onDeleteTag) && (
+        <div className="space-y-2">
+          <button
+            type="button"
+            aria-expanded={manageOpen}
+            onClick={() => setManageOpen((o) => !o)}
+            className="flex items-center gap-1 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground"
+          >
+            {manageOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            Manage tags
+          </button>
+          {manageOpen && (
+            <>
+              {onAddTag && (
+                <form onSubmit={submitAddTag} className="flex gap-2">
+                  <input
+                    aria-label="Create tag"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="Create a tag…"
+                    className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+                  />
+                  <Button type="submit">Add</Button>
+                </form>
+              )}
+              {(onRenameTag || onDeleteTag) && allTags.length > 0 && (
+                <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+                  {allTags.map((tag) => (
+                    <li key={tag} className="flex items-center gap-2 px-3 py-2">
+                      <span className="flex-1 truncate text-sm text-foreground">{tag}</span>
+                      {tagCounts && (
+                        <span className="text-xs text-muted-foreground">{tagCounts[tag] ?? 0}</span>
+                      )}
+                      {onRenameTag && (
+                        <button
+                          type="button"
+                          aria-label={`Rename tag ${tag}`}
+                          onClick={() => onRenameTag(tag)}
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                      {onDeleteTag && (
+                        <button
+                          type="button"
+                          aria-label={`Delete tag ${tag}`}
+                          onClick={() => onDeleteTag(tag)}
+                          className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
+                        >
+                          ×
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
         </div>
       )}
       {savedViews.length > 0 && (
