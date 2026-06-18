@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent, type ReactNode } from 'react';
-import { ChevronLeft, ChevronRight, ChevronsLeftRight, ChevronsRightLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeftRight, ChevronsRightLeft, Pencil } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
@@ -15,6 +15,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
 import { ActionList, ActionRow } from '../actions/ActionRow';
+import { InlineRename } from '../actions/InlineRename';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
@@ -90,6 +91,7 @@ export function ColumnView({
   const subColumnIds = columns.filter((c) => !c.isUnsorted).map((c) => c.id);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [renamingColId, setRenamingColId] = useState<string | null>(null);
   const dnd = Boolean(dndEnabled && onMoveActionToColumn);
 
   // One row; `drag` is supplied when the row is rendered inside a SortableContext.
@@ -144,6 +146,14 @@ export function ColumnView({
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Unsorted
             </span>
+          ) : renamingColId === col.id ? (
+            <div className="min-w-0 flex-1 pr-1">
+              <InlineRename
+                title={col.title}
+                onCommit={(t) => { onRename(col.id, t); setRenamingColId(null); }}
+                onCancel={() => setRenamingColId(null)}
+              />
+            </div>
           ) : (
             <button
               type="button"
@@ -156,6 +166,17 @@ export function ColumnView({
             </button>
           )}
           <div className="flex shrink-0 items-center gap-1">
+            {!col.isUnsorted && renamingColId !== col.id && (
+              <button
+                type="button"
+                aria-label={`Rename ${col.title}`}
+                title="Rename"
+                onClick={() => setRenamingColId(col.id)}
+                className="rounded-sm text-muted-foreground hover:text-foreground"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            )}
             {onMoveColumn && !col.isUnsorted && (
               <>
                 <button
