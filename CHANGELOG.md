@@ -63,6 +63,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Focus a single project's actions.** The project workbench gains a **Focus** button that opens the
+  immersive Focus deck over that project's **open direct actions** (excludes done/sub-projects), via
+  `/focus?project=<id>`. Mirrors NamDesktop's per-project focus mode. Closes #170.
+
 - **Column-view headers: inline rename.** Sub-project column headers in the kanban view get the same
   deliberate **rename** pencil → inline editor. Completes inline rename everywhere a name shows
   (Projects list · action rows · sub-projects · column headers — #168). Closes #186.

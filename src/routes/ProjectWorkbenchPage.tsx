@@ -144,6 +144,7 @@ export function ProjectWorkbenchPage() {
       }
       onSetStatus={(actionId, status) => dispatch({ type: 'setStatus', id: actionId, status, now: nowIso() })}
       onEdit={openEditor}
+      onFocus={() => navigate(`/focus?project=${id}`)}
       onDeleteAction={deleteNode}
       onRename={(actionId, title) => {
         const node = document.nodes[actionId];
