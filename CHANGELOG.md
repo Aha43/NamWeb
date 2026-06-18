@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Inline-rename a project in the Projects list.** Each project row gets a deliberate **rename**
+  button (pencil) that flips the name to an inline editor (Enter commits, Esc cancels) — fast rename
+  without opening the full dialog, and no accidental edits. Matches NamDesktop's double-click rename
+  in spirit but uses an explicit, discoverable trigger. First slice of #168 (sub-projects + column
+  headers to follow).
+
 - **An action's project path is now clickable.** The ancestor-project breadcrumb shown on action
   rows (Next / Backlog / Due / Blocked / Done / Tags / workbench) links each project — click a
   segment to jump to it — matching the project workbench breadcrumb. New shared `ProjectPathLinks`

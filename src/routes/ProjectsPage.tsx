@@ -15,6 +15,10 @@ export function ProjectsPage() {
         dispatch({ type: 'addSubProject', parentId: document.projectsNodeId, id: newId(), title, now: nowIso() });
       }}
       onOpen={(id) => navigate(`/projects/${id}`)}
+      onRename={(id, title) => {
+        const node = document?.nodes[id];
+        if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
+      }}
     />
   );
 }
