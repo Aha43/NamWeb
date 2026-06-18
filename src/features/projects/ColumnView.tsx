@@ -47,6 +47,8 @@ export interface ColumnViewProps {
   onMoveAction: (columnId: string, id: string, direction: 'up' | 'down') => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit: (id: string) => void;
+  /** Inline delete (with confirm) for an action card. */
+  onDelete?: (id: string) => void;
   onRename: (id: string, title: string) => void;
   /** Commit a drag: reorder within a column (from === to) or reparent between columns.
    *  `targetActionIds` is the target column's resulting action order (including the moved action). */
@@ -76,6 +78,7 @@ export function ColumnView({
   onMoveAction,
   onSetStatus,
   onEdit,
+  onDelete,
   onRename,
   onMoveActionToColumn,
   dndEnabled,
@@ -96,6 +99,7 @@ export function ColumnView({
       dragRef={drag?.setNodeRef}
       dragStyle={drag?.style}
       onEdit={() => onEdit(row.id)}
+      onDelete={onDelete && (() => onDelete(row.id))}
       onRename={(title) => onRename(row.id, title)}
       actions={
         <div className="flex items-center gap-1">

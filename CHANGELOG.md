@@ -18,6 +18,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   Next's) that creates a `BACKLOG` action under the structural Actions node — no need to capture to
   the inbox first when you already know it's for later. Closes #169.
 
+- **Inline trash on the column (kanban) view's cards.** The inline delete + confirm now also covers
+  `ColumnView` action cards (was the one list left out of #164). Closes #175.
+
 - **Inline delete (trash) on action rows, with confirm.** Every action list (Next, Backlog, Done,
   Due, Blocked, Tags results, project-workbench actions) now has a **trash button on each row** to
   delete without opening the editor — always behind the count-aware confirm (shared `useDeleteNode`
