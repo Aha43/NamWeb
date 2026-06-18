@@ -16,10 +16,18 @@ export function TruncatedTitle({ text, className }: { text: string; className?: 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const measure = () => setTruncated(el.scrollWidth > el.clientWidth);
+    const measure = () => {
+      const node = ref.current;
+      if (node) setTruncated(node.scrollWidth > node.clientWidth);
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(el);
+    // The box width is fixed, so the ResizeObserver won't fire when the real web font swaps in and
+    // makes the text wider than the fallback measured at mount — re-measure once fonts are ready.
+    if (typeof document !== 'undefined' && 'fonts' in document) {
+      void document.fonts.ready.then(measure).catch(() => {});
+    }
     return () => observer.disconnect();
   }, [text]);
 
