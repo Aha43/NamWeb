@@ -50,11 +50,12 @@ test.describe('templates', () => {
   });
 
   test('save a project as a template, then apply it to another project', async ({ page }) => {
-    // Save the Onboarding subtree as a template (the workbench uses window.prompt for the name).
+    // Save the Onboarding subtree as a template (anchored prompt popover, pre-filled with the name).
     await page.goto('/projects');
     await page.getByRole('button', { name: 'Open Onboarding' }).click();
-    page.once('dialog', (dialog) => dialog.accept('Onboarding template'));
     await page.getByRole('button', { name: 'Save as template…' }).click();
+    await page.getByLabel('Template name').fill('Onboarding template');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
 
     // It appears on the Templates surface with its item count.
     await page.goto('/templates');

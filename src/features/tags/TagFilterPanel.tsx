@@ -31,9 +31,9 @@ export interface TagFilterPanelProps {
   onDeleteAction?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
   /** Provided when the current selection can be saved as a view. */
-  onSaveView?: () => void;
+  onSaveView?: (name: string) => void;
   onOpenView: (view: SavedView) => void;
-  onRenameView?: (oldName: string) => void;
+  onRenameView?: (oldName: string, newName: string) => void;
   onDeleteView?: (name: string) => void;
 }
 
@@ -159,14 +159,17 @@ export function TagFilterPanel({
                   {view.nextOnly && <span className="text-xs text-muted-foreground"> · next only</span>}
                 </button>
                 {onRenameView && (
-                  <button
-                    type="button"
+                  <PromptButton
                     aria-label={`Rename view ${view.name}`}
-                    onClick={() => onRenameView(view.name)}
+                    title="Rename"
+                    label="New view name"
+                    initialValue={view.name}
+                    submitLabel="Rename"
+                    onSubmit={(name) => onRenameView(view.name, name)}
                     className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
                     <Pencil className="h-3.5 w-3.5" />
-                  </button>
+                  </PromptButton>
                 )}
                 {onDeleteView && (
                   <button
@@ -221,9 +224,15 @@ export function TagFilterPanel({
             <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
               <span>{rows.length} {rows.length === 1 ? 'match' : 'matches'}</span>
               {onSaveView && (
-                <Button type="button" variant="outline" size="sm" onClick={onSaveView}>
+                <PromptButton
+                  label="View name"
+                  placeholder="Name this view…"
+                  submitLabel="Save"
+                  onSubmit={onSaveView}
+                  className="rounded-md border border-input px-2.5 py-1 font-medium text-foreground hover:bg-accent"
+                >
                   Save as view…
-                </Button>
+                </PromptButton>
               )}
             </div>
           )}

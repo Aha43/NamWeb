@@ -58,17 +58,13 @@ export function TagsPage() {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
       }}
-      onSaveView={() => {
-        const name = window.prompt('Name this view')?.trim();
-        if (name) dispatch({ type: 'createSavedView', name, tags: selected, nextOnly });
-      }}
+      onSaveView={(name) => dispatch({ type: 'createSavedView', name, tags: selected, nextOnly })}
       onOpenView={(view) => {
         setSelected(view.tags);
         setNextOnly(view.nextOnly);
       }}
-      onRenameView={(oldName) => {
-        const newName = window.prompt('Rename view', oldName)?.trim();
-        if (newName && newName !== oldName) dispatch({ type: 'renameSavedView', oldName, newName });
+      onRenameView={(oldName, newName) => {
+        if (newName !== oldName) dispatch({ type: 'renameSavedView', oldName, newName });
       }}
       onDeleteView={(name) => dispatch({ type: 'deleteSavedView', name })}
     />
