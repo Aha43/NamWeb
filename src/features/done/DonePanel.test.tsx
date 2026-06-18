@@ -18,7 +18,9 @@ describe('DonePanel', () => {
     render(<DonePanel rows={[row({ id: 'x', title: 'Buy milk' })]} {...handlers} />);
     fireEvent.click(screen.getByRole('button', { name: 'Restore Buy milk to next' }));
     fireEvent.click(screen.getByRole('button', { name: 'Move Buy milk to backlog' }));
+    // Delete is a confirm popover: open it, then confirm.
     fireEvent.click(screen.getByRole('button', { name: 'Delete Buy milk' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(handlers.onRestore).toHaveBeenCalledWith('x');
     expect(handlers.onBacklog).toHaveBeenCalledWith('x');
     expect(handlers.onDelete).toHaveBeenCalledWith('x');

@@ -3,6 +3,7 @@ import { Paperclip, Pencil, SlidersHorizontal, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 import { InlineRename } from './InlineRename';
 import { ProjectPathLinks } from './ProjectPathLinks';
 import type { ActionRowData } from './rows';
@@ -103,14 +104,19 @@ export function ActionRow({
         )}
         {actions}
         {onDelete && (
-          <button
-            type="button"
+          <ConfirmButton
             aria-label={`Delete ${row.title}`}
-            onClick={onDelete}
+            title="Delete"
+            message={
+              (row.descendantCount ?? 0) > 0
+                ? `Delete "${row.title}" and its ${row.descendantCount} item${row.descendantCount === 1 ? '' : 's'}?`
+                : `Delete "${row.title}"?`
+            }
+            onConfirm={onDelete}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
           >
             <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          </ConfirmButton>
         )}
       </div>
     </li>

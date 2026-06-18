@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { WorkspaceContext } from '@/store/workspace-context';
 import type { UseWorkspace } from '@/store/useWorkspace';
 import type { NamNode, WorkspaceDocument } from '@/domain/types';
@@ -32,30 +32,25 @@ function wrapper(dispatch: ReturnType<typeof vi.fn>) {
   );
 }
 
-afterEach(() => vi.restoreAllMocks());
-
 describe('useDeleteNode', () => {
-  it('deletes a leaf via deleteLeaf after confirm', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+  it('deletes a leaf via deleteLeaf (no confirm — callers confirm)', () => {
     const dispatch = vi.fn();
     const { result } = renderHook(() => useDeleteNode(), { wrapper: wrapper(dispatch) });
-    expect(result.current('a')).toBe(true);
+    result.current('a');
     expect(dispatch).toHaveBeenCalledWith({ type: 'deleteLeaf', id: 'a' });
   });
 
   it('deletes a subtree via deleteRecursive for a parent', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     const dispatch = vi.fn();
     const { result } = renderHook(() => useDeleteNode(), { wrapper: wrapper(dispatch) });
     result.current('p');
     expect(dispatch).toHaveBeenCalledWith({ type: 'deleteRecursive', id: 'p' });
   });
 
-  it('does nothing when the confirm is dismissed', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+  it('no-ops for a missing node', () => {
     const dispatch = vi.fn();
     const { result } = renderHook(() => useDeleteNode(), { wrapper: wrapper(dispatch) });
-    expect(result.current('a')).toBe(false);
+    result.current('ghost');
     expect(dispatch).not.toHaveBeenCalled();
   });
 });
