@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
 import { InlineRename } from './InlineRename';
+import { ProjectPathLinks } from './ProjectPathLinks';
 import type { ActionRowData } from './rows';
 
 const DUE_TONE: Record<DueTone, string> = {
@@ -41,9 +42,7 @@ export function ActionRow({
   return (
     <li ref={dragRef} style={dragStyle} className="flex items-center gap-2 px-3 py-2">
       <div className="min-w-0 flex-1">
-        {row.path.length > 0 && (
-          <p className="truncate text-xs text-muted-foreground">{row.path.join(' › ')}</p>
-        )}
+        <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />
         {renaming && onRename ? (
           <InlineRename
             title={row.title}

@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import type { ActionRowData } from '../actions/rows';
 import { NextActionsPanel } from './NextActionsPanel';
@@ -9,7 +10,8 @@ function row(overrides: Partial<ActionRowData> = {}): ActionRowData {
 
 function setup(rows: ActionRowData[]) {
   const handlers = { onSetStatus: vi.fn(), onRename: vi.fn() };
-  render(<NextActionsPanel rows={rows} {...handlers} />);
+  // MemoryRouter: project-path segments render as <Link>s.
+  render(<MemoryRouter><NextActionsPanel rows={rows} {...handlers} /></MemoryRouter>);
   return handlers;
 }
 
@@ -19,10 +21,19 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('No next actions.')).toBeInTheDocument();
   });
 
-  it('renders title, project path, tags, and a formatted due hint', () => {
-    setup([row({ title: 'Get quotes', path: ['Home', 'Kitchen'], tags: ['@phone'], dueAt: '2026-03-20' })]);
+  it('renders title, project path (as links), tags, and a formatted due hint', () => {
+    setup([
+      row({
+        title: 'Get quotes',
+        path: [{ id: 'h', title: 'Home' }, { id: 'k', title: 'Kitchen' }],
+        tags: ['@phone'],
+        dueAt: '2026-03-20',
+      }),
+    ]);
     expect(screen.getByText('Get quotes')).toBeInTheDocument();
-    expect(screen.getByText('Home › Kitchen')).toBeInTheDocument();
+    // Path segments are links to their projects.
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('href', '/projects/h');
+    expect(screen.getByRole('link', { name: 'Kitchen' })).toHaveAttribute('href', '/projects/k');
     expect(screen.getByText('@phone')).toBeInTheDocument();
     // 2026-03-20 is well in the past → overdue date label (default Medium format).
     expect(screen.getByText('Due Mar 20, 2026')).toBeInTheDocument();
