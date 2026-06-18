@@ -66,6 +66,7 @@ export function ActionDialog({
   onAddPrerequisite,
   onRemovePrerequisite,
   onDelete,
+  deleteConfirmMessage,
   availableTags = [],
 }: {
   node: NamNode;
@@ -82,8 +83,10 @@ export function ActionDialog({
   wouldUnblock?: string[];
   onAddPrerequisite?: (prereqId: string) => void;
   onRemovePrerequisite?: (prereqId: string) => void;
-  /** Delete this node (the provider confirms + chooses leaf vs recursive). */
+  /** Delete this node (the dialog confirms inline; the provider chooses leaf vs recursive). */
   onDelete?: () => void;
+  /** Count-aware confirm message shown in the inline delete confirm. */
+  deleteConfirmMessage?: string;
 }) {
   const isProject = node.project;
   const [title, setTitle] = useState(node.title);
@@ -93,6 +96,7 @@ export function ActionDialog({
   const [dueError, setDueError] = useState(false);
   const [status, setStatus] = useState<NodeStatus>(node.status);
   const [resources, setResources] = useState<Resource[]>(node.resources);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -268,20 +272,36 @@ export function ActionDialog({
             </div>
           )}
           <DialogFooter>
-            {onDelete && (
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={onDelete}
-                className="text-destructive hover:text-destructive sm:mr-auto"
-              >
-                Delete
-              </Button>
+            {confirmingDelete ? (
+              <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
+                <span className="text-sm text-destructive sm:mr-auto">
+                  {deleteConfirmMessage ?? 'Delete this? This cannot be undone.'}
+                </span>
+                <Button type="button" variant="ghost" onClick={() => setConfirmingDelete(false)}>
+                  Cancel
+                </Button>
+                <Button type="button" variant="destructive" autoFocus onClick={() => onDelete?.()}>
+                  Delete
+                </Button>
+              </div>
+            ) : (
+              <>
+                {onDelete && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setConfirmingDelete(true)}
+                    className="text-destructive hover:text-destructive sm:mr-auto"
+                  >
+                    Delete
+                  </Button>
+                )}
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">Save</Button>
+              </>
             )}
-            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit">Save</Button>
           </DialogFooter>
         </form>
       </DialogContent>

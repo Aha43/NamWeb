@@ -27,8 +27,9 @@ test('delete an action from the workbench via the editor (with confirm)', async 
   await page.goto('/projects/proj');
 
   await page.getByRole('button', { name: 'Edit Buy tiles' }).click();
-  page.once('dialog', (d) => d.accept()); // window.confirm
-  await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Delete' }).click(); // arm the inline confirm
+  await dialog.getByRole('button', { name: 'Delete' }).click(); // confirm
 
   await expect(page.getByText('Buy tiles')).toHaveCount(0);
   await expect.poll(() => doc.current().nodes['a1']).toBeUndefined();
