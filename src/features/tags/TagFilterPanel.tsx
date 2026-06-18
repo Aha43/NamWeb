@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight, Pencil } from 'lucide-react';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import { Button } from '@/components/ui/button';
+import { ConfirmButton } from '@/components/ui/confirm-button';
+import { PromptButton } from '@/components/ui/prompt-button';
 import { cn } from '@/lib/utils';
 import type { ActionRowData } from '../actions/rows';
 import type { NodeStatus, SavedView } from '../../domain/types';
@@ -18,8 +20,8 @@ export interface TagFilterPanelProps {
   onAddTag?: (tag: string) => void;
   /** Per-tag usage counts (how many items carry each tag). */
   tagCounts?: Record<string, number>;
-  /** Rename a tag everywhere it's used. */
-  onRenameTag?: (tag: string) => void;
+  /** Rename a tag everywhere it's used (new name from the inline prompt). */
+  onRenameTag?: (tag: string, newName: string) => void;
   /** Delete a tag (from the list and every item using it). */
   onDeleteTag?: (tag: string) => void;
   onToggleNextOnly: () => void;
@@ -106,24 +108,32 @@ export function TagFilterPanel({
                         <span className="text-xs text-muted-foreground">{tagCounts[tag] ?? 0}</span>
                       )}
                       {onRenameTag && (
-                        <button
-                          type="button"
+                        <PromptButton
                           aria-label={`Rename tag ${tag}`}
-                          onClick={() => onRenameTag(tag)}
+                          title="Rename"
+                          label="New tag name"
+                          initialValue={tag}
+                          submitLabel="Rename"
+                          onSubmit={(name) => onRenameTag(tag, name)}
                           className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                         >
                           <Pencil className="h-3.5 w-3.5" />
-                        </button>
+                        </PromptButton>
                       )}
                       {onDeleteTag && (
-                        <button
-                          type="button"
+                        <ConfirmButton
                           aria-label={`Delete tag ${tag}`}
-                          onClick={() => onDeleteTag(tag)}
+                          title="Delete"
+                          message={
+                            (tagCounts?.[tag] ?? 0) > 0
+                              ? `Delete "${tag}" from ${tagCounts![tag]} item${tagCounts![tag] === 1 ? '' : 's'}? This cannot be undone.`
+                              : `Remove "${tag}" from the tag list?`
+                          }
+                          onConfirm={() => onDeleteTag(tag)}
                           className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
                         >
                           ×
-                        </button>
+                        </ConfirmButton>
                       )}
                     </li>
                   ))}

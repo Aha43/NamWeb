@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Tags view: rename/delete use anchored popovers (no native dialogs).** Deleting a tag now uses the
+  anchored confirm popover, and renaming a tag uses a new anchored **`PromptButton`** (themed inline
+  input, Enter to save) instead of `window.prompt` — both right at the button, on-design. Part of #173.
+
 - **Confirm deletes in an anchored popover (no more native dialog for row deletes).** Deleting an
   action/project from a row's trash now asks in a small **themed popover anchored to the trash
   button** — confirm is right where you clicked (no mouse-travel across the screen), Enter confirms /

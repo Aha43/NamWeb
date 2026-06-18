@@ -84,15 +84,24 @@ describe('TagFilterPanel', () => {
     expect(screen.queryByLabelText('Create tag')).not.toBeInTheDocument();
   });
 
-  it('lists tags with counts and fires rename/delete from the manage list (once expanded)', () => {
+  it('renames a tag via the anchored prompt popover (once expanded)', () => {
     const onRenameTag = vi.fn();
-    const onDeleteTag = vi.fn();
-    setup({ allTags: ['home'], tagCounts: { home: 3 }, onRenameTag, onDeleteTag });
+    setup({ allTags: ['home'], tagCounts: { home: 3 }, onRenameTag });
     fireEvent.click(screen.getByRole('button', { name: /Manage tags/ }));
     expect(screen.getByText('3')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Rename tag home' }));
+    const input = screen.getByLabelText('New tag name'); // prefilled with the current name
+    fireEvent.change(input, { target: { value: 'house' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Rename' }));
+    expect(onRenameTag).toHaveBeenCalledWith('home', 'house');
+  });
+
+  it('deletes a tag via the anchored confirm popover (once expanded)', () => {
+    const onDeleteTag = vi.fn();
+    setup({ allTags: ['home'], tagCounts: { home: 3 }, onDeleteTag });
+    fireEvent.click(screen.getByRole('button', { name: /Manage tags/ }));
     fireEvent.click(screen.getByRole('button', { name: 'Delete tag home' }));
-    expect(onRenameTag).toHaveBeenCalledWith('home');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDeleteTag).toHaveBeenCalledWith('home');
   });
 });
