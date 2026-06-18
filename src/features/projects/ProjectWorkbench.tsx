@@ -3,6 +3,8 @@ import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal, Target } from 'lu
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
+import { Tooltip } from '@/components/ui/tooltip';
+import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
@@ -145,30 +147,32 @@ export function ProjectWorkbench({
             onClick={() => onOpenProject(sub.id)}
             className="flex flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
           >
-            <span className="flex-1 truncate text-sm text-foreground">{sub.title}</span>
+            <TruncatedTitle text={sub.title} className="min-w-0 flex-1 text-sm text-foreground" />
             {sub.childIds.length > 0 && (
               <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
             )}
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
-          <button
-            type="button"
-            aria-label={`Rename ${sub.title}`}
-            title="Rename"
-            onClick={() => setRenamingSubId(sub.id)}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-          <button
-            type="button"
-            aria-label={`Edit ${sub.title}`}
-            title="Edit details"
-            onClick={() => onEdit(sub.id)}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label={`Rename ${sub.title}`}>
+            <button
+              type="button"
+              aria-label={`Rename ${sub.title}`}
+              onClick={() => setRenamingSubId(sub.id)}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
+          <Tooltip label={`Edit ${sub.title}`}>
+            <button
+              type="button"
+              aria-label={`Edit ${sub.title}`}
+              onClick={() => onEdit(sub.id)}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
           {drag?.handle}
           {onMoveSubProject && (
             <ReorderControls
@@ -304,15 +308,16 @@ export function ProjectWorkbench({
                   />
                 </div>
                 {onFocus && (
-                  <button
-                    type="button"
-                    aria-label="Focus actions"
-                    title="Focus this project's actions"
-                    onClick={onFocus}
-                    className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  >
-                    <Target className="h-4 w-4" />
-                  </button>
+                  <Tooltip label="Focus this project's actions">
+                    <button
+                      type="button"
+                      aria-label="Focus actions"
+                      onClick={onFocus}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <Target className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
                 )}
               </div>
               {!sectionCollapsed('actions') && (

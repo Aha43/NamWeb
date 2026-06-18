@@ -5,6 +5,15 @@ if (!Element.prototype.hasPointerCapture) Element.prototype.hasPointerCapture = 
 if (!Element.prototype.releasePointerCapture) Element.prototype.releasePointerCapture = () => {};
 if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
 
+// jsdom has no ResizeObserver; TruncatedTitle observes its element to re-measure overflow.
+if (!('ResizeObserver' in globalThis)) {
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };
+}
+
 // jsdom has no matchMedia; default to phone (matches: false). Tests that exercise
 // the desktop shell override window.matchMedia before rendering.
 if (!window.matchMedia) {

@@ -5,6 +5,7 @@ import { StatusMenu } from '../actions/StatusMenu';
 import { Button } from '@/components/ui/button';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { PromptButton } from '@/components/ui/prompt-button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ActionRowData } from '../actions/rows';
 import type { NodeStatus, SavedView } from '../../domain/types';
@@ -110,7 +111,6 @@ export function TagFilterPanel({
                       {onRenameTag && (
                         <PromptButton
                           aria-label={`Rename tag ${tag}`}
-                          title="Rename"
                           label="New tag name"
                           initialValue={tag}
                           submitLabel="Rename"
@@ -123,7 +123,6 @@ export function TagFilterPanel({
                       {onDeleteTag && (
                         <ConfirmButton
                           aria-label={`Delete tag ${tag}`}
-                          title="Delete"
                           message={
                             (tagCounts?.[tag] ?? 0) > 0
                               ? `Delete "${tag}" from ${tagCounts![tag]} item${tagCounts![tag] === 1 ? '' : 's'}? This cannot be undone.`
@@ -161,7 +160,6 @@ export function TagFilterPanel({
                 {onRenameView && (
                   <PromptButton
                     aria-label={`Rename view ${view.name}`}
-                    title="Rename"
                     label="New view name"
                     initialValue={view.name}
                     submitLabel="Rename"
@@ -172,14 +170,16 @@ export function TagFilterPanel({
                   </PromptButton>
                 )}
                 {onDeleteView && (
-                  <button
-                    type="button"
-                    aria-label={`Delete view ${view.name}`}
-                    onClick={() => onDeleteView(view.name)}
-                    className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
-                  >
-                    ×
-                  </button>
+                  <Tooltip label={`Delete view ${view.name}`}>
+                    <button
+                      type="button"
+                      aria-label={`Delete view ${view.name}`}
+                      onClick={() => onDeleteView(view.name)}
+                      className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
+                    >
+                      ×
+                    </button>
+                  </Tooltip>
                 )}
               </li>
             ))}

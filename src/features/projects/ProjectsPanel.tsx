@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { ChevronRight, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
+import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from '../actions/InlineRename';
 import type { NamNode } from '../../domain/types';
 
@@ -60,7 +62,7 @@ export function ProjectsPanel({ projects, onAdd, onOpen, onRename }: ProjectsPan
                   className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
                 >
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm text-foreground">{project.title}</span>
+                    <TruncatedTitle text={project.title} className="text-sm text-foreground" />
                     {project.tags.length > 0 && (
                       <span className="mt-0.5 flex flex-wrap gap-1">
                         {project.tags.map((tag) => (
@@ -77,14 +79,16 @@ export function ProjectsPanel({ projects, onAdd, onOpen, onRename }: ProjectsPan
                   <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                 </button>
                 {onRename && (
-                  <button
-                    type="button"
-                    aria-label={`Rename ${project.title}`}
-                    onClick={() => setRenamingId(project.id)}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
+                  <Tooltip label={`Rename ${project.title}`}>
+                    <button
+                      type="button"
+                      aria-label={`Rename ${project.title}`}
+                      onClick={() => setRenamingId(project.id)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </Tooltip>
                 )}
               </li>
             ),

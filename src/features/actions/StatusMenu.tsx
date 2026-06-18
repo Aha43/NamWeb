@@ -4,6 +4,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { NodeStatus } from '@/domain/types';
 
@@ -31,15 +32,17 @@ export function StatusMenu({
 }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`Status of ${title}: ${status}. Change status.`}
-        className={cn(
-          'inline-flex h-6 w-6 items-center justify-center rounded-md border text-xs font-semibold outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
-          TONE[status] ?? 'text-muted-foreground border-border',
-        )}
-      >
-        {LETTER[status] ?? status[0]}
-      </DropdownMenuTrigger>
+      <Tooltip label={`Status: ${status} — change`}>
+        <DropdownMenuTrigger
+          aria-label={`Status of ${title}: ${status}. Change status.`}
+          className={cn(
+            'inline-flex h-6 w-6 items-center justify-center rounded-md border text-xs font-semibold outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
+            TONE[status] ?? 'text-muted-foreground border-border',
+          )}
+        >
+          {LETTER[status] ?? status[0]}
+        </DropdownMenuTrigger>
+      </Tooltip>
       <DropdownMenuContent align="end">
         {OPTIONS.map((option) => (
           <DropdownMenuItem key={option.status} onSelect={() => onSetStatus(option.status)}>

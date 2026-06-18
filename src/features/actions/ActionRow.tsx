@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
 import { ConfirmButton } from '@/components/ui/confirm-button';
+import { Tooltip } from '@/components/ui/tooltip';
+import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
 import { ProjectPathLinks } from './ProjectPathLinks';
 import type { ActionRowData } from './rows';
@@ -51,7 +53,7 @@ export function ActionRow({
             onCancel={() => setRenaming(false)}
           />
         ) : (
-          <p className="truncate text-sm text-foreground">{row.title}</p>
+          <TruncatedTitle text={row.title} className="text-sm text-foreground" />
         )}
         {(row.tags.length > 0 || due || age || row.hasResources) && (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
@@ -81,32 +83,33 @@ export function ActionRow({
       </div>
       <div className="flex shrink-0 items-center gap-1">
         {onRename && !renaming && (
-          <button
-            type="button"
-            aria-label={`Rename ${row.title}`}
-            title="Rename"
-            onClick={() => setRenaming(true)}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label={`Rename ${row.title}`}>
+            <button
+              type="button"
+              aria-label={`Rename ${row.title}`}
+              onClick={() => setRenaming(true)}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         )}
         {onEdit && (
-          <button
-            type="button"
-            aria-label={`Edit ${row.title}`}
-            title="Edit details"
-            onClick={onEdit}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-          </button>
+          <Tooltip label={`Edit ${row.title}`}>
+            <button
+              type="button"
+              aria-label={`Edit ${row.title}`}
+              onClick={onEdit}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+            </button>
+          </Tooltip>
         )}
         {actions}
         {onDelete && (
           <ConfirmButton
             aria-label={`Delete ${row.title}`}
-            title="Delete"
             message={
               (row.descendantCount ?? 0) > 0
                 ? `Delete "${row.title}" and its ${row.descendantCount} item${row.descendantCount === 1 ? '' : 's'}?`
