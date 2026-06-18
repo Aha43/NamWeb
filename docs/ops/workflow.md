@@ -36,12 +36,19 @@ migration path.
 ## Frontend flow (low-risk, keep it fast)
 
 1. Branch off `main` (feature branch; always tied to a GitHub issue).
-2. Develop locally (`npm run dev` against local Supabase). Add/adjust tests.
-3. Open a PR. **CI** (`check`, `e2e-mocked`) + GitGuardian must be green; Cloudflare publishes a
-   **preview deploy** — click it to verify the change live.
-4. Merge to `main` → Pages **auto-deploys** to `usenam.app`.
-5. **Post-deploy smoke** (see runbooks). If broken: **roll back** the Pages deployment immediately,
-   then revert the merge on `main` so the next deploy doesn't re-ship it, and fix on a branch.
+2. Develop locally (`npm run dev` against local Supabase). Add/adjust tests, and **run the mocked
+   e2e locally** for UI changes (`npx playwright test --project=mocked-desktop --project=mocked-phone`).
+3. Open a PR. The **PR gate is `check`** (typecheck/lint/test/build) + GitGuardian; Cloudflare
+   publishes a **preview deploy** — click it to verify the change live.
+4. Merge to `main` → Pages **auto-deploys** to `usenam.app`, and **`e2e-mocked` runs on `main`** as
+   the post-merge canary.
+5. **Post-deploy smoke** (see runbooks). If e2e (or smoke) goes red on `main`: **roll back** the
+   Pages deployment immediately, then revert the merge and fix on a branch.
+
+> **Why e2e isn't a PR gate:** the mocked e2e can be slow on busy runners and would bottleneck the
+> one-PR-per-lap loop. It runs **post-merge on `main`, nightly, and on demand** (`workflow_dispatch`)
+> instead — backed by the run-it-locally habit in step 2. So every merge is still e2e-covered; it
+> just never blocks a merge.
 
 ## Schema flow (high-risk, armor it)
 
@@ -63,7 +70,8 @@ prod manually. Rules:
 
 ## Universal gates
 
-- **Branch protection on `main`** — require a PR + green CI before merge, so the auto-deploy never
+- **Branch protection on `main`** — require a PR + the green **`check`** job before merge (e2e runs
+  post-merge/nightly, not as a gate), so the auto-deploy never
   ships a red build.
 - **Post-deploy smoke** — a short checklist after each prod deploy (runbooks).
 - **Backups** — scheduled off-platform `pg_dump`, independent of any one migration.
