@@ -43,6 +43,13 @@ describe('ProjectWorkbench', () => {
     expect(screen.getByRole('button', { name: 'Open Plumbing' })).toBeInTheDocument();
   });
 
+  it('shows a Focus button on the actions header that enters focus', () => {
+    const onFocus = vi.fn();
+    setup({ onFocus });
+    fireEvent.click(screen.getByRole('button', { name: 'Focus actions' }));
+    expect(onFocus).toHaveBeenCalled();
+  });
+
   it('inline-renames a sub-project via the rename button (not the editor)', () => {
     const { onRename, onEdit } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Rename Plumbing' }));
