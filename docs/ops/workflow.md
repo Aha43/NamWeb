@@ -40,15 +40,14 @@ migration path.
    e2e locally** for UI changes (`npx playwright test --project=mocked-desktop --project=mocked-phone`).
 3. Open a PR. The **PR gate is `check`** (typecheck/lint/test/build) + GitGuardian; Cloudflare
    publishes a **preview deploy** — click it to verify the change live.
-4. Merge to `main` → Pages **auto-deploys** to `usenam.app`, and **`e2e-mocked` runs on `main`** as
-   the post-merge canary.
-5. **Post-deploy smoke** (see runbooks). If e2e (or smoke) goes red on `main`: **roll back** the
+4. Merge to `main` → Pages **auto-deploys** to `usenam.app`.
+5. **Post-deploy smoke** (see runbooks). If smoke (or the nightly e2e) goes red: **roll back** the
    Pages deployment immediately, then revert the merge and fix on a branch.
 
-> **Why e2e isn't a PR gate:** the mocked e2e can be slow on busy runners and would bottleneck the
-> one-PR-per-lap loop. It runs **post-merge on `main`, nightly, and on demand** (`workflow_dispatch`)
-> instead — backed by the run-it-locally habit in step 2. So every merge is still e2e-covered; it
-> just never blocks a merge.
+> **Why e2e isn't a PR gate (or per-merge):** the mocked e2e is slow on busy runners (mostly the
+> browser download), and merging one PR per lap meant a per-merge run was an e2e run every lap. So it
+> runs **nightly + on demand** (`workflow_dispatch`) only — the per-change gate is the **local e2e run
+> in step 2**, with the nightly as the catch-all. `check` (typecheck/lint/test/build) stays the PR gate.
 
 ## Schema flow (high-risk, armor it)
 
@@ -71,7 +70,7 @@ prod manually. Rules:
 ## Universal gates
 
 - **Branch protection on `main`** — require a PR + the green **`check`** job before merge (e2e runs
-  post-merge/nightly, not as a gate), so the auto-deploy never
+  nightly/on-demand, not as a gate), so the auto-deploy never
   ships a red build.
 - **Post-deploy smoke** — a short checklist after each prod deploy (runbooks).
 - **Backups** — scheduled off-platform `pg_dump`, independent of any one migration.

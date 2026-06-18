@@ -33,12 +33,12 @@ jobs:
       - run: npm run build
 
   # Network-mocked Playwright journeys — no Supabase backend (the HTTP calls are intercepted).
-  # Deliberately NOT a PR gate (it can be slow on busy runners and would bottleneck the
-  # short-line one-PR-per-lap flow). Instead it runs post-merge on `main`, nightly, and on demand
-  # — and we run it locally before pushing. So every merge is still e2e-gated, just not blocking
-  # the PR. The real-backend smoke (smoke.spec.ts) needs a live stack and stays out of CI.
+  # Deliberately NOT a PR gate, nor per-merge: it runs **nightly** and **on demand**
+  # (workflow_dispatch). The per-change gate is running it locally before pushing; the nightly is
+  # the catch-all. (Not per-merge because, merging one PR per lap, that was an e2e run per merge.)
+  # The real-backend smoke (smoke.spec.ts) needs a live stack and stays out of CI.
   e2e-mocked:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
       VITE_SUPABASE_URL: http://127.0.0.1:54321
@@ -50,7 +50,19 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
+      # Cache the browser binaries (the slow part) — keyed on the lockfile so a Playwright bump busts it.
+      - name: Cache Playwright browsers
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browsers (+ OS deps)
+        if: steps.pw-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium webkit
+      - name: Install Playwright OS deps (cached browsers)
+        if: steps.pw-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium webkit
       - run: npx playwright test --project=mocked-desktop --project=mocked-phone
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}

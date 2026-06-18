@@ -89,11 +89,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   don't look identical. Applies everywhere actions render (Next/Backlog/Due/Blocked/Done/Tags/workbench
   + column cards). Closes #184.
 
-- **CI: e2e-mocked is no longer a PR gate.** It can be slow on busy runners and was bottlenecking the
-  one-PR-per-lap flow, so it now runs **post-merge on `main`, nightly, and on demand** — the PR gate is
-  `check` (typecheck/lint/test/build) + GitGuardian + the Cloudflare preview, and e2e is run locally
-  before pushing. Every merge is still e2e-covered; it just never blocks a merge. `docs/ops/workflow.md`
-  updated. Closes #187.
+- **CI: e2e-mocked runs nightly + on-demand, not per PR/merge.** It's slow on busy runners (mostly the
+  browser download) and, merging one PR per lap, a per-merge run was an e2e run every lap — so it now
+  runs **nightly (cron) and on demand** (`workflow_dispatch`) only. The PR gate is `check`
+  (typecheck/lint/test/build) + GitGuardian + the Cloudflare preview; the per-change gate is the
+  **local e2e run before pushing**, with the nightly as the catch-all. Playwright browsers are now
+  **cached** so the runs that do happen skip the re-download. `docs/ops/workflow.md` updated.
+  Closes #187, #195.
 
 - **Quick-added actions land first in Next & Backlog too.** Extends #174 to the flat lists: a quick-add
   in Next/Backlog now seeds the view's order so the new action appears at the top (those lists order by
