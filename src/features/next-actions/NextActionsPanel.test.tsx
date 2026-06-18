@@ -68,9 +68,9 @@ describe('NextActionsPanel', () => {
     expect(screen.queryByLabelText('Add a next action')).not.toBeInTheDocument();
   });
 
-  it('renames inline on double-click + Enter', () => {
+  it('renames inline via the rename button + Enter', () => {
     const { onRename } = setup([row({ id: 'x', title: 'Buy milk' })]);
-    fireEvent.doubleClick(screen.getByText('Buy milk'));
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Buy milk' }));
     const input = screen.getByLabelText('Rename Buy milk');
     fireEvent.change(input, { target: { value: 'Buy oat milk' } });
     fireEvent.keyDown(input, { key: 'Enter' });

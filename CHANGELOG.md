@@ -63,6 +63,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Action rows: deliberate rename, no accidental edits.** Action rows now have an explicit **rename**
+  pencil (→ inline editor) instead of the undiscoverable, accidental-prone **double-click** to rename
+  (removed). The full-editor button keeps its `Edit` label but gets a distinct (sliders) icon so the two
+  don't look identical. Applies everywhere actions render (Next/Backlog/Due/Blocked/Done/Tags/workbench
+  + column cards). Closes #184.
+
 - **CI: e2e-mocked is no longer a PR gate.** It can be slow on busy runners and was bottlenecking the
   one-PR-per-lap flow, so it now runs **post-merge on `main`, nightly, and on demand** — the PR gate is
   `check` (typecheck/lint/test/build) + GitGuardian + the Cloudflare preview, and e2e is run locally
