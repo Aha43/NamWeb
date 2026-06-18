@@ -63,6 +63,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Column-view headers: inline rename.** Sub-project column headers in the kanban view get the same
+  deliberate **rename** pencil → inline editor. Completes inline rename everywhere a name shows
+  (Projects list · action rows · sub-projects · column headers — #168). Closes #186.
+
 - **Workbench sub-projects: inline rename.** Sub-project rows get the same deliberate **rename**
   pencil (→ inline editor) as actions/projects; the existing button (full editor) keeps its `Edit`
   label with the distinct sliders icon. Closes #185.

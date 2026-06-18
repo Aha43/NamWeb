@@ -30,6 +30,16 @@ describe('ColumnView', () => {
     expect(screen.getByLabelText('Add action to Phase 1')).toBeInTheDocument();
   });
 
+  it('inline-renames a sub-project column header (not the Unsorted column)', () => {
+    const { onRename } = setup();
+    expect(screen.queryByRole('button', { name: /Rename Unsorted/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Phase 1' }));
+    const input = screen.getByLabelText('Rename Phase 1');
+    fireEvent.change(input, { target: { value: 'Phase one' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith('s1', 'Phase one');
+  });
+
   it('shows a delete (trash) button per card and fires onDelete', () => {
     const onDelete = vi.fn();
     setup({ onDelete });
