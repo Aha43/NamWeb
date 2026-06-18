@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AccountMenu } from './AccountMenu';
 import { useCapture } from '@/capture/capture-context';
@@ -57,14 +58,16 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
     <div className="flex h-dvh flex-col bg-background text-foreground">
       <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            onClick={toggleCollapsed}
-          >
-            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </Button>
+          <Tooltip label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              onClick={toggleCollapsed}
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          </Tooltip>
           <ToolbarSearch />
         </div>
         <div className="flex shrink-0 items-center gap-1">
@@ -79,9 +82,9 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             <aside style={{ width }} className="flex shrink-0 flex-col overflow-y-auto p-4">
               <div className="flex items-center gap-2 px-2">
                 <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
-                <h1 className="truncate text-lg font-semibold tracking-tight" title={APP_NAME}>
-                  {APP_SHORT_NAME}
-                </h1>
+                <Tooltip label={APP_NAME}>
+                  <h1 className="truncate text-lg font-semibold tracking-tight">{APP_SHORT_NAME}</h1>
+                </Tooltip>
               </div>
 
               <Button className="mt-4 justify-start gap-2" onClick={openCapture}>

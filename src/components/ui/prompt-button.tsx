@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from './button';
+import { Tooltip } from './tooltip';
 
 /**
  * A button that asks for a single line of text in a popover **anchored to itself** — the input
@@ -26,6 +27,8 @@ export function PromptButton({
 } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onSubmit'>) {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initialValue);
+  // Label the (icon) trigger from its own aria-label; hidden while the input popover is open.
+  const tip = !open ? (trigger['aria-label'] ?? undefined) : undefined;
 
   return (
     <Popover.Root
@@ -35,11 +38,13 @@ export function PromptButton({
         if (o) setValue(initialValue); // reset to the latest initial each time it opens
       }}
     >
-      <Popover.Trigger asChild>
-        <button type="button" {...trigger}>
-          {children}
-        </button>
-      </Popover.Trigger>
+      <Tooltip label={tip}>
+        <Popover.Trigger asChild>
+          <button type="button" {...trigger}>
+            {children}
+          </button>
+        </Popover.Trigger>
+      </Tooltip>
       <Popover.Portal>
         <Popover.Content
           side="bottom"

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from './button';
+import { Tooltip } from './tooltip';
 
 /**
  * A button that asks for confirmation in a small popover **anchored to itself** — so the
@@ -23,13 +24,18 @@ export function ConfirmButton({
   children: ReactNode;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const [open, setOpen] = useState(false);
+  // Label the (icon) trigger from its own aria-label — no separate prop to keep in sync. Hidden
+  // while the popover is open so the tooltip doesn't sit on top of the confirm.
+  const tip = !open ? (trigger['aria-label'] ?? undefined) : undefined;
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
-      <Popover.Trigger asChild>
-        <button type="button" {...trigger}>
-          {children}
-        </button>
-      </Popover.Trigger>
+      <Tooltip label={tip}>
+        <Popover.Trigger asChild>
+          <button type="button" {...trigger}>
+            {children}
+          </button>
+        </Popover.Trigger>
+      </Tooltip>
       <Popover.Portal>
         <Popover.Content
           side="bottom"

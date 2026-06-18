@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Tooltips across the app — and full names where they're clipped.** Every icon/symbol button now
+  has a themed, context-aware tooltip ("Rename *Buy tiles*", "Delete *Roof*", "Focus this project's
+  actions", account icon → "Signed in as …") replacing the few native `title=` ones. And anywhere a
+  project/action name is shown one-line — column cards, rows, sub-projects, the projects list — the
+  **full name appears on hover, but only when the text is actually truncated** (no redundant tooltip
+  when it already fits). New `Tooltip` + `TruncatedTitle` primitives (`src/components/ui/`). Closes #172.
+
 - **Editor delete now confirms inline in the dialog (no native dialog left).** Deleting an
   action/project from inside the edit dialog asks for confirmation right in the dialog footer
   (count-aware message + Cancel / Delete) instead of `window.confirm`. This retires the last native

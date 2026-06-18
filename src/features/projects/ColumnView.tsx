@@ -14,6 +14,8 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
+import { Tooltip } from '@/components/ui/tooltip';
+import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { ActionList, ActionRow } from '../actions/ActionRow';
 import { InlineRename } from '../actions/InlineRename';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -159,56 +161,63 @@ export function ColumnView({
               type="button"
               aria-label={`Open ${col.title}`}
               onClick={() => onOpenColumn(col.id)}
-              className="flex min-w-0 items-center gap-1 truncate text-sm font-medium text-foreground hover:underline"
+              className="flex min-w-0 items-center gap-1 text-sm font-medium text-foreground hover:underline"
             >
-              <span className="truncate">{col.title}</span>
+              <TruncatedTitle text={col.title} className="min-w-0 flex-1 text-left" />
               <ChevronRight className="h-3.5 w-3.5 shrink-0" />
             </button>
           )}
           <div className="flex shrink-0 items-center gap-1">
             {!col.isUnsorted && renamingColId !== col.id && (
-              <button
-                type="button"
-                aria-label={`Rename ${col.title}`}
-                title="Rename"
-                onClick={() => setRenamingColId(col.id)}
-                className="rounded-sm text-muted-foreground hover:text-foreground"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
+              <Tooltip label={`Rename ${col.title}`}>
+                <button
+                  type="button"
+                  aria-label={`Rename ${col.title}`}
+                  onClick={() => setRenamingColId(col.id)}
+                  className="rounded-sm text-muted-foreground hover:text-foreground"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
             )}
             {onMoveColumn && !col.isUnsorted && (
               <>
-                <button
-                  type="button"
-                  aria-label={`Move ${col.title} left`}
-                  disabled={subColumnIds[0] === col.id}
-                  onClick={() => onMoveColumn(col.id, 'left')}
-                  className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Move ${col.title} right`}
-                  disabled={subColumnIds[subColumnIds.length - 1] === col.id}
-                  onClick={() => onMoveColumn(col.id, 'right')}
-                  className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+                <Tooltip label="Move column left">
+                  <button
+                    type="button"
+                    aria-label={`Move ${col.title} left`}
+                    disabled={subColumnIds[0] === col.id}
+                    onClick={() => onMoveColumn(col.id, 'left')}
+                    className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                </Tooltip>
+                <Tooltip label="Move column right">
+                  <button
+                    type="button"
+                    aria-label={`Move ${col.title} right`}
+                    disabled={subColumnIds[subColumnIds.length - 1] === col.id}
+                    onClick={() => onMoveColumn(col.id, 'right')}
+                    className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </Tooltip>
               </>
             )}
             <span className="text-xs text-muted-foreground">{col.actions.length}</span>
             {onToggleCollapse && (
-              <button
-                type="button"
-                aria-label={`Collapse ${label}`}
-                onClick={() => onToggleCollapse(col.id)}
-                className="rounded-sm text-muted-foreground hover:text-foreground"
-              >
-                <ChevronsRightLeft className="h-4 w-4" />
-              </button>
+              <Tooltip label="Collapse column">
+                <button
+                  type="button"
+                  aria-label={`Collapse ${label}`}
+                  onClick={() => onToggleCollapse(col.id)}
+                  className="rounded-sm text-muted-foreground hover:text-foreground"
+                >
+                  <ChevronsRightLeft className="h-4 w-4" />
+                </button>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -234,14 +243,16 @@ export function ColumnView({
           key={col.id}
           className="flex w-10 shrink-0 flex-col items-center gap-2 rounded-lg border border-border bg-card/40 p-2"
         >
-          <button
-            type="button"
-            aria-label={`Expand ${label}`}
-            onClick={() => onToggleCollapse(col.id)}
-            className="rounded-sm text-muted-foreground hover:text-foreground"
-          >
-            <ChevronsLeftRight className="h-4 w-4" />
-          </button>
+          <Tooltip label={`Expand ${label}`} side="right">
+            <button
+              type="button"
+              aria-label={`Expand ${label}`}
+              onClick={() => onToggleCollapse(col.id)}
+              className="rounded-sm text-muted-foreground hover:text-foreground"
+            >
+              <ChevronsLeftRight className="h-4 w-4" />
+            </button>
+          </Tooltip>
           <span className="text-xs text-muted-foreground">{col.actions.length}</span>
           <span className="max-h-40 truncate text-xs text-muted-foreground [writing-mode:vertical-rl]">
             {label}
