@@ -63,6 +63,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Workbench sub-projects: inline rename.** Sub-project rows get the same deliberate **rename**
+  pencil (→ inline editor) as actions/projects; the existing button (full editor) keeps its `Edit`
+  label with the distinct sliders icon. Closes #185.
+
 - **Action rows: deliberate rename, no accidental edits.** Action rows now have an explicit **rename**
   pencil (→ inline editor) instead of the undiscoverable, accidental-prone **double-click** to rename
   (removed). The full-editor button keeps its `Edit` label but gets a distinct (sliders) icon so the two

@@ -1,5 +1,6 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronRight, Pencil } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal } from 'lucide-react';
+import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -119,37 +120,60 @@ export function ProjectWorkbench({
   const isColumn = viewMode === 'column';
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
   const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
+  const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
   const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => (
     <li ref={drag?.setNodeRef} style={drag?.style} className="flex items-center gap-1 pr-2">
-      <button
-        type="button"
-        aria-label={`Open ${sub.title}`}
-        onClick={() => onOpenProject(sub.id)}
-        className="flex flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
-      >
-        <span className="flex-1 truncate text-sm text-foreground">{sub.title}</span>
-        {sub.childIds.length > 0 && (
-          <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
-        )}
-        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-      </button>
-      <button
-        type="button"
-        aria-label={`Edit ${sub.title}`}
-        onClick={() => onEdit(sub.id)}
-        className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-      >
-        <Pencil className="h-3.5 w-3.5" />
-      </button>
-      {drag?.handle}
-      {onMoveSubProject && (
-        <ReorderControls
-          title={sub.title}
-          onUp={index > 0 ? () => onMoveSubProject(sub.id, 'up') : undefined}
-          onDown={index < subProjects.length - 1 ? () => onMoveSubProject(sub.id, 'down') : undefined}
-        />
+      {renamingSubId === sub.id ? (
+        <div className="flex-1 px-3 py-2">
+          <InlineRename
+            title={sub.title}
+            onCommit={(t) => { onRename(sub.id, t); setRenamingSubId(null); }}
+            onCancel={() => setRenamingSubId(null)}
+          />
+        </div>
+      ) : (
+        <>
+          <button
+            type="button"
+            aria-label={`Open ${sub.title}`}
+            onClick={() => onOpenProject(sub.id)}
+            className="flex flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
+          >
+            <span className="flex-1 truncate text-sm text-foreground">{sub.title}</span>
+            {sub.childIds.length > 0 && (
+              <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
+            )}
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </button>
+          <button
+            type="button"
+            aria-label={`Rename ${sub.title}`}
+            title="Rename"
+            onClick={() => setRenamingSubId(sub.id)}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            aria-label={`Edit ${sub.title}`}
+            title="Edit details"
+            onClick={() => onEdit(sub.id)}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5" />
+          </button>
+          {drag?.handle}
+          {onMoveSubProject && (
+            <ReorderControls
+              title={sub.title}
+              onUp={index > 0 ? () => onMoveSubProject(sub.id, 'up') : undefined}
+              onDown={index < subProjects.length - 1 ? () => onMoveSubProject(sub.id, 'down') : undefined}
+            />
+          )}
+        </>
       )}
     </li>
   );

@@ -43,6 +43,16 @@ describe('ProjectWorkbench', () => {
     expect(screen.getByRole('button', { name: 'Open Plumbing' })).toBeInTheDocument();
   });
 
+  it('inline-renames a sub-project via the rename button (not the editor)', () => {
+    const { onRename, onEdit } = setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Plumbing' }));
+    const input = screen.getByLabelText('Rename Plumbing');
+    fireEvent.change(input, { target: { value: 'Pipework' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith('s', 'Pipework');
+    expect(onEdit).not.toHaveBeenCalled();
+  });
+
   it('navigates via breadcrumb and sub-project', () => {
     const { onOpenProject, onOpenProjects } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Projects' }));
