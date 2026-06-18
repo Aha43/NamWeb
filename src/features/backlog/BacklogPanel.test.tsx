@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { ActionRowData } from '../actions/rows';
 import { BacklogPanel } from './BacklogPanel';
@@ -34,6 +34,21 @@ describe('BacklogPanel', () => {
     expect(screen.getByRole('button', { name: /Drag to reorder Buy milk/i })).toBeInTheDocument();
     // …and the buttons stay as the a11y fallback.
     expect(screen.getByRole('button', { name: /Move Buy milk down/i })).toBeInTheDocument();
+  });
+
+  it('quick-adds a backlog action via the input (trimmed) and clears it', () => {
+    const onAdd = vi.fn();
+    render(<BacklogPanel rows={[]} onSetStatus={vi.fn()} onAdd={onAdd} />);
+    const input = screen.getByLabelText('Add to backlog');
+    fireEvent.change(input, { target: { value: '  Renew passport  ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onAdd).toHaveBeenCalledWith('Renew passport');
+    expect((input as HTMLInputElement).value).toBe('');
+  });
+
+  it('has no add input when onAdd is not provided', () => {
+    render(<BacklogPanel rows={[row()]} onSetStatus={vi.fn()} />);
+    expect(screen.queryByLabelText('Add to backlog')).not.toBeInTheDocument();
   });
 
   it('shows no drag handle when drag is disabled (e.g. on mobile)', () => {

@@ -1,5 +1,5 @@
 import { applyViewOrder, backlogItems } from '@/domain/lenses';
-import { nowIso } from '@/lib/local';
+import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
@@ -41,6 +41,19 @@ export function BacklogPage() {
       onMove={move}
       onReorder={(ids) => dispatch({ type: 'reorderView', view: VIEW, order: ids })}
       dndEnabled={isDesktop}
+      onAdd={
+        document
+          ? (title) =>
+              dispatch({
+                type: 'addAction',
+                parentId: document.nextActionsNodeId,
+                id: newId(),
+                title,
+                status: 'BACKLOG',
+                now: nowIso(),
+              })
+          : undefined
+      }
       onDelete={deleteNode}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}

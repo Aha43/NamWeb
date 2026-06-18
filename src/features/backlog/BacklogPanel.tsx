@@ -1,3 +1,5 @@
+import { useState, type FormEvent } from 'react';
+import { Button } from '@/components/ui/button';
 import { EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -9,6 +11,8 @@ import type { NodeStatus } from '@/domain/types';
 
 export interface BacklogPanelProps {
   rows: ActionRowData[];
+  /** Quick-add an action straight into the backlog. */
+  onAdd?: (title: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
   /** Inline delete (with confirm) per row. */
@@ -29,6 +33,7 @@ export interface BacklogPanelProps {
  *  Presentational. */
 export function BacklogPanel({
   rows,
+  onAdd,
   onSetStatus,
   onEdit,
   onDelete,
@@ -40,8 +45,30 @@ export function BacklogPanel({
   onReorder,
   dndEnabled,
 }: BacklogPanelProps) {
+  const [title, setTitle] = useState('');
+
+  function submitAdd(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = title.trim();
+    if (!trimmed || !onAdd) return;
+    onAdd(trimmed);
+    setTitle('');
+  }
+
   return (
     <section className="mx-auto max-w-4xl">
+      {onAdd && (
+        <form onSubmit={submitAdd} className="mb-4 flex gap-2">
+          <input
+            aria-label="Add to backlog"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Add to backlog…"
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+          />
+          <Button type="submit">Add</Button>
+        </form>
+      )}
       {sortMode && onCycleSort && rows.length > 0 && (
         <div className="mb-2 flex justify-end">
           <SortButton mode={sortMode} onCycle={onCycleSort} />
