@@ -13,10 +13,12 @@ test.describe('projects workbench', () => {
     await page.getByRole('button', { name: 'Open Roof repair' }).click();
     await expect(page).toHaveURL(/\/projects\/.+/);
 
-    // Add a direct action.
+    // Add a direct action. New project actions default to BACKLOG (so they don't flood Next/Focus
+    // before triage) — the status badge reads "B". #210
     await page.getByLabel('Add action').fill('Buy shingles');
     await page.getByLabel('Add action').press('Enter');
     await expect(page.getByText('Buy shingles')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Status of Buy shingles: BACKLOG/ })).toBeVisible();
 
     // Add a sub-project and drill into it.
     await page.getByLabel('Add sub-project').fill('Phase 1');

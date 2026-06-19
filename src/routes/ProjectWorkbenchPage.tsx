@@ -134,10 +134,12 @@ export function ProjectWorkbenchPage() {
       collapsedSections={collapsedSections}
       onToggleSection={toggleSection}
       onAddAction={(title) =>
-        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'NEXT', now: nowIso() })
+        // New project actions land in BACKLOG (not NEXT) so they don't flood Next/Focus before
+        // you've triaged them — matches NamDesktop's default. Issue #210.
+        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'BACKLOG', now: nowIso() })
       }
       onAddActionToColumn={(columnId, title) =>
-        dispatch({ type: 'addAction', parentId: columnId, id: newId(), title, status: 'NEXT', now: nowIso() })
+        dispatch({ type: 'addAction', parentId: columnId, id: newId(), title, status: 'BACKLOG', now: nowIso() })
       }
       onAddSubProject={(title) =>
         dispatch({ type: 'addSubProject', parentId: id, id: newId(), title, now: nowIso() })
