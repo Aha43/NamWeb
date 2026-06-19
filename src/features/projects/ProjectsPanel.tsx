@@ -64,7 +64,7 @@ export function ProjectsPanel({ projects, onAdd, onOpen, onRename, onAddLearnNam
           )}
         </div>
       ) : (
-        <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {projects.map((project) =>
             renamingId === project.id && onRename ? (
               <li key={project.id} className="px-3 py-2">
@@ -75,7 +75,7 @@ export function ProjectsPanel({ projects, onAdd, onOpen, onRename, onAddLearnNam
                 />
               </li>
             ) : (
-              <li key={project.id} className="flex items-center gap-1 pr-2">
+              <li key={project.id} className="flex items-center gap-1 pr-2 transition-colors even:bg-muted/40 hover:bg-accent/40">
                 <button
                   type="button"
                   aria-label={`Open ${project.title}`}

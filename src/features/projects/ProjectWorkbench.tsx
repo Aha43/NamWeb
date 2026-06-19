@@ -130,7 +130,11 @@ export function ProjectWorkbench({
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
   const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => (
-    <li ref={drag?.setNodeRef} style={drag?.style} className="flex items-center gap-1 pr-2">
+    <li
+      ref={drag?.setNodeRef}
+      style={drag?.style}
+      className="flex items-center gap-1 pr-2 transition-colors even:bg-muted/40 hover:bg-accent/40"
+    >
       {renamingSubId === sub.id ? (
         <div className="flex-1 px-3 py-2">
           <InlineRename
@@ -384,7 +388,7 @@ export function ProjectWorkbench({
                   onReorder={onReorderSubProjects ?? (() => {})}
                   disabled={!subDnd}
                 >
-                  <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+                  <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
                     {subProjects.map((sub, index) =>
                       subDnd ? (
                         <SortableRow key={sub.id} id={sub.id} label={sub.title}>

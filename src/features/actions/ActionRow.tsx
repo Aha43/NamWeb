@@ -43,7 +43,11 @@ export function ActionRow({
   const age = row.touchedAt ? formatAge(row.touchedAt) : null;
   const [renaming, setRenaming] = useState(false);
   return (
-    <li ref={dragRef} style={dragStyle} className="flex items-center gap-2 px-3 py-2">
+    <li
+      ref={dragRef}
+      style={dragStyle}
+      className="flex items-center gap-2 px-3 py-2 transition-colors even:bg-muted/40 hover:bg-accent/40"
+    >
       <div className="min-w-0 flex-1">
         <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />
         {renaming && onRename ? (
@@ -127,7 +131,9 @@ export function ActionRow({
 }
 
 export function ActionList({ children }: { children: ReactNode }) {
-  return <ul className="divide-y divide-border rounded-lg border border-border bg-card">{children}</ul>;
+  return (
+    <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">{children}</ul>
+  );
 }
 
 export function EmptyState({ children }: { children: ReactNode }) {
