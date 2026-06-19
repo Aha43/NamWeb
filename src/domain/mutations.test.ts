@@ -159,6 +159,46 @@ describe('applyIntent', () => {
     expect(applyIntent(doc, { type: 'addSubProject', parentId: 'ghost', id: 'x', title: 'X', now: NOW }).nodes['x']).toBeUndefined();
   });
 
+  it('seedProject inserts a rich subtree (status/tags/due/blockedBy/resources) and registers tags', () => {
+    const doc = workspace();
+    const next = applyIntent(doc, {
+      type: 'seedProject',
+      parentId: 'projects',
+      now: NOW,
+      nodes: [
+        {
+          id: 'demo',
+          title: 'Demo',
+          project: true,
+          children: [
+            { id: 'a1', title: 'Done one', status: 'DONE' },
+            {
+              id: 'a2',
+              title: 'Due one',
+              status: 'BACKLOG',
+              tags: ['Learn', 'learn'],
+              dueAt: '2026-07-01',
+              resources: [{ type: 'URI', value: 'https://usenam.app', description: null }],
+            },
+            { id: 'a3', title: 'Blocked one', status: 'BACKLOG', blockedBy: ['a2'] },
+          ],
+        },
+      ],
+    });
+    // Root project attached under Projects, children in authoring order.
+    expect(next.nodes['projects'].childIds).toEqual(['demo']);
+    expect(next.nodes['demo']).toMatchObject({ project: true, createdAt: NOW });
+    expect(next.nodes['demo'].childIds).toEqual(['a1', 'a2', 'a3']);
+    // Rich fields land; DONE gets a statusChangedAt; tags normalized + registered.
+    expect(next.nodes['a1']).toMatchObject({ status: 'DONE', statusChangedAt: NOW });
+    expect(next.nodes['a2']).toMatchObject({ status: 'BACKLOG', dueAt: '2026-07-01', tags: ['learn'] });
+    expect(next.nodes['a2'].resources).toHaveLength(1);
+    expect(next.nodes['a3'].blockedBy).toEqual(['a2']);
+    expect(next.registeredTags).toEqual(['learn']);
+    // No-op if the parent is gone.
+    expect(applyIntent(doc, { type: 'seedProject', parentId: 'ghost', now: NOW, nodes: [{ id: 'x', title: 'X' }] }).nodes['x']).toBeUndefined();
+  });
+
   it('moveNode reparents but refuses cycles, self, and structural moves', () => {
     const doc = workspace([
       node('p1', { project: true, childIds: ['p2'] }),
