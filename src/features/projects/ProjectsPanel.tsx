@@ -12,10 +12,12 @@ export interface ProjectsPanelProps {
   onOpen: (id: string) => void;
   /** Inline-rename a project (deliberate, via the rename button — no dialog). */
   onRename?: (id: string, title: string) => void;
+  /** Seed the hands-on "Learn NAM" onboarding project (also a safe demo — delete to tidy up). */
+  onAddLearnNam?: () => void;
 }
 
 /** Top-level projects: quick-add plus the list, each opening into the workbench. Presentational. */
-export function ProjectsPanel({ projects, onAdd, onOpen, onRename }: ProjectsPanelProps) {
+export function ProjectsPanel({ projects, onAdd, onOpen, onRename, onAddLearnNam }: ProjectsPanelProps) {
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
 
@@ -40,8 +42,27 @@ export function ProjectsPanel({ projects, onAdd, onOpen, onRename }: ProjectsPan
         <Button type="submit">Add</Button>
       </form>
 
+      {onAddLearnNam && projects.length > 0 && (
+        <div className="flex justify-end">
+          <Button type="button" variant="ghost" size="sm" onClick={onAddLearnNam}>
+            Add Learn NAM 🥋
+          </Button>
+        </div>
+      )}
+
       {projects.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">No projects yet.</p>
+        <div className="space-y-3 py-8 text-center">
+          <p className="text-sm text-muted-foreground">No projects yet.</p>
+          {onAddLearnNam && (
+            <p className="text-sm text-muted-foreground">
+              New to NAM?{' '}
+              <button type="button" onClick={onAddLearnNam} className="font-medium text-primary hover:underline">
+                Add the Learn NAM project 🥋
+              </button>{' '}
+              and learn by doing.
+            </p>
+          )}
+        </div>
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {projects.map((project) =>

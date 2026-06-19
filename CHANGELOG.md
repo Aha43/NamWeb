@@ -20,6 +20,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **"Learn NAM 🥋" onboarding project — learn by doing.** Add a ready-made project from the Projects
+  view whose actions are real tasks you complete *on the project itself* to learn each feature
+  (capture, triage, tags, Focus, due dates, blockers, Column view…), grouped into White / Yellow /
+  Green belts. Finish them all and the heat map goes green — your NAM green belt. Doubles as a safe
+  demo: delete the project to tidy up. Built on a new atomic, replayable `seedProject` intent. Part of #215.
+
 - **Tooltips across the app — and full names where they're clipped.** Every icon/symbol button now
   has a themed, context-aware tooltip ("Rename *Buy tiles*", "Delete *Roof*", "Focus this project's
   actions", account icon → "Signed in as …") replacing the few native `title=` ones. And anywhere a

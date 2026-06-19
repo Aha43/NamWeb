@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { projects } from '@/domain/lenses';
+import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -13,6 +14,12 @@ export function ProjectsPage() {
       onAdd={(title) => {
         if (!document) return;
         dispatch({ type: 'addSubProject', parentId: document.projectsNodeId, id: newId(), title, now: nowIso() });
+      }}
+      onAddLearnNam={() => {
+        if (!document) return;
+        const seed = buildLearnNam(newId, new Date());
+        dispatch({ type: 'seedProject', parentId: document.projectsNodeId, nodes: [seed], now: nowIso() });
+        navigate(`/projects/${seed.id}`);
       }}
       onOpen={(id) => navigate(`/projects/${id}`)}
       onRename={(id, title) => {

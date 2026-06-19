@@ -37,6 +37,7 @@ export type Intent =
   | { type: 'saveAsTemplate'; name: string; nodeId: string }
   | { type: 'deleteTemplate'; name: string }
   | { type: 'applyTemplate'; parentId: string; nodes: ClonedTemplateNode[]; now: string }
+  | { type: 'seedProject'; parentId: string; nodes: SeedNode[]; now: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
@@ -102,6 +103,44 @@ export interface ClonedTemplateNode {
   children: ClonedTemplateNode[];
 }
 
+/**
+ * A fully-resolved node subtree to seed (ids/dates pre-generated in the caller so `seedProject`
+ * stays pure and replayable). Unlike a template it carries rich fields — status, tags, due, blockers
+ * (by id, within the seed), resources, descriptions — so a seeded project can light up every view.
+ */
+export interface SeedNode {
+  id: string;
+  title: string;
+  description?: string | null;
+  project?: boolean;
+  status?: NodeStatus;
+  tags?: string[];
+  dueAt?: string | null;
+  /** Prerequisite ids — must reference other nodes within the same seed. */
+  blockedBy?: string[];
+  resources?: Resource[];
+  children?: SeedNode[];
+}
+
+/** Insert a resolved seed subtree (rich fields, pre-assigned ids) under `parentId`. */
+function insertSeed(doc: WorkspaceDocument, parentId: string, nodes: SeedNode[], now: string): void {
+  for (const seed of nodes) {
+    const node = newNode(seed.id, seed.title, now);
+    node.project = seed.project ?? false;
+    node.description = seed.description ?? null;
+    node.status = seed.status ?? 'BACKLOG';
+    node.statusChangedAt = seed.status ? now : null;
+    node.tags = normalizeTags(seed.tags ?? []);
+    node.dueAt = seed.dueAt ?? null;
+    node.blockedBy = seed.blockedBy ?? [];
+    node.resources = seed.resources ?? [];
+    doc.nodes[seed.id] = node;
+    doc.nodes[parentId]?.childIds.push(seed.id);
+    if (node.tags.length) doc.registeredTags = normalizeTags([...doc.registeredTags, ...node.tags]);
+    insertSeed(doc, seed.id, seed.children ?? [], now);
+  }
+}
+
 /** Insert cloned template nodes (with their pre-assigned ids) under `parentId`. */
 function insertClones(
   doc: WorkspaceDocument,
@@ -152,7 +191,7 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     return true; // operate on a document-level list, not a node
   }
   if (intent.type === 'saveAsTemplate') return Boolean(doc.nodes[intent.nodeId]);
-  if (intent.type === 'applyTemplate' || intent.type === 'reorderChildren') {
+  if (intent.type === 'applyTemplate' || intent.type === 'seedProject' || intent.type === 'reorderChildren') {
     return Boolean(doc.nodes[intent.parentId]);
   }
   return Boolean(doc.nodes[intent.id]);
@@ -387,6 +426,11 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'applyTemplate': {
       if (!next.nodes[intent.parentId]) return next;
       insertClones(next, intent.parentId, intent.nodes, intent.now);
+      return next;
+    }
+    case 'seedProject': {
+      if (!next.nodes[intent.parentId]) return next;
+      insertSeed(next, intent.parentId, intent.nodes, intent.now);
       return next;
     }
     case 'deleteRecursive': {

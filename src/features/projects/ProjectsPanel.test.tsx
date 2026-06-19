@@ -52,4 +52,18 @@ describe('ProjectsPanel', () => {
     setup([project('p', 'Kitchen reno')]);
     expect(screen.queryByRole('button', { name: 'Rename Kitchen reno' })).not.toBeInTheDocument();
   });
+
+  it('offers Learn NAM in the empty state and calls onAddLearnNam', () => {
+    const onAddLearnNam = vi.fn();
+    setup([], { onAddLearnNam });
+    fireEvent.click(screen.getByRole('button', { name: /Add the Learn NAM project/ }));
+    expect(onAddLearnNam).toHaveBeenCalled();
+  });
+
+  it('offers Learn NAM alongside existing projects too', () => {
+    const onAddLearnNam = vi.fn();
+    setup([project('p', 'Kitchen reno')], { onAddLearnNam });
+    fireEvent.click(screen.getByRole('button', { name: 'Add Learn NAM 🥋' }));
+    expect(onAddLearnNam).toHaveBeenCalled();
+  });
 });
