@@ -60,6 +60,15 @@ describe('ProjectsPanel', () => {
     expect(onEdit).toHaveBeenCalledWith('p');
   });
 
+  it('reorders top-level projects with the up/down controls', () => {
+    const onReorder = vi.fn();
+    setup([project('a', 'Alpha'), project('b', 'Beta')], { onReorder });
+    // First row can't go up; moving it down swaps with the next and persists the full order.
+    expect(screen.getByRole('button', { name: 'Move Alpha up' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Move Alpha down' }));
+    expect(onReorder).toHaveBeenCalledWith(['b', 'a']);
+  });
+
   it('offers Learn NAM in the empty state and calls onAddLearnNam', () => {
     const onAddLearnNam = vi.fn();
     setup([], { onAddLearnNam });

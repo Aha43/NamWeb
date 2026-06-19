@@ -1,14 +1,16 @@
 import { useNavigate } from 'react-router-dom';
-import { projects } from '@/domain/lenses';
+import { projects, reorderKindWithinChildren } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
+import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 export function ProjectsPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
+  const isDesktop = useIsDesktop();
   const navigate = useNavigate();
   return (
     <ProjectsPanel
@@ -25,6 +27,17 @@ export function ProjectsPage() {
       }}
       onOpen={(id) => navigate(`/projects/${id}`)}
       onEdit={openEditor}
+      dndEnabled={isDesktop}
+      onReorder={(orderedIds) => {
+        if (!document) return;
+        const container = document.nodes[document.projectsNodeId];
+        if (!container) return;
+        dispatch({
+          type: 'reorderChildren',
+          parentId: document.projectsNodeId,
+          order: reorderKindWithinChildren(container.childIds, orderedIds),
+        });
+      }}
       onRename={(id, title) => {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
