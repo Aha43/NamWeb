@@ -186,7 +186,7 @@ export function ProjectWorkbench({
     </li>
   );
   return (
-    <section className={cn('mx-auto', isColumn ? 'w-full' : 'max-w-4xl')}>
+    <section className="w-full">
       {/* Pinned header: breadcrumb + add-panel + view switch stay put while the lists scroll. */}
       <div className="sticky top-0 z-20 space-y-3 bg-background pb-2 pt-1">
       <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">

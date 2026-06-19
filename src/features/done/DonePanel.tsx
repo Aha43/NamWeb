@@ -12,7 +12,7 @@ export interface DonePanelProps {
 /** Done: completed actions with restore / backlog / delete. Presentational. */
 export function DonePanel({ rows, onRestore, onBacklog, onDelete, onEdit }: DonePanelProps) {
   return (
-    <section className="mx-auto max-w-4xl">
+    <section>
       {rows.length === 0 ? (
         <EmptyState>Nothing done yet.</EmptyState>
       ) : (

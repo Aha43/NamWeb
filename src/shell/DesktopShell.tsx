@@ -132,7 +132,9 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <SyncNotice />
           <main className="min-h-0 flex-1 overflow-auto px-6 py-8">
-            <div className="mx-auto max-w-4xl">
+            {/* Single width knob for all workspace content: full-width fill. Cap here (e.g.
+                max-w-6xl) if a wide screen ever feels too roomy — panels no longer cap themselves. */}
+            <div className="mx-auto w-full">
               <ShellContent />
             </div>
           </main>

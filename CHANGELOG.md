@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Workspace content now fills the screen width.** The content area was capped at ~900px and
+  centered, wasting most of a wide display; it now uses the full width. Width is a single knob in
+  `DesktopShell` (panels no longer cap themselves), so it's a one-line change to re-cap if a very
+  wide screen feels too roomy. Narrow-by-design surfaces (Account/Settings, Focus card, auth) keep
+  their widths. Closes #213.
+
 - **Actions added inside a project now default to BACKLOG, not NEXT.** New project actions no longer
   flood the Next / Focus views before you've triaged them; the Next-view quick-add still adds NEXT.
   Matches NamDesktop's default. Closes #210.
