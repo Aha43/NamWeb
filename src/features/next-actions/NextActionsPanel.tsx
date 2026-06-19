@@ -56,7 +56,7 @@ export function NextActionsPanel({
   }
 
   return (
-    <section className="mx-auto max-w-4xl">
+    <section>
       {onAdd && (
         <form onSubmit={submitAdd} className="mb-4 flex gap-2">
           <input

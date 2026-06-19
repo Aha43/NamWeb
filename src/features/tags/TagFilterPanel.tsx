@@ -74,7 +74,7 @@ export function TagFilterPanel({
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-4">
+    <section className="space-y-4">
       {(onAddTag || onRenameTag || onDeleteTag) && (
         <div className="space-y-2">
           <button

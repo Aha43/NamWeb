@@ -28,7 +28,7 @@ export function ProjectsPanel({ projects, onAdd, onOpen, onRename }: ProjectsPan
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-4">
+    <section className="space-y-4">
       <form onSubmit={submit} className="flex gap-2">
         <input
           aria-label="Add project"

@@ -31,14 +31,14 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename }: Du
   const total = SECTIONS.reduce((n, s) => n + groups[s.key].length, 0);
   if (total === 0) {
     return (
-      <section className="mx-auto max-w-4xl">
+      <section>
         <EmptyState>Nothing due.</EmptyState>
       </section>
     );
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-4">
+    <section className="space-y-4">
       {SECTIONS.map((section) => {
         const rows = groups[section.key];
         if (rows.length === 0) return null;

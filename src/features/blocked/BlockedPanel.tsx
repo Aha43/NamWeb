@@ -22,14 +22,14 @@ export interface BlockedPanelProps {
 export function BlockedPanel({ groups, onOpenBlocker, onSetStatus, onEdit, onDelete, onRename }: BlockedPanelProps) {
   if (groups.length === 0) {
     return (
-      <section className="mx-auto max-w-4xl">
+      <section>
         <EmptyState>Nothing blocked.</EmptyState>
       </section>
     );
   }
 
   return (
-    <section className="mx-auto max-w-4xl space-y-4">
+    <section className="space-y-4">
       {groups.map((group) => (
         <div key={group.blocker.id} className="space-y-1">
           <button
