@@ -3,10 +3,12 @@ import { projects } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
+import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 export function ProjectsPage() {
   const { document, dispatch } = useWorkspaceContext();
+  const { openEditor } = useActionEditor();
   const navigate = useNavigate();
   return (
     <ProjectsPanel
@@ -22,6 +24,7 @@ export function ProjectsPage() {
         navigate(`/projects/${seed.id}`);
       }}
       onOpen={(id) => navigate(`/projects/${id}`)}
+      onEdit={openEditor}
       onRename={(id, title) => {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ChevronRight, Pencil } from 'lucide-react';
+import { ChevronRight, Pencil, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
@@ -12,12 +12,14 @@ export interface ProjectsPanelProps {
   onOpen: (id: string) => void;
   /** Inline-rename a project (deliberate, via the rename button — no dialog). */
   onRename?: (id: string, title: string) => void;
+  /** Open the full editor (description, tags, due…) for a top-level project. */
+  onEdit?: (id: string) => void;
   /** Seed the hands-on "Learn NAM" onboarding project (also a safe demo — delete to tidy up). */
   onAddLearnNam?: () => void;
 }
 
 /** Top-level projects: quick-add plus the list, each opening into the workbench. Presentational. */
-export function ProjectsPanel({ projects, onAdd, onOpen, onRename, onAddLearnNam }: ProjectsPanelProps) {
+export function ProjectsPanel({ projects, onAdd, onOpen, onRename, onEdit, onAddLearnNam }: ProjectsPanelProps) {
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
 
@@ -108,6 +110,18 @@ export function ProjectsPanel({ projects, onAdd, onOpen, onRename, onAddLearnNam
                       className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
                       <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  </Tooltip>
+                )}
+                {onEdit && (
+                  <Tooltip label={`Edit ${project.title}`}>
+                    <button
+                      type="button"
+                      aria-label={`Edit ${project.title}`}
+                      onClick={() => onEdit(project.id)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <SlidersHorizontal className="h-3.5 w-3.5" />
                     </button>
                   </Tooltip>
                 )}
