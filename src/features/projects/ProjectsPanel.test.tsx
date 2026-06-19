@@ -53,6 +53,13 @@ describe('ProjectsPanel', () => {
     expect(screen.queryByRole('button', { name: 'Rename Kitchen reno' })).not.toBeInTheDocument();
   });
 
+  it('opens the editor for a top-level project via the edit button', () => {
+    const onEdit = vi.fn();
+    setup([project('p', 'Kitchen reno')], { onEdit });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Kitchen reno' }));
+    expect(onEdit).toHaveBeenCalledWith('p');
+  });
+
   it('offers Learn NAM in the empty state and calls onAddLearnNam', () => {
     const onAddLearnNam = vi.fn();
     setup([], { onAddLearnNam });
