@@ -44,9 +44,9 @@ export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit, onRename
       {items.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Inbox zero. Nothing to process.</p>
       ) : (
-        <ul className="divide-y divide-border rounded-lg border border-border bg-card">
+        <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 px-3 py-2">
+            <li key={item.id} className="flex items-center gap-2 px-3 py-2 transition-colors even:bg-muted/40 hover:bg-accent/40">
               {renamingId === item.id && onRename ? (
                 <div className="flex-1">
                   <InlineRename

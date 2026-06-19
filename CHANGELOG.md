@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **List rows are easier to read across.** Subtle zebra striping + a full-row hover highlight on
+  every list (Next, Backlog, Tags, Due, Blocked, Done, column cards, Projects, sub-projects, Inbox)
+  so your eye tracks a row from its title to its right-side controls — the read-across cost of the
+  full-width layout. Closes #218.
+
 - **Workspace content now fills the screen width.** The content area was capped at ~900px and
   centered, wasting most of a wide display; it now uses the full width. Width is a single knob in
   `DesktopShell` (panels no longer cap themselves), so it's a one-line change to re-cap if a very
