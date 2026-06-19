@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Actions added inside a project now default to BACKLOG, not NEXT.** New project actions no longer
+  flood the Next / Focus views before you've triaged them; the Next-view quick-add still adds NEXT.
+  Matches NamDesktop's default. Closes #210.
+
 ### Added
 
 - **Tooltips across the app — and full names where they're clipped.** Every icon/symbol button now
