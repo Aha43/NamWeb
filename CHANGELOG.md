@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   auto-advancing — clear the catch-all in one flow. Builds on the existing per-item process dialog.
   Closes #258.
 
+- **Summary: include only the current project (toggle).** The project Summary dialog gains an
+  **"Include sub-projects"** checkbox (on by default = whole tree); unchecked = just this project's own
+  direct actions. Closes #257.
+
 - **Quick "Move into" another project.** Every project row — in the Projects list **and** the
   workbench's sub-project list — gains a **Move into…** button → a dropdown of targets (a **Top
   level** option when nested, its current **siblings first**, then other projects by path) → pick one

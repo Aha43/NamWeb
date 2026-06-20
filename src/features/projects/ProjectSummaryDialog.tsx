@@ -10,8 +10,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import type { NodeStatus } from '@/domain/types';
+import type { SummaryOptions } from '@/domain/projectSummary';
 
-/** Shows a project's Markdown summary (status-filtered) in a copyable, selectable text area. */
+/** Shows a project's Markdown summary (status- + scope-filtered) in a copyable, selectable area. */
 export function ProjectSummaryDialog({
   open,
   onOpenChange,
@@ -21,12 +22,13 @@ export function ProjectSummaryDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  /** Render the summary Markdown for the chosen action statuses. */
-  buildSummary: (statuses: NodeStatus[]) => string;
+  /** Render the summary Markdown for the chosen options. */
+  buildSummary: (options: SummaryOptions) => string;
 }) {
   const [next, setNext] = useState(true);
   const [backlog, setBacklog] = useState(true);
   const [done, setDone] = useState(false);
+  const [includeSubProjects, setIncludeSubProjects] = useState(true);
   const [copied, setCopied] = useState(false);
 
   const markdown = useMemo(() => {
@@ -34,8 +36,8 @@ export function ProjectSummaryDialog({
     if (next) statuses.push('NEXT');
     if (backlog) statuses.push('BACKLOG');
     if (done) statuses.push('DONE');
-    return buildSummary(statuses);
-  }, [next, backlog, done, buildSummary]);
+    return buildSummary({ statuses, includeSubProjects });
+  }, [next, backlog, done, includeSubProjects, buildSummary]);
 
   async function copy() {
     try {
@@ -68,6 +70,14 @@ export function ProjectSummaryDialog({
           <label className="flex items-center gap-1.5">
             <input type="checkbox" checked={done} onChange={(e) => setDone(e.target.checked)} />
             Done
+          </label>
+          <label className="flex items-center gap-1.5 sm:ml-auto">
+            <input
+              type="checkbox"
+              checked={includeSubProjects}
+              onChange={(e) => setIncludeSubProjects(e.target.checked)}
+            />
+            Include sub-projects
           </label>
         </div>
 
