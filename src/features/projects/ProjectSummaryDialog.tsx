@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import {
   Dialog,
@@ -9,20 +9,33 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import type { NodeStatus } from '@/domain/types';
 
-/** Shows a project's Markdown summary in a copyable, selectable text area. Presentational. */
+/** Shows a project's Markdown summary (status-filtered) in a copyable, selectable text area. */
 export function ProjectSummaryDialog({
   open,
   onOpenChange,
   title,
-  markdown,
+  buildSummary,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
-  markdown: string;
+  /** Render the summary Markdown for the chosen action statuses. */
+  buildSummary: (statuses: NodeStatus[]) => string;
 }) {
+  const [next, setNext] = useState(true);
+  const [backlog, setBacklog] = useState(true);
+  const [done, setDone] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const markdown = useMemo(() => {
+    const statuses: NodeStatus[] = [];
+    if (next) statuses.push('NEXT');
+    if (backlog) statuses.push('BACKLOG');
+    if (done) statuses.push('DONE');
+    return buildSummary(statuses);
+  }, [next, backlog, done, buildSummary]);
 
   async function copy() {
     try {
@@ -41,6 +54,23 @@ export function ProjectSummaryDialog({
           <DialogTitle>Summary — {title}</DialogTitle>
           <DialogDescription>Markdown summary of this project's actions — copy and paste anywhere.</DialogDescription>
         </DialogHeader>
+
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <span className="text-muted-foreground">Include:</span>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={next} onChange={(e) => setNext(e.target.checked)} />
+            Next
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={backlog} onChange={(e) => setBacklog(e.target.checked)} />
+            Backlog
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={done} onChange={(e) => setDone(e.target.checked)} />
+            Done
+          </label>
+        </div>
+
         <textarea
           readOnly
           aria-label="Project summary (Markdown)"
@@ -48,6 +78,7 @@ export function ProjectSummaryDialog({
           onFocus={(e) => e.currentTarget.select()}
           className="h-72 w-full resize-none rounded-md border border-input bg-muted/30 p-3 font-mono text-xs text-foreground outline-none focus:border-ring"
         />
+
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Close

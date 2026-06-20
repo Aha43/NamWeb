@@ -10,8 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Copy a project summary as Markdown.** A **Summary** button on the project workbench opens a
   dialog with the project rendered as Markdown — the project title as `#`, each action as a heading
-  with its description as a paragraph (when present), sub-projects nested a level deeper — plus a
-  one-click **Copy**. Closes #245.
+  with its tags (an italic `_Tags: …_` line) and its description as a paragraph (when present),
+  sub-projects nested a level deeper — plus a one-click **Copy**. Status checkboxes (Next + Backlog
+  on, Done off by default) filter what's included and regenerate live; sub-projects with no matching
+  actions are pruned. Closes #245, #247.
 
 ### Fixed
 
