@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { projectMoveTargets, projects, reorderKindWithinChildren } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
+import { importSeedFromJson } from '@/domain/importWorkspace';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
@@ -24,6 +25,14 @@ export function ProjectsPage() {
         const seed = buildLearnNam(newId, new Date());
         dispatch({ type: 'seedProject', parentId: document.projectsNodeId, nodes: [seed], now: nowIso() });
         navigate(`/projects/${seed.id}`);
+      }}
+      onImportWorkspace={(json) => {
+        if (!document) return { ok: false, error: 'Workspace not ready.' };
+        const result = importSeedFromJson(json, newId, new Date());
+        if (!result.ok) return result;
+        dispatch({ type: 'seedProject', parentId: document.projectsNodeId, nodes: [result.seed], now: nowIso() });
+        navigate(`/projects/${result.seed.id}`);
+        return { ok: true };
       }}
       onOpen={(id) => navigate(`/projects/${id}`)}
       onEdit={openEditor}

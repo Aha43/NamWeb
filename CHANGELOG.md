@@ -22,6 +22,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   carve several groups), **Set status** (Next/Backlog/Done), and **Add tag** (with existing-tag
   suggestions) — alongside bulk Delete. New atomic `groupIntoSubProject` intent. Closes #259.
 
+- **Import a workspace.** An **Import workspace…** button in the Projects view takes a NAM JSON
+  export (the account "Export my data" bundle, or a single workspace document) and grafts it under a
+  fresh `import-YYYY-MM-DD-HH-MM-SS` project — projects become sub-projects, free/Next actions +
+  Inbox items become direct actions, all fields preserved, ids re-generated and blocker links
+  remapped. A bundle with several workspaces nests each under its own sub-project. Invalid file →
+  clear error, nothing imported. Closes #260.
+
 - **Quick "Move into" another project.** Every project row — in the Projects list **and** the
   workbench's sub-project list — gains a **Move into…** button → a dropdown of targets (a **Top
   level** option when nested, its current **siblings first**, then other projects by path) → pick one
