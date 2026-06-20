@@ -8,10 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- **Quick "Move into" another project.** Each project row in the Projects list gains a **Move into…**
-  button → a dropdown of target projects (its top-level **siblings first**, then deeper sub-projects
-  by path) → pick one to make it a sub-project — no full editor, works on desktop and mobile.
-  (Replaces the abandoned drag-onto-nest attempt; plain drag-reorder from #222 is unchanged.) Closes #251.
+- **Quick "Move into" another project.** Every project row — in the Projects list **and** the
+  workbench's sub-project list — gains a **Move into…** button → a dropdown of targets (a **Top
+  level** option when nested, its current **siblings first**, then other projects by path) → pick one
+  to re-parent it. No full editor, works on desktop and mobile. (Replaces the abandoned
+  drag-onto-nest attempt; plain drag-reorder from #222 is unchanged.) Closes #251.
 
 - **Delete a project's done actions in one go.** A trash button on the project workbench's Actions
   header (shown when the project has done actions) opens a modal — "Delete N done actions in …?" —

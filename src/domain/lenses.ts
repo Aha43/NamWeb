@@ -122,6 +122,39 @@ export function subProjects(doc: WorkspaceDocument, projectId: string): NamNode[
   return childrenByKind(doc, projectId, true);
 }
 
+export interface ProjectMoveTarget {
+  id: string;
+  label: string;
+}
+
+/**
+ * Projects that `id` can be moved into (made a sub-project of): a **"Top level"** entry first when
+ * `id` is currently nested, then its **current project siblings** (same parent), then every other
+ * project labelled by path. Excludes `id` itself, its own subtree, and its current parent.
+ */
+export function projectMoveTargets(doc: WorkspaceDocument, id: string): ProjectMoveTarget[] {
+  if (!doc.nodes[id]) return [];
+  const excluded = subtreeIds(doc, id);
+  const parentId = Object.values(doc.nodes).find((n) => n.childIds.includes(id))?.id;
+  const parent = parentId ? doc.nodes[parentId] : undefined;
+  const siblingIds = parent
+    ? parent.childIds.filter((cid) => Boolean(doc.nodes[cid]?.project) && !excluded.has(cid))
+    : [];
+  const sibSet = new Set(siblingIds);
+  const toTarget = (n: NamNode): ProjectMoveTarget => ({
+    id: n.id,
+    label: [...projectPath(doc, n.id), n.title].join(' › '),
+  });
+
+  const topLevel: ProjectMoveTarget[] =
+    parentId && parentId !== doc.projectsNodeId ? [{ id: doc.projectsNodeId, label: 'Top level' }] : [];
+  const siblings = siblingIds.map((cid) => doc.nodes[cid]!);
+  const others = Object.values(doc.nodes).filter(
+    (n) => n.project && !excluded.has(n.id) && !sibSet.has(n.id) && n.id !== parentId,
+  );
+  return [...topLevel, ...siblings.map(toTarget), ...others.map(toTarget)];
+}
+
 /**
  * Splice a new order for one *kind* of child (e.g. just the actions, or just the sub-projects)
  * back into the parent's full `childIds`, leaving the other kind in their existing slots. The
