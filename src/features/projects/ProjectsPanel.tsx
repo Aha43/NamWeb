@@ -1,5 +1,5 @@
-import { Fragment, useState, type FormEvent } from 'react';
-import { ChevronRight, FolderInput, Pencil, SlidersHorizontal } from 'lucide-react';
+import { Fragment, useRef, useState, type FormEvent } from 'react';
+import { ChevronRight, FolderInput, Pencil, SlidersHorizontal, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
@@ -39,6 +39,8 @@ export interface ProjectsPanelProps {
   onMoveInto?: (id: string, targetId: string) => void;
   /** Seed the hands-on "Learn NAM" onboarding project (also a safe demo — delete to tidy up). */
   onAddLearnNam?: () => void;
+  /** Import a workspace JSON export under a new timestamped project. Returns an error to show. */
+  onImportWorkspace?: (json: string) => { ok: boolean; error?: string };
 }
 
 /** Top-level projects: quick-add plus the list, each opening into the workbench. Presentational. */
@@ -53,9 +55,22 @@ export function ProjectsPanel({
   moveTargets,
   onMoveInto,
   onAddLearnNam,
+  onImportWorkspace,
 }: ProjectsPanelProps) {
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [importError, setImportError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  async function onImportFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // allow re-importing the same file
+    if (!file || !onImportWorkspace) return;
+    setImportError(null);
+    const text = await file.text();
+    const result = onImportWorkspace(text);
+    if (!result.ok) setImportError(result.error ?? 'Import failed.');
+  }
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -193,12 +208,35 @@ export function ProjectsPanel({
         <Button type="submit">Add</Button>
       </form>
 
-      {onAddLearnNam && projects.length > 0 && (
-        <div className="flex justify-end">
-          <Button type="button" variant="ghost" size="sm" onClick={onAddLearnNam}>
-            Add Learn NAM 🥋
-          </Button>
+      {(onImportWorkspace || (onAddLearnNam && projects.length > 0)) && (
+        <div className="flex items-center justify-end gap-2">
+          {onImportWorkspace && (
+            <>
+              <input
+                ref={fileInput}
+                type="file"
+                accept=".json,application/json"
+                className="hidden"
+                aria-label="Workspace JSON file"
+                onChange={onImportFile}
+              />
+              <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={() => fileInput.current?.click()}>
+                <Upload className="h-4 w-4" />
+                Import workspace…
+              </Button>
+            </>
+          )}
+          {onAddLearnNam && projects.length > 0 && (
+            <Button type="button" variant="ghost" size="sm" onClick={onAddLearnNam}>
+              Add Learn NAM 🥋
+            </Button>
+          )}
         </div>
+      )}
+      {importError && (
+        <p className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+          {importError}
+        </p>
       )}
 
       {projects.length === 0 ? (
