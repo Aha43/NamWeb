@@ -1,0 +1,23 @@
+# Keep dependencies fresh so they don't drift behind (see #226). Dependabot also opens
+# security-update PRs out-of-band when an advisory hits a dependency we use (enabled in repo
+# settings). Minor/patch are grouped to keep PR noise down; majors arrive as individual PRs so
+# each gets a proper look. Every PR runs the full `check` + Cloudflare build before it can merge.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      dev-minor-patch:
+        dependency-type: "development"
+        update-types: ["minor", "patch"]
+      prod-minor-patch:
+        dependency-type: "production"
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
