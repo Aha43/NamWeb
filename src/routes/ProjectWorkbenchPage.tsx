@@ -1,9 +1,12 @@
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { allTags, buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
+import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
 import type { ClonedTemplateNode } from '@/domain/mutations';
 import type { TemplateNode } from '@/domain/types';
+import type { ActionEdits } from '@/features/actions/ActionDialog';
 import { toActionRow } from '@/features/actions/rows';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
 import type { WorkbenchColumn } from '@/features/projects/ColumnView';
@@ -12,6 +15,7 @@ import { projectSummaryMarkdown } from '@/domain/projectSummary';
 import { useViewMode } from '@/features/projects/useViewMode';
 import { useCollapsedColumns } from '@/features/projects/useCollapsedColumns';
 import { useCollapsedAddPanel } from '@/features/projects/useCollapsedAddPanel';
+import { useCollapsedDetails } from '@/features/projects/useCollapsedDetails';
 import { useCollapsedSections } from '@/features/projects/useCollapsedSections';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useActionEditor } from '@/features/actions/action-editor-context';
@@ -32,8 +36,21 @@ export function ProjectWorkbenchPage() {
   const [mode, setMode] = useViewMode(id);
   const [collapsedColumns, toggleColumn] = useCollapsedColumns(id);
   const [addPanelCollapsed, toggleAddPanel] = useCollapsedAddPanel(id);
+  const [detailsCollapsed, toggleDetails, setDetailsCollapsed] = useCollapsedDetails(id);
   const [collapsedSections, toggleSection] = useCollapsedSections(id);
+  const [searchParams, setSearchParams] = useSearchParams();
   const isDesktop = useIsDesktop();
+
+  // Arriving via an "edit details" action (Projects list / a sub-project row) carries ?edit=1 —
+  // open the Details panel, then strip the param so a refresh/back doesn't force it open again.
+  useEffect(() => {
+    if (searchParams.get('edit') === '1') {
+      setDetailsCollapsed(false);
+      const next = new URLSearchParams(searchParams);
+      next.delete('edit');
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams, setDetailsCollapsed]);
 
   if (!document) return null;
   const project = document.nodes[id];
@@ -42,6 +59,24 @@ export function ProjectWorkbenchPage() {
   const actionNodes = projectActions(document, id);
   const subProjectNodes = subProjects(document, id);
   const actions = actionNodes.map((n) => toActionRow(document, n));
+
+  // Save the current project's edited details (inline Details panel) — dispatch only the intents
+  // for fields that actually changed, mirroring the action editor's save.
+  const saveDetails = (edits: ActionEdits) => {
+    const now = nowIso();
+    if (edits.title !== project.title || edits.description !== project.description) {
+      dispatch({ type: 'updateNode', id, title: edits.title, description: edits.description, now });
+    }
+    const tags = normalizeTags(edits.tags);
+    if (tags.length !== project.tags.length || tags.some((t, i) => t !== project.tags[i])) {
+      dispatch({ type: 'updateTags', id, tags, now });
+    }
+    if (edits.dueAt !== project.dueAt) dispatch({ type: 'setDue', id, dueAt: edits.dueAt, now });
+    if (edits.status !== project.status) dispatch({ type: 'setStatus', id, status: edits.status, now });
+    if (JSON.stringify(edits.resources) !== JSON.stringify(project.resources)) {
+      dispatch({ type: 'updateResources', id, resources: edits.resources, now });
+    }
+  };
 
   // Column mode is desktop-only and needs sub-projects; otherwise fall back to a list.
   const hasSubs = subProjectNodes.length > 0;
@@ -148,6 +183,10 @@ export function ProjectWorkbenchPage() {
       }
       onSetStatus={(actionId, status) => dispatch({ type: 'setStatus', id: actionId, status, now: nowIso() })}
       onEdit={openEditor}
+      onEditProject={(pid) => navigate(`/projects/${pid}?edit=1`)}
+      detailsCollapsed={detailsCollapsed}
+      onToggleDetails={toggleDetails}
+      onSaveDetails={saveDetails}
       onFocus={() => navigate(`/focus?project=${id}`)}
       onDeleteAction={deleteNode}
       onGroupSelected={(actionIds, title) =>

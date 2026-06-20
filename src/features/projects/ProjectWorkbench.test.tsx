@@ -60,6 +60,50 @@ describe('ProjectWorkbench', () => {
     expect(onEdit).not.toHaveBeenCalled();
   });
 
+  it('edits a sub-project via onEditProject (not the action editor)', () => {
+    const onEditProject = vi.fn();
+    const { onEdit } = setup({ onEditProject });
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Plumbing' }));
+    expect(onEditProject).toHaveBeenCalledWith('s');
+    expect(onEdit).not.toHaveBeenCalled();
+  });
+
+  it('renders the Details panel only when onSaveDetails is wired', () => {
+    const { rerender } = render(
+      <ProjectWorkbench
+        project={pnode('p', 'Kitchen reno')}
+        breadcrumb={[]}
+        actions={[]}
+        subProjects={[]}
+        onOpenProject={vi.fn()}
+        onOpenProjects={vi.fn()}
+        onAddAction={vi.fn()}
+        onAddSubProject={vi.fn()}
+        onSetStatus={vi.fn()}
+        onEdit={vi.fn()}
+        onRename={vi.fn()}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Details' })).not.toBeInTheDocument();
+    rerender(
+      <ProjectWorkbench
+        project={pnode('p', 'Kitchen reno')}
+        breadcrumb={[]}
+        actions={[]}
+        subProjects={[]}
+        onOpenProject={vi.fn()}
+        onOpenProjects={vi.fn()}
+        onAddAction={vi.fn()}
+        onAddSubProject={vi.fn()}
+        onSetStatus={vi.fn()}
+        onEdit={vi.fn()}
+        onRename={vi.fn()}
+        onSaveDetails={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Details' })).toBeInTheDocument();
+  });
+
   it('navigates via breadcrumb and sub-project', () => {
     const { onOpenProject, onOpenProjects } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Projects' }));

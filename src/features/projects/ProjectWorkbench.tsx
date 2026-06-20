@@ -21,6 +21,8 @@ import { SortableList } from '@/components/dnd/SortableList';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
 import { ProjectSummaryDialog } from './ProjectSummaryDialog';
+import { ProjectDetailsPanel } from './ProjectDetailsPanel';
+import type { ActionEdits } from '../actions/ActionDialog';
 import type { ActionRowData } from '../actions/rows';
 import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
@@ -50,7 +52,15 @@ export interface ProjectWorkbenchProps {
   onAddSubProject: (title: string) => void;
   onAddActionToColumn?: (columnId: string, title: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
+  /** Open an action's editor (the dialog). Actions only. */
   onEdit: (id: string) => void;
+  /** Edit a sub-project — drills into its workbench and opens the Details panel there. */
+  onEditProject?: (id: string) => void;
+  /** Collapsed state of the current project's "Details" (edit) panel + toggle (persisted by the page). */
+  detailsCollapsed?: boolean;
+  onToggleDetails?: () => void;
+  /** Save edits to the current project's title/notes/tags/due/status/resources. */
+  onSaveDetails?: (edits: ActionEdits) => void;
   /** Enter Focus mode over this project's open direct actions. */
   onFocus?: () => void;
   /** Inline delete (with confirm) for a direct action row. */
@@ -123,6 +133,10 @@ export function ProjectWorkbench({
   onAddActionToColumn = () => {},
   onSetStatus,
   onEdit,
+  onEditProject,
+  detailsCollapsed = true,
+  onToggleDetails = () => {},
+  onSaveDetails,
   onFocus,
   onDeleteAction,
   onGroupSelected,
@@ -233,16 +247,18 @@ export function ProjectWorkbench({
               <Pencil className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
-          <Tooltip label={`Edit ${sub.title}`}>
-            <button
-              type="button"
-              aria-label={`Edit ${sub.title}`}
-              onClick={() => onEdit(sub.id)}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-            </button>
-          </Tooltip>
+          {onEditProject && (
+            <Tooltip label={`Edit ${sub.title}`}>
+              <button
+                type="button"
+                aria-label={`Edit ${sub.title}`}
+                onClick={() => onEditProject(sub.id)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+          )}
           {onMoveInto && subTargets.length > 0 && (
             <DropdownMenu>
               <Tooltip label="Move into another project">
@@ -366,6 +382,17 @@ export function ProjectWorkbench({
           </div>
         )}
       </div>
+
+      {onSaveDetails && (
+        <ProjectDetailsPanel
+          key={project.id}
+          project={project}
+          collapsed={detailsCollapsed}
+          onToggle={onToggleDetails}
+          onSave={onSaveDetails}
+          availableTags={allTags}
+        />
+      )}
 
       {subProjects.length > 0 && (
         <ViewSwitch mode={viewMode} onSet={onSetViewMode} columnAvailable={columnAvailable} />

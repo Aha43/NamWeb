@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Edit a project on its workbench, not in a modal.** A project's details — title, notes, tags,
+  due date, status, and resources — are now edited in a collapsible **Details** panel at the top of
+  the project's own workbench (its home surface), beside the existing "Add to project" panel, instead
+  of in the overloaded action dialog. The Projects-list **edit-details** button and a sub-project
+  row's **edit** button both drill into the relevant workbench with the panel open. The shared
+  `ResourcesEditor` is now its own module (reused by the action dialog and the panel), and the action
+  editor no longer opens for project nodes. Closes #269.
+
 ### Added
 
 - **Process Inbox — one-at-a-time deck.** A **Process inbox** button runs through every inbox
