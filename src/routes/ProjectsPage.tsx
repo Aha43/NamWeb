@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { projects, reorderKindWithinChildren } from '@/domain/lenses';
+import { projectMoveTargets, projects, reorderKindWithinChildren } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
@@ -37,6 +37,11 @@ export function ProjectsPage() {
           parentId: document.projectsNodeId,
           order: reorderKindWithinChildren(container.childIds, orderedIds),
         });
+      }}
+      moveTargets={(id) => (document ? projectMoveTargets(document, id) : [])}
+      onMoveInto={(id, targetId) => {
+        if (!document) return;
+        dispatch({ type: 'moveNode', id, newParentId: targetId, now: nowIso() });
       }}
       onRename={(id, title) => {
         const node = document?.nodes[id];

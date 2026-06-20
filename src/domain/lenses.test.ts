@@ -18,6 +18,7 @@ import {
   inboxItems,
   nextActions,
   projectActions,
+  projectMoveTargets,
   projectPath,
   projects,
   reorderKindWithinChildren,
@@ -95,6 +96,47 @@ describe('projects', () => {
       },
     );
     expect(ids(projects(doc))).toEqual(['p1', 'p2']);
+  });
+});
+
+describe('projectMoveTargets', () => {
+  // projects/ A[a1] , B / B1 ; move targets exclude self + subtree, siblings first.
+  function tree(): WorkspaceDocument {
+    return workspace(
+      [
+        node('A', { project: true, childIds: ['a1'] }),
+        node('a1', { project: true }), // sub-project of A
+        node('B', { project: true }),
+      ],
+      (d) => {
+        addChild(d, 'projects', 'A');
+        addChild(d, 'projects', 'B');
+      },
+    );
+  }
+
+  it('lists top-level siblings first for a top-level project (no Top level entry)', () => {
+    const targets = projectMoveTargets(tree(), 'A');
+    // A's siblings (top-level) first = B; then deeper = a1's... a1 is in A's subtree → excluded.
+    expect(targets.map((t) => t.id)).toEqual(['B']);
+    expect(targets.map((t) => t.label)).toEqual(['B']);
+  });
+
+  it("offers Top level + same-parent siblings for a nested project, excluding its parent", () => {
+    // Give A a second sub-project so a1 has a sibling.
+    const doc = tree();
+    doc.nodes['A'].childIds.push('a2');
+    doc.nodes['a2'] = node('a2', { project: true });
+    const targets = projectMoveTargets(doc, 'a1');
+    // Top level first, then sibling a2, then other projects (B) — parent A excluded.
+    expect(targets[0]).toEqual({ id: 'projects', label: 'Top level' });
+    const idsList = targets.map((t) => t.id);
+    expect(idsList).toContain('a2');
+    expect(idsList).toContain('B');
+    expect(idsList).not.toContain('A'); // current parent excluded
+    expect(idsList).not.toContain('a1'); // self excluded
+    // a2 (sibling) comes before B (other).
+    expect(idsList.indexOf('a2')).toBeLessThan(idsList.indexOf('B'));
   });
 });
 

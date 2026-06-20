@@ -1,9 +1,15 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { CheckSquare, ChevronDown, ChevronRight, FileText, Pencil, SlidersHorizontal, Target, Trash2 } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, SlidersHorizontal, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
@@ -50,6 +56,10 @@ export interface ProjectWorkbenchProps {
   /** Inline delete (with confirm) for a direct action row. */
   onDeleteAction?: (id: string) => void;
   onRename: (id: string, title: string) => void;
+  /** Candidate projects to move a sub-project into (siblings first); excludes self + subtree. */
+  moveTargets?: (id: string) => { id: string; label: string }[];
+  /** Make a sub-project a child of `targetId` (or top-level). */
+  onMoveInto?: (id: string, targetId: string) => void;
   /** Hand-order a direct action within the project (reorders the project's childIds). */
   onMoveAction?: (id: string, direction: MoveDirection) => void;
   /** Hand-order a direct sub-project within the project. */
@@ -110,6 +120,8 @@ export function ProjectWorkbench({
   onFocus,
   onDeleteAction,
   onRename,
+  moveTargets,
+  onMoveInto,
   onMoveAction,
   onMoveSubProject,
   onReorderActions,
@@ -160,7 +172,9 @@ export function ProjectWorkbench({
   };
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
-  const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => (
+  const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => {
+    const subTargets = onMoveInto && moveTargets ? moveTargets(sub.id) : [];
+    return (
     <li
       ref={drag?.setNodeRef}
       style={drag?.style}
@@ -208,6 +222,28 @@ export function ProjectWorkbench({
               <SlidersHorizontal className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
+          {onMoveInto && subTargets.length > 0 && (
+            <DropdownMenu>
+              <Tooltip label="Move into another project">
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Move ${sub.title} into another project`}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <FolderInput className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
+                {subTargets.map((t) => (
+                  <DropdownMenuItem key={t.id} onSelect={() => onMoveInto(sub.id, t.id)}>
+                    {t.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {drag?.handle}
           {onMoveSubProject && (
             <ReorderControls
@@ -219,7 +255,8 @@ export function ProjectWorkbench({
         </>
       )}
     </li>
-  );
+    );
+  };
   return (
     <section className="w-full">
       {/* Pinned header: breadcrumb + add-panel + view switch stay put while the lists scroll. */}

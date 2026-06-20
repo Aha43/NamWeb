@@ -1,5 +1,5 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { buildPath, projectActions, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
+import { buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import type { NamNode } from '@/domain/types';
 import type { ClonedTemplateNode } from '@/domain/mutations';
@@ -154,6 +154,8 @@ export function ProjectWorkbenchPage() {
         const node = document.nodes[actionId];
         if (node) dispatch({ type: 'updateNode', id: actionId, title, description: node.description, now: nowIso() });
       }}
+      moveTargets={(subId) => projectMoveTargets(document, subId)}
+      onMoveInto={(subId, targetId) => dispatch({ type: 'moveNode', id: subId, newParentId: targetId, now: nowIso() })}
       onConvertToAction={
         project.childIds.length === 0
           ? () => dispatch({ type: 'convertProjectToAction', id, status: 'NEXT', now: nowIso() })
