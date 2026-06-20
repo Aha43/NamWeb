@@ -82,7 +82,8 @@ test.describe('reshape', () => {
   test('lift a free action to a project (Make project)', async ({ page }) => {
     await page.goto('/next');
     await page.getByRole('button', { name: 'Edit Plan trip' }).click();
-    await page.getByRole('dialog').getByRole('button', { name: 'Make project' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Move / make project' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Make project', exact: true }).click();
 
     // Navigate in-app (no full reload) so the optimistic change is observed deterministically.
     await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
@@ -92,6 +93,7 @@ test.describe('reshape', () => {
   test('reparent a free action into a project (Move to…)', async ({ page }) => {
     await page.goto('/next');
     await page.getByRole('button', { name: 'Edit Fix sink' }).click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Move / make project' }).click();
     await page.getByLabel('Move to').selectOption({ label: 'Home' });
 
     await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();

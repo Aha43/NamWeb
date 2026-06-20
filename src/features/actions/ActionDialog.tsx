@@ -1,6 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
+import { ChevronRight } from 'lucide-react';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -121,12 +123,13 @@ export function ActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isProject ? 'Edit project' : 'Edit action'}</DialogTitle>
-          <DialogDescription>Update the title, notes, tags, due date, and status.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
+      <DialogContent className="flex flex-col gap-0 overflow-hidden p-0">
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+          <DialogHeader className="border-b border-border px-6 pb-4 pt-6 text-left">
+            <DialogTitle>{isProject ? 'Edit project' : 'Edit action'}</DialogTitle>
+            <DialogDescription>Update the title, notes, tags, due date, and status.</DialogDescription>
+          </DialogHeader>
+          <DialogBody className="space-y-4 px-6 py-4">
           <div className="space-y-1.5">
             <Label htmlFor="action-title">Title</Label>
             <Input id="action-title" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
@@ -194,10 +197,11 @@ export function ActionDialog({
               ))}
             </div>
           </fieldset>
-          <ResourcesEditor resources={resources} onChange={setResources} />
+          <CollapsibleSection title="Resources" defaultOpen={node.resources.length > 0}>
+            <ResourcesEditor resources={resources} onChange={setResources} />
+          </CollapsibleSection>
           {onAddPrerequisite && onRemovePrerequisite && (
-            <div className="space-y-1.5 border-t border-border pt-3">
-              <span className="text-sm font-medium text-foreground">Blocked by</span>
+            <CollapsibleSection title="Blocked by" defaultOpen={(blockers?.length ?? 0) > 0}>
               {blockers && blockers.length > 0 ? (
                 <ul className="flex flex-col gap-1">
                   {blockers.map((blocker) => (
@@ -241,37 +245,40 @@ export function ActionDialog({
               {wouldUnblock && wouldUnblock.length > 0 && (
                 <p className="text-xs text-muted-foreground">Would unblock: {wouldUnblock.join(', ')}</p>
               )}
-            </div>
+            </CollapsibleSection>
           )}
           {(onMakeProject || (moveTargets && onMove)) && (
-            <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-              {onMakeProject && (
-                <Button type="button" variant="outline" size="sm" onClick={onMakeProject}>
-                  Make project
-                </Button>
-              )}
-              {moveTargets && onMove && (
-                <select
-                  aria-label="Move to"
-                  defaultValue=""
-                  onChange={(e) => {
-                    if (e.target.value) onMove(e.target.value);
-                  }}
-                  className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
-                >
-                  <option value="" disabled>
-                    Move to…
-                  </option>
-                  {moveTargets.map((target) => (
-                    <option key={target.id} value={target.id}>
-                      {target.label}
+            <CollapsibleSection title="Move / make project">
+              <div className="flex flex-wrap items-center gap-2">
+                {onMakeProject && (
+                  <Button type="button" variant="outline" size="sm" onClick={onMakeProject}>
+                    Make project
+                  </Button>
+                )}
+                {moveTargets && onMove && (
+                  <select
+                    aria-label="Move to"
+                    defaultValue=""
+                    onChange={(e) => {
+                      if (e.target.value) onMove(e.target.value);
+                    }}
+                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+                  >
+                    <option value="" disabled>
+                      Move to…
                     </option>
-                  ))}
-                </select>
-              )}
-            </div>
+                    {moveTargets.map((target) => (
+                      <option key={target.id} value={target.id}>
+                        {target.label}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </CollapsibleSection>
           )}
-          <DialogFooter>
+          </DialogBody>
+          <DialogFooter className="border-t border-border px-6 py-4">
             {confirmingDelete ? (
               <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
                 <span className="text-sm text-destructive sm:mr-auto">
@@ -309,6 +316,35 @@ export function ActionDialog({
   );
 }
 
+/** A disclosure for an occasional section (Resources, Blocked by, Move / make project) so the
+ *  open dialog stays short — title/notes/tags/due/status — and Save/Cancel never get pushed off
+ *  screen. Opens by default when the section already has content worth seeing. */
+function CollapsibleSection({
+  title,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="border-t border-border pt-3">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center gap-1 text-sm font-medium text-foreground"
+      >
+        <ChevronRight className={cn('h-4 w-4 text-muted-foreground transition-transform', open && 'rotate-90')} />
+        {title}
+      </button>
+      {open && <div className="space-y-1.5 pt-2">{children}</div>}
+    </div>
+  );
+}
+
 /** Add/remove attached resources (links/files/notes). Local edits are reported via onChange and
  *  committed with the dialog's Save. FILE is link/metadata only (no upload). */
 function ResourcesEditor({
@@ -329,8 +365,7 @@ function ResourcesEditor({
   }
 
   return (
-    <div className="space-y-1.5 border-t border-border pt-3">
-      <span className="text-sm font-medium text-foreground">Resources</span>
+    <div className="space-y-1.5">
       {resources.length > 0 ? (
         <ul className="flex flex-col gap-1">
           {resources.map((r, i) => (

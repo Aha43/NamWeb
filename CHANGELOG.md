@@ -58,6 +58,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Edit dialog: Save/Cancel no longer hide below a long form.** The action/project editor used to
+  scroll header, body, *and* footer together, so once you filled in a description or added a few
+  resources/blockers the **Save/Cancel buttons scrolled off-screen**. The dialog now **pins its
+  header and footer** and scrolls only the body (new `DialogBody` region), and the occasional
+  sections — **Resources**, **Blocked by**, **Move / make project** — are tucked behind disclosures
+  (collapsed by default, auto-opened when they already have content), so the open dialog stays short
+  (title · notes · tags · due · status) and the buttons are always reachable. Closes #268.
+
 - **Heat-map accuracy.** An empty project no longer shows green ("all done") — empty cards are now
   neutral and read "no actions". And a project's own loose actions get their own **"Unsorted"** heat
   card (omitted when it has none), so a project with both sub-projects and direct actions no longer
