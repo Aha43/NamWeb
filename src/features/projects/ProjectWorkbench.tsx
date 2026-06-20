@@ -1,10 +1,11 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { CheckSquare, ChevronDown, ChevronRight, FileText, Pencil, SlidersHorizontal, Target } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, FileText, Pencil, SlidersHorizontal, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ConfirmButton } from '@/components/ui/confirm-button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -150,6 +151,12 @@ export function ProjectWorkbench({
   const bulkDelete = () => {
     if (onDeleteAction) for (const id of selected) onDeleteAction(id);
     setSelected(new Set());
+  };
+  // Delete the project's own done actions (direct only, no recursion) via a modal confirm.
+  const doneActions = actions.filter((a) => a.status === 'DONE');
+  const [deleteDoneOpen, setDeleteDoneOpen] = useState(false);
+  const deleteDone = () => {
+    if (onDeleteAction) for (const a of doneActions) onDeleteAction(a.id);
   };
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
@@ -363,6 +370,18 @@ export function ProjectWorkbench({
                     </button>
                   </Tooltip>
                 )}
+                {onDeleteAction && doneActions.length > 0 && !selectMode && (
+                  <Tooltip label={`Delete ${doneActions.length} done action${doneActions.length === 1 ? '' : 's'}`}>
+                    <button
+                      type="button"
+                      aria-label="Delete done actions"
+                      onClick={() => setDeleteDoneOpen(true)}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                )}
                 {onFocus && (
                   <Tooltip label="Focus this project's actions">
                     <button
@@ -499,6 +518,15 @@ export function ProjectWorkbench({
         onOpenChange={setSummaryOpen}
         title={project.title}
         buildSummary={buildSummary}
+      />
+
+      <ConfirmDialog
+        open={deleteDoneOpen}
+        onOpenChange={setDeleteDoneOpen}
+        title="Delete done actions"
+        message={`Delete ${doneActions.length} done action${doneActions.length === 1 ? '' : 's'} in "${project.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+        onConfirm={deleteDone}
       />
     </section>
   );

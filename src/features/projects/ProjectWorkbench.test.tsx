@@ -178,4 +178,23 @@ describe('ProjectWorkbench', () => {
     setup({ actions: [actionRow('a', 'Get quotes')] }); // no onDeleteAction
     expect(screen.queryByRole('button', { name: 'Select actions' })).not.toBeInTheDocument();
   });
+
+  it('deletes the project\'s done actions via the modal confirm', () => {
+    const onDeleteAction = vi.fn();
+    setup({
+      actions: [actionRow('a', 'Get quotes'), { ...actionRow('d', 'Old task'), status: 'DONE' }],
+      onDeleteAction,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete done actions' }));
+    // Modal confirm with a count-aware message.
+    expect(screen.getByText(/Delete 1 done action in/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(onDeleteAction).toHaveBeenCalledTimes(1);
+    expect(onDeleteAction).toHaveBeenCalledWith('d');
+  });
+
+  it('has no Delete-done button when there are no done actions', () => {
+    setup({ actions: [actionRow('a', 'Get quotes')], onDeleteAction: vi.fn() });
+    expect(screen.queryByRole('button', { name: 'Delete done actions' })).not.toBeInTheDocument();
+  });
 });
