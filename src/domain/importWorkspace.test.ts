@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { buildImportSeed, importProjectName, importSeedFromJson, parseWorkspaceJson } from './importWorkspace';
+import type { SeedNode } from './mutations';
+import { buildImportSeed, importProjectName, importSeedFromJson, parseImport } from './importWorkspace';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -11,7 +12,7 @@ function node(id: string, partial: Partial<NamNode> = {}): NamNode {
 }
 
 // projects/[P1 → A1], free action F1 (blocked by A1), inbox item I1.
-function source(): WorkspaceDocument {
+function doc(): WorkspaceDocument {
   const nodes: Record<string, NamNode> = {};
   for (const n of [
     node('root', { childIds: ['inbox', 'projects', 'actions'] }),
@@ -29,12 +30,25 @@ function source(): WorkspaceDocument {
   };
 }
 
-describe('parseWorkspaceJson', () => {
-  it('accepts a valid workspace and rejects junk', () => {
-    expect(parseWorkspaceJson(JSON.stringify(source()))).not.toBeNull();
-    expect(parseWorkspaceJson('not json')).toBeNull();
-    expect(parseWorkspaceJson(JSON.stringify({ hello: 'world' }))).toBeNull();
-    expect(parseWorkspaceJson(JSON.stringify({ nodes: {}, projectsNodeId: 'x' }))).toBeNull();
+/** The account "Export my data" bundle shape. */
+function bundle(workspaces: { name: string; document: WorkspaceDocument }[]) {
+  return JSON.stringify({ exportedAt: '2026-06-20T00:00:00Z', user: { id: 'u', email: null }, workspaces });
+}
+
+function allIds(seed: SeedNode): Set<string> {
+  const out = new Set<string>();
+  const walk = (s: SeedNode) => { out.add(s.id); s.children?.forEach(walk); };
+  walk(seed);
+  return out;
+}
+
+describe('parseImport', () => {
+  it('accepts the export bundle and a bare document; rejects junk', () => {
+    expect(parseImport(bundle([{ name: 'Main', document: doc() }]))).toHaveLength(1);
+    expect(parseImport(JSON.stringify(doc()))).toHaveLength(1); // bare document
+    expect(parseImport('not json')).toBeNull();
+    expect(parseImport(JSON.stringify({ hello: 'world' }))).toBeNull();
+    expect(parseImport(JSON.stringify({ workspaces: [{ name: 'x', document: { nope: true } }] }))).toBeNull();
   });
 });
 
@@ -45,39 +59,38 @@ describe('importProjectName', () => {
 });
 
 describe('buildImportSeed', () => {
-  it('grafts projects as sub-projects + free/inbox actions, fresh ids, remapped blockers', () => {
+  it('single workspace: grafts content directly, fresh ids, remapped blockers', () => {
     let n = 0;
-    const seed = buildImportSeed(source(), () => `n${n++}`, new Date('2026-06-20T00:00:00'));
-
+    const seed = buildImportSeed([{ name: 'Main', doc: doc() }], () => `n${n++}`, new Date('2026-06-20T00:00:00'));
     expect(seed.project).toBe(true);
     expect(seed.title).toMatch(/^import-/);
-    // Order: project first, then free action, then inbox item.
     expect(seed.children?.map((c) => c.title)).toEqual(['Roof', 'Free one', 'Captured thought']);
 
-    // Fresh ids (none of the source ids survive).
-    const allIds = new Set<string>();
-    const walk = (s: typeof seed) => { allIds.add(s.id); s.children?.forEach(walk); };
-    walk(seed);
-    for (const old of ['P1', 'A1', 'F1', 'I1']) expect(allIds.has(old)).toBe(false);
+    const ids = allIds(seed);
+    for (const old of ['P1', 'A1', 'F1', 'I1']) expect(ids.has(old)).toBe(false);
 
-    // Roof keeps its action + tags preserved.
     const roof = seed.children![0];
     expect(roof.children?.[0]).toMatchObject({ title: 'Buy tiles', status: 'NEXT', tags: ['home'] });
-
-    // F1's blockedBy was remapped to the NEW id of A1 (not the old 'A1').
     const free = seed.children![1];
-    const newA1Id = roof.children![0].id;
-    expect(free.blockedBy).toEqual([newA1Id]);
+    expect(free.blockedBy).toEqual([roof.children![0].id]); // remapped to the new A1 id
+  });
+
+  it('multiple workspaces: each becomes its own sub-project under the import root', () => {
+    let n = 0;
+    const seed = buildImportSeed(
+      [{ name: 'Home', doc: doc() }, { name: 'Work', doc: doc() }],
+      () => `n${n++}`,
+      new Date(),
+    );
+    expect(seed.children?.map((c) => c.title)).toEqual(['Home', 'Work']);
+    expect(seed.children?.every((c) => c.project)).toBe(true);
   });
 });
 
 describe('importSeedFromJson', () => {
-  it('returns an error for invalid input and a seed for valid', () => {
-    expect(importSeedFromJson('garbage', () => 'x', new Date())).toEqual({
-      ok: false,
-      error: expect.stringContaining('valid NAM workspace'),
-    });
-    const ok = importSeedFromJson(JSON.stringify(source()), (() => { let i = 0; return () => `m${i++}`; })(), new Date());
-    expect(ok.ok).toBe(true);
+  it('errors on junk, succeeds on a real bundle', () => {
+    expect(importSeedFromJson('garbage', () => 'x', new Date())).toMatchObject({ ok: false });
+    let n = 0;
+    expect(importSeedFromJson(bundle([{ name: 'Main', document: doc() }]), () => `m${n++}`, new Date()).ok).toBe(true);
   });
 });
