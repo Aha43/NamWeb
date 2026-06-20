@@ -13,7 +13,7 @@ import { SortableList } from '@/components/dnd/SortableList';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
 import type { ActionRowData } from '../actions/rows';
-import { ratioBorderClass, type MissionStat } from './missionStats';
+import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
 import type { NamNode, NodeStatus } from '../../domain/types';
 
@@ -371,12 +371,12 @@ export function ProjectWorkbench({
                       onClick={() => onOpenProject(stat.id)}
                       className={cn(
                         'flex flex-col gap-1 rounded-lg border-2 bg-card p-3 text-left hover:bg-accent',
-                        ratioBorderClass(stat.ratio),
+                        heatBorderClass(stat),
                       )}
                     >
                       <span className="truncate text-sm font-medium text-foreground">{stat.title}</span>
                       <span className="text-xs text-muted-foreground">
-                        {stat.done}/{stat.total} done
+                        {stat.total === 0 ? 'no actions' : `${stat.done}/${stat.total} done`}
                         {stat.subProjectCount > 0 && ` · ${stat.subProjectCount} sub`}
                       </span>
                     </button>

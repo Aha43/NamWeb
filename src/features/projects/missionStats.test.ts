@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from '@/domain/types';
-import { missionStats } from './missionStats';
+import { missionStats, heatBorderClass } from './missionStats';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -37,5 +37,32 @@ describe('missionStats', () => {
       { id: 'A', title: 'A', subProjectCount: 0, done: 1, total: 2, ratio: 0.5 },
       { id: 'B', title: 'B', subProjectCount: 1, done: 1, total: 1, ratio: 1 },
     ]);
+  });
+
+  it('adds an "Unsorted" card for the parent\'s own direct actions (only when it has some)', () => {
+    const d = doc();
+    // Give P two direct actions of its own.
+    d.nodes['P'].childIds = ['p1', 'p2', 'A', 'B'];
+    d.nodes['p1'] = node('p1', { status: 'DONE' });
+    d.nodes['p2'] = node('p2', { status: 'NEXT' });
+    const stats = missionStats(d, 'P');
+    expect(stats[0]).toEqual({ id: 'P', title: 'Unsorted', subProjectCount: 0, done: 1, total: 2, ratio: 0.5 });
+    expect(stats.map((s) => s.id)).toEqual(['P', 'A', 'B']); // own box first, then sub-projects
+  });
+
+  it('omits the own-actions card when the project has no direct actions', () => {
+    expect(missionStats(doc(), 'P').some((s) => s.id === 'P')).toBe(false);
+  });
+});
+
+describe('heatBorderClass', () => {
+  it('is neutral for an empty card, not green', () => {
+    expect(heatBorderClass({ total: 0, ratio: 1 })).toBe('border-border');
+  });
+
+  it('colours by done-ratio when there are actions', () => {
+    expect(heatBorderClass({ total: 3, ratio: 0 })).toContain('red');
+    expect(heatBorderClass({ total: 3, ratio: 0.5 })).toContain('amber');
+    expect(heatBorderClass({ total: 3, ratio: 1 })).toContain('green');
   });
 });
