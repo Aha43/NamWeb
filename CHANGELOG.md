@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Delete a project's done actions in one go.** A trash button on the project workbench's Actions
+  header (shown when the project has done actions) opens a modal — "Delete N done actions in …?" —
+  and clears that project's **direct** done actions (no recursion). Closes #250.
+
 - **Select project actions for bulk delete.** A **Select** toggle on the project workbench's Actions
   header reveals per-row checkboxes and a selection bar (**N selected · Delete · Clear**); Delete
   removes the selected actions behind a count-aware confirm. Selection is session-only. First step
