@@ -98,4 +98,24 @@ describe('ProjectsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add Learn NAM 🥋' }));
     expect(onAddLearnNam).toHaveBeenCalled();
   });
+
+  it('archives a project, and shows Unarchive for archived rows', () => {
+    const onArchive = vi.fn();
+    setup([project('p', 'Kitchen reno')], { onArchive });
+    fireEvent.click(screen.getByRole('button', { name: 'Archive Kitchen reno' }));
+    expect(onArchive).toHaveBeenCalledWith('p');
+
+    const onUnarchive = vi.fn();
+    setup([project('a', 'Old thing', { status: 'ARCHIVED' })], { onUnarchive });
+    expect(screen.queryByRole('button', { name: 'Archive Old thing' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Unarchive Old thing' }));
+    expect(onUnarchive).toHaveBeenCalledWith('a');
+  });
+
+  it('toggles "show archived" when there are archived projects', () => {
+    const onToggleShowArchived = vi.fn();
+    setup([project('p', 'Kitchen reno')], { archivedCount: 2, onToggleShowArchived });
+    fireEvent.click(screen.getByRole('button', { name: 'Show archived (2)' }));
+    expect(onToggleShowArchived).toHaveBeenCalled();
+  });
 });

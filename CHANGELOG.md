@@ -29,6 +29,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   remapped. A bundle with several workspaces nests each under its own sub-project. Invalid file →
   clear error, nothing imported. Closes #260.
 
+- **Archive finished projects.** An **Archive** action on a project row tucks it out of the
+  Projects list (using the existing ARCHIVED status), with a **Show archived (N)** toggle to bring
+  them back and **Unarchive**. Keeps the list to what is live — same spirit as BACKLOG-default for
+  Next. Closes #261.
+
 - **Quick "Move into" another project.** Every project row — in the Projects list **and** the
   workbench's sub-project list — gains a **Move into…** button → a dropdown of targets (a **Top
   level** option when nested, its current **siblings first**, then other projects by path) → pick one
