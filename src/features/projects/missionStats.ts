@@ -1,4 +1,4 @@
-import type { WorkspaceDocument } from '@/domain/types';
+import type { NamNode, WorkspaceDocument } from '@/domain/types';
 import { subtreeIds } from '@/domain/lenses';
 
 /** Roll-up stats for one project — done/total descendant actions + sub-project count. */
@@ -40,12 +40,45 @@ export function ratioBorderClass(ratio: number): string {
   return 'border-green-500/60';
 }
 
-/** Per-direct-sub-project roll-ups under `projectId`, for the workbench heat-map. */
+/**
+ * Heat-map border colour for a roll-up. An empty card (no actions) is **neutral**, not green —
+ * "nothing to do here" isn't "all done". Otherwise it's the done-ratio colour.
+ */
+export function heatBorderClass(stat: { total: number; ratio: number }): string {
+  if (stat.total === 0) return 'border-border';
+  return ratioBorderClass(stat.ratio);
+}
+
+/**
+ * Heat-map cards under `projectId`: the project's own direct actions get an "Unsorted" card
+ * (omitted when it has none — mirrors the Column view's leading column), followed by one card per
+ * direct sub-project (rolled up over its whole subtree).
+ */
 export function missionStats(doc: WorkspaceDocument, projectId: string): MissionStat[] {
   const project = doc.nodes[projectId];
   if (!project) return [];
-  return project.childIds
+  const children = project.childIds
     .map((id) => doc.nodes[id])
-    .filter((n) => n?.project)
-    .map((sub) => ({ id: sub.id, title: sub.title, ...projectRollup(doc, sub.id) }));
+    .filter((n): n is NamNode => Boolean(n));
+
+  const stats: MissionStat[] = [];
+
+  // The project's own loose actions, as their own box (only when there are any).
+  const ownActions = children.filter((n) => !n.project);
+  if (ownActions.length > 0) {
+    const done = ownActions.filter((n) => n.status === 'DONE').length;
+    stats.push({
+      id: projectId,
+      title: 'Unsorted',
+      subProjectCount: 0,
+      done,
+      total: ownActions.length,
+      ratio: done / ownActions.length,
+    });
+  }
+
+  for (const sub of children.filter((n) => n.project)) {
+    stats.push({ id: sub.id, title: sub.title, ...projectRollup(doc, sub.id) });
+  }
+  return stats;
 }

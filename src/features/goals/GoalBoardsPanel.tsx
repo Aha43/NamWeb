@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { ratioBorderClass, type MissionStat } from '../projects/missionStats';
+import { heatBorderClass, type MissionStat } from '../projects/missionStats';
 import type { MissionControl } from '../../domain/types';
 
 export interface GoalBoardsPanelProps {
@@ -108,12 +108,12 @@ export function GoalBoardsPanel({
                   onClick={() => onOpenProject(stat.id)}
                   className={cn(
                     'flex flex-col gap-1 rounded-lg border-2 bg-card p-3 text-left hover:bg-accent',
-                    ratioBorderClass(stat.ratio),
+                    heatBorderClass(stat),
                   )}
                 >
                   <span className="truncate text-sm font-medium text-foreground">{stat.title}</span>
                   <span className="flex items-center justify-between text-xs text-muted-foreground">
-                    {stat.done}/{stat.total} done
+                    {stat.total === 0 ? 'no actions' : `${stat.done}/${stat.total} done`}
                     <ChevronRight className="h-3.5 w-3.5" />
                   </span>
                 </button>

@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Heat-map accuracy.** An empty project no longer shows green ("all done") — empty cards are now
+  neutral and read "no actions". And a project's own loose actions get their own **"Unsorted"** heat
+  card (omitted when it has none), so a project with both sub-projects and direct actions no longer
+  hides its own progress. Closes #224.
+
 - **Top-level projects can now open the full editor.** Projects in the Projects list gained an
   "edit details" (sliders) button — previously only sub-projects could open the editor, so a
   top-level project's description/tags/due were uneditable. Closes #220.
