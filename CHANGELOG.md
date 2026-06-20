@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Copy a project summary as Markdown.** A **Summary** button on the project workbench opens a
+  dialog with the project rendered as Markdown — the project title as `#`, each action as a heading
+  with its description as a paragraph (when present), sub-projects nested a level deeper — plus a
+  one-click **Copy**. Closes #245.
+
 ### Fixed
 
 - **Heat-map accuracy.** An empty project no longer shows green ("all done") — empty cards are now
