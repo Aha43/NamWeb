@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState, type FormEvent } from 'react';
-import { ChevronRight, FolderInput, Pencil, SlidersHorizontal, Upload } from 'lucide-react';
+import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, SlidersHorizontal, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
@@ -41,6 +41,13 @@ export interface ProjectsPanelProps {
   onAddLearnNam?: () => void;
   /** Import a workspace JSON export under a new timestamped project. Returns an error to show. */
   onImportWorkspace?: (json: string) => { ok: boolean; error?: string };
+  /** Archive / unarchive a project (declutter the list using the ARCHIVED status). */
+  onArchive?: (id: string) => void;
+  onUnarchive?: (id: string) => void;
+  /** "Show archived" toggle state + count of hidden archived projects. */
+  showArchived?: boolean;
+  onToggleShowArchived?: () => void;
+  archivedCount?: number;
 }
 
 /** Top-level projects: quick-add plus the list, each opening into the workbench. Presentational. */
@@ -56,6 +63,11 @@ export function ProjectsPanel({
   onMoveInto,
   onAddLearnNam,
   onImportWorkspace,
+  onArchive,
+  onUnarchive,
+  showArchived,
+  onToggleShowArchived,
+  archivedCount = 0,
 }: ProjectsPanelProps) {
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -95,12 +107,13 @@ export function ProjectsPanel({
 
   // One project row; `drag` is supplied when rendered inside a SortableContext.
   const renderRow = (project: NamNode, index: number, drag?: SortableRowRender) => {
-    const targets = onMoveInto && moveTargets ? moveTargets(project.id) : [];
+    const isArchived = project.status === 'ARCHIVED';
+    const targets = onMoveInto && !isArchived && moveTargets ? moveTargets(project.id) : [];
     return (
     <li
       ref={drag?.setNodeRef}
       style={drag?.style}
-      className="flex items-center gap-1 pr-2 transition-colors even:bg-muted/40 hover:bg-accent/40"
+      className={`flex items-center gap-1 pr-2 transition-colors even:bg-muted/40 hover:bg-accent/40${isArchived ? ' opacity-60' : ''}`}
     >
       {renamingId === project.id && onRename ? (
         <div className="flex-1 px-3 py-2">
@@ -159,6 +172,30 @@ export function ProjectsPanel({
               </button>
             </Tooltip>
           )}
+          {onArchive && !isArchived && (
+            <Tooltip label="Archive">
+              <button
+                type="button"
+                aria-label={`Archive ${project.title}`}
+                onClick={() => onArchive(project.id)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <Archive className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+          )}
+          {onUnarchive && isArchived && (
+            <Tooltip label="Unarchive">
+              <button
+                type="button"
+                aria-label={`Unarchive ${project.title}`}
+                onClick={() => onUnarchive(project.id)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <ArchiveRestore className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+          )}
           {onMoveInto && targets.length > 0 && (
             <DropdownMenu>
               <Tooltip label="Move into another project">
@@ -181,8 +218,8 @@ export function ProjectsPanel({
               </DropdownMenuContent>
             </DropdownMenu>
           )}
-          {drag?.handle}
-          {onReorder && (
+          {!isArchived && drag?.handle}
+          {onReorder && !isArchived && (
             <ReorderControls
               title={project.title}
               onUp={index > 0 ? () => move(index, 'up') : undefined}
@@ -208,7 +245,9 @@ export function ProjectsPanel({
         <Button type="submit">Add</Button>
       </form>
 
-      {(onImportWorkspace || (onAddLearnNam && projects.length > 0)) && (
+      {(onImportWorkspace ||
+        (archivedCount > 0 && onToggleShowArchived) ||
+        (onAddLearnNam && projects.length > 0)) && (
         <div className="flex items-center justify-end gap-2">
           {onImportWorkspace && (
             <>
@@ -225,6 +264,11 @@ export function ProjectsPanel({
                 Import workspace…
               </Button>
             </>
+          )}
+          {archivedCount > 0 && onToggleShowArchived && (
+            <Button type="button" variant="ghost" size="sm" onClick={onToggleShowArchived}>
+              {showArchived ? 'Hide archived' : `Show archived (${archivedCount})`}
+            </Button>
           )}
           {onAddLearnNam && projects.length > 0 && (
             <Button type="button" variant="ghost" size="sm" onClick={onAddLearnNam}>

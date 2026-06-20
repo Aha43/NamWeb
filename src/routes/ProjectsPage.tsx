@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { projectMoveTargets, projects, reorderKindWithinChildren } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
@@ -13,9 +14,20 @@ export function ProjectsPage() {
   const { openEditor } = useActionEditor();
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
+  const [showArchived, setShowArchived] = useState(false);
+
+  const allProjects = document ? projects(document) : [];
+  const archivedCount = allProjects.filter((p) => p.status === 'ARCHIVED').length;
+  const visibleProjects = showArchived ? allProjects : allProjects.filter((p) => p.status !== 'ARCHIVED');
+
   return (
     <ProjectsPanel
-      projects={document ? projects(document) : []}
+      projects={visibleProjects}
+      showArchived={showArchived}
+      onToggleShowArchived={() => setShowArchived((v) => !v)}
+      archivedCount={archivedCount}
+      onArchive={(id) => dispatch({ type: 'setStatus', id, status: 'ARCHIVED', now: nowIso() })}
+      onUnarchive={(id) => dispatch({ type: 'setStatus', id, status: 'BACKLOG', now: nowIso() })}
       onAdd={(title) => {
         if (!document) return;
         dispatch({ type: 'addSubProject', parentId: document.projectsNodeId, id: newId(), title, now: nowIso() });
