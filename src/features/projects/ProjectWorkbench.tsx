@@ -59,6 +59,8 @@ export interface ProjectWorkbenchProps {
   onGroupSelected?: (actionIds: string[], title: string) => void;
   /** Bulk: add a tag to the selected actions. */
   onAddTagToActions?: (actionIds: string[], tag: string) => void;
+  /** Existing tags to suggest in the bulk Add-tag input. */
+  allTags?: string[];
   onRename: (id: string, title: string) => void;
   /** Candidate projects to move a sub-project into (siblings first); excludes self + subtree. */
   moveTargets?: (id: string) => { id: string; label: string }[];
@@ -125,6 +127,7 @@ export function ProjectWorkbench({
   onDeleteAction,
   onGroupSelected,
   onAddTagToActions,
+  allTags,
   onRename,
   moveTargets,
   onMoveInto,
@@ -485,6 +488,7 @@ export function ProjectWorkbench({
                       label="Tag"
                       placeholder="Add a tag…"
                       submitLabel="Add tag"
+                      suggestions={allTags}
                       onSubmit={bulkAddTag}
                       disabled={selected.size === 0}
                       className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
