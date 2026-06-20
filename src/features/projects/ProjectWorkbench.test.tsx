@@ -164,6 +164,49 @@ describe('ProjectWorkbench', () => {
     expect(onDeleteAction).toHaveBeenCalledWith('a');
   });
 
+  it('bulk-groups selected actions into a named sub-project, and bulk-sets status', () => {
+    const onGroupSelected = vi.fn();
+    const onSetStatus = vi.fn();
+    const onAddTagToActions = vi.fn();
+    setup({
+      actions: [actionRow('a', 'Get quotes'), actionRow('b', 'Buy paint')],
+      onDeleteAction: vi.fn(),
+      onGroupSelected,
+      onAddTagToActions,
+      onSetStatus,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByLabelText('Select Get quotes'));
+    fireEvent.click(screen.getByLabelText('Select Buy paint'));
+
+    // Make sub-project from selected (anchored prompt).
+    fireEvent.click(screen.getByRole('button', { name: 'Make sub-project from selected' }));
+    fireEvent.change(screen.getByLabelText('Sub-project name'), { target: { value: 'Quotes' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create' }));
+    expect(onGroupSelected).toHaveBeenCalledWith(['a', 'b'], 'Quotes');
+  });
+
+  it('bulk-sets status on selected actions', () => {
+    const onSetStatus = vi.fn();
+    setup({ actions: [actionRow('a', 'Get quotes')], onDeleteAction: vi.fn(), onSetStatus });
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByLabelText('Select Get quotes'));
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Status ▾' }), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Backlog' }));
+    expect(onSetStatus).toHaveBeenCalledWith('a', 'BACKLOG');
+  });
+
+  it('bulk-adds a tag to selected actions', () => {
+    const onAddTagToActions = vi.fn();
+    setup({ actions: [actionRow('a', 'Get quotes')], onDeleteAction: vi.fn(), onAddTagToActions });
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByLabelText('Select Get quotes'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add tag to selected' }));
+    fireEvent.change(screen.getByLabelText('Tag'), { target: { value: 'home' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add tag' }));
+    expect(onAddTagToActions).toHaveBeenCalledWith(['a'], 'home');
+  });
+
   it('exiting select mode clears the selection and hides checkboxes', () => {
     setup({ actions: [actionRow('a', 'Get quotes')], onDeleteAction: vi.fn() });
     fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));

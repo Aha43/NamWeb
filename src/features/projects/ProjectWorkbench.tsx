@@ -55,6 +55,10 @@ export interface ProjectWorkbenchProps {
   onFocus?: () => void;
   /** Inline delete (with confirm) for a direct action row. */
   onDeleteAction?: (id: string) => void;
+  /** Bulk: move the selected actions into a new sub-project (named) under this project. */
+  onGroupSelected?: (actionIds: string[], title: string) => void;
+  /** Bulk: add a tag to the selected actions. */
+  onAddTagToActions?: (actionIds: string[], tag: string) => void;
   onRename: (id: string, title: string) => void;
   /** Candidate projects to move a sub-project into (siblings first); excludes self + subtree. */
   moveTargets?: (id: string) => { id: string; label: string }[];
@@ -119,6 +123,8 @@ export function ProjectWorkbench({
   onEdit,
   onFocus,
   onDeleteAction,
+  onGroupSelected,
+  onAddTagToActions,
   onRename,
   moveTargets,
   onMoveInto,
@@ -162,6 +168,18 @@ export function ProjectWorkbench({
   };
   const bulkDelete = () => {
     if (onDeleteAction) for (const id of selected) onDeleteAction(id);
+    setSelected(new Set());
+  };
+  const bulkSetStatus = (status: NodeStatus) => {
+    for (const id of selected) onSetStatus(id, status);
+    setSelected(new Set());
+  };
+  const bulkGroup = (title: string) => {
+    onGroupSelected?.([...selected], title);
+    setSelected(new Set()); // stay in select mode so you can carve the next group
+  };
+  const bulkAddTag = (tag: string) => {
+    onAddTagToActions?.([...selected], tag);
     setSelected(new Set());
   };
   // Delete the project's own done actions (direct only, no recursion) via a modal confirm.
@@ -433,8 +451,47 @@ export function ProjectWorkbench({
                 )}
               </div>
               {selectMode && (
-                <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
-                  <span className="text-muted-foreground">{selected.size} selected</span>
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+                  <span className="mr-1 text-muted-foreground">{selected.size} selected</span>
+                  {onGroupSelected && (
+                    <PromptButton
+                      aria-label="Make sub-project from selected"
+                      label="Sub-project name"
+                      placeholder="Name the group…"
+                      submitLabel="Create"
+                      onSubmit={bulkGroup}
+                      disabled={selected.size === 0}
+                      className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      Make sub-project
+                    </PromptButton>
+                  )}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      disabled={selected.size === 0}
+                      className="rounded-md px-2 py-0.5 font-medium text-foreground outline-none hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      Status ▾
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem onSelect={() => bulkSetStatus('NEXT')}>Next</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => bulkSetStatus('BACKLOG')}>Backlog</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => bulkSetStatus('DONE')}>Done</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  {onAddTagToActions && (
+                    <PromptButton
+                      aria-label="Add tag to selected"
+                      label="Tag"
+                      placeholder="Add a tag…"
+                      submitLabel="Add tag"
+                      onSubmit={bulkAddTag}
+                      disabled={selected.size === 0}
+                      className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                    >
+                      Tag
+                    </PromptButton>
+                  )}
                   <ConfirmButton
                     aria-label="Delete selected actions"
                     message={`Delete ${selected.size} selected action${selected.size === 1 ? '' : 's'}? This cannot be undone.`}
@@ -448,7 +505,7 @@ export function ProjectWorkbench({
                     type="button"
                     onClick={() => setSelected(new Set())}
                     disabled={selected.size === 0}
-                    className="rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                    className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
                     Clear
                   </button>

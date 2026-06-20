@@ -199,6 +199,30 @@ describe('applyIntent', () => {
     expect(applyIntent(doc, { type: 'seedProject', parentId: 'ghost', now: NOW, nodes: [{ id: 'x', title: 'X' }] }).nodes['x']).toBeUndefined();
   });
 
+  it('groupIntoSubProject creates a sub-project and moves the selected actions into it', () => {
+    const doc = workspace([
+      node('p', { project: true, childIds: ['a', 'b', 'c'] }),
+      node('a'),
+      node('b'),
+      node('c'),
+    ]);
+    doc.nodes['projects'].childIds.push('p');
+    const next = applyIntent(doc, {
+      type: 'groupIntoSubProject',
+      parentId: 'p',
+      subProjectId: 's',
+      title: 'Group',
+      actionIds: ['a', 'c'],
+      now: NOW,
+    });
+    expect(next.nodes['s']).toMatchObject({ title: 'Group', project: true, createdAt: NOW });
+    expect(next.nodes['p'].childIds).toEqual(['b', 's']); // a + c moved out; sub-project appended
+    expect(next.nodes['s'].childIds).toEqual(['a', 'c']);
+    expect(
+      applyIntent(doc, { type: 'groupIntoSubProject', parentId: 'ghost', subProjectId: 'x', title: 'X', actionIds: [], now: NOW }).nodes['x'],
+    ).toBeUndefined();
+  });
+
   it('moveNode reparents but refuses cycles, self, and structural moves', () => {
     const doc = workspace([
       node('p1', { project: true, childIds: ['p2'] }),

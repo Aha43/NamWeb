@@ -38,6 +38,7 @@ export type Intent =
   | { type: 'deleteTemplate'; name: string }
   | { type: 'applyTemplate'; parentId: string; nodes: ClonedTemplateNode[]; now: string }
   | { type: 'seedProject'; parentId: string; nodes: SeedNode[]; now: string }
+  | { type: 'groupIntoSubProject'; parentId: string; subProjectId: string; title: string; actionIds: string[]; now: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string };
 
@@ -191,7 +192,12 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     return true; // operate on a document-level list, not a node
   }
   if (intent.type === 'saveAsTemplate') return Boolean(doc.nodes[intent.nodeId]);
-  if (intent.type === 'applyTemplate' || intent.type === 'seedProject' || intent.type === 'reorderChildren') {
+  if (
+    intent.type === 'applyTemplate' ||
+    intent.type === 'seedProject' ||
+    intent.type === 'groupIntoSubProject' ||
+    intent.type === 'reorderChildren'
+  ) {
     return Boolean(doc.nodes[intent.parentId]);
   }
   return Boolean(doc.nodes[intent.id]);
@@ -431,6 +437,22 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'seedProject': {
       if (!next.nodes[intent.parentId]) return next;
       insertSeed(next, intent.parentId, intent.nodes, intent.now);
+      return next;
+    }
+    case 'groupIntoSubProject': {
+      // Create a new sub-project under `parentId`, then move the selected actions into it.
+      const parent = next.nodes[intent.parentId];
+      if (!parent) return next;
+      next.nodes[intent.subProjectId] = {
+        ...newNode(intent.subProjectId, intent.title, intent.now),
+        project: true,
+      };
+      parent.childIds.push(intent.subProjectId);
+      for (const actionId of intent.actionIds) {
+        if (!next.nodes[actionId]) continue;
+        detach(next, actionId);
+        next.nodes[intent.subProjectId].childIds.push(actionId);
+      }
       return next;
     }
     case 'deleteRecursive': {

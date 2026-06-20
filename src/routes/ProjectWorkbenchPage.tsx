@@ -150,6 +150,16 @@ export function ProjectWorkbenchPage() {
       onEdit={openEditor}
       onFocus={() => navigate(`/focus?project=${id}`)}
       onDeleteAction={deleteNode}
+      onGroupSelected={(actionIds, title) =>
+        dispatch({ type: 'groupIntoSubProject', parentId: id, subProjectId: newId(), title, actionIds, now: nowIso() })
+      }
+      onAddTagToActions={(actionIds, tag) => {
+        const now = nowIso();
+        for (const actionId of actionIds) {
+          const node = document.nodes[actionId];
+          if (node) dispatch({ type: 'updateTags', id: actionId, tags: [...node.tags, tag], now });
+        }
+      }}
       onRename={(actionId, title) => {
         const node = document.nodes[actionId];
         if (node) dispatch({ type: 'updateNode', id: actionId, title, description: node.description, now: nowIso() });
