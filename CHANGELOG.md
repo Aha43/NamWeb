@@ -12,6 +12,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   "edit details" (sliders) button — previously only sub-projects could open the editor, so a
   top-level project's description/tags/due were uneditable. Closes #220.
 
+### Added
+
+- **Reorder top-level projects.** The Projects list now has up/down controls (everywhere) plus
+  drag-and-drop on desktop, persisted to the project order — matching how sub-projects already
+  reorder. Closes #222.
+
 ### Changed
 
 - **List rows are easier to read across.** Subtle zebra striping + a full-row hover highlight on
