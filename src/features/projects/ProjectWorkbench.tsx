@@ -1,9 +1,10 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronRight, FileText, Pencil, SlidersHorizontal, Target } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, FileText, Pencil, SlidersHorizontal, Target } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -132,6 +133,24 @@ export function ProjectWorkbench({
   const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  // Multi-select on the project's actions (session-only) for bulk delete.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const toggleSelect = (id: string) =>
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const exitSelect = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+  const bulkDelete = () => {
+    if (onDeleteAction) for (const id of selected) onDeleteAction(id);
+    setSelected(new Set());
+  };
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
   const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => (
@@ -328,6 +347,22 @@ export function ProjectWorkbench({
                     onToggle={() => onToggleSection('actions')}
                   />
                 </div>
+                {onDeleteAction && (
+                  <Tooltip label={selectMode ? 'Exit select' : 'Select actions'}>
+                    <button
+                      type="button"
+                      aria-label={selectMode ? 'Exit select' : 'Select actions'}
+                      aria-pressed={selectMode}
+                      onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
+                      className={cn(
+                        'rounded-md p-1 hover:bg-accent hover:text-foreground',
+                        selectMode ? 'text-foreground' : 'text-muted-foreground',
+                      )}
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                    </button>
+                  </Tooltip>
+                )}
                 {onFocus && (
                   <Tooltip label="Focus this project's actions">
                     <button
@@ -341,6 +376,28 @@ export function ProjectWorkbench({
                   </Tooltip>
                 )}
               </div>
+              {selectMode && (
+                <div className="flex items-center gap-3 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+                  <span className="text-muted-foreground">{selected.size} selected</span>
+                  <ConfirmButton
+                    aria-label="Delete selected actions"
+                    message={`Delete ${selected.size} selected action${selected.size === 1 ? '' : 's'}? This cannot be undone.`}
+                    onConfirm={bulkDelete}
+                    disabled={selected.size === 0}
+                    className="rounded-md px-2 py-0.5 font-medium text-destructive hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    Delete
+                  </ConfirmButton>
+                  <button
+                    type="button"
+                    onClick={() => setSelected(new Set())}
+                    disabled={selected.size === 0}
+                    className="rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
               {!sectionCollapsed('actions') && (
                 <ReorderableActionList
                   rows={actions}
@@ -349,6 +406,8 @@ export function ProjectWorkbench({
                   onRename={onRename}
                   onReorder={onReorderActions}
                   dndEnabled={dndEnabled}
+                  selectedIds={selectMode ? selected : undefined}
+                  onToggleSelect={selectMode ? toggleSelect : undefined}
                   renderActions={(row, index) => (
                     <>
                       {onMoveAction && (

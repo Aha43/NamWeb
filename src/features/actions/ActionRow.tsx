@@ -26,6 +26,9 @@ export function ActionRow({
   onRename,
   dragRef,
   dragStyle,
+  selectable = false,
+  selected = false,
+  onSelectedChange,
 }: {
   row: ActionRowData;
   actions: ReactNode;
@@ -37,6 +40,10 @@ export function ActionRow({
   /** Sortable wiring (drag-and-drop): ref + transform style for the row element. */
   dragRef?: (el: HTMLElement | null) => void;
   dragStyle?: CSSProperties;
+  /** Show a leading selection checkbox (multi-select / bulk ops). */
+  selectable?: boolean;
+  selected?: boolean;
+  onSelectedChange?: (selected: boolean) => void;
 }) {
   const { dateFormat } = useSettings();
   const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat) : null;
@@ -48,6 +55,15 @@ export function ActionRow({
       style={dragStyle}
       className="flex items-center gap-2 px-3 py-2 transition-colors even:bg-muted/40 hover:bg-accent/40"
     >
+      {selectable && (
+        <input
+          type="checkbox"
+          aria-label={`Select ${row.title}`}
+          checked={selected}
+          onChange={(e) => onSelectedChange?.(e.target.checked)}
+          className="shrink-0"
+        />
+      )}
       <div className="min-w-0 flex-1">
         <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />
         {renaming && onRename ? (

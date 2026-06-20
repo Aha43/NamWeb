@@ -17,6 +17,9 @@ export interface ReorderableActionListProps {
   onReorder?: (ids: string[]) => void;
   /** Mount drag-and-drop (desktop). When false, rows render with their buttons only. */
   dndEnabled?: boolean;
+  /** When provided, rows show a selection checkbox (multi-select). */
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 /** An {@link ActionList} of {@link ActionRow}s that can be drag-reordered on desktop, with the
@@ -29,9 +32,12 @@ export function ReorderableActionList({
   onDelete,
   onReorder,
   dndEnabled,
+  selectedIds,
+  onToggleSelect,
 }: ReorderableActionListProps) {
   // Mirror SortableList's gate: no drag (and no SortableRow) unless there are 2+ items to reorder.
   const dnd = Boolean(dndEnabled && onReorder && rows.length > 1);
+  const selectable = Boolean(onToggleSelect);
 
   const row = (data: ActionRowData, index: number) =>
     dnd ? (
@@ -44,6 +50,9 @@ export function ReorderableActionList({
             onEdit={onEdit && (() => onEdit(data.id))}
             onDelete={onDelete && (() => onDelete(data.id))}
             onRename={onRename && ((title) => onRename(data.id, title))}
+            selectable={selectable}
+            selected={selectedIds?.has(data.id) ?? false}
+            onSelectedChange={onToggleSelect && (() => onToggleSelect(data.id))}
             actions={
               <div className="flex items-center gap-1">
                 {drag.handle}
@@ -60,6 +69,9 @@ export function ReorderableActionList({
           onEdit={onEdit && (() => onEdit(data.id))}
           onDelete={onDelete && (() => onDelete(data.id))}
           onRename={onRename && ((title) => onRename(data.id, title))}
+          selectable={selectable}
+          selected={selectedIds?.has(data.id) ?? false}
+          onSelectedChange={onToggleSelect && (() => onToggleSelect(data.id))}
           actions={<div className="flex items-center gap-1">{renderActions(data, index)}</div>}
         />
       </Fragment>
