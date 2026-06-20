@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Drag a project onto another to nest it.** In the Projects list, dropping a project onto the
+  middle of another makes it a **sub-project** of that target (highlighted while you hover-to-nest);
+  dropping between rows still reorders (#222). Desktop-only; cycle/self-guarded. Closes #251.
+
 - **Delete a project's done actions in one go.** A trash button on the project workbench's Actions
   header (shown when the project has done actions) opens a modal — "Delete N done actions in …?" —
   and clears that project's **direct** done actions (no recursion). Closes #250.

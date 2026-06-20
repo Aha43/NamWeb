@@ -38,6 +38,10 @@ export function ProjectsPage() {
           order: reorderKindWithinChildren(container.childIds, orderedIds),
         });
       }}
+      onNest={(dragId, targetId) => {
+        if (!document) return;
+        dispatch({ type: 'moveNode', id: dragId, newParentId: targetId, now: nowIso() });
+      }}
       onRename={(id, title) => {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });

@@ -1,13 +1,27 @@
 import { Fragment, useState, type FormEvent } from 'react';
 import { ChevronRight, Pencil, SlidersHorizontal } from 'lucide-react';
+import {
+  DndContext,
+  PointerSensor,
+  pointerWithin,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+  type DragOverEvent,
+} from '@dnd-kit/core';
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
-import { SortableList } from '@/components/dnd/SortableList';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
+import { cn } from '@/lib/utils';
 import { InlineRename } from '../actions/InlineRename';
 import { ReorderControls } from '../actions/ReorderControls';
 import type { NamNode } from '../../domain/types';
+
+const NEST_PREFIX = 'nest:';
 
 export interface ProjectsPanelProps {
   projects: NamNode[];
@@ -19,6 +33,8 @@ export interface ProjectsPanelProps {
   onEdit?: (id: string) => void;
   /** Persist a new top-level order (up/down buttons + desktop drag). Gets the full id order. */
   onReorder?: (orderedIds: string[]) => void;
+  /** Drop one project onto another → make the dragged one a sub-project of the target (desktop). */
+  onNest?: (dragId: string, targetId: string) => void;
   /** Mount drag-and-drop (desktop). The up/down buttons are the always-on fallback. */
   dndEnabled?: boolean;
   /** Seed the hands-on "Learn NAM" onboarding project (also a safe demo — delete to tidy up). */
@@ -33,11 +49,13 @@ export function ProjectsPanel({
   onRename,
   onEdit,
   onReorder,
+  onNest,
   dndEnabled,
   onAddLearnNam,
 }: ProjectsPanelProps) {
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [nestTargetId, setNestTargetId] = useState<string | null>(null);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -48,7 +66,8 @@ export function ProjectsPanel({
   }
 
   const ids = projects.map((p) => p.id);
-  const dnd = Boolean(dndEnabled && onReorder && projects.length > 1);
+  const dnd = Boolean(dndEnabled && (onReorder || onNest) && projects.length > 1);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
   // Up/down: swap a project with its neighbour and persist the whole new order.
   function move(index: number, direction: 'up' | 'down') {
@@ -60,13 +79,56 @@ export function ProjectsPanel({
     onReorder(order);
   }
 
+  // Hovering the middle band of a *different* row = nest there; the edges = reorder before/after.
+  const collisionDetection: CollisionDetection = (args) => {
+    const hits = pointerWithin(args);
+    if (hits.length === 0) return [];
+    const rowHit = hits.find((h) => !String(h.id).startsWith(NEST_PREFIX)) ?? hits[0];
+    if (onNest && String(rowHit.id) !== String(args.active.id)) {
+      const rect = args.droppableRects.get(rowHit.id);
+      const y = args.pointerCoordinates?.y;
+      if (rect && y != null) {
+        const rel = (y - rect.top) / rect.height;
+        if (rel > 0.25 && rel < 0.75) {
+          const nestHit = hits.find((h) => h.id === `${NEST_PREFIX}${String(rowHit.id)}`);
+          if (nestHit) return [nestHit];
+        }
+      }
+    }
+    return [rowHit];
+  };
+
+  function onDragOver(event: DragOverEvent) {
+    const over = event.over ? String(event.over.id) : '';
+    setNestTargetId(over.startsWith(NEST_PREFIX) ? over.slice(NEST_PREFIX.length) : null);
+  }
+
+  function onDragEnd(event: DragEndEvent) {
+    setNestTargetId(null);
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (overId.startsWith(NEST_PREFIX)) {
+      const target = overId.slice(NEST_PREFIX.length);
+      if (target !== activeId) onNest?.(activeId, target);
+      return;
+    }
+    if (overId !== activeId && onReorder) {
+      const from = ids.indexOf(activeId);
+      const to = ids.indexOf(overId);
+      if (from >= 0 && to >= 0) onReorder(arrayMove(ids, from, to));
+    }
+  }
+
   // One project row; `drag` is supplied when rendered inside a SortableContext.
-  const renderRow = (project: NamNode, index: number, drag?: SortableRowRender) => (
+  const renderRow = (project: NamNode, index: number, drag?: SortableRowRender, nestActive = false) => (
     <li
       ref={drag?.setNodeRef}
       style={drag?.style}
-      className="flex items-center gap-1 pr-2 transition-colors even:bg-muted/40 hover:bg-accent/40"
+      className="relative flex items-center gap-1 pr-2 transition-colors even:bg-muted/40 hover:bg-accent/40"
     >
+      {dnd && onNest && <NestZone id={project.id} active={nestActive} />}
       {renamingId === project.id && onRename ? (
         <div className="flex-1 px-3 py-2">
           <InlineRename
@@ -137,6 +199,20 @@ export function ProjectsPanel({
     </li>
   );
 
+  const list = (
+    <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+      {projects.map((project, index) =>
+        dnd ? (
+          <SortableRow key={project.id} id={project.id} label={project.title}>
+            {(drag) => renderRow(project, index, drag, nestTargetId === project.id)}
+          </SortableRow>
+        ) : (
+          <Fragment key={project.id}>{renderRow(project, index)}</Fragment>
+        ),
+      )}
+    </ul>
+  );
+
   return (
     <section className="space-y-4">
       <form onSubmit={submit} className="flex gap-2">
@@ -171,21 +247,37 @@ export function ProjectsPanel({
             </p>
           )}
         </div>
+      ) : dnd ? (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={collisionDetection}
+          onDragOver={onDragOver}
+          onDragEnd={onDragEnd}
+          onDragCancel={() => setNestTargetId(null)}
+        >
+          <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+            {list}
+          </SortableContext>
+        </DndContext>
       ) : (
-        <SortableList ids={ids} onReorder={onReorder ?? (() => {})} disabled={!dnd}>
-          <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
-            {projects.map((project, index) =>
-              dnd ? (
-                <SortableRow key={project.id} id={project.id} label={project.title}>
-                  {(drag) => renderRow(project, index, drag)}
-                </SortableRow>
-              ) : (
-                <Fragment key={project.id}>{renderRow(project, index)}</Fragment>
-              ),
-            )}
-          </ul>
-        </SortableList>
+        list
       )}
     </section>
+  );
+}
+
+/** Full-row drop target for "nest as sub-project"; highlights when it's the active nest target.
+ *  `pointer-events-none` so it never blocks the row's own buttons (dnd measures its rect, not clicks). */
+function NestZone({ id, active }: { id: string; active: boolean }) {
+  const { setNodeRef } = useDroppable({ id: `${NEST_PREFIX}${id}` });
+  return (
+    <div
+      ref={setNodeRef}
+      aria-hidden
+      className={cn(
+        'pointer-events-none absolute inset-0 z-10 rounded-md',
+        active && 'bg-primary/5 ring-2 ring-inset ring-primary',
+      )}
+    />
   );
 }
