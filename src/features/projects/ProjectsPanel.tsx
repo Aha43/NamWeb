@@ -2,6 +2,7 @@ import { Fragment, useState, type FormEvent } from 'react';
 import { ChevronRight, Pencil, SlidersHorizontal } from 'lucide-react';
 import {
   DndContext,
+  DragOverlay,
   PointerSensor,
   pointerWithin,
   useDroppable,
@@ -10,6 +11,7 @@ import {
   type CollisionDetection,
   type DragEndEvent,
   type DragOverEvent,
+  type DragStartEvent,
 } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Button } from '@/components/ui/button';
@@ -56,6 +58,7 @@ export function ProjectsPanel({
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [nestTargetId, setNestTargetId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -98,6 +101,10 @@ export function ProjectsPanel({
     return [rowHit];
   };
 
+  function onDragStart(event: DragStartEvent) {
+    setActiveId(String(event.active.id));
+  }
+
   function onDragOver(event: DragOverEvent) {
     const over = event.over ? String(event.over.id) : '';
     setNestTargetId(over.startsWith(NEST_PREFIX) ? over.slice(NEST_PREFIX.length) : null);
@@ -105,6 +112,7 @@ export function ProjectsPanel({
 
   function onDragEnd(event: DragEndEvent) {
     setNestTargetId(null);
+    setActiveId(null);
     const { active, over } = event;
     if (!over) return;
     const activeId = String(active.id);
@@ -251,13 +259,26 @@ export function ProjectsPanel({
         <DndContext
           sensors={sensors}
           collisionDetection={collisionDetection}
+          onDragStart={onDragStart}
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
-          onDragCancel={() => setNestTargetId(null)}
+          onDragCancel={() => {
+            setNestTargetId(null);
+            setActiveId(null);
+          }}
         >
           <SortableContext items={ids} strategy={verticalListSortingStrategy}>
             {list}
           </SortableContext>
+          {/* The source row stays put while a clone follows the cursor — so pointer-based collision
+              hits the row *underneath* (needed to tell "nest onto target" from "reorder"). */}
+          <DragOverlay>
+            {activeId ? (
+              <div className="rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground shadow-lg">
+                {projects.find((p) => p.id === activeId)?.title}
+              </div>
+            ) : null}
+          </DragOverlay>
         </DndContext>
       ) : (
         list
