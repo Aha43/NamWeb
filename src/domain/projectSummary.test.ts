@@ -77,6 +77,18 @@ describe('projectSummaryMarkdown', () => {
     );
   });
 
+  it('omits sub-projects entirely when includeSubProjects is false', () => {
+    const doc = workspace([
+      node('p', { project: true, title: 'P', childIds: ['a1', 'sub'] }),
+      node('a1', { title: 'Direct action' }),
+      node('sub', { project: true, title: 'Phase 2', childIds: ['b1'] }),
+      node('b1', { title: 'Nested action' }),
+    ]);
+    expect(projectSummaryMarkdown(doc, 'p', { includeSubProjects: false })).toBe(
+      ['# P', '## Direct action'].join('\n\n') + '\n',
+    );
+  });
+
   it('returns empty string for a missing project', () => {
     expect(projectSummaryMarkdown(workspace([]), 'ghost')).toBe('');
   });

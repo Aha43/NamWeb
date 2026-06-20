@@ -36,7 +36,7 @@ export interface ProjectWorkbenchProps {
   subProjects: NamNode[];
   subProjectStats?: MissionStat[];
   /** Build the Markdown summary for the chosen action statuses (the copyable Summary dialog). */
-  buildSummary?: (statuses: NodeStatus[]) => string;
+  buildSummary?: (options: import('@/domain/projectSummary').SummaryOptions) => string;
   /** Workbench view mode + setter (list / heat-map / column). */
   viewMode?: ViewMode;
   onSetViewMode?: (mode: ViewMode) => void;

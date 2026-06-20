@@ -6,16 +6,23 @@ describe('ProjectSummaryDialog', () => {
   it('builds with Next+Backlog by default, regenerates when toggling Done, and copies', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
-    const buildSummary = vi.fn((statuses: string[]) => `# P (${statuses.join(',')})`);
+    const buildSummary = vi.fn(
+      (o: { statuses?: string[]; includeSubProjects?: boolean }) =>
+        `# P (${(o.statuses ?? []).join(',')})${o.includeSubProjects ? ' +subs' : ''}`,
+    );
 
     render(<ProjectSummaryDialog open onOpenChange={vi.fn()} title="P" buildSummary={buildSummary} />);
 
     const area = screen.getByLabelText('Project summary (Markdown)');
-    // Default: Next + Backlog, Done off.
-    expect(area).toHaveValue('# P (NEXT,BACKLOG)');
+    // Default: Next + Backlog, Done off, sub-projects on.
+    expect(area).toHaveValue('# P (NEXT,BACKLOG) +subs');
 
     // Toggling Done regenerates with DONE included.
     fireEvent.click(screen.getByLabelText('Done'));
+    expect(area).toHaveValue('# P (NEXT,BACKLOG,DONE) +subs');
+
+    // Toggling off sub-projects drops them.
+    fireEvent.click(screen.getByLabelText('Include sub-projects'));
     expect(area).toHaveValue('# P (NEXT,BACKLOG,DONE)');
 
     // Copy writes the current markdown.

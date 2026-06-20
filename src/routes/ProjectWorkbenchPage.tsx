@@ -110,7 +110,7 @@ export function ProjectWorkbenchPage() {
       actions={actions}
       subProjects={subProjectNodes}
       subProjectStats={hasSubs ? missionStats(document, id) : undefined}
-      buildSummary={(statuses) => projectSummaryMarkdown(document, id, { statuses })}
+      buildSummary={(options) => projectSummaryMarkdown(document, id, options)}
       viewMode={viewMode}
       onSetViewMode={setMode}
       columnAvailable={isDesktop}

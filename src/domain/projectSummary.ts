@@ -9,6 +9,8 @@ import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 export interface SummaryOptions {
   /** Action statuses to include. Defaults to all of NEXT / BACKLOG / DONE. */
   statuses?: NodeStatus[];
+  /** Recurse into sub-projects (default true); false = only the project's own direct actions. */
+  includeSubProjects?: boolean;
 }
 
 const heading = (level: number, text: string): string => `${'#'.repeat(Math.min(level, 6))} ${text}`;
@@ -22,6 +24,7 @@ export function projectSummaryMarkdown(
   const project = doc.nodes[projectId];
   if (!project) return '';
   const statuses = new Set<NodeStatus>(options.statuses ?? ['NEXT', 'BACKLOG', 'DONE']);
+  const includeSubProjects = options.includeSubProjects ?? true;
 
   // Blocks for one parent's descendants; returns [] when nothing matches (so empty sub-projects prune).
   const walk = (parentId: string, level: number): string[] => {
@@ -41,14 +44,17 @@ export function projectSummaryMarkdown(
       if (d) out.push(d);
     }
 
-    // Then sub-projects — only when they actually contain matching actions.
-    for (const sub of children.filter((n) => n.project)) {
-      const subBlocks = walk(sub.id, level + 1);
-      if (subBlocks.length === 0) continue;
-      out.push(heading(level, sub.title));
-      const d = sub.description?.trim();
-      if (d) out.push(d);
-      out.push(...subBlocks);
+    // Then sub-projects — only when they actually contain matching actions (skipped entirely when
+    // the caller wants just this project's own direct actions).
+    if (includeSubProjects) {
+      for (const sub of children.filter((n) => n.project)) {
+        const subBlocks = walk(sub.id, level + 1);
+        if (subBlocks.length === 0) continue;
+        out.push(heading(level, sub.title));
+        const d = sub.description?.trim();
+        if (d) out.push(d);
+        out.push(...subBlocks);
+      }
     }
     return out;
   };
