@@ -17,6 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   **"Include sub-projects"** checkbox (on by default = whole tree); unchecked = just this project's own
   direct actions. Closes #257.
 
+- **More bulk actions on selected actions.** The Select-mode bar on a project gains **Make
+  sub-project** (name → new sub-project with the selected actions moved in; stays selecting so you can
+  carve several groups), **Set status** (Next/Backlog/Done), and **Add tag** (with existing-tag
+  suggestions) — alongside bulk Delete. New atomic `groupIntoSubProject` intent. Closes #259.
+
 - **Quick "Move into" another project.** Every project row — in the Projects list **and** the
   workbench's sub-project list — gains a **Move into…** button → a dropdown of targets (a **Top
   level** option when nested, its current **siblings first**, then other projects by path) → pick one

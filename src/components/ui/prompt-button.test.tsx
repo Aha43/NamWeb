@@ -18,6 +18,23 @@ describe('PromptButton', () => {
     expect(onSubmit).toHaveBeenCalledWith('house');
   });
 
+  it('suggests existing values and fills the input when one is picked', () => {
+    const onSubmit = vi.fn();
+    render(
+      <PromptButton aria-label="Add tag" label="Tag" suggestions={['home', 'work', 'house']} onSubmit={onSubmit}>
+        tag
+      </PromptButton>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Add tag' }));
+    const input = screen.getByLabelText('Tag');
+    fireEvent.change(input, { target: { value: 'ho' } }); // matches home + house
+    expect(screen.getByRole('option', { name: 'home' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'house' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: 'work' })).not.toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'house' }));
+    expect(input).toHaveValue('house');
+  });
+
   it('does not submit an empty value, and cancels cleanly', () => {
     const onSubmit = vi.fn();
     render(
