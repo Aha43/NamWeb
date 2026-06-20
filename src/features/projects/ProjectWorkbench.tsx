@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronRight, Pencil, SlidersHorizontal, Target } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, Pencil, SlidersHorizontal, Target } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
@@ -12,6 +12,7 @@ import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
 import { SortableList } from '@/components/dnd/SortableList';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
+import { ProjectSummaryDialog } from './ProjectSummaryDialog';
 import type { ActionRowData } from '../actions/rows';
 import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
@@ -26,6 +27,8 @@ export interface ProjectWorkbenchProps {
   actions: ActionRowData[];
   subProjects: NamNode[];
   subProjectStats?: MissionStat[];
+  /** Markdown summary of this project's actions (for the copyable Summary dialog). */
+  summaryMarkdown?: string;
   /** Workbench view mode + setter (list / heat-map / column). */
   viewMode?: ViewMode;
   onSetViewMode?: (mode: ViewMode) => void;
@@ -90,6 +93,7 @@ export function ProjectWorkbench({
   actions,
   subProjects,
   subProjectStats,
+  summaryMarkdown = '',
   viewMode = 'list',
   onSetViewMode = () => {},
   columnAvailable = false,
@@ -127,6 +131,7 @@ export function ProjectWorkbench({
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
   const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
+  const [summaryOpen, setSummaryOpen] = useState(false);
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
   const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => (
@@ -193,21 +198,33 @@ export function ProjectWorkbench({
     <section className="w-full">
       {/* Pinned header: breadcrumb + add-panel + view switch stay put while the lists scroll. */}
       <div className="sticky top-0 z-20 space-y-3 bg-background pb-2 pt-1">
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
-        <button type="button" onClick={onOpenProjects} className="hover:text-foreground">
-          Projects
-        </button>
-        {breadcrumb.map((ancestor) => (
-          <span key={ancestor.id} className="flex items-center gap-1">
-            <ChevronRight className="h-3 w-3" />
-            <button type="button" onClick={() => onOpenProject(ancestor.id)} className="hover:text-foreground">
-              {ancestor.title}
-            </button>
-          </span>
-        ))}
-        <ChevronRight className="h-3 w-3" />
-        <span className="font-medium text-foreground">{project.title}</span>
-      </nav>
+      <div className="flex items-start justify-between gap-2">
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+          <button type="button" onClick={onOpenProjects} className="hover:text-foreground">
+            Projects
+          </button>
+          {breadcrumb.map((ancestor) => (
+            <span key={ancestor.id} className="flex items-center gap-1">
+              <ChevronRight className="h-3 w-3" />
+              <button type="button" onClick={() => onOpenProject(ancestor.id)} className="hover:text-foreground">
+                {ancestor.title}
+              </button>
+            </span>
+          ))}
+          <ChevronRight className="h-3 w-3" />
+          <span className="font-medium text-foreground">{project.title}</span>
+        </nav>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="shrink-0 gap-1.5"
+          onClick={() => setSummaryOpen(true)}
+        >
+          <FileText className="h-4 w-4" />
+          Summary
+        </Button>
+      </div>
 
       <div className="rounded-lg border border-border">
         <button
@@ -417,6 +434,13 @@ export function ProjectWorkbench({
         </>
       )}
       </div>
+
+      <ProjectSummaryDialog
+        open={summaryOpen}
+        onOpenChange={setSummaryOpen}
+        title={project.title}
+        markdown={summaryMarkdown}
+      />
     </section>
   );
 }

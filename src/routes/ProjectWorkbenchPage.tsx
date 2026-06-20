@@ -8,6 +8,7 @@ import { toActionRow } from '@/features/actions/rows';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
 import type { WorkbenchColumn } from '@/features/projects/ColumnView';
 import { missionStats } from '@/features/projects/missionStats';
+import { projectSummaryMarkdown } from '@/domain/projectSummary';
 import { useViewMode } from '@/features/projects/useViewMode';
 import { useCollapsedColumns } from '@/features/projects/useCollapsedColumns';
 import { useCollapsedAddPanel } from '@/features/projects/useCollapsedAddPanel';
@@ -109,6 +110,7 @@ export function ProjectWorkbenchPage() {
       actions={actions}
       subProjects={subProjectNodes}
       subProjectStats={hasSubs ? missionStats(document, id) : undefined}
+      summaryMarkdown={projectSummaryMarkdown(document, id)}
       viewMode={viewMode}
       onSetViewMode={setMode}
       columnAvailable={isDesktop}
