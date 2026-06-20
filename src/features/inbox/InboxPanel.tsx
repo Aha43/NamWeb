@@ -10,13 +10,15 @@ export interface InboxPanelProps {
   items: NamNode[];
   onAdd: (title: string) => void;
   onProcess: (id: string) => void;
+  /** Start the one-at-a-time process-all deck. */
+  onProcessAll?: () => void;
   onDelete: (id: string) => void;
   onEdit?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
 }
 
 /** Inbox: quick-add capture plus the list of unprocessed items. Pure/presentational. */
-export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit, onRename }: InboxPanelProps) {
+export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, onEdit, onRename }: InboxPanelProps) {
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
 
@@ -40,6 +42,14 @@ export function InboxPanel({ items, onAdd, onProcess, onDelete, onEdit, onRename
         />
         <Button type="submit">Add</Button>
       </form>
+
+      {onProcessAll && items.length > 0 && (
+        <div className="flex justify-end">
+          <Button type="button" variant="outline" size="sm" onClick={onProcessAll}>
+            Process inbox ({items.length})
+          </Button>
+        </div>
+      )}
 
       {items.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Inbox zero. Nothing to process.</p>
