@@ -145,4 +145,37 @@ describe('ProjectWorkbench', () => {
     expect(onAddAction).toHaveBeenCalledWith('Measure');
     expect(onAddSubProject).toHaveBeenCalledWith('Wiring');
   });
+
+  it('multi-selects project actions and bulk-deletes them', () => {
+    const onDeleteAction = vi.fn();
+    setup({ actions: [actionRow('a', 'Get quotes'), actionRow('b', 'Buy paint')], onDeleteAction });
+
+    // No checkboxes until select mode is on.
+    expect(screen.queryByLabelText('Select Get quotes')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+
+    fireEvent.click(screen.getByLabelText('Select Get quotes'));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+
+    // Bulk delete: open the count-aware confirm, then confirm.
+    fireEvent.click(screen.getByRole('button', { name: 'Delete selected actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // popover confirm
+    expect(onDeleteAction).toHaveBeenCalledTimes(1);
+    expect(onDeleteAction).toHaveBeenCalledWith('a');
+  });
+
+  it('exiting select mode clears the selection and hides checkboxes', () => {
+    setup({ actions: [actionRow('a', 'Get quotes')], onDeleteAction: vi.fn() });
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByLabelText('Select Get quotes'));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Exit select' }));
+    expect(screen.queryByLabelText('Select Get quotes')).not.toBeInTheDocument();
+    expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
+  });
+
+  it('has no Select toggle when delete is not wired', () => {
+    setup({ actions: [actionRow('a', 'Get quotes')] }); // no onDeleteAction
+    expect(screen.queryByRole('button', { name: 'Select actions' })).not.toBeInTheDocument();
+  });
 });

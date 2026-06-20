@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Select project actions for bulk delete.** A **Select** toggle on the project workbench's Actions
+  header reveals per-row checkboxes and a selection bar (**N selected · Delete · Clear**); Delete
+  removes the selected actions behind a count-aware confirm. Selection is session-only. First step
+  toward broader bulk operations. Closes #249.
+
 - **Copy a project summary as Markdown.** A **Summary** button on the project workbench opens a
   dialog with the project rendered as Markdown — the project title as `#`, each action as a heading
   with its tags (an italic `_Tags: …_` line) and its description as a paragraph (when present),
