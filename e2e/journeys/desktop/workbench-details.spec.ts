@@ -41,3 +41,15 @@ test('edit a sub-project from its parent workbench drills in', async ({ page, do
 
   await expect.poll(() => doc.current().nodes['sub'].title).toBe('Pipework');
 });
+
+test('delete a project from its Details panel, then land on the parent', async ({ page, doc }) => {
+  await page.goto('/projects/sub'); // open the sub-project's own workbench
+
+  await page.getByRole('button', { name: 'Details' }).click();
+  await page.getByRole('button', { name: 'Delete project' }).click(); // arm the inline confirm
+  await page.getByRole('button', { name: 'Delete', exact: true }).click(); // confirm
+
+  // Climbs to the parent project's workbench, and the node is gone.
+  await expect(page).toHaveURL(/\/projects\/proj/);
+  await expect.poll(() => doc.current().nodes['sub']).toBeUndefined();
+});

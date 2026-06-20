@@ -29,12 +29,18 @@ export function ProjectDetailsPanel({
   onToggle,
   onSave,
   availableTags = [],
+  onDelete,
+  deleteConfirmMessage,
 }: {
   project: NamNode;
   collapsed: boolean;
   onToggle: () => void;
   onSave: (edits: ActionEdits) => void;
   availableTags?: string[];
+  /** Delete the project (recursive); the panel confirms inline. */
+  onDelete?: () => void;
+  /** Count-aware confirm message shown in the inline delete confirm. */
+  deleteConfirmMessage?: string;
 }) {
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? '');
@@ -44,6 +50,7 @@ export function ProjectDetailsPanel({
   const [status, setStatus] = useState<NodeStatus>(project.status);
   const [resources, setResources] = useState<Resource[]>(project.resources);
   const [saved, setSaved] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -180,10 +187,34 @@ export function ProjectDetailsPanel({
               }}
             />
           </div>
-          <div className="flex items-center justify-end gap-3">
-            {saved && <span className="text-xs text-muted-foreground">Saved</span>}
-            <Button type="submit">Save</Button>
-          </div>
+          {confirmingDelete ? (
+            <div className="flex flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center">
+              <span className="text-sm text-destructive sm:mr-auto">
+                {deleteConfirmMessage ?? 'Delete this project? This cannot be undone.'}
+              </span>
+              <Button type="button" variant="ghost" onClick={() => setConfirmingDelete(false)}>
+                Cancel
+              </Button>
+              <Button type="button" variant="destructive" onClick={() => onDelete?.()}>
+                Delete
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 border-t border-border pt-3">
+              {onDelete && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setConfirmingDelete(true)}
+                  className="mr-auto text-destructive hover:text-destructive"
+                >
+                  Delete project
+                </Button>
+              )}
+              {saved && <span className="ml-auto text-xs text-muted-foreground">Saved</span>}
+              <Button type="submit">Save</Button>
+            </div>
+          )}
         </form>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { allTags, buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
+import { allTags, buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
@@ -76,6 +76,23 @@ export function ProjectWorkbenchPage() {
     if (JSON.stringify(edits.resources) !== JSON.stringify(project.resources)) {
       dispatch({ type: 'updateResources', id, resources: edits.resources, now });
     }
+  };
+
+  // Delete the whole project (recursive) from its Details panel, then climb to the parent project
+  // (or the Projects list when it was top-level), since this workbench is about to vanish.
+  const descendants = subtreeIds(document, id).size - 1;
+  const deleteProjectMessage =
+    descendants > 0
+      ? `Delete the "${project.title}" project and its ${descendants} item${descendants === 1 ? '' : 's'}? This cannot be undone.`
+      : `Delete the "${project.title}" project? This cannot be undone.`;
+  const deleteProject = () => {
+    const ancestors = buildPath(document, id);
+    const parent = ancestors[ancestors.length - 1];
+    // Climb to the parent project (or the Projects list when top-level), then delete on the next
+    // tick — once this workbench has unmounted, so its "project gone" guard below can't first
+    // redirect to /projects and override the climb.
+    navigate(parent ? `/projects/${parent.id}` : '/projects');
+    setTimeout(() => deleteNode(id), 0);
   };
 
   // Column mode is desktop-only and needs sub-projects; otherwise fall back to a list.
@@ -187,6 +204,8 @@ export function ProjectWorkbenchPage() {
       detailsCollapsed={detailsCollapsed}
       onToggleDetails={toggleDetails}
       onSaveDetails={saveDetails}
+      onDeleteProject={deleteProject}
+      deleteProjectMessage={deleteProjectMessage}
       onFocus={() => navigate(`/focus?project=${id}`)}
       onDeleteAction={deleteNode}
       onGroupSelected={(actionIds, title) =>

@@ -59,6 +59,32 @@ describe('ProjectDetailsPanel', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/date like/i);
   });
 
+  it('deletes behind an inline confirm (when wired)', () => {
+    const onDelete = vi.fn();
+    render(
+      <ProjectDetailsPanel
+        project={project()}
+        collapsed={false}
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onDelete={onDelete}
+        deleteConfirmMessage="Delete the Kitchen reno project?"
+      />,
+    );
+    // First click arms the confirm; it does not delete yet.
+    fireEvent.click(screen.getByRole('button', { name: 'Delete project' }));
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByText('Delete the Kitchen reno project?')).toBeInTheDocument();
+    // The confirm deletes.
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(onDelete).toHaveBeenCalled();
+  });
+
+  it('omits delete when not wired', () => {
+    render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Delete project' })).not.toBeInTheDocument();
+  });
+
   it('toggles via the header button', () => {
     const onToggle = vi.fn();
     render(<ProjectDetailsPanel project={project()} collapsed onToggle={onToggle} onSave={vi.fn()} />);

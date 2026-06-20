@@ -61,6 +61,10 @@ export interface ProjectWorkbenchProps {
   onToggleDetails?: () => void;
   /** Save edits to the current project's title/notes/tags/due/status/resources. */
   onSaveDetails?: (edits: ActionEdits) => void;
+  /** Delete the current project (recursive); the Details panel confirms inline. */
+  onDeleteProject?: () => void;
+  /** Count-aware confirm message for the project delete. */
+  deleteProjectMessage?: string;
   /** Enter Focus mode over this project's open direct actions. */
   onFocus?: () => void;
   /** Inline delete (with confirm) for a direct action row. */
@@ -137,6 +141,8 @@ export function ProjectWorkbench({
   detailsCollapsed = true,
   onToggleDetails = () => {},
   onSaveDetails,
+  onDeleteProject,
+  deleteProjectMessage,
   onFocus,
   onDeleteAction,
   onGroupSelected,
@@ -391,6 +397,8 @@ export function ProjectWorkbench({
           onToggle={onToggleDetails}
           onSave={onSaveDetails}
           availableTags={allTags}
+          onDelete={onDeleteProject}
+          deleteConfirmMessage={deleteProjectMessage}
         />
       )}
 
