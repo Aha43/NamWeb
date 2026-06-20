@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
-import { projects, reorderKindWithinChildren } from '@/domain/lenses';
+import { projectPath, projects, reorderKindWithinChildren, subtreeIds } from '@/domain/lenses';
+import type { NamNode } from '@/domain/types';
 import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
@@ -37,6 +38,24 @@ export function ProjectsPage() {
           parentId: document.projectsNodeId,
           order: reorderKindWithinChildren(container.childIds, orderedIds),
         });
+      }}
+      moveTargets={(id) => {
+        if (!document) return [];
+        const excluded = subtreeIds(document, id); // can't move into itself or its own subtree
+        const tops = projects(document).filter((p) => !excluded.has(p.id)); // siblings, listed first
+        const topIds = new Set(tops.map((p) => p.id));
+        const deeper = Object.values(document.nodes).filter(
+          (n) => n.project && !excluded.has(n.id) && !topIds.has(n.id) && n.id !== document.projectsNodeId,
+        );
+        const toTarget = (n: NamNode) => ({
+          id: n.id,
+          label: [...projectPath(document, n.id), n.title].join(' › '),
+        });
+        return [...tops.map(toTarget), ...deeper.map(toTarget)];
+      }}
+      onMoveInto={(id, targetId) => {
+        if (!document) return;
+        dispatch({ type: 'moveNode', id, newParentId: targetId, now: nowIso() });
       }}
       onRename={(id, title) => {
         const node = document?.nodes[id];

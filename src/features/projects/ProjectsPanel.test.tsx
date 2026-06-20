@@ -69,6 +69,22 @@ describe('ProjectsPanel', () => {
     expect(onReorder).toHaveBeenCalledWith(['b', 'a']);
   });
 
+  it('moves a project into a target via the Move-into menu', () => {
+    const onMoveInto = vi.fn();
+    const moveTargets = vi.fn(() => [{ id: 't', label: 'Target proj' }]);
+    setup([project('p', 'Kitchen reno')], { onMoveInto, moveTargets });
+    // Radix opens the menu on Enter/Space/ArrowDown (reliable in jsdom).
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Move Kitchen reno into another project' }), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Target proj' }));
+    expect(moveTargets).toHaveBeenCalledWith('p');
+    expect(onMoveInto).toHaveBeenCalledWith('p', 't');
+  });
+
+  it('shows no Move-into button when there are no targets', () => {
+    setup([project('p', 'Kitchen reno')], { onMoveInto: vi.fn(), moveTargets: () => [] });
+    expect(screen.queryByRole('button', { name: /Move Kitchen reno into another project/ })).not.toBeInTheDocument();
+  });
+
   it('offers Learn NAM in the empty state and calls onAddLearnNam', () => {
     const onAddLearnNam = vi.fn();
     setup([], { onAddLearnNam });

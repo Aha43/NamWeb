@@ -1,13 +1,25 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { ChevronRight, Pencil, SlidersHorizontal } from 'lucide-react';
+import { ChevronRight, FolderInput, Pencil, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { SortableList } from '@/components/dnd/SortableList';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { InlineRename } from '../actions/InlineRename';
 import { ReorderControls } from '../actions/ReorderControls';
 import type { NamNode } from '../../domain/types';
+
+/** A project the row can be moved into (made a sub-project of). */
+export interface MoveTarget {
+  id: string;
+  label: string;
+}
 
 export interface ProjectsPanelProps {
   projects: NamNode[];
@@ -21,6 +33,10 @@ export interface ProjectsPanelProps {
   onReorder?: (orderedIds: string[]) => void;
   /** Mount drag-and-drop (desktop). The up/down buttons are the always-on fallback. */
   dndEnabled?: boolean;
+  /** Candidate projects to move `id` into (siblings first), excluding itself + its subtree. */
+  moveTargets?: (id: string) => MoveTarget[];
+  /** Make `id` a sub-project of `targetId`. */
+  onMoveInto?: (id: string, targetId: string) => void;
   /** Seed the hands-on "Learn NAM" onboarding project (also a safe demo — delete to tidy up). */
   onAddLearnNam?: () => void;
 }
@@ -34,6 +50,8 @@ export function ProjectsPanel({
   onEdit,
   onReorder,
   dndEnabled,
+  moveTargets,
+  onMoveInto,
   onAddLearnNam,
 }: ProjectsPanelProps) {
   const [title, setTitle] = useState('');
@@ -61,7 +79,9 @@ export function ProjectsPanel({
   }
 
   // One project row; `drag` is supplied when rendered inside a SortableContext.
-  const renderRow = (project: NamNode, index: number, drag?: SortableRowRender) => (
+  const renderRow = (project: NamNode, index: number, drag?: SortableRowRender) => {
+    const targets = onMoveInto && moveTargets ? moveTargets(project.id) : [];
+    return (
     <li
       ref={drag?.setNodeRef}
       style={drag?.style}
@@ -124,6 +144,28 @@ export function ProjectsPanel({
               </button>
             </Tooltip>
           )}
+          {onMoveInto && targets.length > 0 && (
+            <DropdownMenu>
+              <Tooltip label="Move into another project">
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Move ${project.title} into another project`}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <FolderInput className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
+                {targets.map((t) => (
+                  <DropdownMenuItem key={t.id} onSelect={() => onMoveInto(project.id, t.id)}>
+                    {t.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {drag?.handle}
           {onReorder && (
             <ReorderControls
@@ -135,7 +177,8 @@ export function ProjectsPanel({
         </>
       )}
     </li>
-  );
+    );
+  };
 
   return (
     <section className="space-y-4">
