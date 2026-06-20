@@ -27,8 +27,8 @@ export interface ProjectWorkbenchProps {
   actions: ActionRowData[];
   subProjects: NamNode[];
   subProjectStats?: MissionStat[];
-  /** Markdown summary of this project's actions (for the copyable Summary dialog). */
-  summaryMarkdown?: string;
+  /** Build the Markdown summary for the chosen action statuses (the copyable Summary dialog). */
+  buildSummary?: (statuses: NodeStatus[]) => string;
   /** Workbench view mode + setter (list / heat-map / column). */
   viewMode?: ViewMode;
   onSetViewMode?: (mode: ViewMode) => void;
@@ -93,7 +93,7 @@ export function ProjectWorkbench({
   actions,
   subProjects,
   subProjectStats,
-  summaryMarkdown = '',
+  buildSummary = () => '',
   viewMode = 'list',
   onSetViewMode = () => {},
   columnAvailable = false,
@@ -439,7 +439,7 @@ export function ProjectWorkbench({
         open={summaryOpen}
         onOpenChange={setSummaryOpen}
         title={project.title}
-        markdown={summaryMarkdown}
+        buildSummary={buildSummary}
       />
     </section>
   );

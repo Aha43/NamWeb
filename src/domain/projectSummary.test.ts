@@ -49,6 +49,34 @@ describe('projectSummaryMarkdown', () => {
     );
   });
 
+  it("includes an action's tags as an italic line under its heading", () => {
+    const doc = workspace([
+      node('p', { project: true, title: 'P', childIds: ['a'] }),
+      node('a', { title: 'Tagged', tags: ['shopping', 'home'], description: 'Buy stuff.' }),
+    ]);
+    expect(projectSummaryMarkdown(doc, 'p')).toBe(
+      ['# P', '## Tagged', '_Tags: shopping, home_', 'Buy stuff.'].join('\n\n') + '\n',
+    );
+  });
+
+  it('filters actions by status and prunes sub-projects with no matching actions', () => {
+    const doc = workspace([
+      node('p', { project: true, title: 'P', childIds: ['a1', 'a2', 'sub'] }),
+      node('a1', { title: 'Do now', status: 'NEXT' }),
+      node('a2', { title: 'Finished', status: 'DONE' }),
+      node('sub', { project: true, title: 'All done', childIds: ['b1'] }),
+      node('b1', { title: 'Old', status: 'DONE' }),
+    ]);
+    // Next + Backlog only: the DONE action is excluded and the all-DONE sub-project is pruned.
+    expect(projectSummaryMarkdown(doc, 'p', { statuses: ['NEXT', 'BACKLOG'] })).toBe(
+      ['# P', '## Do now'].join('\n\n') + '\n',
+    );
+    // Including DONE brings them back (sub-project no longer pruned).
+    expect(projectSummaryMarkdown(doc, 'p', { statuses: ['NEXT', 'BACKLOG', 'DONE'] })).toBe(
+      ['# P', '## Do now', '## Finished', '## All done', '### Old'].join('\n\n') + '\n',
+    );
+  });
+
   it('returns empty string for a missing project', () => {
     expect(projectSummaryMarkdown(workspace([]), 'ghost')).toBe('');
   });
