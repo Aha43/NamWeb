@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Process Inbox — one-at-a-time deck.** A **Process inbox** button runs through every inbox
+  item one at a time (Next / Backlog / Make project / Delete / Skip, with an "N left" counter),
+  auto-advancing — clear the catch-all in one flow. Builds on the existing per-item process dialog.
+  Closes #258.
+
 - **Quick "Move into" another project.** Every project row — in the Projects list **and** the
   workbench's sub-project list — gains a **Move into…** button → a dropdown of targets (a **Top
   level** option when nested, its current **siblings first**, then other projects by path) → pick one

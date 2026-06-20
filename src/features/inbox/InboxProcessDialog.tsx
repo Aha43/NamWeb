@@ -24,17 +24,27 @@ export function InboxProcessDialog({
   open,
   onOpenChange,
   onResolve,
+  onDelete,
+  onSkip,
+  remaining,
 }: {
   node: NamNode;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onResolve: (resolution: ProcessResolution) => void;
+  /** Deck mode (process-all): delete the current item and advance. */
+  onDelete?: () => void;
+  /** Deck mode: leave the item in the inbox and advance to the next. */
+  onSkip?: () => void;
+  /** Deck mode: how many items are left (incl. the current one). */
+  remaining?: number;
 }) {
   const [step, setStep] = useState<'kind' | 'action'>('kind');
+  const deck = Boolean(onSkip); // process-all flow: parent swaps in the next item
 
   function resolve(resolution: ProcessResolution) {
     onResolve(resolution);
-    onOpenChange(false);
+    if (!deck) onOpenChange(false);
   }
 
   return (
@@ -47,8 +57,11 @@ export function InboxProcessDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Process item</DialogTitle>
-          <DialogDescription className="truncate">{node.title}</DialogDescription>
+          <DialogTitle>{deck ? 'Process inbox' : 'Process item'}</DialogTitle>
+          <DialogDescription className="truncate">
+            {node.title}
+            {deck && remaining ? ` · ${remaining} left` : ''}
+          </DialogDescription>
         </DialogHeader>
 
         {step === 'kind' ? (
@@ -59,6 +72,16 @@ export function InboxProcessDialog({
             <Button variant="outline" className="justify-start" onClick={() => resolve({ kind: 'project' })}>
               It needs planning — make a project
             </Button>
+            {deck && (
+              <div className="mt-1 flex gap-2">
+                <Button variant="ghost" size="sm" className="flex-1 text-destructive" onClick={onDelete}>
+                  Delete
+                </Button>
+                <Button variant="ghost" size="sm" className="flex-1" onClick={onSkip}>
+                  Skip →
+                </Button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-2">
