@@ -51,6 +51,16 @@ function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
   return <div className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)} {...props} />;
 }
 
+/**
+ * A scrollable middle region for dialogs that pin their header/footer: pair it with a
+ * `DialogContent` laid out as a flex column (`flex flex-col gap-0 p-0 overflow-hidden`).
+ * The `min-h-0 flex-1` lets the body shrink and scroll while header/footer stay put, so
+ * the action buttons never disappear below a long form. Short dialogs are unaffected.
+ */
+function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('min-h-0 flex-1 overflow-y-auto', className)} {...props} />;
+}
+
 function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
@@ -92,6 +102,7 @@ export {
   DialogOverlay,
   DialogContent,
   DialogHeader,
+  DialogBody,
   DialogFooter,
   DialogTitle,
   DialogDescription,

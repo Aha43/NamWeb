@@ -12,6 +12,7 @@ test('add a resource via the editor; the row shows a paperclip', async ({ page, 
 
   await page.getByRole('button', { name: 'Edit Read the spec' }).click();
   const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: 'Resources' }).click(); // expand the collapsed section
   await dialog.getByLabel('Resource value').fill('https://spec.test');
   await dialog.getByRole('button', { name: 'Add' }).click();
   await dialog.getByRole('button', { name: 'Save' }).click();

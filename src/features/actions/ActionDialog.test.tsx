@@ -85,6 +85,7 @@ describe('ActionDialog', () => {
         onMove={onMove}
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: 'Move / make project' })); // expand the section
     fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
     expect(onMakeProject).toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText('Move to'), { target: { value: 'p1' } });
@@ -156,6 +157,7 @@ describe('ActionDialog', () => {
   it('adds a resource and reports it on save', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Resources' })); // expand the section
     fireEvent.change(screen.getByLabelText('Resource value'), { target: { value: 'https://docs.test' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -179,6 +181,41 @@ describe('ActionDialog', () => {
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ resources: [{ type: 'URI', value: 'https://keep.test', description: null }] }),
     );
+  });
+
+  it('collapses the occasional sections by default, expanding on click', () => {
+    render(
+      <ActionDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onSave={vi.fn()}
+        onMakeProject={vi.fn()}
+        moveTargets={[{ id: 'p1', label: 'Home' }]}
+        onMove={vi.fn()}
+      />,
+    );
+    // Resources / Move section controls are hidden until their disclosure is opened, so the
+    // common fields + Save stay together at the top.
+    expect(screen.queryByLabelText('Resource value')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Make project' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Resources' }));
+    expect(screen.getByLabelText('Resource value')).toBeInTheDocument();
+  });
+
+  it('opens the Blocked-by section by default when the action already has prerequisites', () => {
+    render(
+      <ActionDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onSave={vi.fn()}
+        blockers={[{ id: 'b1', title: 'Prep', done: false }]}
+        onAddPrerequisite={vi.fn()}
+        onRemovePrerequisite={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Remove prerequisite Prep' })).toBeInTheDocument();
   });
 
   it('does not save with an empty title', () => {
