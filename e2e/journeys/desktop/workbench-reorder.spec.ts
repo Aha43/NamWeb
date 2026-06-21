@@ -1,5 +1,6 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
+import { expandWorkbench } from '../../helpers/workbench';
 
 // #79 (Workspace parity, phase 1) — hand-order a project's direct actions and its sub-projects in
 // the workbench. Reorders the parent's childIds (the structural order shared with desktop).
@@ -15,6 +16,7 @@ test.use({
 
 test('reorder actions and sub-projects in the workbench, persisted to childIds', async ({ page, doc }) => {
   await page.goto('/projects/proj');
+  await expandWorkbench(page);
 
   const actions = page.getByRole('list').first().getByRole('listitem');
   const subs = page.getByRole('list').nth(1).getByRole('listitem');

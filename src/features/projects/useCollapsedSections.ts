@@ -5,14 +5,18 @@ export type WorkbenchSection = 'actions' | 'subprojects';
 
 const KEY = (projectId: string) => `namweb.collapsed.sections.${projectId}`;
 
+/** Default on first open (no stored value): both sections collapsed, for a clean project landing. */
+const DEFAULT_COLLAPSED = (): Set<string> => new Set(['actions', 'subprojects']);
+
 function read(projectId: string): Set<string> {
   try {
     const stored = localStorage.getItem(KEY(projectId));
-    if (stored) return new Set(JSON.parse(stored) as string[]);
+    // A stored value (even '[]' = "I expanded both") is authoritative; only first-open defaults.
+    if (stored === null) return DEFAULT_COLLAPSED();
+    return new Set(JSON.parse(stored) as string[]);
   } catch {
-    // localStorage unavailable / malformed — nothing collapsed.
+    return DEFAULT_COLLAPSED();
   }
-  return new Set();
 }
 
 /** Per-project set of collapsed workbench sections (Actions / Sub-projects) for the List and

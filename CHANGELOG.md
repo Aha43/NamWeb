@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Open a project with all sections collapsed (clean landing).** A project's workbench now lands
+  with **Details · Add to project · Actions · Sub-projects** all collapsed — a scannable overview you
+  expand into, instead of a wall of content. The state is still persisted per-project, so your
+  expansions stick; only the first-open default changed. To avoid losing track of what you add, a
+  section **auto-expands when you add to it** (a new action, sub-project, or applied template), and
+  deleting a project now redirects to the Projects list. Closes #279.
+
 - **Edit a project on its workbench, not in a modal.** A project's details — title, notes, tags,
   due date, status, and resources — are now edited in a collapsible **Details** panel at the top of
   the project's own workbench (its home surface), beside the existing "Add to project" panel, instead

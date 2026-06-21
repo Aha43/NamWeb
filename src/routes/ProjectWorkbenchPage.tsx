@@ -72,14 +72,15 @@ export function ProjectWorkbenchPage() {
     descendants > 0
       ? `Delete the "${project.title}" project and its ${descendants} item${descendants === 1 ? '' : 's'}? This cannot be undone.`
       : `Delete the "${project.title}" project? This cannot be undone.`;
-  const deleteProject = () => {
-    const ancestors = buildPath(document, id);
-    const parent = ancestors[ancestors.length - 1];
-    // Climb to the parent project (or the Projects list when top-level), then delete on the next
-    // tick — once this workbench has unmounted, so its "project gone" guard below can't first
-    // redirect to /projects and override the climb.
-    navigate(parent ? `/projects/${parent.id}` : '/projects');
-    setTimeout(() => deleteNode(id), 0);
+  // Delete the whole project (recursive). Don't navigate here: removing the node makes the routed
+  // project vanish, so the "project gone" guard below redirects to /projects — one deterministic
+  // redirect. (An earlier navigate-to-parent raced that guard and flaked.)
+  const deleteProject = () => deleteNode(id);
+
+  // Sections collapse by default on open (#279); when you add to one, expand it so the new item is
+  // visible rather than dropped into a collapsed section.
+  const ensureSectionExpanded = (section: 'actions' | 'subprojects') => {
+    if (collapsedSections.has(section)) toggleSection(section);
   };
 
   // Column mode is desktop-only and needs sub-projects; otherwise fall back to a list.
@@ -174,17 +175,19 @@ export function ProjectWorkbenchPage() {
       onToggleAddPanel={toggleAddPanel}
       collapsedSections={collapsedSections}
       onToggleSection={toggleSection}
-      onAddAction={(title) =>
+      onAddAction={(title) => {
         // New project actions land in BACKLOG (not NEXT) so they don't flood Next/Focus before
         // you've triaged them — matches NamDesktop's default. Issue #210.
-        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'BACKLOG', now: nowIso() })
-      }
+        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'BACKLOG', now: nowIso() });
+        ensureSectionExpanded('actions');
+      }}
       onAddActionToColumn={(columnId, title) =>
         dispatch({ type: 'addAction', parentId: columnId, id: newId(), title, status: 'BACKLOG', now: nowIso() })
       }
-      onAddSubProject={(title) =>
-        dispatch({ type: 'addSubProject', parentId: id, id: newId(), title, now: nowIso() })
-      }
+      onAddSubProject={(title) => {
+        dispatch({ type: 'addSubProject', parentId: id, id: newId(), title, now: nowIso() });
+        ensureSectionExpanded('subprojects');
+      }}
       onSetStatus={(actionId, status) => dispatch({ type: 'setStatus', id: actionId, status, now: nowIso() })}
       onEdit={openEditor}
       detailsCollapsed={detailsCollapsed}
@@ -222,6 +225,9 @@ export function ProjectWorkbenchPage() {
         const template = document.templates.find((t) => t.name === name);
         if (template) {
           dispatch({ type: 'applyTemplate', parentId: id, nodes: cloneTemplateNodes(template.children), now: nowIso() });
+          // Reveal the cloned-in structure rather than dropping it into collapsed sections (#279).
+          ensureSectionExpanded('actions');
+          ensureSectionExpanded('subprojects');
         }
       }}
     />

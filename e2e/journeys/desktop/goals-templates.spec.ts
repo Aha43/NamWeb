@@ -1,5 +1,6 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
+import { expandWorkbench } from '../../helpers/workbench';
 
 // J5 — Mission Control + templates: tag-grouped Goal Boards (heat-map → drill) and the
 // save-as-template / apply-template round-trip. Network-mocked.
@@ -53,6 +54,7 @@ test.describe('templates', () => {
     // Save the Onboarding subtree as a template (anchored prompt popover, pre-filled with the name).
     await page.goto('/projects');
     await page.getByRole('button', { name: 'Open Onboarding' }).click();
+    await expandWorkbench(page);
     await page.getByRole('button', { name: 'Save as template…' }).click();
     await page.getByLabel('Template name').fill('Onboarding template');
     await page.getByRole('button', { name: 'Save', exact: true }).click();
@@ -65,6 +67,7 @@ test.describe('templates', () => {
     // Apply it under a different project → its structure is cloned in.
     await page.goto('/projects');
     await page.getByRole('button', { name: 'Open New hire: Sam' }).click();
+    await expandWorkbench(page);
     await page.getByLabel('Add from template').selectOption({ label: 'Onboarding template' });
     await expect(page.getByText('Sign forms')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Open Setup' })).toBeVisible();
