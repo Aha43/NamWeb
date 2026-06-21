@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState, type FormEvent } from 'react';
-import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, SlidersHorizontal, Upload } from 'lucide-react';
+import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
@@ -27,8 +27,6 @@ export interface ProjectsPanelProps {
   onOpen: (id: string) => void;
   /** Inline-rename a project (deliberate, via the rename button — no dialog). */
   onRename?: (id: string, title: string) => void;
-  /** Open the full editor (description, tags, due…) for a top-level project. */
-  onEdit?: (id: string) => void;
   /** Persist a new top-level order (up/down buttons + desktop drag). Gets the full id order. */
   onReorder?: (orderedIds: string[]) => void;
   /** Mount drag-and-drop (desktop). The up/down buttons are the always-on fallback. */
@@ -56,7 +54,6 @@ export function ProjectsPanel({
   onAdd,
   onOpen,
   onRename,
-  onEdit,
   onReorder,
   dndEnabled,
   moveTargets,
@@ -157,18 +154,6 @@ export function ProjectsPanel({
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
                 <Pencil className="h-3.5 w-3.5" />
-              </button>
-            </Tooltip>
-          )}
-          {onEdit && (
-            <Tooltip label={`Edit ${project.title}`}>
-              <button
-                type="button"
-                aria-label={`Edit ${project.title}`}
-                onClick={() => onEdit(project.id)}
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
               </button>
             </Tooltip>
           )}

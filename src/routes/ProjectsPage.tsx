@@ -5,13 +5,11 @@ import { buildLearnNam } from '@/domain/learnNam';
 import { importSeedFromJson } from '@/domain/importWorkspace';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
-import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 export function ProjectsPage() {
   const { document, dispatch } = useWorkspaceContext();
-  const { openEditor } = useActionEditor();
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
   const [showArchived, setShowArchived] = useState(false);
@@ -47,7 +45,6 @@ export function ProjectsPage() {
         return { ok: true };
       }}
       onOpen={(id) => navigate(`/projects/${id}`)}
-      onEdit={openEditor}
       dndEnabled={isDesktop}
       onReorder={(orderedIds) => {
         if (!document) return;

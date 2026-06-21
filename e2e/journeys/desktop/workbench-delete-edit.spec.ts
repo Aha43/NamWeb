@@ -1,8 +1,9 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
 
-// #83 (Workspace parity, phase 3) — edit a project's own metadata, and delete items from the
-// workbench via the editor (with a confirm). Network-mocked.
+// #83 (Workspace parity, phase 3) — edit a project's own metadata (now via the workbench Details
+// panel, #269), and delete actions from the workbench via the editor dialog (with a confirm).
+// Network-mocked.
 test.use({
   seedDoc: new DocBuilder()
     .project('proj', 'Project')
@@ -11,14 +12,15 @@ test.use({
     .build(),
 });
 
-test('edit a sub-project’s tags via the editor', async ({ page, doc }) => {
+test('edit a sub-project’s tags via the workbench Details panel', async ({ page, doc }) => {
   await page.goto('/projects/proj');
 
-  await page.getByRole('button', { name: 'Edit Plumbing' }).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText('Edit project')).toBeVisible();
-  await dialog.getByLabel('Tags').fill('home');
-  await dialog.getByRole('button', { name: 'Save' }).click();
+  // A sub-project is edited on its own workbench Details panel (#269) — open it, then expand Details.
+  await page.getByRole('button', { name: 'Open Plumbing' }).click();
+  await expect(page).toHaveURL(/\/projects\/sp1/);
+  await page.getByRole('button', { name: 'Details' }).click();
+  await page.getByLabel('Tags').fill('home');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
 
   await expect.poll(() => doc.current().nodes['sp1'].tags).toEqual(['home']);
 });

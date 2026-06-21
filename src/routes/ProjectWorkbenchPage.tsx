@@ -1,9 +1,11 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { allTags, buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
+import { allTags, buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
+import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
 import type { ClonedTemplateNode } from '@/domain/mutations';
 import type { TemplateNode } from '@/domain/types';
+import type { ActionEdits } from '@/features/actions/ActionDialog';
 import { toActionRow } from '@/features/actions/rows';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
 import type { WorkbenchColumn } from '@/features/projects/ColumnView';
@@ -12,6 +14,7 @@ import { projectSummaryMarkdown } from '@/domain/projectSummary';
 import { useViewMode } from '@/features/projects/useViewMode';
 import { useCollapsedColumns } from '@/features/projects/useCollapsedColumns';
 import { useCollapsedAddPanel } from '@/features/projects/useCollapsedAddPanel';
+import { useCollapsedDetails } from '@/features/projects/useCollapsedDetails';
 import { useCollapsedSections } from '@/features/projects/useCollapsedSections';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useActionEditor } from '@/features/actions/action-editor-context';
@@ -32,6 +35,7 @@ export function ProjectWorkbenchPage() {
   const [mode, setMode] = useViewMode(id);
   const [collapsedColumns, toggleColumn] = useCollapsedColumns(id);
   const [addPanelCollapsed, toggleAddPanel] = useCollapsedAddPanel(id);
+  const [detailsCollapsed, toggleDetails] = useCollapsedDetails(id);
   const [collapsedSections, toggleSection] = useCollapsedSections(id);
   const isDesktop = useIsDesktop();
 
@@ -42,6 +46,41 @@ export function ProjectWorkbenchPage() {
   const actionNodes = projectActions(document, id);
   const subProjectNodes = subProjects(document, id);
   const actions = actionNodes.map((n) => toActionRow(document, n));
+
+  // Save the current project's edited details (inline Details panel) — dispatch only the intents
+  // for fields that actually changed, mirroring the action editor's save.
+  const saveDetails = (edits: ActionEdits) => {
+    const now = nowIso();
+    if (edits.title !== project.title || edits.description !== project.description) {
+      dispatch({ type: 'updateNode', id, title: edits.title, description: edits.description, now });
+    }
+    const tags = normalizeTags(edits.tags);
+    if (tags.length !== project.tags.length || tags.some((t, i) => t !== project.tags[i])) {
+      dispatch({ type: 'updateTags', id, tags, now });
+    }
+    if (edits.dueAt !== project.dueAt) dispatch({ type: 'setDue', id, dueAt: edits.dueAt, now });
+    if (edits.status !== project.status) dispatch({ type: 'setStatus', id, status: edits.status, now });
+    if (JSON.stringify(edits.resources) !== JSON.stringify(project.resources)) {
+      dispatch({ type: 'updateResources', id, resources: edits.resources, now });
+    }
+  };
+
+  // Delete the whole project (recursive) from its Details panel, then climb to the parent project
+  // (or the Projects list when it was top-level), since this workbench is about to vanish.
+  const descendants = subtreeIds(document, id).size - 1;
+  const deleteProjectMessage =
+    descendants > 0
+      ? `Delete the "${project.title}" project and its ${descendants} item${descendants === 1 ? '' : 's'}? This cannot be undone.`
+      : `Delete the "${project.title}" project? This cannot be undone.`;
+  const deleteProject = () => {
+    const ancestors = buildPath(document, id);
+    const parent = ancestors[ancestors.length - 1];
+    // Climb to the parent project (or the Projects list when top-level), then delete on the next
+    // tick — once this workbench has unmounted, so its "project gone" guard below can't first
+    // redirect to /projects and override the climb.
+    navigate(parent ? `/projects/${parent.id}` : '/projects');
+    setTimeout(() => deleteNode(id), 0);
+  };
 
   // Column mode is desktop-only and needs sub-projects; otherwise fall back to a list.
   const hasSubs = subProjectNodes.length > 0;
@@ -148,6 +187,11 @@ export function ProjectWorkbenchPage() {
       }
       onSetStatus={(actionId, status) => dispatch({ type: 'setStatus', id: actionId, status, now: nowIso() })}
       onEdit={openEditor}
+      detailsCollapsed={detailsCollapsed}
+      onToggleDetails={toggleDetails}
+      onSaveDetails={saveDetails}
+      onDeleteProject={deleteProject}
+      deleteProjectMessage={deleteProjectMessage}
       onFocus={() => navigate(`/focus?project=${id}`)}
       onDeleteAction={deleteNode}
       onGroupSelected={(actionIds, title) =>

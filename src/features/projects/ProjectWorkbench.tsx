@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, SlidersHorizontal, Target, Trash2 } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
@@ -21,6 +21,8 @@ import { SortableList } from '@/components/dnd/SortableList';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
 import { ProjectSummaryDialog } from './ProjectSummaryDialog';
+import { ProjectDetailsPanel } from './ProjectDetailsPanel';
+import type { ActionEdits } from '../actions/ActionDialog';
 import type { ActionRowData } from '../actions/rows';
 import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
@@ -50,7 +52,17 @@ export interface ProjectWorkbenchProps {
   onAddSubProject: (title: string) => void;
   onAddActionToColumn?: (columnId: string, title: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
+  /** Open an action's editor (the dialog). Actions only. */
   onEdit: (id: string) => void;
+  /** Collapsed state of the current project's "Details" (edit) panel + toggle (persisted by the page). */
+  detailsCollapsed?: boolean;
+  onToggleDetails?: () => void;
+  /** Save edits to the current project's title/notes/tags/due/status/resources. */
+  onSaveDetails?: (edits: ActionEdits) => void;
+  /** Delete the current project (recursive); the Details panel confirms inline. */
+  onDeleteProject?: () => void;
+  /** Count-aware confirm message for the project delete. */
+  deleteProjectMessage?: string;
   /** Enter Focus mode over this project's open direct actions. */
   onFocus?: () => void;
   /** Inline delete (with confirm) for a direct action row. */
@@ -123,6 +135,11 @@ export function ProjectWorkbench({
   onAddActionToColumn = () => {},
   onSetStatus,
   onEdit,
+  detailsCollapsed = true,
+  onToggleDetails = () => {},
+  onSaveDetails,
+  onDeleteProject,
+  deleteProjectMessage,
   onFocus,
   onDeleteAction,
   onGroupSelected,
@@ -233,16 +250,6 @@ export function ProjectWorkbench({
               <Pencil className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
-          <Tooltip label={`Edit ${sub.title}`}>
-            <button
-              type="button"
-              aria-label={`Edit ${sub.title}`}
-              onClick={() => onEdit(sub.id)}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
-            </button>
-          </Tooltip>
           {onMoveInto && subTargets.length > 0 && (
             <DropdownMenu>
               <Tooltip label="Move into another project">
@@ -309,6 +316,19 @@ export function ProjectWorkbench({
           Summary
         </Button>
       </div>
+
+      {onSaveDetails && (
+        <ProjectDetailsPanel
+          key={project.id}
+          project={project}
+          collapsed={detailsCollapsed}
+          onToggle={onToggleDetails}
+          onSave={onSaveDetails}
+          availableTags={allTags}
+          onDelete={onDeleteProject}
+          deleteConfirmMessage={deleteProjectMessage}
+        />
+      )}
 
       <div className="rounded-lg border border-border">
         <button
