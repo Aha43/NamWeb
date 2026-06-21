@@ -45,7 +45,6 @@ export function ProjectsPage() {
         return { ok: true };
       }}
       onOpen={(id) => navigate(`/projects/${id}`)}
-      onEdit={(id) => navigate(`/projects/${id}?edit=1`)}
       dndEnabled={isDesktop}
       onReorder={(orderedIds) => {
         if (!document) return;

@@ -12,10 +12,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   due date, status, and resources — are now edited in a collapsible **Details** panel at the top of
   the project's own workbench (its home surface), beside the existing "Add to project" panel, instead
   of in the overloaded action dialog. The panel also carries the project **Delete** (recursive, with
-  a count-aware inline confirm; deleting climbs to the parent project). The Projects-list
-  **edit-details** button and a sub-project row's **edit** button both drill into the relevant
-  workbench with the panel open. The shared `ResourcesEditor` is now its own module (reused by the
-  action dialog and the panel), and the action editor no longer opens for project nodes. Closes #269.
+  a count-aware inline confirm; deleting climbs to the parent project). To edit a project you simply
+  **open it** (from the Projects list, or a sub-project from its parent workbench) and expand the
+  Details panel — the per-row "edit details" (sliders) button is gone from both lists, since it now
+  only duplicated opening the project. The shared `ResourcesEditor` is now its own module (reused by
+  the action dialog and the panel), and the action editor no longer opens for project nodes. Closes #269.
 
 ### Added
 

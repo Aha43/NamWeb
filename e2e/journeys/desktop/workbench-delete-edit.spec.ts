@@ -15,9 +15,10 @@ test.use({
 test('edit a sub-project’s tags via the workbench Details panel', async ({ page, doc }) => {
   await page.goto('/projects/proj');
 
-  // Editing a sub-project drills into its own workbench with the Details panel open (#269).
-  await page.getByRole('button', { name: 'Edit Plumbing' }).click();
+  // A sub-project is edited on its own workbench Details panel (#269) — open it, then expand Details.
+  await page.getByRole('button', { name: 'Open Plumbing' }).click();
   await expect(page).toHaveURL(/\/projects\/sp1/);
+  await page.getByRole('button', { name: 'Details' }).click();
   await page.getByLabel('Tags').fill('home');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 

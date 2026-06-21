@@ -2,8 +2,8 @@ import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
 
 // #269 — a project is edited on its own workbench (inline Details panel), not in the action dialog.
-// The Projects-list "edit details" button drills in with the panel open; a sub-project's edit button
-// does the same one level down. Network-mocked.
+// You open a project (from the list, or a sub-project from its parent workbench) and expand the
+// Details panel to edit/delete it. Network-mocked.
 test.use({
   seedDoc: new DocBuilder()
     .project('proj', 'Kitchen reno')
@@ -14,9 +14,10 @@ test.use({
 test('edit a top-level project via the workbench Details panel', async ({ page, doc }) => {
   await page.goto('/projects');
 
-  // The list's edit-details button drills into the workbench with the Details panel open.
-  await page.getByRole('button', { name: 'Edit Kitchen reno' }).click();
+  // Open the project, then expand its Details panel to edit it (no per-row edit button).
+  await page.getByRole('button', { name: 'Open Kitchen reno' }).click();
   await expect(page).toHaveURL(/\/projects\/proj/);
+  await page.getByRole('button', { name: 'Details' }).click();
 
   const title = page.getByLabel('Title');
   await expect(title).toHaveValue('Kitchen reno');
@@ -30,12 +31,13 @@ test('edit a top-level project via the workbench Details panel', async ({ page, 
   await expect.poll(() => doc.current().nodes['proj'].description).toBe('new cabinets');
 });
 
-test('edit a sub-project from its parent workbench drills in', async ({ page, doc }) => {
+test('edit a sub-project on its own workbench', async ({ page, doc }) => {
   await page.goto('/projects/proj');
 
-  await page.getByRole('button', { name: 'Edit Plumbing' }).click();
+  // Open the sub-project from its parent workbench, then edit it via its Details panel.
+  await page.getByRole('button', { name: 'Open Plumbing' }).click();
   await expect(page).toHaveURL(/\/projects\/sub/);
-
+  await page.getByRole('button', { name: 'Details' }).click();
   await page.getByLabel('Title').fill('Pipework');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
 

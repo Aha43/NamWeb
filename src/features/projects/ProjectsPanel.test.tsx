@@ -53,13 +53,6 @@ describe('ProjectsPanel', () => {
     expect(screen.queryByRole('button', { name: 'Rename Kitchen reno' })).not.toBeInTheDocument();
   });
 
-  it('opens the editor for a top-level project via the edit button', () => {
-    const onEdit = vi.fn();
-    setup([project('p', 'Kitchen reno')], { onEdit });
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Kitchen reno' }));
-    expect(onEdit).toHaveBeenCalledWith('p');
-  });
-
   it('reorders top-level projects with the up/down controls', () => {
     const onReorder = vi.fn();
     setup([project('a', 'Alpha'), project('b', 'Beta')], { onReorder });

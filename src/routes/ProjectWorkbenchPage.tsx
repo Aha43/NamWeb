@@ -1,5 +1,4 @@
-import { useEffect } from 'react';
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { allTags, buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { normalizeTags } from '@/domain/mutations';
@@ -36,21 +35,9 @@ export function ProjectWorkbenchPage() {
   const [mode, setMode] = useViewMode(id);
   const [collapsedColumns, toggleColumn] = useCollapsedColumns(id);
   const [addPanelCollapsed, toggleAddPanel] = useCollapsedAddPanel(id);
-  const [detailsCollapsed, toggleDetails, setDetailsCollapsed] = useCollapsedDetails(id);
+  const [detailsCollapsed, toggleDetails] = useCollapsedDetails(id);
   const [collapsedSections, toggleSection] = useCollapsedSections(id);
-  const [searchParams, setSearchParams] = useSearchParams();
   const isDesktop = useIsDesktop();
-
-  // Arriving via an "edit details" action (Projects list / a sub-project row) carries ?edit=1 —
-  // open the Details panel, then strip the param so a refresh/back doesn't force it open again.
-  useEffect(() => {
-    if (searchParams.get('edit') === '1') {
-      setDetailsCollapsed(false);
-      const next = new URLSearchParams(searchParams);
-      next.delete('edit');
-      setSearchParams(next, { replace: true });
-    }
-  }, [searchParams, setSearchParams, setDetailsCollapsed]);
 
   if (!document) return null;
   const project = document.nodes[id];
@@ -200,7 +187,6 @@ export function ProjectWorkbenchPage() {
       }
       onSetStatus={(actionId, status) => dispatch({ type: 'setStatus', id: actionId, status, now: nowIso() })}
       onEdit={openEditor}
-      onEditProject={(pid) => navigate(`/projects/${pid}?edit=1`)}
       detailsCollapsed={detailsCollapsed}
       onToggleDetails={toggleDetails}
       onSaveDetails={saveDetails}

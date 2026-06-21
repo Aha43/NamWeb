@@ -21,9 +21,8 @@ function write(projectId: string, collapsed: boolean) {
 }
 
 /** Per-project collapsed state for the workbench "Details" (edit project) panel, persisted to
- *  localStorage (mirrors `useCollapsedAddPanel`). Defaults to collapsed. The explicit setter lets
- *  the page force it open when the user arrives via an "edit details" action. */
-export function useCollapsedDetails(projectId: string): [boolean, () => void, (collapsed: boolean) => void] {
+ *  localStorage (mirrors `useCollapsedAddPanel`). Defaults to collapsed. */
+export function useCollapsedDetails(projectId: string): [boolean, () => void] {
   const [collapsed, setCollapsed] = useState<boolean>(() => read(projectId));
 
   // Re-read when navigating to a different project (the component instance is reused).
@@ -37,13 +36,5 @@ export function useCollapsedDetails(projectId: string): [boolean, () => void, (c
     });
   }, [projectId]);
 
-  const set = useCallback(
-    (next: boolean) => {
-      write(projectId, next);
-      setCollapsed(next);
-    },
-    [projectId],
-  );
-
-  return [collapsed, toggle, set];
+  return [collapsed, toggle];
 }

@@ -60,14 +60,6 @@ describe('ProjectWorkbench', () => {
     expect(onEdit).not.toHaveBeenCalled();
   });
 
-  it('edits a sub-project via onEditProject (not the action editor)', () => {
-    const onEditProject = vi.fn();
-    const { onEdit } = setup({ onEditProject });
-    fireEvent.click(screen.getByRole('button', { name: 'Edit Plumbing' }));
-    expect(onEditProject).toHaveBeenCalledWith('s');
-    expect(onEdit).not.toHaveBeenCalled();
-  });
-
   it('renders the Details panel only when onSaveDetails is wired', () => {
     const { rerender } = render(
       <ProjectWorkbench

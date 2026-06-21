@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent } from 'react';
-import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, SlidersHorizontal, Target, Trash2 } from 'lucide-react';
+import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
@@ -54,8 +54,6 @@ export interface ProjectWorkbenchProps {
   onSetStatus: (id: string, status: NodeStatus) => void;
   /** Open an action's editor (the dialog). Actions only. */
   onEdit: (id: string) => void;
-  /** Edit a sub-project — drills into its workbench and opens the Details panel there. */
-  onEditProject?: (id: string) => void;
   /** Collapsed state of the current project's "Details" (edit) panel + toggle (persisted by the page). */
   detailsCollapsed?: boolean;
   onToggleDetails?: () => void;
@@ -137,7 +135,6 @@ export function ProjectWorkbench({
   onAddActionToColumn = () => {},
   onSetStatus,
   onEdit,
-  onEditProject,
   detailsCollapsed = true,
   onToggleDetails = () => {},
   onSaveDetails,
@@ -253,18 +250,6 @@ export function ProjectWorkbench({
               <Pencil className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
-          {onEditProject && (
-            <Tooltip label={`Edit ${sub.title}`}>
-              <button
-                type="button"
-                aria-label={`Edit ${sub.title}`}
-                onClick={() => onEditProject(sub.id)}
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                <SlidersHorizontal className="h-3.5 w-3.5" />
-              </button>
-            </Tooltip>
-          )}
           {onMoveInto && subTargets.length > 0 && (
             <DropdownMenu>
               <Tooltip label="Move into another project">
