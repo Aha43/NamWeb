@@ -20,6 +20,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Re-triage in Focus mode — fix bad planning in-flow.** Going through your **Next** queue in Focus
+  and spotting a card that shouldn't be a Next, you can now **Move to Backlog** right there (and, when
+  focusing **Backlog**, **Move to Next**) — a secondary action beside Done. The flipped card changes
+  status, drops out of the current deck, and the next card slides in, exactly like Done — so you
+  triage without leaving the flow. Deliberately the *only* addition: no edit/delete in Focus, and it's
+  omitted for project-scoped focus (mixed statuses). Closes #277.
+
 - **Process Inbox — one-at-a-time deck.** A **Process inbox** button runs through every inbox
   item one at a time (Next / Backlog / Make project / Delete / Skip, with an "N left" counter),
   auto-advancing — clear the catch-all in one flow. Builds on the existing per-item process dialog.

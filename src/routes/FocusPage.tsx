@@ -65,6 +65,20 @@ export function FocusPage() {
         key={sourceKey}
         cards={cards}
         onDone={(id) => dispatch({ type: 'setStatus', id, status: 'DONE', now: nowIso() })}
+        // In-flow re-triage for the flat queues: defer a Next to Backlog, or promote a Backlog to
+        // Next. Omitted for project-scoped focus, whose deck mixes statuses.
+        flipLabel={projectId ? undefined : source === 'backlog' ? 'Next' : 'Backlog'}
+        onFlip={
+          projectId
+            ? undefined
+            : (id) =>
+                dispatch({
+                  type: 'setStatus',
+                  id,
+                  status: source === 'backlog' ? 'NEXT' : 'BACKLOG',
+                  now: nowIso(),
+                })
+        }
         onExit={exit}
       />
     </div>
