@@ -36,7 +36,7 @@ export function InlineRename({
       onChange={(e) => setDraft(e.target.value)}
       onKeyDown={onKeyDown}
       onBlur={onCancel}
-      className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm outline-none focus:border-ring"
+      className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm outline-hidden focus:border-ring"
     />
   );
 }

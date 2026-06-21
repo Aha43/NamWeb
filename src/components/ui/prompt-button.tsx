@@ -85,7 +85,7 @@ export function PromptButton({
           side="bottom"
           align="end"
           sideOffset={4}
-          className="z-50 w-64 rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          className="z-50 w-64 rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-md outline-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         >
           <form
             onSubmit={(e) => {
@@ -112,7 +112,7 @@ export function PromptButton({
                 setHighlight(0);
               }}
               onKeyDown={onKeyDown}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
             />
             {showList && (
               <ul

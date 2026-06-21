@@ -36,7 +36,7 @@ export function StatusMenu({
         <DropdownMenuTrigger
           aria-label={`Status of ${title}: ${status}. Change status.`}
           className={cn(
-            'inline-flex h-6 w-6 items-center justify-center rounded-md border text-xs font-semibold outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
+            'inline-flex h-6 w-6 items-center justify-center rounded-md border text-xs font-semibold outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
             TONE[status] ?? 'text-muted-foreground border-border',
           )}
         >

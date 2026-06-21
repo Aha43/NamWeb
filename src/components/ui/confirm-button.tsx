@@ -41,7 +41,7 @@ export function ConfirmButton({
           side="bottom"
           align="end"
           sideOffset={4}
-          className="z-50 w-64 rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-md outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          className="z-50 w-64 rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-md outline-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         >
           <p className="text-sm text-foreground">{message}</p>
           <div className="mt-3 flex justify-end gap-2">

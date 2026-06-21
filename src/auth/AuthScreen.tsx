@@ -129,7 +129,7 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
     <div className="flex min-h-dvh items-center justify-center bg-background px-4">
       <form
         onSubmit={onSubmit}
-        className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6 shadow-sm"
+        className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6 shadow-xs"
       >
         <div className="flex flex-col items-center text-center">
           <LogoMark className="h-12 w-12 text-card-foreground" />
@@ -146,7 +146,7 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
             />
           </label>
         )}
@@ -161,7 +161,7 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
               minLength={mode === 'signin' ? undefined : MIN_PASSWORD}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
             />
           </label>
         )}
@@ -180,7 +180,7 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
               minLength={MIN_PASSWORD}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
             />
           </label>
         )}

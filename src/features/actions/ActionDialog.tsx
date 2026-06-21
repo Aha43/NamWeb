@@ -229,7 +229,7 @@ export function ActionDialog({
                   onChange={(e) => {
                     if (e.target.value) onAddPrerequisite(e.target.value);
                   }}
-                  className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+                  className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
                 >
                   <option value="" disabled>
                     Add a prerequisite…
@@ -261,7 +261,7 @@ export function ActionDialog({
                     onChange={(e) => {
                       if (e.target.value) onMove(e.target.value);
                     }}
-                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
                   >
                     <option value="" disabled>
                       Move to…

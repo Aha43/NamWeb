@@ -70,7 +70,7 @@ export function FocusDeck({ cards, onDone, onExit }: FocusDeckProps) {
           initial={reduceMotion ? false : { opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: reduceMotion ? 0 : 0.15 }}
-          className="w-full max-w-lg cursor-grab rounded-2xl border border-border bg-card p-8 shadow-sm active:cursor-grabbing"
+          className="w-full max-w-lg cursor-grab rounded-2xl border border-border bg-card p-8 shadow-xs active:cursor-grabbing"
         >
           {current.path.length > 0 && (
             <p className="mb-2 text-sm text-muted-foreground">{current.path.join(' › ')}</p>

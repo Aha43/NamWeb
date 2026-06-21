@@ -358,7 +358,7 @@ export function ProjectWorkbench({
                     e.target.value = '';
                   }
                 }}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
               >
                 <option value="" disabled>
                   Add from template…
@@ -492,7 +492,7 @@ export function ProjectWorkbench({
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       disabled={selected.size === 0}
-                      className="rounded-md px-2 py-0.5 font-medium text-foreground outline-none hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                      className="rounded-md px-2 py-0.5 font-medium text-foreground outline-hidden hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
                     >
                       Status ▾
                     </DropdownMenuTrigger>
@@ -740,7 +740,7 @@ function QuickAdd({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder={placeholder}
-        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
       />
       <Button type="submit" variant="outline" size="sm">
         Add

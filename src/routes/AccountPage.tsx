@@ -219,7 +219,7 @@ function DeleteAccount() {
                 id="confirm-delete"
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
               />
             </div>
             {error && (
@@ -276,7 +276,7 @@ function ChangePassword() {
   }
 
   const field =
-    'mt-1 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring';
+    'mt-1 w-full max-w-xs rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring';
 
   return (
     <form onSubmit={onSubmit} className="space-y-2">
@@ -330,7 +330,7 @@ function PreferencesTab() {
         id="settings-date-format"
         value={dateFormat}
         onChange={(e) => setDateFormat(e.target.value as DateFormat)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
       >
         {DATE_FORMAT_OPTIONS.map((opt) => (
           <option key={opt.value} value={opt.value}>

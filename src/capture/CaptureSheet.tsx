@@ -33,7 +33,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="What's on your mind?"
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
           />
           <Button type="submit">Add</Button>
         </form>

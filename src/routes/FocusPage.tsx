@@ -49,7 +49,7 @@ export function FocusPage() {
                 onClick={() => setParams({ source: s })}
                 className={cn(
                   'rounded px-3 py-1 text-sm font-medium capitalize transition-colors',
-                  source === s ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
+                  source === s ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground',
                 )}
               >
                 {s}

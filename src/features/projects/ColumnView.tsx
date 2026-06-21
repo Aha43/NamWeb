@@ -347,7 +347,7 @@ function ColumnAdd({ label, onAdd }: { label: string; onAdd: (title: string) => 
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Add an action…"
-        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+        className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
       />
     </form>
   );
