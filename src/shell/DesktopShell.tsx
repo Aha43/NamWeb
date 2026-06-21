@@ -119,14 +119,14 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                     )}
                     {group.items.map(({ to, label, icon: Icon, hint }) => (
                       <Tooltip key={to} label={hint} side="right">
+                        {/* Static (string) className + aria-current for the active state — a render-prop
+                            className breaks when the Tooltip's asChild Slot clones the NavLink. */}
                         <NavLink
                           to={to}
-                          className={({ isActive }) =>
-                            cn(
-                              'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors',
-                              isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                            )
-                          }
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                            'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
+                          )}
                         >
                           <Icon className="h-4 w-4" />
                           {label}
