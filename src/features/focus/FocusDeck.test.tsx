@@ -52,6 +52,18 @@ describe('FocusDeck', () => {
     expect(onExit).toHaveBeenCalledOnce();
   });
 
+  it('re-triages the current card via the flip button when wired', () => {
+    const onFlip = vi.fn();
+    render(<FocusDeck cards={three} onDone={vi.fn()} onExit={vi.fn()} flipLabel="Backlog" onFlip={onFlip} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Move to Backlog' }));
+    expect(onFlip).toHaveBeenCalledWith('a');
+  });
+
+  it('omits the flip button when not wired (e.g. project-scoped focus)', () => {
+    setup(three);
+    expect(screen.queryByRole('button', { name: /^Move to/ })).not.toBeInTheDocument();
+  });
+
   it('shows an all-done state for an empty queue', () => {
     const { onExit } = setup([]);
     expect(screen.getByText('All done.')).toBeInTheDocument();

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, FolderInput } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { FocusCard } from './focusCards';
 
@@ -8,14 +8,22 @@ export interface FocusDeckProps {
   cards: FocusCard[];
   onDone: (id: string) => void;
   onExit: () => void;
+  /**
+   * Optional in-flow re-triage: move the current card to the other queue (Next↔Backlog). When
+   * wired, a secondary button appears; flipping changes the card's status, so it drops out of this
+   * deck and the next card slides in — exactly like Done. `flipLabel` is the destination ("Backlog"
+   * / "Next"). Omitted for project-scoped focus (mixed statuses).
+   */
+  flipLabel?: string;
+  onFlip?: (id: string) => void;
 }
 
 /**
  * One-card-at-a-time execution deck (NamDesktop focus mode). Circular prev/next,
  * Done & advance, keyboard (←/→/Space/Esc), and swipe on touch. The card list is
- * live — marking Done removes the item upstream and the next card slides in.
+ * live — marking Done (or re-triaging) removes the item upstream and the next card slides in.
  */
-export function FocusDeck({ cards, onDone, onExit }: FocusDeckProps) {
+export function FocusDeck({ cards, onDone, onExit, flipLabel, onFlip }: FocusDeckProps) {
   const [index, setIndex] = useState(0);
   const reduceMotion = useReducedMotion();
 
@@ -27,6 +35,9 @@ export function FocusDeck({ cards, onDone, onExit }: FocusDeckProps) {
   const prev = () => setIndex((i) => i - 1);
   const done = () => {
     if (current) onDone(current.id);
+  };
+  const flip = () => {
+    if (current && onFlip) onFlip(current.id);
   };
 
   useEffect(() => {
@@ -94,6 +105,21 @@ export function FocusDeck({ cards, onDone, onExit }: FocusDeckProps) {
           <ChevronRight />
         </Button>
       </div>
+
+      {onFlip && flipLabel && (
+        <div className="flex justify-center pb-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 text-muted-foreground"
+            aria-label={`Move to ${flipLabel}`}
+            onClick={flip}
+          >
+            <FolderInput className="h-4 w-4" />
+            Move to {flipLabel}
+          </Button>
+        </div>
+      )}
 
       <p className="pb-6 text-center text-sm text-muted-foreground" aria-label="Progress" aria-live="polite">
         {safeIndex + 1} / {len}
