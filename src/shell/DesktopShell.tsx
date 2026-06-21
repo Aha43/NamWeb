@@ -70,24 +70,15 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             </Button>
           </Tooltip>
           <ToolbarSearch />
+          <Tooltip label="Tags">
+            <Button asChild variant="ghost" size="icon" aria-label="Tags">
+              <NavLink to="/tags">
+                <Tag />
+              </NavLink>
+            </Button>
+          </Tooltip>
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <Tooltip label="Tags">
-            <NavLink
-              to="/tags"
-              aria-label="Tags"
-              className={({ isActive }) =>
-                cn(
-                  'inline-flex h-9 w-9 items-center justify-center rounded-md transition-colors',
-                  isActive
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                )
-              }
-            >
-              <Tag className="h-4 w-4" />
-            </NavLink>
-          </Tooltip>
           <ThemeToggle />
           <AccountMenu onSignOut={onSignOut} />
         </div>
