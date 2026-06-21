@@ -88,13 +88,19 @@ describe('adaptive shell', () => {
     expect(within(more).getByRole('link', { name: 'Backlog' })).toBeInTheDocument();
   });
 
-  it('desktop: persistent sidebar with every surface, no bottom bar', () => {
+  it('desktop: grouped sidebar with Capture + Focus promoted to buttons, no bottom bar', () => {
     renderShell(true);
     const sidebar = screen.getByRole('navigation', { name: 'Sidebar' });
     expect(within(sidebar).getByRole('link', { name: 'Backlog' })).toBeInTheDocument();
     expect(within(sidebar).getByRole('link', { name: 'Inbox' })).toBeInTheDocument();
     expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument();
+    // The two "do" actions are foregrounded above the grouped list; Focus is no longer a list item.
     expect(screen.getByRole('button', { name: 'Capture' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Focus' })).toHaveAttribute('href', '/focus');
+    expect(within(sidebar).queryByRole('link', { name: 'Focus' })).not.toBeInTheDocument();
+    // Section headings group the list.
+    expect(within(sidebar).getByText('Lenses')).toBeInTheDocument();
+    expect(within(sidebar).getByText('Organize')).toBeInTheDocument();
   });
 
   it('desktop: top toolbar carries search, theme toggle and the account menu (not the sidebar)', () => {

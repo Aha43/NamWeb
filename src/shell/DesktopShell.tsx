@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen, Plus, Search, Tag } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Plus, Search, Tag, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -9,7 +9,7 @@ import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
-import { SURFACES } from './nav';
+import { SIDEBAR_GROUPS } from './nav';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
 import {
@@ -19,12 +19,8 @@ import {
   useSidebarLayout,
 } from './useSidebarLayout';
 
-// Search + Tags live in the toolbar now (Tags is more an admin surface than a daily view); the rest
-// of the surfaces stay in the sidebar nav.
-const SIDEBAR_SURFACES = SURFACES.filter((s) => s.to !== '/search' && s.to !== '/tags');
-
-/** Laptop/desktop: a top toolbar (search + theme + sign out) over a resizable, collapsible
- *  view-list sidebar and the workspace. */
+/** Laptop/desktop: a top toolbar (search + tags + theme + account) over a resizable, collapsible
+ *  view-list sidebar (grouped) and the workspace. */
 export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   const { openCapture } = useCapture();
   const { width, collapsed, setWidth, toggleCollapsed } = useSidebarLayout();
@@ -95,26 +91,44 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 </Tooltip>
               </div>
 
-              <Button className="mt-4 justify-start gap-2" onClick={openCapture}>
-                <Plus />
-                Capture
-              </Button>
-
-              <nav aria-label="Sidebar" className="mt-4 flex flex-col gap-1">
-                {SIDEBAR_SURFACES.map(({ to, label, icon: Icon }) => (
-                  <NavLink
-                    key={to}
-                    to={to}
-                    className={({ isActive }) =>
-                      cn(
-                        'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors',
-                        isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                      )
-                    }
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
+              {/* The two "do" actions, foregrounded (mirrors the phone bottom bar). */}
+              <div className="mt-4 flex flex-col gap-2">
+                <Button className="justify-start gap-2" onClick={openCapture}>
+                  <Plus />
+                  Capture
+                </Button>
+                <Button asChild variant="outline" className="justify-start gap-2">
+                  <NavLink to="/focus">
+                    <Target />
+                    Focus
                   </NavLink>
+                </Button>
+              </div>
+
+              <nav aria-label="Sidebar" className="mt-5 flex flex-col gap-4">
+                {SIDEBAR_GROUPS.map((group, i) => (
+                  <div key={group.label ?? i} className="flex flex-col gap-1">
+                    {group.label && (
+                      <span className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                        {group.label}
+                      </span>
+                    )}
+                    {group.items.map(({ to, label, icon: Icon }) => (
+                      <NavLink
+                        key={to}
+                        to={to}
+                        className={({ isActive }) =>
+                          cn(
+                            'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors',
+                            isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                          )
+                        }
+                      >
+                        <Icon className="h-4 w-4" />
+                        {label}
+                      </NavLink>
+                    ))}
+                  </div>
                 ))}
               </nav>
             </aside>
