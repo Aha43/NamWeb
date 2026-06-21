@@ -103,9 +103,12 @@ describe('adaptive shell', () => {
     expect(screen.getByRole('button', { name: 'Toggle theme' })).toBeInTheDocument();
     // Sign out now lives inside the account menu (top-right user icon).
     expect(screen.getByRole('button', { name: 'Account menu' })).toBeInTheDocument();
-    // Search moved out of the sidebar nav (still in SURFACES for phone's More sheet).
+    // Search + Tags moved out of the sidebar nav (still in SURFACES for phone's More sheet).
     const sidebar = screen.getByRole('navigation', { name: 'Sidebar' });
     expect(within(sidebar).queryByRole('link', { name: 'Search' })).not.toBeInTheDocument();
+    expect(within(sidebar).queryByRole('link', { name: 'Tags' })).not.toBeInTheDocument();
+    // Tags is reachable from the toolbar instead.
+    expect(screen.getByRole('link', { name: 'Tags' })).toHaveAttribute('href', '/tags');
   });
 
   it('desktop: a draggable divider separates the view list from the workspace', () => {

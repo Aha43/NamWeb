@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Tags moved from the sidebar to the toolbar.** Tags is more a manage-your-vocabulary *admin*
+  surface than a daily view, so on desktop it's now a **Tag icon button in the top toolbar** (next to
+  theme/account), mirroring how Search already lives there. The sidebar keeps the daily views; the
+  phone **More** sheet is unchanged. Closes #284.
+
 - **Open a project with all sections collapsed (clean landing).** A project's workbench now lands
   with **Details · Add to project · Actions · Sub-projects** all collapsed — a scannable overview you
   expand into, instead of a wall of content. The state is still persisted per-project, so your

@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen, Plus, Search } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Plus, Search, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -19,8 +19,9 @@ import {
   useSidebarLayout,
 } from './useSidebarLayout';
 
-// Search lives in the toolbar now; the rest of the surfaces stay in the sidebar nav.
-const SIDEBAR_SURFACES = SURFACES.filter((s) => s.to !== '/search');
+// Search + Tags live in the toolbar now (Tags is more an admin surface than a daily view); the rest
+// of the surfaces stay in the sidebar nav.
+const SIDEBAR_SURFACES = SURFACES.filter((s) => s.to !== '/search' && s.to !== '/tags');
 
 /** Laptop/desktop: a top toolbar (search + theme + sign out) over a resizable, collapsible
  *  view-list sidebar and the workspace. */
@@ -69,6 +70,13 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             </Button>
           </Tooltip>
           <ToolbarSearch />
+          <Tooltip label="Tags">
+            <Button asChild variant="ghost" size="icon" aria-label="Tags">
+              <NavLink to="/tags">
+                <Tag />
+              </NavLink>
+            </Button>
+          </Tooltip>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
