@@ -50,6 +50,6 @@ export interface NavGroup {
  *  **Tags** + **Search** live in the toolbar — so none of those appear here. */
 export const SIDEBAR_GROUPS: NavGroup[] = [
   { items: [inbox, next] },
-  { label: 'Lenses', items: [backlog, due, blocked, done] },
+  { label: 'Views', items: [backlog, due, blocked, done] },
   { label: 'Organize', items: [projects, goals, templates] },
 ];

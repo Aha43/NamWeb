@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Sidebar grouped, and Focus promoted to a button.** The desktop sidebar was a flat list of ~10
   surfaces with **Focus** — a primary daily action — stuck last. Now **Capture** and **Focus** sit as
   the two buttons up top (the "do" actions, mirroring the phone bottom bar), and the rest is grouped
-  into short labelled sections — **Inbox · Next**, then **Lenses** (Backlog · Due · Blocked · Done),
+  into short labelled sections — **Inbox · Next**, then **Views** (Backlog · Due · Blocked · Done),
   then **Organize** (Projects · Goals · Templates) — so the list reads as chunks instead of a wall.
   Closes #286.
 

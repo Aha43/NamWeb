@@ -99,7 +99,7 @@ describe('adaptive shell', () => {
     expect(screen.getByRole('link', { name: 'Focus' })).toHaveAttribute('href', '/focus');
     expect(within(sidebar).queryByRole('link', { name: 'Focus' })).not.toBeInTheDocument();
     // Section headings group the list.
-    expect(within(sidebar).getByText('Lenses')).toBeInTheDocument();
+    expect(within(sidebar).getByText('Views')).toBeInTheDocument();
     expect(within(sidebar).getByText('Organize')).toBeInTheDocument();
   });
 
