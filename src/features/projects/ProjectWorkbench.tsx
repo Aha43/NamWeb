@@ -332,6 +332,19 @@ export function ProjectWorkbench({
         </Button>
       </div>
 
+      {onSaveDetails && (
+        <ProjectDetailsPanel
+          key={project.id}
+          project={project}
+          collapsed={detailsCollapsed}
+          onToggle={onToggleDetails}
+          onSave={onSaveDetails}
+          availableTags={allTags}
+          onDelete={onDeleteProject}
+          deleteConfirmMessage={deleteProjectMessage}
+        />
+      )}
+
       <div className="rounded-lg border border-border">
         <button
           type="button"
@@ -388,19 +401,6 @@ export function ProjectWorkbench({
           </div>
         )}
       </div>
-
-      {onSaveDetails && (
-        <ProjectDetailsPanel
-          key={project.id}
-          project={project}
-          collapsed={detailsCollapsed}
-          onToggle={onToggleDetails}
-          onSave={onSaveDetails}
-          availableTags={allTags}
-          onDelete={onDeleteProject}
-          deleteConfirmMessage={deleteProjectMessage}
-        />
-      )}
 
       {subProjects.length > 0 && (
         <ViewSwitch mode={viewMode} onSet={onSetViewMode} columnAvailable={columnAvailable} />
