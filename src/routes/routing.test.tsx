@@ -131,11 +131,16 @@ describe('routing', () => {
     expect(screen.getByRole('button', { name: 'Restore Old task to next' })).toBeInTheDocument();
   });
 
-  it('renders a project workbench at /projects/:id', () => {
+  it('renders a project workbench at /projects/:id, sections collapsed by default', () => {
     renderAt('/projects/proj');
     expect(screen.getByRole('button', { name: 'Projects' })).toBeInTheDocument(); // breadcrumb root
-    expect(screen.getByText('Task one')).toBeInTheDocument(); // its direct action
-    expect(screen.getByLabelText('Add action')).toBeInTheDocument();
+    // #279: the workbench lands with all sections collapsed for a clean overview — content and the
+    // add-panel inputs sit behind their headers.
+    expect(screen.queryByText('Task one')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Add action')).not.toBeInTheDocument();
+    // Expanding the Actions section reveals the direct action.
+    fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
+    expect(screen.getByText('Task one')).toBeInTheDocument();
   });
 
   it('redirects the index route to /inbox', () => {

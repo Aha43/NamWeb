@@ -1,5 +1,6 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
+import { expandWorkbench } from '../../helpers/workbench';
 
 // #87 (Workspace parity, phase 5) — attach a resource (link) to an action via the editor; the row
 // then shows a paperclip and the resource persists. Network-mocked.
@@ -9,6 +10,7 @@ test.use({
 
 test('add a resource via the editor; the row shows a paperclip', async ({ page, doc }) => {
   await page.goto('/projects/proj');
+  await expandWorkbench(page);
 
   await page.getByRole('button', { name: 'Edit Read the spec' }).click();
   const dialog = page.getByRole('dialog');

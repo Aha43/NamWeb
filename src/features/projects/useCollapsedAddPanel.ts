@@ -4,15 +4,16 @@ const KEY = (projectId: string) => `namweb.addpanel.collapsed.${projectId}`;
 
 function read(projectId: string): boolean {
   try {
-    return localStorage.getItem(KEY(projectId)) === 'true';
+    const stored = localStorage.getItem(KEY(projectId));
+    // Default collapsed on first open (clean project landing); a stored value is authoritative.
+    return stored === null ? true : stored === 'true';
   } catch {
-    // localStorage unavailable — default to expanded.
-    return false;
+    return true;
   }
 }
 
 /** Per-project collapsed state for the workbench "Add to project" panel, persisted to
- *  localStorage (mirrors `useViewMode` / `useCollapsedColumns`). Defaults to expanded. */
+ *  localStorage (mirrors `useViewMode` / `useCollapsedColumns`). Defaults to collapsed. */
 export function useCollapsedAddPanel(projectId: string): [boolean, () => void] {
   const [collapsed, setCollapsed] = useState<boolean>(() => read(projectId));
 

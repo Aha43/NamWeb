@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
+import { expandWorkbench } from '../../helpers/workbench';
 
 // #89 (Workspace parity, phase 6a) — drag-and-drop reorder (dnd-kit) on the single-container
 // surfaces, reusing the existing intents. Desktop-only; the up/down buttons stay as a fallback.
@@ -34,6 +35,7 @@ test.describe('workbench drag reorder (childIds)', () => {
 
   test('drag a direct action and a sub-project, persisted to childIds', async ({ page, doc }) => {
     await page.goto('/projects/proj');
+    await expandWorkbench(page);
 
     const actions = page.getByRole('list').first().getByRole('listitem');
     const subs = page.getByRole('list').nth(1).getByRole('listitem');

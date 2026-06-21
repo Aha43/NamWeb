@@ -1,5 +1,6 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
+import { expandWorkbench } from '../../helpers/workbench';
 
 // J4 — triage breadth: the backlog status switch, the due-date grouping, the blocked surface,
 // and reshaping actions ↔ projects. Network-mocked.
@@ -98,6 +99,7 @@ test.describe('reshape', () => {
 
     await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
     await page.getByRole('button', { name: 'Open Home' }).click();
+    await expandWorkbench(page);
     await expect(page.getByText('Fix sink')).toBeVisible();
   });
 

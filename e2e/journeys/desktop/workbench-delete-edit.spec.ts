@@ -1,5 +1,6 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
+import { expandWorkbench } from '../../helpers/workbench';
 
 // #83 (Workspace parity, phase 3) — edit a project's own metadata (now via the workbench Details
 // panel, #269), and delete actions from the workbench via the editor dialog (with a confirm).
@@ -14,6 +15,7 @@ test.use({
 
 test('edit a sub-project’s tags via the workbench Details panel', async ({ page, doc }) => {
   await page.goto('/projects/proj');
+  await expandWorkbench(page);
 
   // A sub-project is edited on its own workbench Details panel (#269) — open it, then expand Details.
   await page.getByRole('button', { name: 'Open Plumbing' }).click();
@@ -27,6 +29,7 @@ test('edit a sub-project’s tags via the workbench Details panel', async ({ pag
 
 test('delete an action from the workbench via the editor (with confirm)', async ({ page, doc }) => {
   await page.goto('/projects/proj');
+  await expandWorkbench(page);
 
   await page.getByRole('button', { name: 'Edit Buy tiles' }).click();
   const dialog = page.getByRole('dialog');

@@ -1,4 +1,5 @@
 import { test, expect } from '../../mockedTest';
+import { expandWorkbench } from '../../helpers/workbench';
 
 // J2 — the deepest, most stateful surface: create a project, drill into its workbench, add an
 // action and a sub-project, drill one level further, then climb back via the breadcrumb. Submits
@@ -12,6 +13,7 @@ test.describe('projects workbench', () => {
     await page.getByLabel('Add project').press('Enter');
     await page.getByRole('button', { name: 'Open Roof repair' }).click();
     await expect(page).toHaveURL(/\/projects\/.+/);
+    await expandWorkbench(page); // sections collapse by default (#279); reveals the add-panel inputs
 
     // Add a direct action. New project actions default to BACKLOG (so they don't flood Next/Focus
     // before triage) — the status badge reads "B". #210

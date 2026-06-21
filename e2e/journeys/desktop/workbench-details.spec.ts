@@ -1,5 +1,6 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
+import { expandWorkbench } from '../../helpers/workbench';
 
 // #269 — a project is edited on its own workbench (inline Details panel), not in the action dialog.
 // You open a project (from the list, or a sub-project from its parent workbench) and expand the
@@ -33,6 +34,7 @@ test('edit a top-level project via the workbench Details panel', async ({ page, 
 
 test('edit a sub-project on its own workbench', async ({ page, doc }) => {
   await page.goto('/projects/proj');
+  await expandWorkbench(page);
 
   // Open the sub-project from its parent workbench, then edit it via its Details panel.
   await page.getByRole('button', { name: 'Open Plumbing' }).click();
@@ -51,7 +53,7 @@ test('delete a project from its Details panel, then land on the parent', async (
   await page.getByRole('button', { name: 'Delete project' }).click(); // arm the inline confirm
   await page.getByRole('button', { name: 'Delete', exact: true }).click(); // confirm
 
-  // Climbs to the parent project's workbench, and the node is gone.
-  await expect(page).toHaveURL(/\/projects\/proj/);
+  // Redirected to the Projects list (the routed project is gone), and the node is deleted.
+  await expect(page).toHaveURL(/\/projects$/);
   await expect.poll(() => doc.current().nodes['sub']).toBeUndefined();
 });
