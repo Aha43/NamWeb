@@ -93,13 +93,13 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
 
               {/* The two "do" actions, foregrounded (mirrors the phone bottom bar). */}
               <div className="mt-4 flex flex-col gap-2">
-                <Tooltip label="Capture a thought" side="right">
+                <Tooltip label="Capture a thought">
                   <Button className="justify-start gap-2" onClick={openCapture}>
                     <Plus />
                     Capture
                   </Button>
                 </Tooltip>
-                <Tooltip label={focus.hint} side="right">
+                <Tooltip label={focus.hint}>
                   <Button asChild variant="outline" className="justify-start gap-2">
                     <NavLink to="/focus">
                       <Target />
@@ -118,7 +118,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                       </span>
                     )}
                     {group.items.map(({ to, label, icon: Icon, hint }) => (
-                      <Tooltip key={to} label={hint} side="right">
+                      <Tooltip key={to} label={hint}>
                         {/* Static (string) className + aria-current for the active state — a render-prop
                             className breaks when the Tooltip's asChild Slot clones the NavLink. */}
                         <NavLink
