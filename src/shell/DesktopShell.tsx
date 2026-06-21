@@ -9,7 +9,7 @@ import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
-import { SIDEBAR_GROUPS } from './nav';
+import { SIDEBAR_GROUPS, focus } from './nav';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
 import {
@@ -93,16 +93,20 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
 
               {/* The two "do" actions, foregrounded (mirrors the phone bottom bar). */}
               <div className="mt-4 flex flex-col gap-2">
-                <Button className="justify-start gap-2" onClick={openCapture}>
-                  <Plus />
-                  Capture
-                </Button>
-                <Button asChild variant="outline" className="justify-start gap-2">
-                  <NavLink to="/focus">
-                    <Target />
-                    Focus
-                  </NavLink>
-                </Button>
+                <Tooltip label="Capture a thought">
+                  <Button className="justify-start gap-2" onClick={openCapture}>
+                    <Plus />
+                    Capture
+                  </Button>
+                </Tooltip>
+                <Tooltip label={focus.hint}>
+                  <Button asChild variant="outline" className="justify-start gap-2">
+                    <NavLink to="/focus">
+                      <Target />
+                      Focus
+                    </NavLink>
+                  </Button>
+                </Tooltip>
               </div>
 
               <nav aria-label="Sidebar" className="mt-5 flex flex-col gap-4">
@@ -113,20 +117,21 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                         {group.label}
                       </span>
                     )}
-                    {group.items.map(({ to, label, icon: Icon }) => (
-                      <NavLink
-                        key={to}
-                        to={to}
-                        className={({ isActive }) =>
-                          cn(
-                            'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium transition-colors',
-                            isActive ? 'bg-accent text-accent-foreground' : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
-                          )
-                        }
-                      >
-                        <Icon className="h-4 w-4" />
-                        {label}
-                      </NavLink>
+                    {group.items.map(({ to, label, icon: Icon, hint }) => (
+                      <Tooltip key={to} label={hint}>
+                        {/* Static (string) className + aria-current for the active state — a render-prop
+                            className breaks when the Tooltip's asChild Slot clones the NavLink. */}
+                        <NavLink
+                          to={to}
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                            'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {label}
+                        </NavLink>
+                      </Tooltip>
                     ))}
                   </div>
                 ))}
