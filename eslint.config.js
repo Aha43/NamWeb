@@ -20,6 +20,12 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // eslint-plugin-react-hooks 7 expands `recommended` with React-Compiler-era rules. Keep the
+      // ESLint-10 bump behaviour-neutral by deferring the two that fire on existing, intentional
+      // patterns (derive-state-on-prop-change in the collapse hooks; a ref write in Turnstile).
+      // Adopting the full new ruleset is a deliberate follow-up.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/refs': 'off',
     },
   },
   {
