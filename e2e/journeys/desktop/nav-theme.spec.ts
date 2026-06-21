@@ -14,7 +14,8 @@ test.describe('navigation + theme', () => {
     await sidebar.getByRole('link', { name: 'Backlog' }).click();
     await expect(page).toHaveURL(/\/backlog$/);
 
-    await sidebar.getByRole('link', { name: 'Tags' }).click();
+    // Tags now lives in the toolbar (admin surface), not the sidebar. #284
+    await page.getByRole('link', { name: 'Tags' }).click();
     await expect(page).toHaveURL(/\/tags$/);
 
     await sidebar.getByRole('link', { name: 'Done' }).click();
