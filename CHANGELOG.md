@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Tooltips on the sidebar (parity with the toolbar).** Every sidebar surface and the Capture/Focus
+  buttons now have a tooltip. Since the label is already visible, the tooltip is a short *description*
+  of the surface (e.g. Inbox → "Capture and triage", Focus → "Work through actions one at a time")
+  rather than an echo of the label. New optional `hint` on `NavItem`. Closes #288.
+
 - **Sidebar grouped, and Focus promoted to a button.** The desktop sidebar was a flat list of ~10
   surfaces with **Focus** — a primary daily action — stuck last. Now **Capture** and **Focus** sit as
   the two buttons up top (the "do" actions, mirroring the phone bottom bar), and the rest is grouped

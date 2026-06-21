@@ -18,20 +18,22 @@ export interface NavItem {
   to: string;
   label: string;
   icon: LucideIcon;
+  /** Short tooltip describing the surface (the sidebar label is already shown, so this adds value). */
+  hint?: string;
 }
 
-const inbox: NavItem = { to: '/inbox', label: 'Inbox', icon: Inbox };
-const next: NavItem = { to: '/next', label: 'Next', icon: ListTodo };
-const backlog: NavItem = { to: '/backlog', label: 'Backlog', icon: Layers };
-const due: NavItem = { to: '/due', label: 'Due', icon: CalendarClock };
-const blocked: NavItem = { to: '/blocked', label: 'Blocked', icon: Lock };
-const tags: NavItem = { to: '/tags', label: 'Tags', icon: Tag };
-const search: NavItem = { to: '/search', label: 'Search', icon: Search };
-const projects: NavItem = { to: '/projects', label: 'Projects', icon: Folders };
-const goals: NavItem = { to: '/goals', label: 'Goals', icon: LayoutDashboard };
-const templates: NavItem = { to: '/templates', label: 'Templates', icon: Copy };
-const done: NavItem = { to: '/done', label: 'Done', icon: CheckCircle2 };
-export const focus: NavItem = { to: '/focus', label: 'Focus', icon: Target };
+const inbox: NavItem = { to: '/inbox', label: 'Inbox', icon: Inbox, hint: 'Capture and triage' };
+const next: NavItem = { to: '/next', label: 'Next', icon: ListTodo, hint: 'Your next actions' };
+const backlog: NavItem = { to: '/backlog', label: 'Backlog', icon: Layers, hint: 'Parked for later' };
+const due: NavItem = { to: '/due', label: 'Due', icon: CalendarClock, hint: 'Grouped by due date' };
+const blocked: NavItem = { to: '/blocked', label: 'Blocked', icon: Lock, hint: 'Waiting on prerequisites' };
+const tags: NavItem = { to: '/tags', label: 'Tags', icon: Tag, hint: 'Filter by tag · manage tags' };
+const search: NavItem = { to: '/search', label: 'Search', icon: Search, hint: 'Search your workspace' };
+const projects: NavItem = { to: '/projects', label: 'Projects', icon: Folders, hint: 'Your project hierarchy' };
+const goals: NavItem = { to: '/goals', label: 'Goals', icon: LayoutDashboard, hint: 'Goal boards (Mission Control)' };
+const templates: NavItem = { to: '/templates', label: 'Templates', icon: Copy, hint: 'Reusable project templates' };
+const done: NavItem = { to: '/done', label: 'Done', icon: CheckCircle2, hint: 'Completed actions' };
+export const focus: NavItem = { to: '/focus', label: 'Focus', icon: Target, hint: 'Work through actions one at a time' };
 
 /** All routable surfaces, flat — the phone bottom bar foregrounds a subset (capture + execution) and
  *  the rest live in the More sheet. */
