@@ -66,6 +66,31 @@ describe('ColumnView', () => {
     expect(screen.getByRole('button', { name: /Move Alpha down/i })).toBeInTheDocument();
   });
 
+  it('renders a resize handle per column when wired; arrow keys nudge the width', () => {
+    const onSetColumnWidth = vi.fn();
+    setup({ onSetColumnWidth, columnWidths: { p: 300 } });
+    const handle = screen.getByRole('separator', { name: 'Resize Unsorted column' });
+    expect(handle).toHaveAttribute('aria-valuenow', '300');
+    fireEvent.keyDown(handle, { key: 'ArrowRight' });
+    expect(onSetColumnWidth).toHaveBeenCalledWith('p', 316);
+    fireEvent.keyDown(handle, { key: 'ArrowLeft' });
+    expect(onSetColumnWidth).toHaveBeenCalledWith('p', 284);
+  });
+
+  it('uses the default width and resets on double-click', () => {
+    const onResetColumnWidth = vi.fn();
+    setup({ onSetColumnWidth: vi.fn(), onResetColumnWidth });
+    const handle = screen.getByRole('separator', { name: 'Resize Phase 1 column' });
+    expect(handle).toHaveAttribute('aria-valuenow', '256'); // default when no stored width
+    fireEvent.doubleClick(handle);
+    expect(onResetColumnWidth).toHaveBeenCalledWith('s1');
+  });
+
+  it('has no resize handle when width control is not wired', () => {
+    setup();
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument();
+  });
+
   it('offers left/right column-move buttons on sub-projects (not Unsorted), with ends disabled', () => {
     const onMoveColumn = vi.fn();
     const threeColumns: WorkbenchColumn[] = [

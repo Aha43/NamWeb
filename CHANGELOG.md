@@ -34,6 +34,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   triage without leaving the flow. Deliberately the *only* addition: no edit/delete in Focus, and it's
   omitted for project-scoped focus (mixed statuses). Closes #277.
 
+- **Resize columns in the Column (Kanban) view.** Each column gets a **drag handle on its right
+  edge** to set its width — widen the one you're working in instead of living with fixed columns and
+  unused screen space. Widths are **persisted per project + column** (localStorage); double-click a
+  handle to reset, arrow keys nudge it (keyboard a11y). Mirrors the resizable sidebar. Closes #280.
+
 - **Process Inbox — one-at-a-time deck.** A **Process inbox** button runs through every inbox
   item one at a time (Next / Backlog / Make project / Delete / Skip, with an "N left" counter),
   auto-advancing — clear the catch-all in one flow. Builds on the existing per-item process dialog.

@@ -1,4 +1,4 @@
-import { Fragment, useState, type FormEvent, type ReactNode } from 'react';
+import { Fragment, useState, type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeftRight, ChevronsRightLeft, Pencil } from 'lucide-react';
 import {
   DndContext,
@@ -22,6 +22,7 @@ import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { COLUMN_DROPPABLE_PREFIX, columnDroppableId, resolveColumnDrop } from './columnDnd';
+import { DEFAULT_COLUMN_WIDTH } from './useColumnWidths';
 
 // With a DragOverlay the source row stays put, so rect-based detection (closestCorners) can't reach
 // a distant column. Use the pointer instead, and prefer a row hit (precise insert) over the column
@@ -69,6 +70,11 @@ export interface ColumnViewProps {
   /** Collapsed column ids + toggle (persisted per-project by the page). */
   collapsed?: Set<string>;
   onToggleCollapse?: (id: string) => void;
+  /** Per-column widths (px) + setters (persisted per-project by the page). When wired, each column
+   *  gets a drag-to-resize handle on its right edge. A column with no entry uses the default width. */
+  columnWidths?: Record<string, number>;
+  onSetColumnWidth?: (id: string, width: number) => void;
+  onResetColumnWidth?: (id: string) => void;
 }
 
 /** Kanban-style columns: Unsorted (the project's own actions) + one per sub-project. Presentational.
@@ -88,6 +94,9 @@ export function ColumnView({
   onMoveColumn,
   collapsed,
   onToggleCollapse,
+  columnWidths,
+  onSetColumnWidth,
+  onResetColumnWidth,
 }: ColumnViewProps) {
   // Sub-project columns (everything but the fixed Unsorted column) — the ones that can be reordered.
   const subColumnIds = columns.filter((c) => !c.isUnsorted).map((c) => c.id);
@@ -260,14 +269,25 @@ export function ColumnView({
         </div>
       );
     }
-    const cardClass = 'flex w-64 shrink-0 flex-col gap-2 rounded-lg border border-border bg-card/40 p-2';
+    const cardClass = 'relative flex shrink-0 flex-col gap-2 rounded-lg border border-border bg-card/40 p-2';
+    const width = columnWidths?.[col.id] ?? DEFAULT_COLUMN_WIDTH;
+    const resizer = onSetColumnWidth && (
+      <ColumnResizer
+        label={label}
+        width={width}
+        onResize={(w) => onSetColumnWidth(col.id, w)}
+        onReset={onResetColumnWidth ? () => onResetColumnWidth(col.id) : undefined}
+      />
+    );
     return dnd ? (
-      <DroppableColumn key={col.id} columnId={col.id} className={cardClass}>
+      <DroppableColumn key={col.id} columnId={col.id} className={cardClass} style={{ width }}>
         {columnBody(col)}
+        {resizer}
       </DroppableColumn>
     ) : (
-      <div key={col.id} className={cardClass}>
+      <div key={col.id} className={cardClass} style={{ width }}>
         {columnBody(col)}
+        {resizer}
       </div>
     );
   };
@@ -317,17 +337,63 @@ export function ColumnView({
 function DroppableColumn({
   columnId,
   className,
+  style,
   children,
 }: {
   columnId: string;
   className: string;
+  style?: CSSProperties;
   children: ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: columnDroppableId(columnId) });
   return (
-    <div ref={setNodeRef} className={cn(className, isOver && 'ring-2 ring-ring')}>
+    <div ref={setNodeRef} style={style} className={cn(className, isOver && 'ring-2 ring-ring')}>
       {children}
     </div>
+  );
+}
+
+/** A drag-to-resize handle on a column's right edge (mirrors the resizable sidebar). Pointer-drag to
+ *  set the width, arrow keys to nudge for keyboard a11y, double-click to reset to the default. */
+function ColumnResizer({
+  label,
+  width,
+  onResize,
+  onReset,
+}: {
+  label: string;
+  width: number;
+  onResize: (width: number) => void;
+  onReset?: () => void;
+}) {
+  const onPointerDown = (event: ReactPointerEvent) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startWidth = width;
+    const onMove = (e: PointerEvent) => onResize(startWidth + (e.clientX - startX));
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  };
+  return (
+    <div
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={`Resize ${label} column`}
+      aria-valuenow={width}
+      tabIndex={0}
+      onPointerDown={onPointerDown}
+      onDoubleClick={onReset}
+      onKeyDown={(e) => {
+        if (e.key === 'ArrowLeft') onResize(width - 16);
+        else if (e.key === 'ArrowRight') onResize(width + 16);
+      }}
+      title="Drag to resize · double-click to reset"
+      className="absolute inset-y-0 right-0 w-1.5 cursor-col-resize rounded-r-lg bg-transparent transition-colors hover:bg-ring focus-visible:bg-ring focus-visible:outline-hidden"
+    />
   );
 }
 

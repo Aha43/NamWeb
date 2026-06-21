@@ -102,6 +102,10 @@ export interface ProjectWorkbenchProps {
   /** Collapsed column ids + toggle (Column view; persisted per-project by the page). */
   collapsedColumns?: Set<string>;
   onToggleColumn?: (id: string) => void;
+  /** Per-column widths + setters (Column view; persisted per-project by the page). */
+  columnWidths?: Record<string, number>;
+  onSetColumnWidth?: (id: string, width: number) => void;
+  onResetColumnWidth?: (id: string) => void;
   /** Provided only when the project is a leaf (no children) — convert it back to an action. */
   onConvertToAction?: () => void;
   onSaveAsTemplate?: (name: string) => void;
@@ -158,6 +162,9 @@ export function ProjectWorkbench({
   onMoveColumn,
   collapsedColumns,
   onToggleColumn,
+  columnWidths,
+  onSetColumnWidth,
+  onResetColumnWidth,
   onConvertToAction,
   onSaveAsTemplate,
   templateNames,
@@ -417,6 +424,9 @@ export function ProjectWorkbench({
           onRename={onRename}
           collapsed={collapsedColumns}
           onToggleCollapse={onToggleColumn}
+          columnWidths={columnWidths}
+          onSetColumnWidth={onSetColumnWidth}
+          onResetColumnWidth={onResetColumnWidth}
         />
         </>
       ) : (
