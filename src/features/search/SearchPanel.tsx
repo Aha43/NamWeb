@@ -23,7 +23,7 @@ export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPan
         value={query}
         onChange={(e) => onQueryChange(e.target.value)}
         placeholder="Search titles & tags…"
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-none focus:border-ring"
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
       />
 
       {query.trim() === '' ? (

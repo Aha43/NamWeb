@@ -124,7 +124,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               onKeyDown={onResizeKeyDown}
               onDoubleClick={() => setWidth(SIDEBAR_DEFAULT_WIDTH)}
               title="Drag to resize · double-click to reset"
-              className="w-1 shrink-0 cursor-col-resize bg-border transition-colors hover:bg-ring focus-visible:bg-ring focus-visible:outline-none"
+              className="w-1 shrink-0 cursor-col-resize bg-border transition-colors hover:bg-ring focus-visible:bg-ring focus-visible:outline-hidden"
             />
           </>
         )}
@@ -168,7 +168,7 @@ function ToolbarSearch() {
           );
         }}
         placeholder="Search…"
-        className="w-44 rounded-md border border-input bg-background py-1.5 pl-8 pr-2 text-sm outline-none focus:border-ring sm:w-64"
+        className="w-44 rounded-md border border-input bg-background py-1.5 pl-8 pr-2 text-sm outline-hidden focus:border-ring sm:w-64"
       />
     </div>
   );

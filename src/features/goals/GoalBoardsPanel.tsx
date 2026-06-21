@@ -46,7 +46,7 @@ export function GoalBoardsPanel({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="New goal board…"
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
         />
         <div className="flex gap-2">
           <input
@@ -54,7 +54,7 @@ export function GoalBoardsPanel({
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="tags (space or comma)"
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
           />
           <Button type="submit" size="sm">Create</Button>
         </div>

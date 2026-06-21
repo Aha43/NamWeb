@@ -86,7 +86,7 @@ export function ProjectSummaryDialog({
           aria-label="Project summary (Markdown)"
           value={markdown}
           onFocus={(e) => e.currentTarget.select()}
-          className="h-72 w-full resize-none rounded-md border border-input bg-muted/30 p-3 font-mono text-xs text-foreground outline-none focus:border-ring"
+          className="h-72 w-full resize-none rounded-md border border-input bg-muted/30 p-3 font-mono text-xs text-foreground outline-hidden focus:border-ring"
         />
 
         <DialogFooter>

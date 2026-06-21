@@ -52,7 +52,7 @@ export function ResourcesEditor({
           aria-label="Resource type"
           value={type}
           onChange={(e) => setType(e.target.value as ResourceType)}
-          className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-ring"
+          className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
         >
           {RESOURCE_TYPES.map((t) => (
             <option key={t} value={t}>
