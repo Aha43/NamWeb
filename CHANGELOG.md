@@ -26,6 +26,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Tags reads as "engage", not just "admin".** The Tags view's prompt and the Help page now point
+  out that you can **filter to a context (tag), then Focus just those** — surfacing the tag-focus path
+  (#301) that was only discoverable after filtering. Closes #303.
+
 - **Focus mode: shortcut hint + a guiding empty state.** The Focus deck now shows its keyboard
   shortcuts ("← → or swipe to move · Space to mark done · Esc to exit") under the counter, and the
   empty-queue state guides instead of dead-ending — "All clear 🎉 — capture a thought or move an
