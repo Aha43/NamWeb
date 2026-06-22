@@ -26,6 +26,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Phone More sheet: grouped + descriptive.** The mobile **More** sheet was a flat list; it's now
+  grouped (**Views** / **Organize** / **Find**, mirroring the desktop sidebar) with each surface's
+  **description shown as a subtitle** — since tooltips don't fire on touch, that's how the per-surface
+  hints reach mobile. Items are two-line with bigger tap targets, and the sheet scrolls. Closes #308.
+
 - **Tags reads as "engage", not just "admin".** The Tags view's prompt and the Help page now point
   out that you can **filter to a context (tag), then Focus just those** — surfacing the tag-focus path
   (#301) that was only discoverable after filtering. Closes #303.

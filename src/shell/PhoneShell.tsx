@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
-import { SURFACES } from './nav';
+import { MORE_GROUPS } from './nav';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
 
@@ -71,28 +71,39 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
       </nav>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom">
+        <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>More</SheetTitle>
             <SheetDescription>Jump to any surface, or manage your session.</SheetDescription>
           </SheetHeader>
 
-          <nav aria-label="More" className="mt-4 flex flex-col gap-1">
-            {SURFACES.map(({ to, label, icon: Icon }) => (
-              <NavLink
-                key={to}
-                to={to}
-                onClick={() => setMoreOpen(false)}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-md px-2 py-2.5 text-sm font-medium transition-colors',
-                    isActive ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent',
-                  )
-                }
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </NavLink>
+          <nav aria-label="More" className="mt-4 flex flex-col gap-4">
+            {MORE_GROUPS.map((group) => (
+              <div key={group.label} className="flex flex-col gap-1">
+                <span className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+                  {group.label}
+                </span>
+                {group.items.map(({ to, label, icon: Icon, hint }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    aria-label={label}
+                    onClick={() => setMoreOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 rounded-md px-2 py-2.5 transition-colors',
+                        isActive ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent',
+                      )
+                    }
+                  >
+                    <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="text-sm font-medium leading-tight">{label}</span>
+                      {hint && <span className="truncate text-xs text-muted-foreground">{hint}</span>}
+                    </span>
+                  </NavLink>
+                ))}
+              </div>
             ))}
           </nav>
 
