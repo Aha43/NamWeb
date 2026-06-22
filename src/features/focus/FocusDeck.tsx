@@ -57,8 +57,10 @@ export function FocusDeck({ cards, onDone, onExit, flipLabel, onFlip }: FocusDec
   if (!current) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-        <p className="text-lg font-medium text-foreground">All done.</p>
-        <p className="text-sm text-muted-foreground">Nothing left in this queue.</p>
+        <p className="text-lg font-medium text-foreground">All clear 🎉</p>
+        <p className="max-w-xs text-sm text-muted-foreground">
+          Nothing left in this queue. Capture a thought or move an action to Next, then come back.
+        </p>
         <Button variant="outline" onClick={onExit}>
           Done
         </Button>
@@ -121,8 +123,11 @@ export function FocusDeck({ cards, onDone, onExit, flipLabel, onFlip }: FocusDec
         </div>
       )}
 
-      <p className="pb-6 text-center text-sm text-muted-foreground" aria-label="Progress" aria-live="polite">
+      <p className="text-center text-sm text-muted-foreground" aria-label="Progress" aria-live="polite">
         {safeIndex + 1} / {len}
+      </p>
+      <p className="pb-6 pt-1 text-center text-xs text-muted-foreground/70">
+        ← → or swipe to move · Space to mark done · Esc to exit
       </p>
     </div>
   );

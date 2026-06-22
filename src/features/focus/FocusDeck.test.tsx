@@ -64,10 +64,16 @@ describe('FocusDeck', () => {
     expect(screen.queryByRole('button', { name: /^Move to/ })).not.toBeInTheDocument();
   });
 
-  it('shows an all-done state for an empty queue', () => {
+  it('shows an empty-queue state that guides what to do next', () => {
     const { onExit } = setup([]);
-    expect(screen.getByText('All done.')).toBeInTheDocument();
+    expect(screen.getByText('All clear 🎉')).toBeInTheDocument();
+    expect(screen.getByText(/Capture a thought or move an action to Next/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(onExit).toHaveBeenCalledOnce();
+  });
+
+  it('shows the keyboard-shortcut hint', () => {
+    setup(three);
+    expect(screen.getByText(/Space to mark done/)).toBeInTheDocument();
   });
 });
