@@ -55,3 +55,12 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   { label: 'Views', items: [backlog, due, blocked, done] },
   { label: 'Organize', items: [projects, goals, templates] },
 ];
+
+/** Phone "More" sheet: the surfaces that aren't on the bottom bar (Inbox / Next / Focus + Capture),
+ *  grouped, and rendered with their `hint` as a subtitle — tooltips don't fire on touch, so this is
+ *  how the per-surface descriptions reach mobile. Tags + Search live here too (no toolbar on phone). */
+export const MORE_GROUPS: NavGroup[] = [
+  { label: 'Views', items: [backlog, due, blocked, done] },
+  { label: 'Organize', items: [projects, goals, templates] },
+  { label: 'Find', items: [tags, search] },
+];
