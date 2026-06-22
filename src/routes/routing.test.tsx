@@ -41,6 +41,19 @@ function document(): WorkspaceDocument {
   };
 }
 
+/** A freshly-created workspace: only the four structural containers, no content yet. */
+function emptyDocument(): WorkspaceDocument {
+  return {
+    formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox',
+    projectsNodeId: 'projects', nextActionsNodeId: 'actions',
+    nodes: {
+      root: node('root', { childIds: ['inbox', 'projects', 'actions'] }),
+      inbox: node('inbox'), projects: node('projects'), actions: node('actions'),
+    },
+    registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
+  };
+}
+
 function workspace(overrides: Partial<UseWorkspace> = {}): UseWorkspace {
   return {
     document: document(), loading: false, error: null, noRemote: false, creating: false,
@@ -141,6 +154,18 @@ describe('routing', () => {
     // Expanding the Actions section reveals the direct action.
     fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
     expect(screen.getByText('Task one')).toBeInTheDocument();
+  });
+
+  it('shows the get-started on-ramp on an empty workspace (#291)', () => {
+    localStorage.clear();
+    renderAt('/inbox', { document: emptyDocument() });
+    expect(screen.getByText('Welcome to NAM 👋')).toBeInTheDocument();
+  });
+
+  it('does not show get-started once the workspace has content', () => {
+    localStorage.clear();
+    renderAt('/inbox'); // the default document is populated
+    expect(screen.queryByText('Welcome to NAM 👋')).not.toBeInTheDocument();
   });
 
   it('redirects the index route to /inbox', () => {

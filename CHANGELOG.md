@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **First-run get-started on-ramp.** A brand-new (or still-empty) workspace now shows a dismissible
+  card on the Inbox that names the **Capture → Clarify → Focus** loop and offers the two ways to
+  begin — **Capture your first thought** or **Add the Learn NAM project 🥋** — instead of dropping you
+  on a blank inbox. Auto-hides once the workspace has any content. Closes #291, #294.
+
 ### Changed
 
 - **Empty states now teach.** Instead of a bare "No next actions." every empty surface explains
