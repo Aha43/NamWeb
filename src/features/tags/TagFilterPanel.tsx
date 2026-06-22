@@ -224,7 +224,10 @@ export function TagFilterPanel({
           </label>
 
           {selected.length === 0 ? (
-            <p className="px-1 text-xs text-muted-foreground">Select one or more tags to filter.</p>
+            <p className="px-1 text-xs text-muted-foreground">
+              Select a tag to filter — then <span className="font-medium text-foreground">Focus</span> just
+              those, or save the selection as a view.
+            </p>
           ) : (
             <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
               <span>{rows.length} {rows.length === 1 ? 'match' : 'matches'}</span>

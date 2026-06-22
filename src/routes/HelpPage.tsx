@@ -48,7 +48,7 @@ export function HelpPage() {
             ['Projects', 'Group related actions; plan bigger outcomes.'],
             ['Goals', 'Tag-grouped boards to track progress (Mission Control).'],
             ['Templates', 'Reusable project structures.'],
-            ['Tags', 'Filter by tag, and manage your tags.'],
+            ['Tags', 'Filter by a context (tag), then Focus just those — and manage your tags.'],
             ['Done', 'Completed actions.'],
             ['Focus', 'Execute one action at a time.'],
           ].map(([name, desc]) => (

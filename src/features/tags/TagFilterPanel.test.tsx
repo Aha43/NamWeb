@@ -35,7 +35,7 @@ describe('TagFilterPanel', () => {
 
   it('prompts to pick a tag when none are selected (no match flood)', () => {
     setup({ selected: [], rows: [] });
-    expect(screen.getByText('Select one or more tags to filter.')).toBeInTheDocument();
+    expect(screen.getByText(/Select a tag to filter/)).toBeInTheDocument();
     expect(screen.queryByText(/match/)).not.toBeInTheDocument();
   });
 
