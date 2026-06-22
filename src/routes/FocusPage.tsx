@@ -14,20 +14,41 @@ export function FocusPage() {
   const navigate = useNavigate();
   const { document, dispatch } = useWorkspaceContext();
 
-  // Project-scoped focus (?project=<id>) takes precedence over the Next/Backlog toggle.
+  // Scoped focus precedence: a project (?project=<id>), then a tag filter (?tags=home&next=1, from the
+  // Tags view), else the global Next/Backlog toggle.
   const projectId = params.get('project');
+  const tagsParam = params.get('tags');
+  const nextOnly = params.get('next') === '1';
+  const tags = useMemo(() => (tagsParam ? tagsParam.split(',').filter(Boolean) : []), [tagsParam]);
+  const isTag = !projectId && tags.length > 0;
   const sourceParam = params.get('source');
-  // Memoized so the project-source object is stable across renders (keeps the cards useMemo honest).
+  // Memoized so the object sources are stable across renders (keeps the cards useMemo honest).
   const source: FocusSource = useMemo(
-    () => (projectId ? { project: projectId } : sourceParam === 'backlog' ? 'backlog' : 'next'),
-    [projectId, sourceParam],
+    () =>
+      projectId
+        ? { project: projectId }
+        : tags.length > 0
+          ? { tags, nextOnly }
+          : sourceParam === 'backlog'
+            ? 'backlog'
+            : 'next',
+    [projectId, tags, nextOnly, sourceParam],
   );
-  const sourceKey = projectId ? `project:${projectId}` : sourceParam === 'backlog' ? 'backlog' : 'next';
+  const sourceKey = projectId
+    ? `project:${projectId}`
+    : isTag
+      ? `tags:${tagsParam}:${nextOnly}`
+      : sourceParam === 'backlog'
+        ? 'backlog'
+        : 'next';
   const projectTitle = projectId && document ? document.nodes[projectId]?.title : undefined;
+  const scopedLabel = projectId ? (projectTitle ?? 'project') : tags.join(', ');
+  // Re-triage flip only makes sense for a single-status queue (flat Next/Backlog).
+  const flat = !projectId && !isTag;
 
   const cards = useMemo(() => (document ? focusCards(document, source) : []), [document, source]);
   const exit = () =>
-    navigate(projectId ? `/projects/${projectId}` : source === 'backlog' ? '/backlog' : '/next');
+    navigate(projectId ? `/projects/${projectId}` : isTag ? '/tags' : sourceParam === 'backlog' ? '/backlog' : '/next');
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
@@ -36,9 +57,9 @@ export function FocusPage() {
           <X />
         </Button>
 
-        {projectId ? (
+        {projectId || isTag ? (
           <span className="truncate px-3 text-sm font-medium text-foreground">
-            Focus: {projectTitle ?? 'project'}
+            Focus: {scopedLabel}
           </span>
         ) : (
           <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
@@ -66,18 +87,18 @@ export function FocusPage() {
         cards={cards}
         onDone={(id) => dispatch({ type: 'setStatus', id, status: 'DONE', now: nowIso() })}
         // In-flow re-triage for the flat queues: defer a Next to Backlog, or promote a Backlog to
-        // Next. Omitted for project-scoped focus, whose deck mixes statuses.
-        flipLabel={projectId ? undefined : source === 'backlog' ? 'Next' : 'Backlog'}
+        // Next. Omitted for project- and tag-scoped focus, whose decks mix statuses.
+        flipLabel={flat ? (sourceParam === 'backlog' ? 'Next' : 'Backlog') : undefined}
         onFlip={
-          projectId
-            ? undefined
-            : (id) =>
+          flat
+            ? (id) =>
                 dispatch({
                   type: 'setStatus',
                   id,
-                  status: source === 'backlog' ? 'NEXT' : 'BACKLOG',
+                  status: sourceParam === 'backlog' ? 'NEXT' : 'BACKLOG',
                   now: nowIso(),
                 })
+            : undefined
         }
         onExit={exit}
       />

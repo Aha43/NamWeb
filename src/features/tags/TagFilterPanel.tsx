@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ChevronDown, ChevronRight, Pencil } from 'lucide-react';
+import { ChevronDown, ChevronRight, Pencil, Target } from 'lucide-react';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,8 @@ export interface TagFilterPanelProps {
   onRename?: (id: string, title: string) => void;
   /** Provided when the current selection can be saved as a view. */
   onSaveView?: (name: string) => void;
+  /** Enter Focus mode over the currently-filtered actions (the Tags-view "Focus" button). */
+  onFocus?: () => void;
   onOpenView: (view: SavedView) => void;
   onRenameView?: (oldName: string, newName: string) => void;
   onDeleteView?: (name: string) => void;
@@ -56,6 +58,7 @@ export function TagFilterPanel({
   onDeleteAction,
   onRename,
   onSaveView,
+  onFocus,
   onOpenView,
   onRenameView,
   onDeleteView,
@@ -225,17 +228,29 @@ export function TagFilterPanel({
           ) : (
             <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
               <span>{rows.length} {rows.length === 1 ? 'match' : 'matches'}</span>
-              {onSaveView && (
-                <PromptButton
-                  label="View name"
-                  placeholder="Name this view…"
-                  submitLabel="Save"
-                  onSubmit={onSaveView}
-                  className="rounded-md border border-input px-2.5 py-1 font-medium text-foreground hover:bg-accent"
-                >
-                  Save as view…
-                </PromptButton>
-              )}
+              <div className="flex items-center gap-1.5">
+                {onFocus && rows.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={onFocus}
+                    className="flex items-center gap-1 rounded-md border border-input px-2.5 py-1 font-medium text-foreground hover:bg-accent"
+                  >
+                    <Target className="h-3.5 w-3.5" />
+                    Focus
+                  </button>
+                )}
+                {onSaveView && (
+                  <PromptButton
+                    label="View name"
+                    placeholder="Name this view…"
+                    submitLabel="Save"
+                    onSubmit={onSaveView}
+                    className="rounded-md border border-input px-2.5 py-1 font-medium text-foreground hover:bg-accent"
+                  >
+                    Save as view…
+                  </PromptButton>
+                )}
+              </div>
             </div>
           )}
 

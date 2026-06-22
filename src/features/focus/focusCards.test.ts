@@ -15,9 +15,9 @@ function doc(): WorkspaceDocument {
     root: node('root', { project: true, childIds: ['projects'] }),
     projects: node('projects', { project: true, childIds: ['p'] }),
     p: node('p', { project: true, childIds: ['a1', 'a2', 'a3', 'sub'] }),
-    a1: node('a1', { title: 'First', status: 'NEXT' }),
-    a2: node('a2', { title: 'Done one', status: 'DONE' }),
-    a3: node('a3', { title: 'Later', status: 'BACKLOG' }),
+    a1: node('a1', { title: 'First', status: 'NEXT', tags: ['home'] }),
+    a2: node('a2', { title: 'Done one', status: 'DONE', tags: ['home'] }),
+    a3: node('a3', { title: 'Later', status: 'BACKLOG', tags: ['home', 'work'] }),
     sub: node('sub', { title: 'Sub', project: true }),
   };
   return {
@@ -32,5 +32,22 @@ describe('focusCards — project source', () => {
     const cards = focusCards(doc(), { project: 'p' });
     expect(cards.map((c) => c.id)).toEqual(['a1', 'a3']);
     expect(cards.map((c) => c.title)).toEqual(['First', 'Later']);
+  });
+});
+
+describe('focusCards — tag source', () => {
+  it('queues active actions matching the tag (excludes done)', () => {
+    const cards = focusCards(doc(), { tags: ['home'], nextOnly: false });
+    expect(cards.map((c) => c.id)).toEqual(['a1', 'a3']); // a2 is done
+  });
+
+  it('respects nextOnly', () => {
+    const cards = focusCards(doc(), { tags: ['home'], nextOnly: true });
+    expect(cards.map((c) => c.id)).toEqual(['a1']); // a3 is backlog
+  });
+
+  it('matches a different tag', () => {
+    const cards = focusCards(doc(), { tags: ['work'], nextOnly: false });
+    expect(cards.map((c) => c.id)).toEqual(['a3']);
   });
 });
