@@ -10,13 +10,15 @@ import { useGetStartedDismissed } from '@/features/onboarding/useGetStartedDismi
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useCapture } from '@/capture/capture-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { useSession } from '@/auth/useSession';
 
 export function InboxPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const { openCapture } = useCapture();
   const navigate = useNavigate();
-  const [getStartedDismissed, dismissGetStarted] = useGetStartedDismissed();
+  const { session } = useSession();
+  const [getStartedDismissed, dismissGetStarted] = useGetStartedDismissed(session?.user.id);
   const [processingId, setProcessingId] = useState<string | null>(null);
   // Process-all deck: a snapshot of ids to walk one-by-one, plus the current position.
   const [queue, setQueue] = useState<string[] | null>(null);

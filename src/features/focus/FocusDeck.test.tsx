@@ -72,13 +72,13 @@ describe('FocusDeck', () => {
     expect(onExit).toHaveBeenCalledOnce();
   });
 
-  it('shows a touch hint by default (no keyboard on a phone)', () => {
+  it('shows a touch hint by default (coarse pointer, no keyboard)', () => {
     setup(three);
     expect(screen.getByText(/Swipe to move/)).toBeInTheDocument();
     expect(screen.queryByText(/Space to mark done/)).not.toBeInTheDocument();
   });
 
-  it('shows the keyboard shortcuts on desktop', () => {
+  it('shows keyboard shortcuts when a fine pointer is present (capability, not viewport width)', () => {
     const original = window.matchMedia;
     window.matchMedia = ((q: string) =>
       ({ matches: true, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia;
@@ -88,5 +88,12 @@ describe('FocusDeck', () => {
     } finally {
       window.matchMedia = original;
     }
+  });
+
+  it('upgrades to keyboard shortcuts once a real key is pressed (e.g. tablet + keyboard)', () => {
+    setup(three);
+    expect(screen.queryByText(/Space to mark done/)).not.toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(screen.getByText(/Space to mark done/)).toBeInTheDocument();
   });
 });
