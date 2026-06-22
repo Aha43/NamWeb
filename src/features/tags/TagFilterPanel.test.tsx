@@ -30,7 +30,7 @@ function setup(over: Partial<React.ComponentProps<typeof TagFilterPanel>> = {}) 
 describe('TagFilterPanel', () => {
   it('shows the empty state with no tags', () => {
     setup({ allTags: [] });
-    expect(screen.getByText('No tags yet.')).toBeInTheDocument();
+    expect(screen.getByText('No tags yet')).toBeInTheDocument();
   });
 
   it('prompts to pick a tag when none are selected (no match flood)', () => {

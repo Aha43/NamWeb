@@ -23,7 +23,9 @@ export function BlockedPanel({ groups, onOpenBlocker, onSetStatus, onEdit, onDel
   if (groups.length === 0) {
     return (
       <section>
-        <EmptyState>Nothing blocked.</EmptyState>
+        <EmptyState hint="When you mark an action as waiting on a prerequisite, it shows here — grouped under what's blocking it.">
+          Nothing blocked
+        </EmptyState>
       </section>
     );
   }

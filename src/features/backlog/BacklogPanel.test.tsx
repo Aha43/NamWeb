@@ -10,7 +10,7 @@ function row(overrides: Partial<ActionRowData> = {}): ActionRowData {
 describe('BacklogPanel', () => {
   it('shows the empty state with no rows', () => {
     render(<BacklogPanel rows={[]} onSetStatus={vi.fn()} />);
-    expect(screen.getByText('Backlog is empty.')).toBeInTheDocument();
+    expect(screen.getByText('Backlog is empty')).toBeInTheDocument();
   });
 
   it('renders rows with a status control', () => {

@@ -188,7 +188,9 @@ export function TagFilterPanel({
       )}
 
       {allTags.length === 0 ? (
-        <EmptyState>No tags yet.</EmptyState>
+        <EmptyState hint="Tag actions and projects (e.g. @home, #errand) to filter by them here and save the filter as a view.">
+          No tags yet
+        </EmptyState>
       ) : (
         <>
           <div className="flex flex-wrap gap-1.5">

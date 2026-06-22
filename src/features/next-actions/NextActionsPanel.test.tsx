@@ -18,7 +18,7 @@ function setup(rows: ActionRowData[]) {
 describe('NextActionsPanel', () => {
   it('shows the empty state with no rows', () => {
     setup([]);
-    expect(screen.getByText('No next actions.')).toBeInTheDocument();
+    expect(screen.getByText('No next actions yet')).toBeInTheDocument();
   });
 
   it('renders title, project path (as links), tags, and a formatted due hint', () => {

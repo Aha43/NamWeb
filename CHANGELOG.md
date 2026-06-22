@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Empty states now teach.** Instead of a bare "No next actions." every empty surface explains
+  what it's for and how to fill it — e.g. Next: "The things you've decided to do now. Add one above,
+  or capture a thought and process it to Next."; Due/Blocked/Done/Backlog/Tags/Goals/Templates get
+  their own purpose lines; Projects keeps its "Add the Learn NAM project" nudge. The shared
+  `EmptyState` gains a headline + `hint` + optional `action`. Closes #290, #295.
+
 - **Tooltips on the sidebar (parity with the toolbar).** Every sidebar surface and the Capture/Focus
   buttons now have a tooltip. Since the label is already visible, the tooltip is a short *description*
   of the surface (e.g. Inbox → "Capture and triage", Focus → "Work through actions one at a time")

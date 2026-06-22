@@ -75,7 +75,9 @@ export function BacklogPanel({
         </div>
       )}
       {rows.length === 0 ? (
-        <EmptyState>Backlog is empty.</EmptyState>
+        <EmptyState hint="Things to do later — not now. Park actions here, then promote them to Next when you're ready.">
+          Backlog is empty
+        </EmptyState>
       ) : (
         <ReorderableActionList
           rows={rows}

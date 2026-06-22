@@ -152,6 +152,22 @@ export function ActionList({ children }: { children: ReactNode }) {
   );
 }
 
-export function EmptyState({ children }: { children: ReactNode }) {
-  return <p className="py-8 text-center text-sm text-muted-foreground">{children}</p>;
+/** An empty state that teaches: a headline (what's here / why it's empty), an optional `hint`
+ *  describing the surface's purpose, and an optional `action` (e.g. a button). */
+export function EmptyState({
+  children,
+  hint,
+  action,
+}: {
+  children: ReactNode;
+  hint?: ReactNode;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-1.5 px-6 py-10 text-center">
+      <p className="text-sm font-medium text-foreground">{children}</p>
+      {hint && <p className="max-w-sm text-sm text-muted-foreground">{hint}</p>}
+      {action && <div className="mt-3">{action}</div>}
+    </div>
+  );
 }

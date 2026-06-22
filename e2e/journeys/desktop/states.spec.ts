@@ -43,12 +43,12 @@ test.describe('sync conflict', () => {
 test.describe('empty surfaces', () => {
   test('backlog, due, and blocked show their empty copy', async ({ page }) => {
     await page.goto('/backlog');
-    await expect(page.getByText('Backlog is empty.')).toBeVisible();
+    await expect(page.getByText('Backlog is empty')).toBeVisible();
 
     await page.goto('/due');
-    await expect(page.getByText('Nothing due.')).toBeVisible();
+    await expect(page.getByText('Nothing due')).toBeVisible();
 
     await page.goto('/blocked');
-    await expect(page.getByText('Nothing blocked.')).toBeVisible();
+    await expect(page.getByText('Nothing blocked')).toBeVisible();
   });
 });
