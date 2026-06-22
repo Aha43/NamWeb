@@ -10,7 +10,7 @@ function row(id: string, title: string): ActionRowData {
 describe('BlockedPanel', () => {
   it('shows the empty state with no groups', () => {
     render(<BlockedPanel groups={[]} onOpenBlocker={vi.fn()} onSetStatus={vi.fn()} />);
-    expect(screen.getByText('Nothing blocked.')).toBeInTheDocument();
+    expect(screen.getByText('Nothing blocked')).toBeInTheDocument();
   });
 
   it('groups blocked actions under a blocker header that opens the blocker', () => {

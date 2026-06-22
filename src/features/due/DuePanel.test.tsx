@@ -12,7 +12,7 @@ const EMPTY: DueRowGroups = { overdue: [], today: [], thisWeek: [], later: [] };
 describe('DuePanel', () => {
   it('shows the empty state when nothing is due', () => {
     render(<DuePanel groups={EMPTY} onSetStatus={vi.fn()} />);
-    expect(screen.getByText('Nothing due.')).toBeInTheDocument();
+    expect(screen.getByText('Nothing due')).toBeInTheDocument();
   });
 
   it('renders only the non-empty sections', () => {

@@ -32,7 +32,9 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename }: Du
   if (total === 0) {
     return (
       <section>
-        <EmptyState>Nothing due.</EmptyState>
+        <EmptyState hint="Give an action a due date and it shows here, grouped by urgency — overdue, today, this week, later.">
+          Nothing due
+        </EmptyState>
       </section>
     );
   }

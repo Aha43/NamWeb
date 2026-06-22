@@ -14,7 +14,9 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onEdit }: Done
   return (
     <section>
       {rows.length === 0 ? (
-        <EmptyState>Nothing done yet.</EmptyState>
+        <EmptyState hint="Completed actions collect here — you can restore one to Next or move it back to Backlog anytime.">
+          Nothing done yet
+        </EmptyState>
       ) : (
         <ActionList>
           {rows.map((row) => (

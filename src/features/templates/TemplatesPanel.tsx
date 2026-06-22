@@ -14,7 +14,13 @@ export function TemplatesPanel({ templates, onDelete }: TemplatesPanelProps) {
   return (
     <section>
       {templates.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">No templates yet.</p>
+        <div className="flex flex-col items-center gap-1.5 px-6 py-10 text-center">
+          <p className="text-sm font-medium text-foreground">No templates yet</p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            On a project's workbench, “Save as template…” captures its structure — then apply it to
+            spin up similar projects in one click.
+          </p>
+        </div>
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {templates.map((template) => (

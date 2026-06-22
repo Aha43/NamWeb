@@ -6,7 +6,7 @@ import { TemplatesPanel } from './TemplatesPanel';
 describe('TemplatesPanel', () => {
   it('shows the empty state with no templates', () => {
     render(<TemplatesPanel templates={[]} onDelete={vi.fn()} />);
-    expect(screen.getByText('No templates yet.')).toBeInTheDocument();
+    expect(screen.getByText('No templates yet')).toBeInTheDocument();
   });
 
   it('lists templates with their item count and deletes by name', () => {

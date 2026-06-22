@@ -10,7 +10,7 @@ function row(overrides: Partial<ActionRowData> = {}): ActionRowData {
 describe('DonePanel', () => {
   it('shows the empty state with no rows', () => {
     render(<DonePanel rows={[]} onRestore={vi.fn()} onBacklog={vi.fn()} onDelete={vi.fn()} />);
-    expect(screen.getByText('Nothing done yet.')).toBeInTheDocument();
+    expect(screen.getByText('Nothing done yet')).toBeInTheDocument();
   });
 
   it('restores, backlogs, and deletes by id', () => {

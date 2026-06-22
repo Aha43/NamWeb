@@ -269,8 +269,12 @@ export function ProjectsPanel({
       )}
 
       {projects.length === 0 ? (
-        <div className="space-y-3 py-8 text-center">
-          <p className="text-sm text-muted-foreground">No projects yet.</p>
+        <div className="space-y-2 py-10 text-center">
+          <p className="text-sm font-medium text-foreground">No projects yet</p>
+          <p className="mx-auto max-w-sm text-sm text-muted-foreground">
+            Group related actions into a project — plan bigger outcomes with sub-projects, a
+            workbench, and progress at a glance.
+          </p>
           {onAddLearnNam && (
             <p className="text-sm text-muted-foreground">
               New to NAM?{' '}

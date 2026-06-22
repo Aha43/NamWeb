@@ -61,7 +61,13 @@ export function GoalBoardsPanel({
       </form>
 
       {boards.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">No goal boards yet.</p>
+        <div className="flex flex-col items-center gap-1.5 px-6 py-10 text-center">
+          <p className="text-sm font-medium text-foreground">No goal boards yet</p>
+          <p className="max-w-sm text-sm text-muted-foreground">
+            Group projects by tag into a board to track progress across them at a glance — your
+            Mission Control. Create one above.
+          </p>
+        </div>
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {boards.map((board) => (

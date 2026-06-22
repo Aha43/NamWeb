@@ -20,7 +20,7 @@ function setup(projects: NamNode[] = [], over: Partial<React.ComponentProps<type
 describe('ProjectsPanel', () => {
   it('shows the empty state with no projects', () => {
     setup([]);
-    expect(screen.getByText('No projects yet.')).toBeInTheDocument();
+    expect(screen.getByText('No projects yet')).toBeInTheDocument();
   });
 
   it('adds a trimmed project and clears the field', () => {

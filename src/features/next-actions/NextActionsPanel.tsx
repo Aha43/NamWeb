@@ -75,7 +75,9 @@ export function NextActionsPanel({
         </div>
       )}
       {rows.length === 0 ? (
-        <EmptyState>No next actions.</EmptyState>
+        <EmptyState hint="The things you've decided to do now. Add one above, or capture a thought and process it to Next.">
+          No next actions yet
+        </EmptyState>
       ) : (
         <ReorderableActionList
           rows={rows}
