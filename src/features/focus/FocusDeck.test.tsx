@@ -72,8 +72,21 @@ describe('FocusDeck', () => {
     expect(onExit).toHaveBeenCalledOnce();
   });
 
-  it('shows the keyboard-shortcut hint', () => {
+  it('shows a touch hint by default (no keyboard on a phone)', () => {
     setup(three);
-    expect(screen.getByText(/Space to mark done/)).toBeInTheDocument();
+    expect(screen.getByText(/Swipe to move/)).toBeInTheDocument();
+    expect(screen.queryByText(/Space to mark done/)).not.toBeInTheDocument();
+  });
+
+  it('shows the keyboard shortcuts on desktop', () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((q: string) =>
+      ({ matches: true, media: q, onchange: null, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, dispatchEvent: () => false })) as typeof window.matchMedia;
+    try {
+      setup(three);
+      expect(screen.getByText(/Space to mark done/)).toBeInTheDocument();
+    } finally {
+      window.matchMedia = original;
+    }
   });
 });
