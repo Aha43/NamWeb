@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Inbox, ListTodo, MoreHorizontal, Plus, Settings, Target, User, type LucideIcon } from 'lucide-react';
+import { HelpCircle, Inbox, ListTodo, MoreHorizontal, Plus, Settings, Target, User, type LucideIcon } from 'lucide-react';
 import { useCapture } from '@/capture/capture-context';
 import {
   Sheet,
@@ -111,6 +111,14 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
           >
             <Settings className="h-4 w-4" />
             Settings
+          </NavLink>
+          <NavLink
+            to="/help"
+            onClick={() => setMoreOpen(false)}
+            className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
+          >
+            <HelpCircle className="h-4 w-4" />
+            Help
           </NavLink>
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4">

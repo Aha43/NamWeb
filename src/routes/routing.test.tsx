@@ -168,6 +168,13 @@ describe('routing', () => {
     expect(screen.queryByText('Welcome to NAM 👋')).not.toBeInTheDocument();
   });
 
+  it('renders the help page at /help', () => {
+    renderAt('/help');
+    expect(screen.getByRole('heading', { name: 'Help', level: 1 })).toBeInTheDocument();
+    expect(screen.getByText(/Capture → Clarify → Focus/)).toBeInTheDocument();
+    expect(screen.getByText('Keyboard shortcuts')).toBeInTheDocument();
+  });
+
   it('redirects the index route to /inbox', () => {
     renderAt('/');
     expect(screen.getByLabelText('Quick add')).toBeInTheDocument();

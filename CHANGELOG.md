@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **In-app Help.** A new **Help** entry (account menu on desktop, More sheet on phone → `/help`)
+  explains how NAM works (the Capture → Clarify → Focus loop), what each view is for, the keyboard
+  shortcuts, and offers a one-click **Add the Learn NAM project**. A single home for "I'm confused."
+  Closes #292.
+
 - **First-run get-started on-ramp.** A brand-new (or still-empty) workspace now shows a dismissible
   card on the Inbox that names the **Capture → Clarify → Focus** loop and offers the two ways to
   begin — **Capture your first thought** or **Add the Learn NAM project 🥋** — instead of dropping you

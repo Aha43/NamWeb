@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CircleUser, LogOut, Settings, User } from 'lucide-react';
+import { CircleUser, HelpCircle, LogOut, Settings, User } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,10 @@ export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
         <DropdownMenuItem onClick={() => navigate('/account?tab=preferences')}>
           <Settings className="mr-2 h-4 w-4" />
           Settings
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => navigate('/help')}>
+          <HelpCircle className="mr-2 h-4 w-4" />
+          Help
         </DropdownMenuItem>
         <DropdownMenuItem onClick={onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
