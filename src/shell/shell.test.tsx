@@ -7,6 +7,7 @@ import { WorkspaceContext } from '@/store/workspace-context';
 import { CaptureProvider } from '@/capture/CaptureProvider';
 import { ActionEditorProvider } from '@/features/actions/ActionEditorProvider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { WithAuthUser } from '@/test/authUser';
 import { AppRoutes } from '@/routes/AppRoutes';
 
 function setViewport(isDesktop: boolean) {
@@ -56,17 +57,19 @@ function workspace(): UseWorkspace {
 function renderShell(isDesktop: boolean) {
   setViewport(isDesktop);
   render(
-    <ThemeProvider>
-      <WorkspaceContext.Provider value={workspace()}>
-        <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <CaptureProvider>
-            <ActionEditorProvider>
-              <AppRoutes />
-            </ActionEditorProvider>
-          </CaptureProvider>
-        </MemoryRouter>
-      </WorkspaceContext.Provider>
-    </ThemeProvider>,
+    <WithAuthUser>
+      <ThemeProvider>
+        <WorkspaceContext.Provider value={workspace()}>
+          <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <CaptureProvider>
+              <ActionEditorProvider>
+                <AppRoutes />
+              </ActionEditorProvider>
+            </CaptureProvider>
+          </MemoryRouter>
+        </WorkspaceContext.Provider>
+      </ThemeProvider>
+    </WithAuthUser>,
   );
 }
 

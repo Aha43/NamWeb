@@ -20,5 +20,5 @@ export default function App() {
 
   if (!session) return <AuthScreen />;
 
-  return <AuthedApp />;
+  return <AuthedApp user={session.user} />;
 }
