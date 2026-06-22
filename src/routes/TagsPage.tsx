@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { allTags, contextItems } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
@@ -10,6 +11,7 @@ import { useWorkspaceContext } from '@/store/workspace-context';
 export function TagsPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
+  const navigate = useNavigate();
   const deleteNode = useDeleteNode();
   const [selected, setSelected] = useState<string[]>([]);
   const [nextOnly, setNextOnly] = useState(false);
@@ -59,6 +61,9 @@ export function TagsPage() {
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
       }}
       onSaveView={(name) => dispatch({ type: 'createSavedView', name, tags: selected, nextOnly })}
+      onFocus={() =>
+        navigate(`/focus?tags=${selected.map(encodeURIComponent).join(',')}${nextOnly ? '&next=1' : ''}`)
+      }
       onOpenView={(view) => {
         setSelected(view.tags);
         setNextOnly(view.nextOnly);

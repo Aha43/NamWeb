@@ -39,6 +39,18 @@ describe('TagFilterPanel', () => {
     expect(screen.queryByText(/match/)).not.toBeInTheDocument();
   });
 
+  it('offers a Focus button over the filtered results', () => {
+    const onFocus = vi.fn();
+    setup({ selected: ['home'], rows: [row('a', 'Tidy desk')], onFocus });
+    fireEvent.click(screen.getByRole('button', { name: 'Focus' }));
+    expect(onFocus).toHaveBeenCalled();
+  });
+
+  it('hides Focus when the filter has no matches', () => {
+    setup({ selected: ['home'], rows: [], onFocus: vi.fn() });
+    expect(screen.queryByRole('button', { name: 'Focus' })).not.toBeInTheDocument();
+  });
+
   it('toggles tags and shows the match count', () => {
     const { onToggleTag } = setup({ selected: ['home'], rows: [row('a', 'Fix tap')] });
     expect(screen.getByRole('button', { name: 'home' })).toHaveAttribute('aria-pressed', 'true');

@@ -1,8 +1,9 @@
-import { backlogItems, nextActions, projectActions, projectPath } from '@/domain/lenses';
+import { backlogItems, contextItems, nextActions, projectActions, projectPath } from '@/domain/lenses';
 import type { WorkspaceDocument } from '@/domain/types';
 
-/** What to work through: the global Next/Backlog queues, or one project's open direct actions. */
-export type FocusSource = 'next' | 'backlog' | { project: string };
+/** What to work through: the global Next/Backlog queues, one project's open direct actions, or the
+ *  active actions matching a tag filter (the Tags view's "Focus" button). */
+export type FocusSource = 'next' | 'backlog' | { project: string } | { tags: string[]; nextOnly: boolean };
 
 export interface FocusCard {
   id: string;
@@ -15,8 +16,11 @@ export interface FocusCard {
 export function focusCards(doc: WorkspaceDocument, source: FocusSource): FocusCard[] {
   const nodes =
     typeof source === 'object'
-      ? // A project's direct actions, excluding done — mirrors NamDesktop's focusableDirectActions.
-        projectActions(doc, source.project).filter((n) => n.status !== 'DONE')
+      ? 'project' in source
+        ? // A project's direct actions, excluding done — mirrors NamDesktop's focusableDirectActions.
+          projectActions(doc, source.project).filter((n) => n.status !== 'DONE')
+        : // Active actions matching the tag filter (same set the Tags view shows).
+          contextItems(doc, source.tags, source.nextOnly)
       : source === 'backlog'
         ? backlogItems(doc)
         : nextActions(doc);

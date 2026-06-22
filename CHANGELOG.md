@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Focus a single tag.** The **Tags** view gains a **Focus** button that drops you into Focus over
+  the currently-filtered actions — e.g. filter to `home` and focus just those, when your Next queue is
+  full of mixed contexts. The filtering stays in the Tags view, so Focus mode's UI is unchanged (it
+  just gains a tag source, like `?project=` already does). The in-deck re-triage flip is omitted here
+  (mixed statuses, like project focus). Closes #301.
+
 - **In-app Help.** A new **Help** entry (account menu on desktop, More sheet on phone → `/help`)
   explains how NAM works (the Capture → Clarify → Focus loop), what each view is for, the keyboard
   shortcuts, and offers a one-click **Add the Learn NAM project**. A single home for "I'm confused."
