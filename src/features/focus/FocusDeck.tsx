@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, FolderInput } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsDesktop } from '@/shell/useIsDesktop';
 import type { FocusCard } from './focusCards';
 
 export interface FocusDeckProps {
@@ -26,6 +27,7 @@ export interface FocusDeckProps {
 export function FocusDeck({ cards, onDone, onExit, flipLabel, onFlip }: FocusDeckProps) {
   const [index, setIndex] = useState(0);
   const reduceMotion = useReducedMotion();
+  const isDesktop = useIsDesktop();
 
   const len = cards.length;
   const safeIndex = len === 0 ? 0 : ((index % len) + len) % len;
@@ -127,7 +129,7 @@ export function FocusDeck({ cards, onDone, onExit, flipLabel, onFlip }: FocusDec
         {safeIndex + 1} / {len}
       </p>
       <p className="pb-6 pt-1 text-center text-xs text-muted-foreground/70">
-        ← → or swipe to move · Space to mark done · Esc to exit
+        {isDesktop ? '← → or swipe to move · Space to mark done · Esc to exit' : 'Swipe to move · tap Done'}
       </p>
     </div>
   );

@@ -26,6 +26,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Focus shortcut hint adapts to the device.** On a phone the deck no longer shows keyboard keys
+  that don't exist there — it reads "Swipe to move · tap Done" on touch, and keeps the full
+  "← → · Space · Esc" line on desktop. Closes #309.
+
 - **Phone More sheet: grouped + descriptive.** The mobile **More** sheet was a flat list; it's now
   grouped (**Views** / **Organize** / **Find**, mirroring the desktop sidebar) with each surface's
   **description shown as a subtitle** — since tooltips don't fire on touch, that's how the per-surface
