@@ -141,7 +141,7 @@ export function ActionDialog({
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="action-tags">Tags</Label>
               <TagsInput id="action-tags" value={tags} onChange={setTags} suggestions={availableTags} />
