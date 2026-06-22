@@ -33,5 +33,5 @@ test('promote a Backlog item to Next from the focus deck', async ({ page, doc })
   await page.getByRole('button', { name: 'Move to Next' }).click();
 
   await expect.poll(() => doc.current().nodes['b1'].status).toBe('NEXT');
-  await expect(page.getByText('All done.')).toBeVisible(); // backlog queue now empty
+  await expect(page.getByText('All clear 🎉')).toBeVisible(); // backlog queue now empty
 });

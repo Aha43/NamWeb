@@ -20,6 +20,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Focus mode: shortcut hint + a guiding empty state.** The Focus deck now shows its keyboard
+  shortcuts ("← → or swipe to move · Space to mark done · Esc to exit") under the counter, and the
+  empty-queue state guides instead of dead-ending — "All clear 🎉 — capture a thought or move an
+  action to Next, then come back." Closes #293, #296.
+
 - **Empty states now teach.** Instead of a bare "No next actions." every empty surface explains
   what it's for and how to fill it — e.g. Next: "The things you've decided to do now. Add one above,
   or capture a thought and process it to Next."; Due/Blocked/Done/Backlog/Tags/Goals/Templates get
