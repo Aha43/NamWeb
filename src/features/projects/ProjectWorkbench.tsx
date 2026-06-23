@@ -59,6 +59,8 @@ export interface ProjectWorkbenchProps {
   onToggleDetails?: () => void;
   /** Save edits to the current project's title/notes/tags/due/status/resources. */
   onSaveDetails?: (edits: ActionEdits) => void;
+  /** Tags this project inherits from its ancestors ("rub-off") — shown read-only in Details. */
+  projectInheritedTags?: string[];
   /** Delete the current project (recursive); the Details panel confirms inline. */
   onDeleteProject?: () => void;
   /** Count-aware confirm message for the project delete. */
@@ -142,6 +144,7 @@ export function ProjectWorkbench({
   detailsCollapsed = true,
   onToggleDetails = () => {},
   onSaveDetails,
+  projectInheritedTags = [],
   onDeleteProject,
   deleteProjectMessage,
   onFocus,
@@ -332,6 +335,7 @@ export function ProjectWorkbench({
           onToggle={onToggleDetails}
           onSave={onSaveDetails}
           availableTags={allTags}
+          inheritedTags={projectInheritedTags}
           onDelete={onDeleteProject}
           deleteConfirmMessage={deleteProjectMessage}
         />

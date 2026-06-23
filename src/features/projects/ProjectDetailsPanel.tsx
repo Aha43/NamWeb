@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { TagsInput } from '../actions/TagsInput';
+import { InheritedTags } from '../actions/InheritedTags';
 import { ResourcesEditor } from '../actions/ResourcesEditor';
 import type { ActionEdits } from '../actions/ActionDialog';
 import { cn } from '@/lib/utils';
@@ -29,6 +30,7 @@ export function ProjectDetailsPanel({
   onToggle,
   onSave,
   availableTags = [],
+  inheritedTags = [],
   onDelete,
   deleteConfirmMessage,
 }: {
@@ -37,6 +39,8 @@ export function ProjectDetailsPanel({
   onToggle: () => void;
   onSave: (edits: ActionEdits) => void;
   availableTags?: string[];
+  /** Tags inherited from ancestor projects ("rub-off") — shown read-only. */
+  inheritedTags?: string[];
   /** Delete the project (recursive); the panel confirms inline. */
   onDelete?: () => void;
   /** Count-aware confirm message shown in the inline delete confirm. */
@@ -124,6 +128,7 @@ export function ProjectDetailsPanel({
                 }}
                 suggestions={availableTags}
               />
+              <InheritedTags tags={inheritedTags} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="project-due">Due</Label>

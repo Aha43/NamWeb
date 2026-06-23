@@ -1,5 +1,5 @@
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { allTags, buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
+import { allTags, buildPath, effectiveTags, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
@@ -198,6 +198,7 @@ export function ProjectWorkbenchPage() {
       detailsCollapsed={detailsCollapsed}
       onToggleDetails={toggleDetails}
       onSaveDetails={saveDetails}
+      projectInheritedTags={effectiveTags(document, id).filter((t) => !project.tags.includes(t))}
       onDeleteProject={deleteProject}
       deleteProjectMessage={deleteProjectMessage}
       onFocus={() => navigate(`/focus?project=${id}`)}

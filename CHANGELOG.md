@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Project tags rub off onto their contents.** A tag on a project now shows up (read-only) on every
+  action and sub-project beneath it — in the action editor and the project Details panel — marked as
+  inherited ("From project:") and not editable there. Filtering already treated these as effective
+  tags; now they're visible where you edit. Edit them on the project that owns them. Closes #327.
+
 - **File inbox items under an existing project while processing.** When you clarify an inbox item,
   you can now optionally choose which existing project it belongs to: actions gain a **File under…**
   picker (default *Free actions*), and *make a project* gains a **Nest under…** step (default *Top
