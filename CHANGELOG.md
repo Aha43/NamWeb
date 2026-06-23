@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **File inbox items under an existing project while processing.** When you clarify an inbox item,
+  you can now optionally choose which existing project it belongs to: actions gain a **File under…**
+  picker (default *Free actions*), and *make a project* gains a **Nest under…** step (default *Top
+  level*). Defaults preserve the previous one-tap behavior, so the common case stays fast. Often
+  clarifying an item reveals it belongs to a project you already have. Closes #320.
+
 - **Focus a single tag.** The **Tags** view gains a **Focus** button that drops you into Focus over
   the currently-filtered actions — e.g. filter to `home` and focus just those, when your Next queue is
   full of mixed contexts. The filtering stays in the Tags view, so Focus mode's UI is unchanged (it

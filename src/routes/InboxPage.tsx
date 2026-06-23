@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { inboxItems, structuralNodeIds } from '@/domain/lenses';
+import { inboxItems, projectPath, structuralNodeIds, subtreeIds } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { InboxPanel } from '@/features/inbox/InboxPanel';
-import { InboxProcessDialog, type ProcessResolution } from '@/features/inbox/InboxProcessDialog';
+import {
+  InboxProcessDialog,
+  type ProcessResolution,
+  type ProjectTarget,
+} from '@/features/inbox/InboxProcessDialog';
 import { GetStarted } from '@/features/onboarding/GetStarted';
 import { useGetStartedDismissed } from '@/features/onboarding/useGetStartedDismissed';
 import { useActionEditor } from '@/features/actions/action-editor-context';
@@ -47,6 +51,18 @@ export function InboxPage() {
       ? items.find((n) => n.id === processingId) ?? null
       : null;
 
+  // Existing projects the clarified item can be filed/nested under (any depth, excluding its own subtree).
+  const projectTargets = useMemo<ProjectTarget[]>(() => {
+    if (!document || !current) return [];
+    const excluded = subtreeIds(document, current.id);
+    const targets: ProjectTarget[] = [];
+    for (const candidate of Object.values(document.nodes)) {
+      if (!candidate.project || excluded.has(candidate.id)) continue;
+      targets.push({ id: candidate.id, label: [...projectPath(document, candidate.id), candidate.title].join(' › ') });
+    }
+    return targets;
+  }, [document, current]);
+
   function endDeck() {
     setQueue(null);
     setPos(0);
@@ -62,9 +78,15 @@ export function InboxPage() {
     if (!current) return;
     const now = nowIso();
     if (resolution.kind === 'project') {
-      dispatch({ type: 'convertInboxToProject', id: current.id, now });
+      dispatch({ type: 'convertInboxToProject', id: current.id, parentId: resolution.parentId, now });
     } else {
-      dispatch({ type: 'convertInboxToAction', id: current.id, status: resolution.status, now });
+      dispatch({
+        type: 'convertInboxToAction',
+        id: current.id,
+        status: resolution.status,
+        parentId: resolution.parentId,
+        now,
+      });
     }
     if (inDeck) advance();
     else setProcessingId(null);
@@ -102,6 +124,7 @@ export function InboxPage() {
             }
           }}
           onResolve={resolve}
+          projectTargets={projectTargets}
           {...(inDeck
             ? {
                 remaining: queue.length - pos,
