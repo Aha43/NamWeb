@@ -66,10 +66,28 @@ target the local Supabase stack run from NamDesktop (`make supabase-start`).
 - **One issue at a time.** After completing an issue, stop and wait for the user to confirm
   before starting the next one — even when multiple issues are planned for the same sprint.
 
+### Delivery: ship a PR with a Cloudflare preview link
+
+Once a feature is built and **locally green** (typecheck, lint, full unit suite, and the relevant
+mocked e2e journey all pass), **deliver it for review automatically — do not pause to ask "want me
+to commit?":**
+
+1. Commit (`Closes #<number>` + the standard co-author line).
+2. Push the feature branch and open the PR.
+3. Fetch the **Cloudflare Pages branch-preview URL** and post it. It lives in the PR's
+   "Cloudflare Pages" check output — read it with
+   `gh api repos/Aha43/NamWeb/commits/<sha>/check-runs --jq '.check_runs[] | select(.name=="Cloudflare Pages") | .output.summary'`
+   and surface the `*.namweb.pages.dev` **Branch Preview URL** (it tracks the latest push; the
+   per-commit hash URL is frozen to one build).
+4. **Pause for the user to test on the preview.** Merge only when they explicitly say so
+   (`gh pr merge <#> --squash --delete-branch`) — merge is the one step that still needs a go-ahead.
+
+The CF preview — not local `npm run dev` — is the default surface the user tests on.
+
 ### Definition of Done for feature issues
 
 A feature issue is complete when:
-- the feature works (verified by running it)
+- the feature works (verified by running it; for UI, on the Cloudflare PR preview)
 - relevant tests are added or updated
 - all existing tests pass
 - no obvious domain invariant is weakened
