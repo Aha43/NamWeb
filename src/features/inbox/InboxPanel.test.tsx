@@ -52,4 +52,17 @@ describe('InboxPanel', () => {
     expect(onProcess).toHaveBeenCalledWith('a');
     expect(onDelete).toHaveBeenCalledWith('a');
   });
+
+  it('pencil triggers inline rename (not an editor) and commits via onRename', () => {
+    const onRename = vi.fn();
+    render(
+      <InboxPanel items={[item('a', 'Buy milk')]} onAdd={vi.fn()} onProcess={vi.fn()} onDelete={vi.fn()} onRename={onRename} />,
+    );
+    // The pencil opens the inline editor in-place rather than opening the action dialog.
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Buy milk' }));
+    const input = screen.getByRole('textbox', { name: 'Rename Buy milk' });
+    fireEvent.change(input, { target: { value: 'Buy oat milk' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRename).toHaveBeenCalledWith('a', 'Buy oat milk');
+  });
 });
