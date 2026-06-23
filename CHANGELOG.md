@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Copy buttons for names, descriptions, and resources.** A small copy-to-clipboard button now sits
+  by the title and description fields (in the action editor and project Details panel) and on each
+  attached resource — no more select-and-Ctrl-C. Closes #329.
+
 - **Project tags rub off onto their contents.** A tag on a project now shows up (read-only) on every
   action and sub-project beneath it — in the action editor and the project Details panel — marked as
   inherited ("From project:") and not editable there. Filtering already treated these as effective

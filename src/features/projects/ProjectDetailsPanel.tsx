@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { TagsInput } from '../actions/TagsInput';
 import { InheritedTags } from '../actions/InheritedTags';
 import { ResourcesEditor } from '../actions/ResourcesEditor';
+import { CopyButton } from '@/components/ui/copy-button';
 import type { ActionEdits } from '../actions/ActionDialog';
 import { cn } from '@/lib/utils';
 import { parseFlexibleDate } from '@/lib/dates';
@@ -95,7 +96,10 @@ export function ProjectDetailsPanel({
       {!collapsed && (
         <form onSubmit={submit} className="space-y-4 border-t border-border p-3">
           <div className="space-y-1.5">
-            <Label htmlFor="project-title">Title</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="project-title">Title</Label>
+              <CopyButton value={title} label="title" />
+            </div>
             <Input
               id="project-title"
               value={title}
@@ -106,7 +110,10 @@ export function ProjectDetailsPanel({
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="project-description">Description</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="project-description">Description</Label>
+              <CopyButton value={description} label="description" />
+            </div>
             <Textarea
               id="project-description"
               value={description}
