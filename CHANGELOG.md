@@ -96,6 +96,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Inbox pencil now renames in place instead of opening the action editor.** Tapping the pencil on
+  an inbox item used to open the full action dialog — wrong, since the item hasn't been clarified as
+  an action yet. It now starts an inline rename, like everywhere else (double-click still works too).
+  Closes #333.
+
 - **Archived projects no longer show up as move/file targets.** Every "choose a project" picker —
   *Move into* on the Projects list, *Move sub-project into* on the Workbench, the action editor's
   *Move to*, and the inbox *File under / Nest under* — used to list archived projects. They're now
