@@ -103,6 +103,30 @@ export function projects(doc: WorkspaceDocument): NamNode[] {
     .filter((n): n is NamNode => Boolean(n) && n.project);
 }
 
+/**
+ * Project ids that are archived — either explicitly (their own `status === 'ARCHIVED'`) or
+ * transitively (an ancestor project is archived). We only ever set ARCHIVED on a top-level
+ * project, so its whole sub-tree is implicitly archived too. Used to keep archived projects
+ * out of "move/file into a project" target pickers.
+ */
+export function archivedProjectIds(doc: WorkspaceDocument): Set<string> {
+  const parents = buildParentIndex(doc);
+  const structural = structuralNodeIds(doc);
+  const archived = new Set<string>();
+  for (const node of Object.values(doc.nodes)) {
+    if (!node.project) continue;
+    let cursor: string | undefined = node.id;
+    while (cursor && !structural.has(cursor)) {
+      if (doc.nodes[cursor]?.status === 'ARCHIVED') {
+        archived.add(node.id);
+        break;
+      }
+      cursor = parents.get(cursor);
+    }
+  }
+  return archived;
+}
+
 /** A project's direct child nodes, in `childIds` order, filtered by kind. */
 function childrenByKind(doc: WorkspaceDocument, projectId: string, wantProject: boolean): NamNode[] {
   const node = doc.nodes[projectId];
@@ -135,10 +159,13 @@ export interface ProjectMoveTarget {
 export function projectMoveTargets(doc: WorkspaceDocument, id: string): ProjectMoveTarget[] {
   if (!doc.nodes[id]) return [];
   const excluded = subtreeIds(doc, id);
+  const archived = archivedProjectIds(doc); // never offer an archived project as a destination
   const parentId = Object.values(doc.nodes).find((n) => n.childIds.includes(id))?.id;
   const parent = parentId ? doc.nodes[parentId] : undefined;
   const siblingIds = parent
-    ? parent.childIds.filter((cid) => Boolean(doc.nodes[cid]?.project) && !excluded.has(cid))
+    ? parent.childIds.filter(
+        (cid) => Boolean(doc.nodes[cid]?.project) && !excluded.has(cid) && !archived.has(cid),
+      )
     : [];
   const sibSet = new Set(siblingIds);
   const toTarget = (n: NamNode): ProjectMoveTarget => ({
@@ -150,7 +177,7 @@ export function projectMoveTargets(doc: WorkspaceDocument, id: string): ProjectM
     parentId && parentId !== doc.projectsNodeId ? [{ id: doc.projectsNodeId, label: 'Top level' }] : [];
   const siblings = siblingIds.map((cid) => doc.nodes[cid]!);
   const others = Object.values(doc.nodes).filter(
-    (n) => n.project && !excluded.has(n.id) && !sibSet.has(n.id) && n.id !== parentId,
+    (n) => n.project && !excluded.has(n.id) && !archived.has(n.id) && !sibSet.has(n.id) && n.id !== parentId,
   );
   return [...topLevel, ...siblings.map(toTarget), ...others.map(toTarget)];
 }

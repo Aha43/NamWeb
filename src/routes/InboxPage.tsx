@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { inboxItems, projectPath, structuralNodeIds, subtreeIds } from '@/domain/lenses';
+import { archivedProjectIds, inboxItems, projectPath, structuralNodeIds, subtreeIds } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { InboxPanel } from '@/features/inbox/InboxPanel';
@@ -55,9 +55,10 @@ export function InboxPage() {
   const projectTargets = useMemo<ProjectTarget[]>(() => {
     if (!document || !current) return [];
     const excluded = subtreeIds(document, current.id);
+    const archived = archivedProjectIds(document);
     const targets: ProjectTarget[] = [];
     for (const candidate of Object.values(document.nodes)) {
-      if (!candidate.project || excluded.has(candidate.id)) continue;
+      if (!candidate.project || excluded.has(candidate.id) || archived.has(candidate.id)) continue;
       targets.push({ id: candidate.id, label: [...projectPath(document, candidate.id), candidate.title].join(' › ') });
     }
     return targets;
