@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TagsInput } from './TagsInput';
 import { InheritedTags } from './InheritedTags';
+import { CopyButton } from '@/components/ui/copy-button';
 import { ResourcesEditor } from './ResourcesEditor';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -134,11 +135,17 @@ export function ActionDialog({
           </DialogHeader>
           <DialogBody className="space-y-4 px-6 py-4">
           <div className="space-y-1.5">
-            <Label htmlFor="action-title">Title</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="action-title">Title</Label>
+              <CopyButton value={title} label="title" />
+            </div>
             <Input id="action-title" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="action-description">Description</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="action-description">Description</Label>
+              <CopyButton value={description} label="description" />
+            </div>
             <Textarea
               id="action-description"
               value={description}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/ui/copy-button';
 import { Input } from '@/components/ui/input';
 import type { Resource, ResourceType } from '@/domain/types';
 
@@ -33,6 +34,7 @@ export function ResourcesEditor({
             <li key={i} className="flex items-center gap-2 text-sm">
               <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{r.type}</span>
               <span className="min-w-0 flex-1 truncate text-foreground">{r.value}</span>
+              <CopyButton value={r.value} label={`resource ${r.value}`} />
               <button
                 type="button"
                 aria-label={`Remove resource ${r.value}`}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { useCopyToClipboard } from '@/lib/useCopyToClipboard';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +30,7 @@ export function ProjectSummaryDialog({
   const [backlog, setBacklog] = useState(true);
   const [done, setDone] = useState(false);
   const [includeSubProjects, setIncludeSubProjects] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useCopyToClipboard();
 
   const markdown = useMemo(() => {
     const statuses: NodeStatus[] = [];
@@ -38,16 +39,6 @@ export function ProjectSummaryDialog({
     if (done) statuses.push('DONE');
     return buildSummary({ statuses, includeSubProjects });
   }, [next, backlog, done, includeSubProjects, buildSummary]);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(markdown);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch {
-      // Clipboard may be unavailable; the text is selectable so it can be copied manually.
-    }
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,7 +84,7 @@ export function ProjectSummaryDialog({
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-          <Button type="button" onClick={copy} className="gap-1.5">
+          <Button type="button" onClick={() => copy(markdown)} className="gap-1.5">
             {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             {copied ? 'Copied' : 'Copy'}
           </Button>
