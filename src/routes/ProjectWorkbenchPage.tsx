@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { allTags, buildPath, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
@@ -38,10 +39,14 @@ export function ProjectWorkbenchPage() {
   const [detailsCollapsed, toggleDetails] = useCollapsedDetails(id);
   const [collapsedSections, toggleSection] = useCollapsedSections(id);
   const isDesktop = useIsDesktop();
+  // Where to land after this project is deleted. Stashed at delete time (while the node still
+  // exists) so the "project gone" guard below can redirect there deterministically — an imperative
+  // navigate raced that guard and flaked. Defaults to the Projects list.
+  const postDeleteNavRef = useRef<string | null>(null);
 
   if (!document) return null;
   const project = document.nodes[id];
-  if (!project || !project.project) return <Navigate to="/projects" replace />;
+  if (!project || !project.project) return <Navigate to={postDeleteNavRef.current ?? '/projects'} replace />;
 
   const actionNodes = projectActions(document, id);
   const subProjectNodes = subProjects(document, id);
@@ -72,10 +77,15 @@ export function ProjectWorkbenchPage() {
     descendants > 0
       ? `Delete the "${project.title}" project and its ${descendants} item${descendants === 1 ? '' : 's'}? This cannot be undone.`
       : `Delete the "${project.title}" project? This cannot be undone.`;
-  // Delete the whole project (recursive). Don't navigate here: removing the node makes the routed
-  // project vanish, so the "project gone" guard below redirects to /projects — one deterministic
-  // redirect. (An earlier navigate-to-parent raced that guard and flaked.)
-  const deleteProject = () => deleteNode(id);
+  // Delete the whole project (recursive). Stash the post-delete destination — the parent project,
+  // or the Projects list when this was top-level — before the node vanishes, then delete. The guard
+  // above performs the actual redirect, avoiding a race between an imperative navigate and the guard.
+  const deleteProject = () => {
+    const ancestors = buildPath(document, id); // top-most first; last is the immediate parent project
+    const parentProject = ancestors[ancestors.length - 1];
+    postDeleteNavRef.current = parentProject ? `/projects/${parentProject.id}` : '/projects';
+    deleteNode(id);
+  };
 
   // Sections collapse by default on open (#279); when you add to one, expand it so the new item is
   // visible rather than dropped into a collapsed section.
