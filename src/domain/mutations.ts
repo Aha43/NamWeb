@@ -210,7 +210,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
   switch (intent.type) {
     case 'addInboxItem': {
       next.nodes[intent.id] = newNode(intent.id, intent.title, intent.now);
-      next.nodes[next.inboxNodeId]?.childIds.push(intent.id);
+      // Prepend: the latest capture lands first, visible without scrolling.
+      next.nodes[next.inboxNodeId]?.childIds.unshift(intent.id);
       return next;
     }
     case 'convertInboxToNext': {

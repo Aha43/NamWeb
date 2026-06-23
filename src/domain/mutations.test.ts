@@ -59,6 +59,13 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ title: 'Buy milk', status: 'BACKLOG', createdAt: NOW, updatedAt: NOW });
   });
 
+  it('addInboxItem prepends — the newest capture lands first', () => {
+    const doc = workspace([node('old')]);
+    doc.nodes['inbox'].childIds.push('old');
+    const next = applyIntent(doc, { type: 'addInboxItem', id: 'new', title: 'Fresh', now: NOW });
+    expect(next.nodes['inbox'].childIds).toEqual(['new', 'old']);
+  });
+
   it('convertInboxToNext moves the node to actions and sets NEXT', () => {
     const doc = workspace([node('a')]);
     doc.nodes['inbox'].childIds.push('a');

@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   sub-project* — now prepends it to the list (it appears first), matching how newly added actions
   already behave. Closes #326.
 
+- **New inbox items appear first.** Capturing a thought now prepends it to the Inbox, so the latest
+  capture is visible at the top without scrolling. Closes #332.
+
 - **File inbox items under an existing project while processing.** When you clarify an inbox item,
   you can now optionally choose which existing project it belongs to: actions gain a **File under…**
   picker (default *Free actions*), and *make a project* gains a **Nest under…** step (default *Top
