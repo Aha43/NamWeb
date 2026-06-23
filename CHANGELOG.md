@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **New projects land first.** Creating a project — whether via *Add project* or *group actions into a
+  sub-project* — now prepends it to the list (it appears first), matching how newly added actions
+  already behave. Closes #326.
+
 - **File inbox items under an existing project while processing.** When you clarify an inbox item,
   you can now optionally choose which existing project it belongs to: actions gain a **File under…**
   picker (default *Free actions*), and *make a project* gains a **Nest under…** step (default *Top
