@@ -150,10 +150,10 @@ describe('routing', () => {
   it('renders a project workbench at /projects/:id, sections collapsed by default', () => {
     renderAt('/projects/proj');
     expect(screen.getByRole('button', { name: 'Projects' })).toBeInTheDocument(); // breadcrumb root
-    // #279: the workbench lands with all sections collapsed for a clean overview — content and the
-    // add-panel inputs sit behind their headers.
+    // #279: the workbench lands with all sections collapsed for a clean overview — the list content
+    // sits behind its header. The add-action row (#331) stays visible so you can always add.
     expect(screen.queryByText('Task one')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Add action')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Add action')).toBeInTheDocument();
     // Expanding the Actions section reveals the direct action.
     fireEvent.click(screen.getByRole('button', { name: 'Actions' }));
     expect(screen.getByText('Task one')).toBeInTheDocument();

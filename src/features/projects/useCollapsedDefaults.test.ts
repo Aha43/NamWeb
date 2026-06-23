@@ -1,7 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useCollapsedSections } from './useCollapsedSections';
-import { useCollapsedAddPanel } from './useCollapsedAddPanel';
 import { useCollapsedDetails } from './useCollapsedDetails';
 
 // #279 — a project workbench lands with every section collapsed for a clean overview.
@@ -13,8 +12,7 @@ describe('workbench collapse defaults', () => {
     expect(result.current[0]).toEqual(new Set(['actions', 'subprojects']));
   });
 
-  it('collapses the Add-to-project and Details panels on first open', () => {
-    expect(renderHook(() => useCollapsedAddPanel('p1')).result.current[0]).toBe(true);
+  it('collapses the Details panel on first open', () => {
     expect(renderHook(() => useCollapsedDetails('p1')).result.current[0]).toBe(true);
   });
 

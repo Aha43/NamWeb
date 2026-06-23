@@ -111,9 +111,6 @@ export interface ProjectWorkbenchProps {
   onSaveAsTemplate?: (name: string) => void;
   templateNames?: string[];
   onApplyTemplate?: (name: string) => void;
-  /** Collapsed state of the "Add to project" panel + toggle (persisted per-project by the page). */
-  addPanelCollapsed?: boolean;
-  onToggleAddPanel?: () => void;
   /** Collapsed sections (Actions / Sub-projects) for List & Heat-map + toggle (persisted by the page). */
   collapsedSections?: Set<string>;
   onToggleSection?: (section: 'actions' | 'subprojects') => void;
@@ -169,8 +166,6 @@ export function ProjectWorkbench({
   onSaveAsTemplate,
   templateNames,
   onApplyTemplate,
-  addPanelCollapsed = false,
-  onToggleAddPanel = () => {},
   collapsedSections,
   onToggleSection = () => {},
 }: ProjectWorkbenchProps) {
@@ -337,63 +332,6 @@ export function ProjectWorkbench({
         />
       )}
 
-      <div className="rounded-lg border border-border">
-        <button
-          type="button"
-          aria-expanded={!addPanelCollapsed}
-          onClick={onToggleAddPanel}
-          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
-        >
-          <span>Add to project</span>
-          {addPanelCollapsed ? (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-          )}
-        </button>
-        {!addPanelCollapsed && (
-          <div className="space-y-2 border-t border-border p-3">
-            <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
-            <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
-            {onApplyTemplate && templateNames && templateNames.length > 0 && (
-              <select
-                aria-label="Add from template"
-                defaultValue=""
-                onChange={(e) => {
-                  if (e.target.value) {
-                    onApplyTemplate(e.target.value);
-                    e.target.value = '';
-                  }
-                }}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
-              >
-                <option value="" disabled>
-                  Add from template…
-                </option>
-                {templateNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            )}
-            {onSaveAsTemplate && (
-              <div className="flex justify-end">
-                <PromptButton
-                  label="Template name"
-                  initialValue={project.title}
-                  submitLabel="Save"
-                  onSubmit={onSaveAsTemplate}
-                  className="rounded-md px-2.5 py-1 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-                >
-                  Save as template…
-                </PromptButton>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
       {subProjects.length > 0 && (
         <ViewSwitch mode={viewMode} onSet={onSetViewMode} columnAvailable={columnAvailable} />
       )}
@@ -431,8 +369,7 @@ export function ProjectWorkbench({
         </>
       ) : (
         <>
-          {actions.length > 0 && (
-            <div className="space-y-1">
+          <div className="space-y-1">
               <div className="flex items-center gap-1">
                 <div className="flex-1">
                   <SectionHeader
@@ -442,7 +379,7 @@ export function ProjectWorkbench({
                     onToggle={() => onToggleSection('actions')}
                   />
                 </div>
-                {onDeleteAction && (
+                {actions.length > 0 && onDeleteAction && (
                   <Tooltip label={selectMode ? 'Exit select' : 'Select actions'}>
                     <button
                       type="button"
@@ -458,7 +395,7 @@ export function ProjectWorkbench({
                     </button>
                   </Tooltip>
                 )}
-                {onDeleteAction && doneActions.length > 0 && !selectMode && (
+                {actions.length > 0 && onDeleteAction && doneActions.length > 0 && !selectMode && (
                   <Tooltip label={`Delete ${doneActions.length} done action${doneActions.length === 1 ? '' : 's'}`}>
                     <button
                       type="button"
@@ -470,7 +407,7 @@ export function ProjectWorkbench({
                     </button>
                   </Tooltip>
                 )}
-                {onFocus && (
+                {actions.length > 0 && onFocus && (
                   <Tooltip label="Focus this project's actions">
                     <button
                       type="button"
@@ -545,7 +482,9 @@ export function ProjectWorkbench({
                   </button>
                 </div>
               )}
-              {!sectionCollapsed('actions') && (
+              {/* Add-action row lives in the list, always reachable (even when empty or collapsed). */}
+              <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
+              {!sectionCollapsed('actions') && actions.length > 0 && (
                 <ReorderableActionList
                   rows={actions}
                   onEdit={onEdit}
@@ -574,17 +513,54 @@ export function ProjectWorkbench({
                 />
               )}
             </div>
-          )}
 
-          {subProjects.length > 0 && (
-            <div className="space-y-1">
+          <div className="space-y-1">
               <SectionHeader
                 label="Sub-projects"
                 count={subProjects.length}
                 collapsed={sectionCollapsed('subprojects')}
                 onToggle={() => onToggleSection('subprojects')}
               />
-              {sectionCollapsed('subprojects') ? null : viewMode === 'heatmap' && subProjectStats ? (
+              {/* Add-sub-project row + template tools live in the Sub-projects section, always reachable. */}
+              <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
+              {((onApplyTemplate && templateNames && templateNames.length > 0) || onSaveAsTemplate) && (
+                <div className="flex flex-wrap items-center gap-2">
+                  {onApplyTemplate && templateNames && templateNames.length > 0 && (
+                    <select
+                      aria-label="Add from template"
+                      defaultValue=""
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          onApplyTemplate(e.target.value);
+                          e.target.value = '';
+                        }
+                      }}
+                      className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
+                    >
+                      <option value="" disabled>
+                        Add from template…
+                      </option>
+                      {templateNames.map((name) => (
+                        <option key={name} value={name}>
+                          {name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {onSaveAsTemplate && (
+                    <PromptButton
+                      label="Template name"
+                      initialValue={project.title}
+                      submitLabel="Save"
+                      onSubmit={onSaveAsTemplate}
+                      className="ml-auto rounded-md px-2.5 py-1 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      Save as template…
+                    </PromptButton>
+                  )}
+                </div>
+              )}
+              {!sectionCollapsed('subprojects') && subProjects.length > 0 && (viewMode === 'heatmap' && subProjectStats ? (
                 <div className="grid grid-cols-2 gap-2">
                   {subProjectStats.map((stat) => (
                     <button
@@ -623,18 +599,15 @@ export function ProjectWorkbench({
                     )}
                   </ul>
                 </SortableList>
-              )}
+              ))}
             </div>
-          )}
 
-          {actions.length === 0 && subProjects.length === 0 && (
-            <div className="space-y-3 py-8 text-center">
-              <p className="text-sm text-muted-foreground">Nothing here yet — add an action or a sub-project.</p>
-              {onConvertToAction && (
-                <Button type="button" variant="outline" size="sm" onClick={onConvertToAction}>
-                  Convert to action
-                </Button>
-              )}
+          {/* Empty leaf project: offer to turn it back into an action (the sections above carry the add rows). */}
+          {onConvertToAction && actions.length === 0 && subProjects.length === 0 && (
+            <div className="py-4 text-center">
+              <Button type="button" variant="outline" size="sm" onClick={onConvertToAction}>
+                Convert to action
+              </Button>
             </div>
           )}
         </>
