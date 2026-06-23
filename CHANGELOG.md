@@ -117,6 +117,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Archived projects no longer leak their actions into the action views.** Actions inside an
+  archived project kept their NEXT/BACKLOG status, so they still showed up in **Next** and **Backlog**
+  (and Due, Blocked, Done, tag context, and Search). They're now excluded everywhere — archiving a
+  project hides its whole subtree from the working views, not just the project rows. Closes #344.
+
 - **Inbox pencil now renames in place instead of opening the action editor.** Tapping the pencil on
   an inbox item used to open the full action dialog — wrong, since the item hasn't been clarified as
   an action yet. It now starts an inline rename, like everywhere else (double-click still works too).
