@@ -65,21 +65,24 @@ export function InboxProcessDialog({
     setStep('kind');
   }
 
-  const picker = (defaultLabel: string, ariaLabel: string) =>
+  const picker = (defaultLabel: string, fieldLabel: string) =>
     projectTargets.length > 0 ? (
-      <select
-        aria-label={ariaLabel}
-        value={targetId}
-        onChange={(e) => setTargetId(e.target.value)}
-        className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
-      >
-        <option value="">{defaultLabel}</option>
-        {projectTargets.map((target) => (
-          <option key={target.id} value={target.id}>
-            {target.label}
-          </option>
-        ))}
-      </select>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-muted-foreground">{fieldLabel}</span>
+        <select
+          aria-label={fieldLabel}
+          value={targetId}
+          onChange={(e) => setTargetId(e.target.value)}
+          className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
+        >
+          <option value="">{defaultLabel}</option>
+          {projectTargets.map((target) => (
+            <option key={target.id} value={target.id}>
+              {target.label}
+            </option>
+          ))}
+        </select>
+      </label>
     ) : null;
 
   return (
