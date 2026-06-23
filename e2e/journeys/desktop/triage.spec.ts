@@ -70,6 +70,33 @@ test.describe('blocked', () => {
   });
 });
 
+test.describe('inbox processing', () => {
+  test.use({
+    seedDoc: new DocBuilder()
+      .project('p-kitchen', 'Kitchen Reno')
+      .inbox('i1', 'Buy tiles')
+      .build(),
+  });
+
+  // #320 — clarifying an inbox item as an action lets you file it under an existing project.
+  test('files a processed inbox action under a chosen project', async ({ page }) => {
+    await page.goto('/inbox');
+    await page.getByRole('button', { name: 'Process Buy tiles' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: /one action/i }).click();
+    // The "File under" picker is present and offers the existing project.
+    await dialog.getByRole('combobox', { name: 'File under' }).selectOption({ label: 'Kitchen Reno' });
+    await dialog.getByRole('button', { name: /do it next/i }).click();
+
+    // The action landed inside the project, not in Free actions.
+    await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
+    await page.getByRole('button', { name: 'Open Kitchen Reno' }).click();
+    await expandWorkbench(page);
+    await expect(page.getByText('Buy tiles')).toBeVisible();
+  });
+});
+
 test.describe('reshape', () => {
   test.use({
     seedDoc: new DocBuilder()

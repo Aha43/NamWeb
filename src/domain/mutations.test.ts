@@ -87,6 +87,42 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ project: true, updatedAt: NOW });
   });
 
+  it('convertInboxToAction files the action under the chosen project', () => {
+    const doc = workspace([node('p', { project: true }), node('a')]);
+    doc.nodes['projects'].childIds.push('p');
+    doc.nodes['inbox'].childIds.push('a');
+    const next = applyIntent(doc, { type: 'convertInboxToAction', id: 'a', status: 'NEXT', parentId: 'p', now: NOW });
+    expect(next.nodes['inbox'].childIds).toEqual([]);
+    expect(next.nodes['actions'].childIds).toEqual([]);
+    expect(next.nodes['p'].childIds).toEqual(['a']);
+    expect(next.nodes['a']).toMatchObject({ status: 'NEXT', project: false });
+  });
+
+  it('convertInboxToAction falls back to free actions when the parent is gone', () => {
+    const doc = workspace([node('a')]);
+    doc.nodes['inbox'].childIds.push('a');
+    const next = applyIntent(doc, { type: 'convertInboxToAction', id: 'a', status: 'NEXT', parentId: 'ghost', now: NOW });
+    expect(next.nodes['actions'].childIds).toEqual(['a']);
+  });
+
+  it('convertInboxToProject nests the new project under the chosen parent', () => {
+    const doc = workspace([node('p', { project: true }), node('a')]);
+    doc.nodes['projects'].childIds.push('p');
+    doc.nodes['inbox'].childIds.push('a');
+    const next = applyIntent(doc, { type: 'convertInboxToProject', id: 'a', parentId: 'p', now: NOW });
+    expect(next.nodes['projects'].childIds).toEqual(['p']);
+    expect(next.nodes['p'].childIds).toEqual(['a']);
+    expect(next.nodes['a']).toMatchObject({ project: true });
+  });
+
+  it('convertInboxToProject refuses to nest into its own subtree (falls back to top level)', () => {
+    const doc = workspace([node('a', { childIds: ['c'] }), node('c')]);
+    doc.nodes['inbox'].childIds.push('a');
+    const next = applyIntent(doc, { type: 'convertInboxToProject', id: 'a', parentId: 'c', now: NOW });
+    expect(next.nodes['projects'].childIds).toEqual(['a']);
+    expect(next.nodes['c'].childIds).toEqual([]);
+  });
+
   it('setStatus stamps status and timestamps', () => {
     const doc = workspace([node('a', { status: 'NEXT' })]);
     doc.nodes['actions'].childIds.push('a');

@@ -10,8 +10,8 @@ import { canAddPrerequisite, subtreeIds } from './lenses';
 export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; now: string }
   | { type: 'convertInboxToNext'; id: string; now: string }
-  | { type: 'convertInboxToAction'; id: string; status: NodeStatus; now: string }
-  | { type: 'convertInboxToProject'; id: string; now: string }
+  | { type: 'convertInboxToAction'; id: string; status: NodeStatus; parentId?: string; now: string }
+  | { type: 'convertInboxToProject'; id: string; parentId?: string; now: string }
   | { type: 'setStatus'; id: string; status: NodeStatus; now: string }
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; now: string }
@@ -226,8 +226,10 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'convertInboxToAction': {
       const node = next.nodes[intent.id];
       if (!node) return next;
+      // File under the chosen project, or fall back to Free actions (incl. when a stale id is replayed).
+      const target = intent.parentId && next.nodes[intent.parentId] ? intent.parentId : next.nextActionsNodeId;
       detach(next, intent.id);
-      next.nodes[next.nextActionsNodeId]?.childIds.push(intent.id);
+      next.nodes[target]?.childIds.push(intent.id);
       node.project = false;
       node.status = intent.status;
       node.updatedAt = intent.now;
@@ -237,8 +239,14 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'convertInboxToProject': {
       const node = next.nodes[intent.id];
       if (!node) return next;
+      // Nest under the chosen project, or fall back to Top level. Never nest into the item's own subtree.
+      const valid =
+        intent.parentId &&
+        next.nodes[intent.parentId] &&
+        !subtreeIds(next, intent.id).has(intent.parentId);
+      const target = valid ? intent.parentId! : next.projectsNodeId;
       detach(next, intent.id);
-      next.nodes[next.projectsNodeId]?.childIds.push(intent.id);
+      next.nodes[target]?.childIds.push(intent.id);
       node.project = true;
       node.updatedAt = intent.now;
       return next;
