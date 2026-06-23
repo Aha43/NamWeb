@@ -65,6 +65,8 @@ target the local Supabase stack run from NamDesktop (`make supabase-start`).
   `Closes #<number>` in the commit message.
 - **One issue at a time.** After completing an issue, stop and wait for the user to confirm
   before starting the next one — even when multiple issues are planned for the same sprint.
+  (**Exception: auto-sprint mode** — see "Auto-sprints" below, where the whole agreed set runs
+  straight through without per-issue pauses.)
 
 ### Delivery: ship a PR with a Cloudflare preview link
 
@@ -83,6 +85,24 @@ to commit?":**
    (`gh pr merge <#> --squash --delete-branch`) — merge is the one step that still needs a go-ahead.
 
 The CF preview — not local `npm run dev` — is the default surface the user tests on.
+
+### Auto-sprints
+
+A way to run a batch of related work end-to-end. The shape:
+
+1. **Plan the sprint.** Either chat through the issues, or the user dumps a markdown plan exported
+   from NAM (its project-summary feature). Either way, converge on a concrete set of issues.
+2. **Create the issues in GitHub** once agreed (e.g. 4 issues), each scoped to one deliverable.
+3. **Work the whole set straight through, autonomously.** Do *not* pause for confirmation between
+   issues (this is the exception to "one issue at a time"). Pause only for a **genuine blocker** or
+   an **unresolved design decision** — otherwise keep going to the end.
+4. **One issue → one independent branch off `main` → one PR.** Branches are independent (parallel,
+   each independently mergeable), not stacked. If two issues genuinely conflict or depend on each
+   other, flag it and sequence just those — don't silently stack everything.
+5. Each PR follows the **Delivery** loop above: locally green → commit → push → PR with **how to
+   test** + the **Cloudflare branch-preview link**.
+6. **Never merge during the sprint.** The deliverable is N PRs (each with test notes + a CF link)
+   left open for the user. Merge only after they've tested — or explicitly said a PR can be merged.
 
 ### Definition of Done for feature issues
 
