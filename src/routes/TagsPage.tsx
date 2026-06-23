@@ -1,9 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { allTags, contextItems } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
+import { tagFilterParams, parseTagFilter } from '@/features/tags/tagFilterParams';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -13,8 +14,11 @@ export function TagsPage() {
   const { openEditor } = useActionEditor();
   const navigate = useNavigate();
   const deleteNode = useDeleteNode();
-  const [selected, setSelected] = useState<string[]>([]);
-  const [nextOnly, setNextOnly] = useState(false);
+  // The filter lives in the URL so it survives the round-trip into Focus and back.
+  const [params, setParams] = useSearchParams();
+  const { selected, nextOnly } = useMemo(() => parseTagFilter(params), [params]);
+  const setFilter = (nextSelected: string[], nextNextOnly: boolean) =>
+    setParams(tagFilterParams(nextSelected, nextNextOnly), { replace: true });
 
   const tags = document ? allTags(document) : [];
   const tagCounts: Record<string, number> = {};
@@ -37,7 +41,7 @@ export function TagsPage() {
       rows={rows}
       savedViews={document?.savedViews ?? []}
       onToggleTag={(tag) =>
-        setSelected((cur) => (cur.includes(tag) ? cur.filter((t) => t !== tag) : [...cur, tag]))
+        setFilter(selected.includes(tag) ? selected.filter((t) => t !== tag) : [...selected, tag], nextOnly)
       }
       onAddTag={(tag) => dispatch({ type: 'registerTag', tag })}
       tagCounts={tagCounts}
@@ -45,14 +49,14 @@ export function TagsPage() {
         const norm = newName.trim().toLowerCase();
         if (norm && norm !== tag) {
           dispatch({ type: 'renameTag', from: tag, to: norm });
-          setSelected((cur) => cur.map((t) => (t === tag ? norm : t)));
+          setFilter(selected.map((t) => (t === tag ? norm : t)), nextOnly);
         }
       }}
       onDeleteTag={(tag) => {
         dispatch({ type: 'deleteTag', tag });
-        setSelected((cur) => cur.filter((t) => t !== tag));
+        setFilter(selected.filter((t) => t !== tag), nextOnly);
       }}
-      onToggleNextOnly={() => setNextOnly((on) => !on)}
+      onToggleNextOnly={() => setFilter(selected, !nextOnly)}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
       onDeleteAction={deleteNode}
@@ -62,12 +66,9 @@ export function TagsPage() {
       }}
       onSaveView={(name) => dispatch({ type: 'createSavedView', name, tags: selected, nextOnly })}
       onFocus={() =>
-        navigate(`/focus?tags=${selected.map(encodeURIComponent).join(',')}${nextOnly ? '&next=1' : ''}`)
+        navigate({ pathname: '/focus', search: tagFilterParams(selected, nextOnly).toString() })
       }
-      onOpenView={(view) => {
-        setSelected(view.tags);
-        setNextOnly(view.nextOnly);
-      }}
+      onOpenView={(view) => setFilter(view.tags, view.nextOnly)}
       onRenameView={(oldName, newName) => {
         if (newName !== oldName) dispatch({ type: 'renameSavedView', oldName, newName });
       }}

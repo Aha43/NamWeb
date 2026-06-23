@@ -7,6 +7,7 @@ import { nowIso } from '@/lib/local';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { FocusDeck } from '@/features/focus/FocusDeck';
 import { focusCards, type FocusSource } from '@/features/focus/focusCards';
+import { tagFilterParams } from '@/features/tags/tagFilterParams';
 
 /** Immersive full-screen execution surface (outside the shell chrome). */
 export function FocusPage() {
@@ -47,8 +48,12 @@ export function FocusPage() {
   const flat = !projectId && !isTag;
 
   const cards = useMemo(() => (document ? focusCards(document, source) : []), [document, source]);
-  const exit = () =>
-    navigate(projectId ? `/projects/${projectId}` : isTag ? '/tags' : sourceParam === 'backlog' ? '/backlog' : '/next');
+  const exit = () => {
+    if (projectId) navigate(`/projects/${projectId}`);
+    // Return to Tags with the same selection/Next-only that launched Focus, not a bare /tags.
+    else if (isTag) navigate({ pathname: '/tags', search: tagFilterParams(tags, nextOnly).toString() });
+    else navigate(sourceParam === 'backlog' ? '/backlog' : '/next');
+  };
 
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">

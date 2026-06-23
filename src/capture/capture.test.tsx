@@ -5,6 +5,7 @@ import type { NamNode, WorkspaceDocument } from '@/domain/types';
 import type { UseWorkspace } from '@/store/useWorkspace';
 import { WorkspaceContext } from '@/store/workspace-context';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { WithAuthUser } from '@/test/authUser';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { ActionEditorProvider } from '@/features/actions/ActionEditorProvider';
 import { CaptureProvider } from './CaptureProvider';
@@ -58,17 +59,19 @@ describe('CaptureSheet', () => {
 describe('capture from the shell', () => {
   it('opens the capture sheet from the phone Capture button', () => {
     render(
-      <ThemeProvider>
-        <WorkspaceContext.Provider value={workspace()}>
-          <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-            <CaptureProvider>
-              <ActionEditorProvider>
-                <AppRoutes />
-              </ActionEditorProvider>
-            </CaptureProvider>
-          </MemoryRouter>
-        </WorkspaceContext.Provider>
-      </ThemeProvider>,
+      <WithAuthUser>
+        <ThemeProvider>
+          <WorkspaceContext.Provider value={workspace()}>
+            <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <CaptureProvider>
+                <ActionEditorProvider>
+                  <AppRoutes />
+                </ActionEditorProvider>
+              </CaptureProvider>
+            </MemoryRouter>
+          </WorkspaceContext.Provider>
+        </ThemeProvider>
+      </WithAuthUser>,
     );
     expect(screen.queryByLabelText('Capture to inbox')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Capture' }));

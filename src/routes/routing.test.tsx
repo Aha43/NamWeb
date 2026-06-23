@@ -7,6 +7,7 @@ import { WorkspaceContext } from '@/store/workspace-context';
 import { CaptureProvider } from '@/capture/CaptureProvider';
 import { ActionEditorProvider } from '@/features/actions/ActionEditorProvider';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { WithAuthUser } from '@/test/authUser';
 import { AppRoutes } from './AppRoutes';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
@@ -65,17 +66,19 @@ function workspace(overrides: Partial<UseWorkspace> = {}): UseWorkspace {
 function renderAt(path: string, overrides: Partial<UseWorkspace> = {}) {
   const ws = workspace(overrides);
   render(
-    <ThemeProvider>
-      <WorkspaceContext.Provider value={ws}>
-        <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-          <CaptureProvider>
-            <ActionEditorProvider>
-              <AppRoutes />
-            </ActionEditorProvider>
-          </CaptureProvider>
-        </MemoryRouter>
-      </WorkspaceContext.Provider>
-    </ThemeProvider>,
+    <WithAuthUser>
+      <ThemeProvider>
+        <WorkspaceContext.Provider value={ws}>
+          <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <CaptureProvider>
+              <ActionEditorProvider>
+                <AppRoutes />
+              </ActionEditorProvider>
+            </CaptureProvider>
+          </MemoryRouter>
+        </WorkspaceContext.Provider>
+      </ThemeProvider>
+    </WithAuthUser>,
   );
   return ws;
 }

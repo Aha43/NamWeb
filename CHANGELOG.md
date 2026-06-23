@@ -88,6 +88,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   only duplicated opening the project. The shared `ResourcesEditor` is now its own module (reused by
   the action dialog and the panel), and the action editor no longer opens for project nodes. Closes #269.
 
+### Fixed
+
+- **Tag-scoped Focus keeps your selection on exit.** Filtering the **Tags** view and hitting Focus
+  used to drop you back on a bare, unfiltered `/tags` when you exited. The tag filter (selected tags
+  + "Next only") now lives in the URL, so exiting Focus returns to the same selection — and the
+  filter is shareable/bookmarkable. First Codex external-review finding. Closes #316.
+
+- **Get Started on-ramp is per account.** Its dismissal was stored under one browser-global key, so
+  dismissing it for one account suppressed onboarding for another account on the same browser. The
+  dismissal is now scoped to the signed-in user. Closes #317.
+
+- **Focus shortcut hint keys off input, not viewport width.** The hint switched on the responsive
+  breakpoint, so a wide touch tablet was shown keyboard keys and a narrow laptop only the touch hint.
+  It now reads device capability — a fine pointer, upgrading the instant a real key is pressed — and
+  keeps `useIsDesktop` for layout only. Closes #318.
+
 ### Added
 
 - **Re-triage in Focus mode — fix bad planning in-flow.** Going through your **Next** queue in Focus
