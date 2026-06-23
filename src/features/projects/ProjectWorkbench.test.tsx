@@ -137,22 +137,18 @@ describe('ProjectWorkbench', () => {
     expect(onConvertToAction).toHaveBeenCalled();
   });
 
-  it('toggles the "Add to project" panel and hides its controls when collapsed', () => {
-    const onToggleAddPanel = vi.fn();
-    setup({ onToggleAddPanel });
-    // Expanded by default: the controls are visible and the header reports it.
+  it('shows the add-action and add-sub-project rows in the lists (no separate add panel)', () => {
+    setup();
     expect(screen.getByLabelText('Add action')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add to project' })).toHaveAttribute('aria-expanded', 'true');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Add to project' }));
-    expect(onToggleAddPanel).toHaveBeenCalled();
+    expect(screen.getByLabelText('Add sub-project')).toBeInTheDocument();
+    // The old collapsible "Add to project" panel is gone.
+    expect(screen.queryByRole('button', { name: 'Add to project' })).not.toBeInTheDocument();
   });
 
-  it('hides the add controls when the panel is collapsed', () => {
-    setup({ addPanelCollapsed: true });
-    expect(screen.queryByLabelText('Add action')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Add sub-project')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Add to project' })).toHaveAttribute('aria-expanded', 'false');
+  it('keeps the add rows reachable for an empty project', () => {
+    setup({ actions: [], subProjects: [] });
+    expect(screen.getByLabelText('Add action')).toBeInTheDocument();
+    expect(screen.getByLabelText('Add sub-project')).toBeInTheDocument();
   });
 
   it('toggles the Actions and Sub-projects section headers', () => {

@@ -39,6 +39,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Add actions and sub-projects right in their lists.** The separate collapsible "Add to project"
+  panel is gone; the add-action row now lives in the Actions section and the add-sub-project row in
+  the Sub-projects section (with the template tools), each always visible so you can add even when a
+  section is empty or collapsed. Closes #331.
+
 - **Focus shortcut hint adapts to the device.** On a phone the deck no longer shows keyboard keys
   that don't exist there — it reads "Swipe to move · tap Done" on touch, and keeps the full
   "← → · Space · Esc" line on desktop. Closes #309.

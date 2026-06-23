@@ -14,7 +14,6 @@ import { projectSummaryMarkdown } from '@/domain/projectSummary';
 import { useViewMode } from '@/features/projects/useViewMode';
 import { useCollapsedColumns } from '@/features/projects/useCollapsedColumns';
 import { useColumnWidths } from '@/features/projects/useColumnWidths';
-import { useCollapsedAddPanel } from '@/features/projects/useCollapsedAddPanel';
 import { useCollapsedDetails } from '@/features/projects/useCollapsedDetails';
 import { useCollapsedSections } from '@/features/projects/useCollapsedSections';
 import { useIsDesktop } from '@/shell/useIsDesktop';
@@ -36,7 +35,6 @@ export function ProjectWorkbenchPage() {
   const [mode, setMode] = useViewMode(id);
   const [collapsedColumns, toggleColumn] = useCollapsedColumns(id);
   const { widths: columnWidths, setWidth: setColumnWidth, resetWidth: resetColumnWidth } = useColumnWidths(id);
-  const [addPanelCollapsed, toggleAddPanel] = useCollapsedAddPanel(id);
   const [detailsCollapsed, toggleDetails] = useCollapsedDetails(id);
   const [collapsedSections, toggleSection] = useCollapsedSections(id);
   const isDesktop = useIsDesktop();
@@ -176,8 +174,6 @@ export function ProjectWorkbenchPage() {
       columnWidths={columnWidths}
       onSetColumnWidth={setColumnWidth}
       onResetColumnWidth={resetColumnWidth}
-      addPanelCollapsed={addPanelCollapsed}
-      onToggleAddPanel={toggleAddPanel}
       collapsedSections={collapsedSections}
       onToggleSection={toggleSection}
       onAddAction={(title) => {
