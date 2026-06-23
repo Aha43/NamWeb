@@ -96,6 +96,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Archived projects no longer show up as move/file targets.** Every "choose a project" picker —
+  *Move into* on the Projects list, *Move sub-project into* on the Workbench, the action editor's
+  *Move to*, and the inbox *File under / Nest under* — used to list archived projects. They're now
+  excluded, both when a top-level project is archived directly and for its sub-projects (which are
+  archived transitively, since only the top project carries the ARCHIVED status). Closes #323.
+
 - **Tag-scoped Focus keeps your selection on exit.** Filtering the **Tags** view and hitting Focus
   used to drop you back on a bare, unfiltered `/tags` when you exited. The tag filter (selected tags
   + "Next only") now lives in the URL, so exiting Focus returns to the same selection — and the

@@ -3,7 +3,7 @@ import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
-import { allTags, canAddPrerequisite, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
+import { allTags, archivedProjectIds, canAddPrerequisite, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
 import { useDeleteNode } from './useDeleteNode';
 import { nowIso } from '@/lib/local';
 
@@ -26,9 +26,10 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
   const moveTargets = useMemo<MoveTarget[]>(() => {
     if (!node || !document) return [];
     const excluded = subtreeIds(document, node.id);
+    const archived = archivedProjectIds(document);
     const targets: MoveTarget[] = [{ id: document.nextActionsNodeId, label: 'Free actions' }];
     for (const candidate of Object.values(document.nodes)) {
-      if (!candidate.project || excluded.has(candidate.id)) continue;
+      if (!candidate.project || excluded.has(candidate.id) || archived.has(candidate.id)) continue;
       targets.push({ id: candidate.id, label: [...projectPath(document, candidate.id), candidate.title].join(' › ') });
     }
     return targets;

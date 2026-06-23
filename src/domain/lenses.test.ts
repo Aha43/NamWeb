@@ -3,6 +3,7 @@ import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import {
   allTags,
   applyViewOrder,
+  archivedProjectIds,
   backlogItems,
   blockedGroups,
   buildParentIndex,
@@ -137,6 +138,36 @@ describe('projectMoveTargets', () => {
     expect(idsList).not.toContain('a1'); // self excluded
     // a2 (sibling) comes before B (other).
     expect(idsList.indexOf('a2')).toBeLessThan(idsList.indexOf('B'));
+  });
+});
+
+describe('archivedProjectIds', () => {
+  // projects/ Old(ARCHIVED)[sub(NEXT)] , Live ; archiving is set on the top project only.
+  function tree(): WorkspaceDocument {
+    return workspace(
+      [
+        node('Old', { project: true, status: 'ARCHIVED', childIds: ['sub'] }),
+        node('sub', { project: true, status: 'NEXT' }), // sub-project keeps its own status
+        node('Live', { project: true }),
+      ],
+      (d) => {
+        addChild(d, 'projects', 'Old');
+        addChild(d, 'projects', 'Live');
+      },
+    );
+  }
+
+  it('includes a directly-archived top project and its sub-projects (transitive), not live ones', () => {
+    const archived = archivedProjectIds(tree());
+    expect(archived.has('Old')).toBe(true);
+    expect(archived.has('sub')).toBe(true); // archived via ancestor, despite its own NEXT status
+    expect(archived.has('Live')).toBe(false);
+  });
+
+  it('excludes archived projects (and their sub-projects) from move targets', () => {
+    const targets = projectMoveTargets(tree(), 'Live');
+    // Only the archived top project and its sub-project exist besides Live → no valid targets.
+    expect(targets.map((t) => t.id)).toEqual([]);
   });
 });
 

@@ -97,6 +97,28 @@ test.describe('inbox processing', () => {
   });
 });
 
+test.describe('inbox processing — archived projects', () => {
+  test.use({
+    seedDoc: new DocBuilder()
+      .project('p-live', 'Live Reno')
+      .project('p-old', 'Old Reno', { status: 'ARCHIVED' })
+      .inbox('i1', 'Buy tiles')
+      .build(),
+  });
+
+  // #323 — archived projects must not appear as a "File under" target.
+  test('omits archived projects from the File under picker', async ({ page }) => {
+    await page.goto('/inbox');
+    await page.getByRole('button', { name: 'Process Buy tiles' }).click();
+
+    const dialog = page.getByRole('dialog');
+    await dialog.getByRole('button', { name: /one action/i }).click();
+    const picker = dialog.getByRole('combobox', { name: 'File under' });
+    await expect(picker.getByRole('option', { name: 'Live Reno' })).toHaveCount(1);
+    await expect(picker.getByRole('option', { name: 'Old Reno' })).toHaveCount(0);
+  });
+});
+
 test.describe('reshape', () => {
   test.use({
     seedDoc: new DocBuilder()
