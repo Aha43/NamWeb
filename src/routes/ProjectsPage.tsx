@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { projectMoveTargets, projects, reorderKindWithinChildren } from '@/domain/lenses';
+import { projectMoveTargets, projects, reorderKindWithinChildren, subtreeIds } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
 import { importSeedFromJson } from '@/domain/importWorkspace';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
+import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
@@ -12,7 +13,18 @@ export function ProjectsPage() {
   const { document, dispatch } = useWorkspaceContext();
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
+  const deleteNode = useDeleteNode();
   const [showArchived, setShowArchived] = useState(false);
+
+  // Count-aware delete confirm: warn how many items go with a non-empty project.
+  const deleteMessage = (id: string) => {
+    const node = document?.nodes[id];
+    if (!node) return 'Delete this project? This cannot be undone.';
+    const descendants = document ? subtreeIds(document, id).size - 1 : 0;
+    return descendants > 0
+      ? `Delete the "${node.title}" project and its ${descendants} item${descendants === 1 ? '' : 's'}? This cannot be undone.`
+      : `Delete the "${node.title}" project? This cannot be undone.`;
+  };
 
   const allProjects = document ? projects(document) : [];
   const archivedCount = allProjects.filter((p) => p.status === 'ARCHIVED').length;
@@ -26,6 +38,8 @@ export function ProjectsPage() {
       archivedCount={archivedCount}
       onArchive={(id) => dispatch({ type: 'setStatus', id, status: 'ARCHIVED', now: nowIso() })}
       onUnarchive={(id) => dispatch({ type: 'setStatus', id, status: 'BACKLOG', now: nowIso() })}
+      onDelete={(id) => deleteNode(id)}
+      deleteMessage={deleteMessage}
       onAdd={(title) => {
         if (!document) return;
         dispatch({ type: 'addSubProject', parentId: document.projectsNodeId, id: newId(), title, now: nowIso() });

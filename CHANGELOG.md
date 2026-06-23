@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Delete a project straight from the projects list.** Project rows gain a trash button. It asks to
+  confirm first — with a count-aware message ("…and its N items") for a non-empty project, since the
+  whole subtree is removed. Closes #343.
+
 - **New projects land first.** Creating a project — whether via *Add project* or *group actions into a
   sub-project* — now prepends it to the list (it appears first), matching how newly added actions
   already behave. Closes #326.
