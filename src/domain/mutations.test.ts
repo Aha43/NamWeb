@@ -195,6 +195,12 @@ describe('applyIntent', () => {
     expect(applyIntent(doc, { type: 'addSubProject', parentId: 'ghost', id: 'x', title: 'X', now: NOW }).nodes['x']).toBeUndefined();
   });
 
+  it('addSubProject prepends — a new project lands first in the list', () => {
+    const doc = workspace([node('p', { project: true, childIds: ['x'] }), node('x', { project: true })]);
+    const next = applyIntent(doc, { type: 'addSubProject', parentId: 'p', id: 's', title: 'Sub', now: NOW });
+    expect(next.nodes['p'].childIds).toEqual(['s', 'x']);
+  });
+
   it('seedProject inserts a rich subtree (status/tags/due/blockedBy/resources) and registers tags', () => {
     const doc = workspace();
     const next = applyIntent(doc, {
@@ -252,7 +258,7 @@ describe('applyIntent', () => {
       now: NOW,
     });
     expect(next.nodes['s']).toMatchObject({ title: 'Group', project: true, createdAt: NOW });
-    expect(next.nodes['p'].childIds).toEqual(['b', 's']); // a + c moved out; sub-project appended
+    expect(next.nodes['p'].childIds).toEqual(['s', 'b']); // a + c moved out; new sub-project lands first
     expect(next.nodes['s'].childIds).toEqual(['a', 'c']);
     expect(
       applyIntent(doc, { type: 'groupIntoSubProject', parentId: 'ghost', subProjectId: 'x', title: 'X', actionIds: [], now: NOW }).nodes['x'],

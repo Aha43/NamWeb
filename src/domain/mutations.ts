@@ -332,7 +332,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'addSubProject': {
       if (!next.nodes[intent.parentId]) return next;
       next.nodes[intent.id] = { ...newNode(intent.id, intent.title, intent.now), project: true };
-      next.nodes[intent.parentId].childIds.push(intent.id);
+      // Prepend, like addAction: a freshly created project lands first.
+      next.nodes[intent.parentId].childIds.unshift(intent.id);
       return next;
     }
     case 'moveNode': {
@@ -455,7 +456,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
         ...newNode(intent.subProjectId, intent.title, intent.now),
         project: true,
       };
-      parent.childIds.push(intent.subProjectId);
+      // Prepend the new sub-project so it lands first, like other freshly-created nodes.
+      parent.childIds.unshift(intent.subProjectId);
       for (const actionId of intent.actionIds) {
         if (!next.nodes[actionId]) continue;
         detach(next, actionId);
