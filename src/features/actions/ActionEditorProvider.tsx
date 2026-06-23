@@ -3,7 +3,7 @@ import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
-import { allTags, archivedProjectIds, canAddPrerequisite, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
+import { allTags, archivedProjectIds, canAddPrerequisite, effectiveTags, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
 import { useDeleteNode } from './useDeleteNode';
 import { nowIso } from '@/lib/local';
 
@@ -33,6 +33,12 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
       targets.push({ id: candidate.id, label: [...projectPath(document, candidate.id), candidate.title].join(' › ') });
     }
     return targets;
+  }, [node, document]);
+
+  // Tags inherited from ancestor projects ("rub-off") — shown read-only in the dialog.
+  const inheritedTags = useMemo<string[]>(() => {
+    if (!node || !document) return [];
+    return effectiveTags(document, node.id).filter((t) => !node.tags.includes(t));
   }, [node, document]);
 
   // Blocked-by data, recomputed live as prerequisites are added/removed.
@@ -134,6 +140,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           }}
           onSave={save}
           availableTags={document ? allTags(document) : []}
+          inheritedTags={inheritedTags}
           onMakeProject={node.project ? undefined : makeProject}
           moveTargets={moveTargets}
           onMove={move}

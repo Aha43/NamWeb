@@ -27,6 +27,23 @@ describe('ActionDialog', () => {
     expect(screen.getByLabelText('Due')).toHaveValue('2026-07-01');
   });
 
+  it('shows inherited (rub-off) tags read-only, separate from the editable own tags', () => {
+    render(
+      <ActionDialog
+        node={node({ tags: ['home'] })}
+        open
+        onOpenChange={vi.fn()}
+        onSave={vi.fn()}
+        inheritedTags={['office', 'urgent']}
+      />,
+    );
+    // Own tags remain in the editable field; inherited ones appear as read-only chips, not in the input.
+    expect(screen.getByLabelText('Tags')).toHaveValue('home');
+    expect(screen.getByText('From project:')).toBeInTheDocument();
+    expect(screen.getByText('office')).toBeInTheDocument();
+    expect(screen.getByText('urgent')).toBeInTheDocument();
+  });
+
   it('reports the edited fields and chosen status on save, parsing a flexible due date', () => {
     const onSave = vi.fn();
     const onOpenChange = vi.fn();
