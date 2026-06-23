@@ -113,6 +113,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   an action yet. It now starts an inline rename, like everywhere else (double-click still works too).
   Closes #333.
 
+- **Deleting a sub-project returns you to its parent, not the root Projects list.** Deleting a project
+  from its workbench used to always land on `/projects`. Now it navigates to the parent project when
+  you delete a sub-project; only deleting a top-level project lands on the Projects list. Closes #330.
+
 - **Archived projects no longer show up as move/file targets.** Every "choose a project" picker —
   *Move into* on the Projects list, *Move sub-project into* on the Workbench, the action editor's
   *Move to*, and the inbox *File under / Nest under* — used to list archived projects. They're now
