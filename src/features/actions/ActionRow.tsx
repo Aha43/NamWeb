@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Paperclip, Pencil, SlidersHorizontal, Trash2 } from 'lucide-react';
+import { Paperclip, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
@@ -72,6 +72,16 @@ export function ActionRow({
             onCommit={(t) => { onRename(t); setRenaming(false); }}
             onCancel={() => setRenaming(false)}
           />
+        ) : onEdit ? (
+          // Click the title to open the editor (replaces the old slider/edit icon).
+          <button
+            type="button"
+            aria-label={`Edit ${row.title}`}
+            onClick={onEdit}
+            className="block w-full text-left"
+          >
+            <TruncatedTitle text={row.title} className="text-sm text-foreground" />
+          </button>
         ) : (
           <TruncatedTitle text={row.title} className="text-sm text-foreground" />
         )}
@@ -111,18 +121,6 @@ export function ActionRow({
               className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <Pencil className="h-3.5 w-3.5" />
-            </button>
-          </Tooltip>
-        )}
-        {onEdit && (
-          <Tooltip label={`Edit ${row.title}`}>
-            <button
-              type="button"
-              aria-label={`Edit ${row.title}`}
-              onClick={onEdit}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5" />
             </button>
           </Tooltip>
         )}

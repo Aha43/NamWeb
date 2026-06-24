@@ -52,6 +52,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Open an action by clicking it.** Click an action's title in any list to open its editor — the
+  separate slider/edit icon on the row is gone. Rename (pencil), delete, status, and reorder keep
+  their own controls. Closes #348.
+
 - **Capture is a centered modal on desktop.** The quick-capture input used to slide in from the right
   on desktop; it now opens as a centered dialog (the bottom sheet stays on phones for thumb reach).
   Closes #342.
