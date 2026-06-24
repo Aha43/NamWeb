@@ -39,6 +39,14 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('Due Mar 20, 2026')).toBeInTheDocument();
   });
 
+  it('renders inherited (rubbed-off) project tags as italic chips', () => {
+    setup([row({ tags: ['urgent'], inheritedTags: ['office'] })]);
+    const inherited = screen.getByText('office');
+    expect(inherited).toHaveClass('italic');
+    expect(inherited).toHaveAttribute('title', 'From project');
+    expect(screen.getByText('urgent')).not.toHaveClass('italic'); // own tags stay plain
+  });
+
   it('renders a status control for each row', () => {
     setup([row({ id: 'x', title: 'Buy milk' })]);
     expect(screen.getByRole('button', { name: /status of Buy milk/i })).toBeInTheDocument();
