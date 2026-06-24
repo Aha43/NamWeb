@@ -22,6 +22,13 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
     return `${y}-${m}-${day}`;
   };
 
+  // A timestamp `days` in the past, so inbox captures show a little age variety (formatAge).
+  const agoIso = (days: number): string => {
+    const d = new Date(now);
+    d.setDate(d.getDate() - days);
+    return d.toISOString();
+  };
+
   // Captured up-front so the deposit can be blocked by reserving the hotel (by id, within the seed).
   const reserveHotelId = newId();
 
@@ -73,5 +80,18 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
   // The Learn NAM project teaches the method, alongside the relatable sample projects.
   doc = applyIntent(doc, { type: 'seedProject', parentId: doc.projectsNodeId, nodes: [buildLearnNam(newId, now)], now: nowIso });
   doc = applyIntent(doc, { type: 'seedProject', parentId: doc.nextActionsNodeId, nodes: freeActions, now: nowIso });
+
+  // A few raw captures waiting in the Inbox to clarify — some are clearly an action, one is more of
+  // a project, and one belongs under an existing project (great for trying the clarify deck). Added
+  // oldest-first with atTop:false so the listed order is preserved (newest at the bottom).
+  const inboxCaptures: { title: string; ago: number }[] = [
+    { title: 'Email Sara about the long weekend', ago: 3 },
+    { title: 'Look into an Italian phrasebook app', ago: 2 },
+    { title: 'Birthday gift for Mom 🎁', ago: 1 },
+    { title: 'Idea: start a weekly meal plan', ago: 0 },
+  ];
+  for (const capture of inboxCaptures) {
+    doc = applyIntent(doc, { type: 'addInboxItem', id: newId(), title: capture.title, atTop: false, now: agoIso(capture.ago) });
+  }
   return doc;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildDemo } from './buildDemo';
-import { blockedGroups, doneItems, dueGroups, effectiveTags, nextActions, projects } from './lenses';
+import { blockedGroups, doneItems, dueGroups, effectiveTags, inboxItems, nextActions, projects } from './lenses';
 import type { NamNode } from './types';
 
 function counter(): () => string {
@@ -35,6 +35,16 @@ describe('buildDemo', () => {
     expect(due.later.length).toBeGreaterThan(0); // Plan Q3 goals (+40)
     expect(blockedGroups(doc).length).toBeGreaterThan(0); // Pay the deposit ← Reserve a hotel
     expect(doneItems(doc).map((n) => n.title)).toContain('Pick the dates');
+  });
+
+  it('seeds a few raw captures in the Inbox to clarify, in listed (oldest-first) order', () => {
+    const titles = inboxItems(doc).map((n) => n.title);
+    expect(titles).toEqual([
+      'Email Sara about the long weekend',
+      'Look into an Italian phrasebook app',
+      'Birthday gift for Mom 🎁',
+      'Idea: start a weekly meal plan',
+    ]);
   });
 
   it('project tags rub off onto their actions (inherited)', () => {

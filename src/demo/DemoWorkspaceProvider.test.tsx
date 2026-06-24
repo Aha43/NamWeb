@@ -32,13 +32,13 @@ describe('DemoWorkspaceProvider', () => {
       </DemoWorkspaceProvider>,
     );
     expect(screen.getByTestId('seeded').textContent).toBe('true'); // buildDemo content loaded
-    expect(screen.getByTestId('inbox').textContent).toBe('0'); // demo seed has an empty inbox
+    expect(screen.getByTestId('inbox').textContent).toBe('4'); // demo seed has a few captures waiting
 
     fireEvent.click(screen.getByText('add'));
-    expect(screen.getByTestId('inbox').textContent).toBe('1'); // dispatch applied via applyIntent
+    expect(screen.getByTestId('inbox').textContent).toBe('5'); // dispatch applied via applyIntent
 
     fireEvent.click(screen.getByText('reset'));
-    expect(screen.getByTestId('inbox').textContent).toBe('0'); // back to the seed
+    expect(screen.getByTestId('inbox').textContent).toBe('4'); // back to the seed
   });
 
   it('persists edits to localStorage', () => {
