@@ -31,6 +31,8 @@ export interface AuthScreenProps {
   initialMode?: Mode;
   /** Called after a successful password reset, so the app can clear recovery and proceed. */
   onResetDone?: () => void;
+  /** Enter the no-account demo. When provided, a "Try the demo" link is shown. */
+  onTryDemo?: () => void;
 }
 
 /** True when the URL carries an `?invite` param (an invite link → open on sign-up). */
@@ -43,7 +45,7 @@ function hasInviteParam(): boolean {
 }
 
 /** Email/password auth: sign in, sign up (+ email verification), forgot/reset password. */
-export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
+export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenProps) {
   const [mode, setMode] = useState<Mode>(initialMode ?? (hasInviteParam() ? 'signup' : 'signin'));
   const [email, setEmail] = useState(DEV_EMAIL);
   const [password, setPassword] = useState(DEV_PASSWORD);
@@ -254,6 +256,17 @@ export function AuthScreen({ initialMode, onResetDone }: AuthScreenProps) {
                 </button>
               </p>
             )}
+          </div>
+        )}
+        {onTryDemo && mode !== 'reset' && (
+          <div className="border-t border-border pt-3 text-center">
+            <button
+              type="button"
+              onClick={onTryDemo}
+              className="text-sm font-medium text-foreground hover:underline"
+            >
+              Or try the demo — no account needed
+            </button>
           </div>
         )}
       </form>

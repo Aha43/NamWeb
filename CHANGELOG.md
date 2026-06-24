@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Try NAM without an account.** A "Try the demo" link on the sign-in screen (and a `/demo` URL)
+  drops you straight into a populated workspace — relatable sample projects (a trip, getting a dog)
+  plus the Learn NAM project — so you can capture, clarify, Focus, tag, and browse with no sign-up.
+  It runs entirely on your device (localStorage, no backend); a banner offers **Reset demo** and
+  **Sign up to keep your work**. Closes #356, #357.
+
 - **Copy a name from any list row.** Action rows, project rows, and inbox rows now have a small
   copy button that puts the item's name on the clipboard — no need to open the editor first.
   Closes #350.

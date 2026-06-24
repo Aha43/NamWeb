@@ -23,6 +23,7 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
 }));
 
 import { AccountMenu } from './AccountMenu';
+import { DemoContext } from '@/demo/demo-context';
 
 function setup(onSignOut = vi.fn()) {
   render(
@@ -50,5 +51,21 @@ describe('AccountMenu', () => {
     const onSignOut = setup();
     fireEvent.click(screen.getByRole('menuitem', { name: /sign out/i }));
     expect(onSignOut).toHaveBeenCalled();
+  });
+
+  it('in demo mode hides account + settings and turns sign-out into the sign-up CTA', () => {
+    const signUp = vi.fn();
+    render(
+      <MemoryRouter>
+        <DemoContext.Provider value={{ reset: vi.fn(), signUp }}>
+          <AccountMenu onSignOut={vi.fn()} />
+        </DemoContext.Provider>
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('menuitem', { name: /^account$/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /settings/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /help/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: /sign up to keep your work/i }));
+    expect(signUp).toHaveBeenCalled();
   });
 });
