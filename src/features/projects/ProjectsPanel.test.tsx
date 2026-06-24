@@ -38,6 +38,11 @@ describe('ProjectsPanel', () => {
     expect(onOpen).toHaveBeenCalledWith('p');
   });
 
+  it('offers a copy-name button on each project row', () => {
+    setup([project('p', 'Kitchen reno')]);
+    expect(screen.getByRole('button', { name: 'Copy name "Kitchen reno"' })).toBeInTheDocument();
+  });
+
   it('inline-renames a project via the rename button (no dialog)', () => {
     const onRename = vi.fn();
     setup([project('p', 'Kitchen reno')], { onRename });

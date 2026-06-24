@@ -44,6 +44,11 @@ describe('NextActionsPanel', () => {
     expect(screen.getByRole('button', { name: /status of Buy milk/i })).toBeInTheDocument();
   });
 
+  it('offers a copy-name button on each row', () => {
+    setup([row({ title: 'Buy milk' })]);
+    expect(screen.getByRole('button', { name: 'Copy name "Buy milk"' })).toBeInTheDocument();
+  });
+
   it('shows the sort toggle and cycles it', () => {
     const onCycleSort = vi.fn();
     render(

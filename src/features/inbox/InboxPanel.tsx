@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/ui/copy-button';
 import { cn } from '@/lib/utils';
 import { formatAge } from '@/lib/dates';
 import { InlineRename } from '../actions/InlineRename';
@@ -85,6 +86,9 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
                   </span>
                 ) : null;
               })()}
+              {renamingId !== item.id && (
+                <CopyButton value={item.title} label={`name "${item.title}"`} className="p-1.5" />
+              )}
               {onRename && renamingId !== item.id && (
                 <button
                   type="button"
