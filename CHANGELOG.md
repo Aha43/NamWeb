@@ -83,6 +83,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Help reflects the latest Focus and add-box features.** The Help page now describes Focus opening
+  from Next/Backlog/Due/Done/Inbox with per-card actions and Done re-triage, Done's bulk select, and
+  the top/bottom add toggle with its Settings default. Closes #380.
+
 - **Create-account form has an obvious way back.** A prominent "← Back to sign in" now sits at the
   top of the sign-up (and forgot-password) form, so heading back to normal sign-in is one click —
   no hunting below the form. Closes #371.

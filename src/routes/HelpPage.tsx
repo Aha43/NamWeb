@@ -50,8 +50,8 @@ export function HelpPage() {
             ['Templates', 'Reusable project structures.'],
             ['Tags', 'Filter by a context (tag), then Focus just those — and manage your tags.'],
             ['Search', 'Find any action or project by title or tag.'],
-            ['Done', 'Completed actions.'],
-            ['Focus', 'Execute one action at a time.'],
+            ['Done', 'Completed actions — select several to restore or re-triage in bulk.'],
+            ['Focus', 'Work one card at a time — enter from Next, Backlog, Due, Done, or Inbox.'],
           ].map(([name, desc]) => (
             <div key={name} className="flex gap-2">
               <dt className="w-24 shrink-0 font-medium text-foreground">{name}</dt>
@@ -96,6 +96,19 @@ export function HelpPage() {
           <li>
             <span className="font-medium text-foreground">Quick row actions.</span> Click an action's title to open
             it, and use the copy icon on any row to copy its name.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Focus from anywhere.</span> The green glowing button on
+            <span className="font-medium text-foreground"> Next</span>, <span className="font-medium text-foreground">Backlog</span>,
+            <span className="font-medium text-foreground"> Due</span>, <span className="font-medium text-foreground">Done</span>, and
+            <span className="font-medium text-foreground"> Inbox</span> drops you into a one-card-at-a-time deck. From a card you can
+            open the editor, rename, copy, delete, or move it to Backlog — and on <span className="font-medium text-foreground">Done</span>
+            you can re-triage the ones that weren't really done (restore to Next, park in Backlog, or delete).
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Choose where new items land.</span> Each add box has a small
+            top/bottom toggle — flip it right where you add for a here-and-now choice that resets on reload. Set your
+            default in <span className="font-medium text-foreground">Settings → Preferences</span>.
           </li>
         </ul>
       </div>
