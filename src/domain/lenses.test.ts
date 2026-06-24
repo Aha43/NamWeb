@@ -333,6 +333,12 @@ describe('tags & search', () => {
     expect(searchResults(doc, 'URGENT').map((r) => r.node.id)).toEqual(['a']); // d is DONE
     expect(searchResults(doc, '')).toEqual([]);
   });
+
+  it('searchResults matches inherited (rubbed-off) project tags too', () => {
+    const doc = tagged();
+    // 'home' lives on p1; a and b inherit it → all three match (d is DONE, excluded).
+    expect(searchResults(doc, 'home').map((r) => r.node.id).sort()).toEqual(['a', 'b', 'p1']);
+  });
 });
 
 describe('doneItems', () => {

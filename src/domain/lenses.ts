@@ -367,7 +367,12 @@ export function searchResults(doc: WorkspaceDocument, query: string): SearchResu
   return Object.values(doc.nodes)
     .filter((n) => {
       if (structural.has(n.id) || n.status === 'DONE' || archived.has(n.id)) return false;
-      return n.title.toLowerCase().includes(q) || n.tags.some((t) => t.toLowerCase().includes(q));
+      // Match effective tags (own + inherited from ancestor projects) so a rubbed-off tag is
+      // searchable like any real tag.
+      return (
+        n.title.toLowerCase().includes(q) ||
+        effectiveTags(doc, n.id).some((t) => t.toLowerCase().includes(q))
+      );
     })
     .map((node) => ({ node, path: projectPath(doc, node.id) }));
 }
