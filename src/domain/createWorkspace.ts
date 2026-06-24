@@ -61,5 +61,6 @@ export function createDefaultWorkspace(): WorkspaceDocument {
     missionControls: [],
     templates: [],
     viewOrders: {},
+    bookmarks: [],
   };
 }

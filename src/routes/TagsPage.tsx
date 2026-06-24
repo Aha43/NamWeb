@@ -4,6 +4,7 @@ import { allTags, contextItems, effectiveTags } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
+import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
 import { tagFilterParams, parseTagFilter } from '@/features/tags/tagFilterParams';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
@@ -75,6 +76,13 @@ export function TagsPage() {
         if (newName !== oldName) dispatch({ type: 'renameSavedView', oldName, newName });
       }}
       onDeleteView={(name) => dispatch({ type: 'deleteSavedView', name })}
+      bookmarkSlot={
+        selected.length > 0 ? (
+          <AddBookmarkButton
+            draft={{ kind: 'tagFilter', tags: selected, nextOnly, label: `#${selected.join(' #')}` }}
+          />
+        ) : undefined
+      }
     />
   );
 }

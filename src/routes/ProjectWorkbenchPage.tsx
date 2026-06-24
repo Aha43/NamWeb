@@ -9,6 +9,7 @@ import type { TemplateNode } from '@/domain/types';
 import type { ActionEdits } from '@/features/actions/ActionDialog';
 import { toActionRow } from '@/features/actions/rows';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
+import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
 import type { WorkbenchColumn } from '@/features/projects/ColumnView';
 import { missionStats } from '@/features/projects/missionStats';
 import { projectSummaryMarkdown } from '@/domain/projectSummary';
@@ -158,6 +159,7 @@ export function ProjectWorkbenchPage() {
   return (
     <ProjectWorkbench
       project={project}
+      bookmarkSlot={<AddBookmarkButton draft={{ kind: 'project', projectId: id, label: project.title }} />}
       breadcrumb={buildPath(document, id)}
       actions={actions}
       subProjects={subProjectNodes}

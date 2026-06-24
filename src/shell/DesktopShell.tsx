@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AccountMenu } from './AccountMenu';
+import { BookmarkBar } from '@/features/bookmarks/BookmarkBar';
 import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
@@ -74,6 +75,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               </NavLink>
             </Button>
           </Tooltip>
+          <BookmarkBar />
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />

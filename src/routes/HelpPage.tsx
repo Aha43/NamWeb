@@ -118,6 +118,11 @@ export function HelpPage() {
             it, and use the copy icon on any row to copy its name.
           </li>
           <li>
+            <span className="font-medium text-foreground">Bookmark what you return to.</span> Use the bookmark icon on a
+            project or a tag filter to pin it to the toolbar as a colored icon — one click jumps you back. Hover a
+            bookmark to remove it. Bookmarks sync with your workspace.
+          </li>
+          <li>
             <span className="font-medium text-foreground">Focus from anywhere.</span> The green glowing button on
             <span className="font-medium text-foreground"> Next</span>, <span className="font-medium text-foreground">Backlog</span>,
             <span className="font-medium text-foreground"> Due</span>, <span className="font-medium text-foreground">Done</span>, and

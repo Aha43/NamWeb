@@ -4,7 +4,7 @@
 // sync conflict-retry. All functions are pure: they return a new document and
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
-import type { NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
+import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 
 export type Intent =
@@ -32,6 +32,8 @@ export type Intent =
   | { type: 'deleteSavedView'; name: string }
   | { type: 'createMissionControl'; name: string; tags: string[] }
   | { type: 'deleteMissionControl'; name: string }
+  | { type: 'addBookmark'; bookmark: Bookmark }
+  | { type: 'removeBookmark'; id: string }
   | { type: 'reorderView'; view: string; order: string[] }
   | { type: 'reorderChildren'; parentId: string; order: string[] }
   | { type: 'saveAsTemplate'; name: string; nodeId: string }
@@ -194,7 +196,9 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'reorderView' ||
     intent.type === 'registerTag' ||
     intent.type === 'renameTag' ||
-    intent.type === 'deleteTag'
+    intent.type === 'deleteTag' ||
+    intent.type === 'addBookmark' ||
+    intent.type === 'removeBookmark'
   ) {
     return true; // operate on a document-level list, not a node
   }
@@ -409,6 +413,18 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'deleteSavedView': {
       next.savedViews = next.savedViews.filter((v) => v.name !== intent.name);
+      return next;
+    }
+    case 'addBookmark': {
+      // Append; skip an exact duplicate id (replay-safe). The field may be absent on older docs.
+      const existing = next.bookmarks ?? [];
+      next.bookmarks = existing.some((b) => b.id === intent.bookmark.id)
+        ? existing
+        : [...existing, intent.bookmark];
+      return next;
+    }
+    case 'removeBookmark': {
+      next.bookmarks = (next.bookmarks ?? []).filter((b) => b.id !== intent.id);
       return next;
     }
     case 'reorderView': {
