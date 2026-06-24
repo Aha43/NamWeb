@@ -9,6 +9,9 @@ import { InlineRename } from '../actions/InlineRename';
 import { useHasKeyboard } from '@/shell/useHasKeyboard';
 import type { FocusCard } from './focusCards';
 
+/** Id on the current card's delete trigger, so the `Delete` key can open its confirm popover. */
+const DELETE_TRIGGER_ID = 'focus-delete-trigger';
+
 export interface FocusDeckProps {
   cards: FocusCard[];
   onDone: (id: string) => void;
@@ -68,17 +71,40 @@ export function FocusDeck({
       // Don't hijack keys while typing in the inline rename field (Space/arrows are text there).
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      // Leave Ctrl/Cmd/Alt combos to the browser/OS (and the editor's Cmd+Enter).
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'ArrowRight') next();
       else if (e.key === 'ArrowLeft') prev();
       else if (e.key === ' ') {
         e.preventDefault();
         done();
       } else if (e.key === 'Escape') onExit();
+      // Per-card actions, only when wired (no-op otherwise — e.g. project-scoped focus has no flip).
+      else if ((e.key === 'e' || e.key === 'E') && onEditCard && current) onEditCard(current.id);
+      else if ((e.key === 'r' || e.key === 'R') && onRenameCard && current) setRenamingId(current.id);
+      else if ((e.key === 'f' || e.key === 'F') && onFlip && current) flip();
+      else if (e.key === 'Delete' && onDeleteCard) {
+        // Reuse the card's confirm popover (autofocused confirm, Enter/Esc) rather than deleting outright.
+        document.getElementById(DELETE_TRIGGER_ID)?.click();
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // Re-bind so the handlers close over the current card/index.
   }, [cards, index]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keyboard hint, reflecting which per-card actions are wired in this deck.
+  const keyboardHint = [
+    '← → or swipe to move',
+    'Space to mark done',
+    onEditCard && 'e edit',
+    onRenameCard && 'r rename',
+    onFlip && flipLabel && `f → ${flipLabel}`,
+    onDeleteCard && 'Del delete',
+    'Esc to exit',
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   if (!current) {
     return (
@@ -128,6 +154,7 @@ export function FocusDeck({
               <CopyButton value={current.title} label={`name "${current.title}"`} />
               {onDeleteCard && (
                 <ConfirmButton
+                  id={DELETE_TRIGGER_ID}
                   aria-label={`Delete ${current.title}`}
                   message={`Delete "${current.title}"? This cannot be undone.`}
                   onConfirm={() => onDeleteCard(current.id)}
@@ -200,7 +227,7 @@ export function FocusDeck({
         {safeIndex + 1} / {len}
       </p>
       <p className="pb-6 pt-1 text-center text-xs text-muted-foreground/70">
-        {hasKeyboard ? '← → or swipe to move · Space to mark done · Esc to exit' : 'Swipe to move · tap Done'}
+        {hasKeyboard ? keyboardHint : 'Swipe to move · tap Done'}
       </p>
     </div>
   );
