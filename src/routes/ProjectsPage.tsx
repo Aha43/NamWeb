@@ -7,10 +7,12 @@ import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
+import { useSettings } from '@/components/settings/settings-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 export function ProjectsPage() {
   const { document, dispatch } = useWorkspaceContext();
+  const { addToBottom } = useSettings();
   const isDesktop = useIsDesktop();
   const navigate = useNavigate();
   const deleteNode = useDeleteNode();
@@ -42,7 +44,7 @@ export function ProjectsPage() {
       deleteMessage={deleteMessage}
       onAdd={(title) => {
         if (!document) return;
-        dispatch({ type: 'addSubProject', parentId: document.projectsNodeId, id: newId(), title, now: nowIso() });
+        dispatch({ type: 'addSubProject', parentId: document.projectsNodeId, id: newId(), title, atTop: !addToBottom, now: nowIso() });
       }}
       onAddLearnNam={() => {
         if (!document) return;

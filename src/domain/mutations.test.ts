@@ -66,6 +66,21 @@ describe('applyIntent', () => {
     expect(next.nodes['inbox'].childIds).toEqual(['new', 'old']);
   });
 
+  it('add intents append at the bottom when atTop is false', () => {
+    const doc = workspace([node('old'), node('p', { project: true })]);
+    doc.nodes['inbox'].childIds.push('old');
+    doc.nodes['projects'].childIds.push('p');
+    const a = applyIntent(doc, { type: 'addInboxItem', id: 'new', title: 'Fresh', atTop: false, now: NOW });
+    expect(a.nodes['inbox'].childIds).toEqual(['old', 'new']);
+    const b = applyIntent(doc, { type: 'addAction', parentId: 'p', id: 'x', title: 'X', status: 'NEXT', atTop: false, now: NOW });
+    expect(b.nodes['p'].childIds).toEqual(['x']); // empty parent → just the new one
+    const c = applyIntent(
+      { ...doc, nodes: { ...doc.nodes, p: { ...doc.nodes['p'], childIds: ['e1'] } } },
+      { type: 'addSubProject', parentId: 'p', id: 's', title: 'S', atTop: false, now: NOW },
+    );
+    expect(c.nodes['p'].childIds).toEqual(['e1', 's']);
+  });
+
   it('convertInboxToNext moves the node to actions and sets NEXT', () => {
     const doc = workspace([node('a')]);
     doc.nodes['inbox'].childIds.push('a');

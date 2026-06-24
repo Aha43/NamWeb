@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
-import { DATE_FORMAT_STORAGE_KEY, SettingsContext } from './settings-context';
+import { ADD_TO_BOTTOM_STORAGE_KEY, DATE_FORMAT_STORAGE_KEY, SettingsContext } from './settings-context';
 
 const DATE_FORMATS: DateFormat[] = ['medium', 'iso', 'dmy', 'mdy'];
 
@@ -14,8 +14,17 @@ function initialDateFormat(): DateFormat {
   return DEFAULT_DATE_FORMAT;
 }
 
+function initialAddToBottom(): boolean {
+  try {
+    return localStorage.getItem(ADD_TO_BOTTOM_STORAGE_KEY) === '1';
+  } catch {
+    return false; // default: add to top
+  }
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
+  const [addToBottom, setAddToBottom] = useState<boolean>(initialAddToBottom);
 
   useEffect(() => {
     try {
@@ -25,7 +34,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [dateFormat]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(ADD_TO_BOTTOM_STORAGE_KEY, addToBottom ? '1' : '0');
+    } catch {
+      // best-effort persistence
+    }
+  }, [addToBottom]);
+
   return (
-    <SettingsContext.Provider value={{ dateFormat, setDateFormat }}>{children}</SettingsContext.Provider>
+    <SettingsContext.Provider value={{ dateFormat, setDateFormat, addToBottom, setAddToBottom }}>
+      {children}
+    </SettingsContext.Provider>
   );
 }
