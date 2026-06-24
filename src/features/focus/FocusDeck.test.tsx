@@ -93,6 +93,57 @@ describe('FocusDeck', () => {
     expect(onDeleteCard).toHaveBeenCalledWith('a');
   });
 
+  it('keyboard: e edits, r renames, f flips, Delete opens the confirm for the current card', () => {
+    const onEditCard = vi.fn();
+    const onRenameCard = vi.fn();
+    const onDeleteCard = vi.fn();
+    const onFlip = vi.fn();
+    render(
+      <FocusDeck
+        cards={three}
+        onDone={vi.fn()}
+        onExit={vi.fn()}
+        flipLabel="Backlog"
+        onFlip={onFlip}
+        onEditCard={onEditCard}
+        onRenameCard={onRenameCard}
+        onDeleteCard={onDeleteCard}
+      />,
+    );
+
+    // e → open editor for the current card.
+    fireEvent.keyDown(window, { key: 'e' });
+    expect(onEditCard).toHaveBeenCalledWith('a');
+
+    // f → flip the current card.
+    fireEvent.keyDown(window, { key: 'f' });
+    expect(onFlip).toHaveBeenCalledWith('a');
+
+    // r → start inline rename; committing calls onRenameCard.
+    fireEvent.keyDown(window, { key: 'r' });
+    const input = screen.getByRole('textbox', { name: 'Rename Do A' });
+    fireEvent.change(input, { target: { value: 'Do A v2' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRenameCard).toHaveBeenCalledWith('a', 'Do A v2');
+
+    // Delete → opens the confirm popover (not an outright delete); confirming fires onDeleteCard.
+    fireEvent.keyDown(window, { key: 'Delete' });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // the confirm
+    expect(onDeleteCard).toHaveBeenCalledWith('a');
+  });
+
+  it('keyboard: per-card shortcuts are no-ops when their handlers are not wired', () => {
+    const onDone = vi.fn();
+    const onExit = vi.fn();
+    render(<FocusDeck cards={three} onDone={onDone} onExit={onExit} />);
+    // No onEditCard/onFlip/etc wired → these keys do nothing and don't throw.
+    fireEvent.keyDown(window, { key: 'e' });
+    fireEvent.keyDown(window, { key: 'f' });
+    fireEvent.keyDown(window, { key: 'Delete' });
+    expect(screen.getByRole('heading', { name: 'Do A' })).toBeInTheDocument();
+    expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+  });
+
   it('shows an empty-queue state that guides what to do next', () => {
     const { onExit } = setup([]);
     expect(screen.getByText('All clear 🎉')).toBeInTheDocument();

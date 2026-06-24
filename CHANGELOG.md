@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **App-wide keyboard shortcuts.** Press <kbd>c</kbd> to capture, <kbd>/</kbd> to jump to search, <kbd>?</kbd> to open Help, and <kbd>g</kbd> then a letter to go to a view (e.g. `g n` for Next, `g b` for Backlog). They never fire while you're typing in a field, and leave Ctrl/Cmd combos to the browser. Documented in Help. Closes #384.
 
+- **Act on a Focus card with the keyboard.** In Focus mode, press <kbd>e</kbd> to open the editor, <kbd>r</kbd> to rename, <kbd>f</kbd> to move (re-triage to the other queue), and <kbd>Del</kbd> to delete (with the usual confirm) — alongside the existing arrows/Space/Esc. Each is a no-op when that action isn't available for the deck. Closes #385.
+
 - **The demo starts with a few things in the Inbox.** "Try the demo" now lands with a handful of raw captures waiting to clarify — one of which naturally belongs under an existing project — so the Capture → Clarify loop and the Inbox Focus deck have something to act on right away. Closes #382.
 
 - **Focus your Done list.** Done gets its own glowing Focus entry — flip through completed cards to re-triage the ones that weren't really done: the primary action restores to **Next**, "Move to Backlog" parks it, or delete it. Closes #367.
