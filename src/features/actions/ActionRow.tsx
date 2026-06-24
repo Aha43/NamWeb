@@ -86,13 +86,22 @@ export function ActionRow({
         ) : (
           <TruncatedTitle text={row.title} className="text-sm text-foreground" />
         )}
-        {(row.tags.length > 0 || due || age || row.hasResources) && (
+        {(row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || due || age || row.hasResources) && (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
             {row.hasResources && (
               <Paperclip aria-label="Has resources" className="h-3 w-3 text-muted-foreground" />
             )}
             {row.tags.map((tag) => (
               <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+                {tag}
+              </span>
+            ))}
+            {row.inheritedTags?.map((tag) => (
+              <span
+                key={`inh-${tag}`}
+                title="From project"
+                className="rounded bg-muted px-1.5 py-0.5 text-[11px] italic text-muted-foreground"
+              >
                 {tag}
               </span>
             ))}
