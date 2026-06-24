@@ -66,6 +66,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Help page refreshed.** Adds Search to the views list, a "Good to know" section covering tag
+  rub-off, archiving projects, and quick row actions, and notes you can file an inbox item under an
+  existing project while clarifying. Closes #361.
+
 - **Open an action by clicking it.** Click an action's title in any list to open its editor — the
   separate slider/edit icon on the row is gone. Rename (pencil), delete, status, and reorder keep
   their own controls. Closes #348.

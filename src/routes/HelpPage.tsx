@@ -31,7 +31,7 @@ export function HelpPage() {
         </p>
         <ol className="ml-5 list-decimal space-y-1 text-sm text-muted-foreground">
           <li><span className="font-medium text-foreground">Capture</span> anything on your mind into the Inbox — don't stop to organize.</li>
-          <li><span className="font-medium text-foreground">Clarify</span> each inbox item: is it a <span className="font-medium text-foreground">Next</span> action (do soon), <span className="font-medium text-foreground">Backlog</span> (later), or a <span className="font-medium text-foreground">Project</span> (needs steps)?</li>
+          <li><span className="font-medium text-foreground">Clarify</span> each inbox item: is it a <span className="font-medium text-foreground">Next</span> action (do soon), <span className="font-medium text-foreground">Backlog</span> (later), or a <span className="font-medium text-foreground">Project</span> (needs steps)? You can also file it straight into an existing project as you clarify.</li>
           <li><span className="font-medium text-foreground">Focus</span> to work through your Next actions one card at a time.</li>
         </ol>
       </div>
@@ -49,6 +49,7 @@ export function HelpPage() {
             ['Goals', 'Tag-grouped boards to track progress (Mission Control).'],
             ['Templates', 'Reusable project structures.'],
             ['Tags', 'Filter by a context (tag), then Focus just those — and manage your tags.'],
+            ['Search', 'Find any action or project by title or tag.'],
             ['Done', 'Completed actions.'],
             ['Focus', 'Execute one action at a time.'],
           ].map(([name, desc]) => (
@@ -67,6 +68,26 @@ export function HelpPage() {
           <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">←</kbd> / <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">→</kbd> — previous / next card</li>
           <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Space</kbd> — mark the card done</li>
           <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Esc</kbd> — exit Focus</li>
+        </ul>
+      </div>
+
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Good to know</h2>
+        <ul className="ml-5 list-disc space-y-1 text-sm text-muted-foreground">
+          <li>
+            <span className="font-medium text-foreground">Tags rub off.</span> A tag on a project applies to
+            everything inside it — its actions and sub-projects show that tag in <span className="italic">italics</span>,
+            and it filters and searches just like a tag you set directly.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Archive finished projects.</span> Archiving a project
+            (from the Projects view) tucks it away — it and its actions drop out of Next, Backlog, Due, and the
+            project pickers. Use <span className="font-medium text-foreground">Show archived</span> to bring it back.
+          </li>
+          <li>
+            <span className="font-medium text-foreground">Quick row actions.</span> Click an action's title to open
+            it, and use the copy icon on any row to copy its name.
+          </li>
         </ul>
       </div>
 
