@@ -69,6 +69,15 @@ export function HelpPage() {
           <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Space</kbd> — mark the card done</li>
           <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Esc</kbd> — exit Focus</li>
         </ul>
+        <p className="text-sm text-muted-foreground">In the action/project editor:</p>
+        <ul className="space-y-1 text-sm text-muted-foreground">
+          <li>
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">⌘</kbd> /{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Ctrl</kbd> +{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Enter</kbd> — save
+          </li>
+          <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Esc</kbd> — cancel</li>
+        </ul>
       </div>
 
       <div className="space-y-2">

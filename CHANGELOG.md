@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Choose where new items land — top or bottom.** Each add box (Inbox, Next, Backlog, project workbench) gets a small **top/bottom toggle** so you can flip it right where you add — a here-and-now choice that resets to your default. The default lives in **Settings → Preferences**. Closes #369.
 
+- **Save the editor with a keystroke.** The action/project editor now saves on **⌘/Ctrl + Enter** (and cancels on **Esc**), with tooltips on Save/Cancel showing the shortcut. Documented in Help. Closes #370.
+
 - **Focus from more places, and it glows.** The **Next**, **Backlog**, and **Due** views gain a Focus
   button that drops you straight into the deck (Due focuses what's due now — overdue + today). Every
   Focus icon now wears a deliberate **green glow** — the one splash of colour in the neutral theme —

@@ -17,7 +17,14 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { ResourcesEditor } from './ResourcesEditor';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+
+// Mac shows ⌘; everyone else Ctrl. Best-effort platform sniff for the shortcut hints.
+const SAVE_HINT =
+  typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform)
+    ? 'Save (⌘ + Enter)'
+    : 'Save (Ctrl + Enter)';
 import { parseFlexibleDate } from '@/lib/dates';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
 
@@ -104,8 +111,7 @@ export function ActionDialog({
   const [resources, setResources] = useState<Resource[]>(node.resources);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
+  function doSave() {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return;
     const dueAt = parseFlexibleDate(due);
@@ -125,10 +131,25 @@ export function ActionDialog({
     onOpenChange(false);
   }
 
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    doSave();
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex flex-col gap-0 overflow-hidden p-0">
-        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+        <form
+          onSubmit={submit}
+          onKeyDown={(e) => {
+            // ⌘/Ctrl+Enter saves from anywhere in the form (Enter alone adds a newline in notes).
+            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+              e.preventDefault();
+              doSave();
+            }
+          }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
           <DialogHeader className="border-b border-border px-6 pb-4 pt-6 text-left">
             <DialogTitle>{isProject ? 'Edit project' : 'Edit action'}</DialogTitle>
             <DialogDescription>Update the title, notes, tags, due date, and status.</DialogDescription>
@@ -314,10 +335,14 @@ export function ActionDialog({
                     Delete
                   </Button>
                 )}
-                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit">Save</Button>
+                <Tooltip label="Cancel (Esc)">
+                  <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                    Cancel
+                  </Button>
+                </Tooltip>
+                <Tooltip label={SAVE_HINT}>
+                  <Button type="submit">Save</Button>
+                </Tooltip>
               </>
             )}
           </DialogFooter>

@@ -44,6 +44,15 @@ describe('ActionDialog', () => {
     expect(screen.getByText('urgent')).toBeInTheDocument();
   });
 
+  it('saves on Ctrl/Cmd+Enter from within the form', () => {
+    const onSave = vi.fn();
+    const onOpenChange = vi.fn();
+    render(<ActionDialog node={node({ title: 'Keep' })} open onOpenChange={onOpenChange} onSave={onSave} />);
+    fireEvent.keyDown(screen.getByLabelText('Title'), { key: 'Enter', ctrlKey: true });
+    expect(onSave).toHaveBeenCalled();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
   it('reports the edited fields and chosen status on save, parsing a flexible due date', () => {
     const onSave = vi.fn();
     const onOpenChange = vi.fn();
