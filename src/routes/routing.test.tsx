@@ -176,6 +176,10 @@ describe('routing', () => {
     expect(screen.getByRole('heading', { name: 'Help', level: 1 })).toBeInTheDocument();
     expect(screen.getByText(/Capture → Clarify → Focus/)).toBeInTheDocument();
     expect(screen.getByText('Keyboard shortcuts')).toBeInTheDocument();
+    // Refreshed content (#361): Search listed, and the "Good to know" notes incl. tag rub-off.
+    expect(screen.getByText(/Find any action or project by title or tag/)).toBeInTheDocument();
+    expect(screen.getByText('Good to know')).toBeInTheDocument();
+    expect(screen.getByText(/Tags rub off/)).toBeInTheDocument();
   });
 
   it('redirects the index route to /inbox', () => {
