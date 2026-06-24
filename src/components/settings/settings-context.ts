@@ -4,6 +4,13 @@ import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
 export interface SettingsContextValue {
   dateFormat: DateFormat;
   setDateFormat: (format: DateFormat) => void;
+  /** Effective (here-and-now) new-item position: true = bottom, false = top. Session-scoped — it
+   *  starts from the default and the inline add-box toggle flips it; not persisted. */
+  addToBottom: boolean;
+  setAddToBottom: (value: boolean) => void;
+  /** The persisted default new-item position (set in Settings). New sessions start here. */
+  addToBottomDefault: boolean;
+  setAddToBottomDefault: (value: boolean) => void;
 }
 
 export const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -14,7 +21,17 @@ export const SettingsContext = createContext<SettingsContextValue | undefined>(u
  * date format) work in isolation — including in tests — without wrapping them in a provider.
  */
 export function useSettings(): SettingsContextValue {
-  return useContext(SettingsContext) ?? { dateFormat: DEFAULT_DATE_FORMAT, setDateFormat: () => {} };
+  return (
+    useContext(SettingsContext) ?? {
+      dateFormat: DEFAULT_DATE_FORMAT,
+      setDateFormat: () => {},
+      addToBottom: false,
+      setAddToBottom: () => {},
+      addToBottomDefault: false,
+      setAddToBottomDefault: () => {},
+    }
+  );
 }
 
 export const DATE_FORMAT_STORAGE_KEY = 'namweb.settings.date-format';
+export const ADD_TO_BOTTOM_STORAGE_KEY = 'namweb.settings.add-to-bottom';

@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { newId, nowIso } from '@/lib/local';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { useSettings } from '@/components/settings/settings-context';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 
 /**
@@ -12,6 +13,7 @@ import { useIsDesktop } from '@/shell/useIsDesktop';
  */
 export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { dispatch } = useWorkspaceContext();
+  const { addToBottom } = useSettings();
   const isDesktop = useIsDesktop();
   const [title, setTitle] = useState('');
 
@@ -19,7 +21,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     event.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return;
-    dispatch({ type: 'addInboxItem', id: newId(), title: trimmed, now: nowIso() });
+    dispatch({ type: 'addInboxItem', id: newId(), title: trimmed, atTop: !addToBottom, now: nowIso() });
     setTitle('');
   }
 

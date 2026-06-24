@@ -322,25 +322,43 @@ function ChangePassword() {
 }
 
 function PreferencesTab() {
-  const { dateFormat, setDateFormat } = useSettings();
+  const { dateFormat, setDateFormat, addToBottomDefault, setAddToBottomDefault } = useSettings();
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor="settings-date-format">Date format</Label>
-      <select
-        id="settings-date-format"
-        value={dateFormat}
-        onChange={(e) => setDateFormat(e.target.value as DateFormat)}
-        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
-      >
-        {DATE_FORMAT_OPTIONS.map((opt) => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label} — {formatDate(SAMPLE_ISO, opt.value)}
-          </option>
-        ))}
-      </select>
-      <p className="text-xs text-muted-foreground">
-        How due dates are displayed. Date entry is unaffected.
-      </p>
+    <div className="space-y-6">
+      <div className="space-y-1.5">
+        <Label htmlFor="settings-date-format">Date format</Label>
+        <select
+          id="settings-date-format"
+          value={dateFormat}
+          onChange={(e) => setDateFormat(e.target.value as DateFormat)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
+        >
+          {DATE_FORMAT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label} — {formatDate(SAMPLE_ISO, opt.value)}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted-foreground">
+          How due dates are displayed. Date entry is unaffected.
+        </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="flex items-start gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={addToBottomDefault}
+            onChange={(e) => setAddToBottomDefault(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>New items go to the bottom by default</span>
+        </label>
+        <p className="text-xs text-muted-foreground">
+          Your default position for new actions, projects, and inbox captures (off = top). You can flip
+          it just for now with the top/bottom toggle beside each add box; that resets to this default.
+        </p>
+      </div>
     </div>
   );
 }

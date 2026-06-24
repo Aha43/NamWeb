@@ -8,12 +8,14 @@ import { FocusButton } from '@/features/focus/FocusButton';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
+import { useSettings } from '@/components/settings/settings-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 const VIEW = 'backlog';
 
 export function BacklogPage() {
   const { document, dispatch } = useWorkspaceContext();
+  const { addToBottom } = useSettings();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
   const [sortMode, cycleSort] = useSortMode(VIEW);
@@ -58,10 +60,12 @@ export function BacklogPage() {
                 id,
                 title,
                 status: 'BACKLOG',
+                atTop: !addToBottom,
                 now: nowIso(),
               });
-              // Land it first in this view's order (the flat lens otherwise puts new items last).
-              dispatch({ type: 'reorderView', view: VIEW, order: [id, ...ordered.map((n) => n.id)] });
+              // Place it in this view's saved order — top by default, bottom when preferred.
+              const existing = ordered.map((n) => n.id);
+              dispatch({ type: 'reorderView', view: VIEW, order: addToBottom ? [...existing, id] : [id, ...existing] });
             }
           : undefined
       }

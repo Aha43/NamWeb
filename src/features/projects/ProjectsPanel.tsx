@@ -1,6 +1,7 @@
 import { Fragment, useRef, useState, type FormEvent } from 'react';
 import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -246,6 +247,7 @@ export function ProjectsPanel({
           placeholder="New project…"
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
         />
+        <AddPositionToggle />
         <Button type="submit">Add</Button>
       </form>
 

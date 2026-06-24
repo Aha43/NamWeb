@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
+import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -66,6 +67,7 @@ export function BacklogPanel({
             placeholder="Add to backlog…"
             className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
           />
+          <AddPositionToggle />
           <Button type="submit">Add</Button>
         </form>
       )}

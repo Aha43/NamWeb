@@ -13,10 +13,12 @@ import { GetStarted } from '@/features/onboarding/GetStarted';
 import { useGetStartedDismissed } from '@/features/onboarding/useGetStartedDismissed';
 import { useCapture } from '@/capture/capture-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { useSettings } from '@/components/settings/settings-context';
 import { useAuthUser } from '@/auth/auth-context';
 
 export function InboxPage() {
   const { document, dispatch } = useWorkspaceContext();
+  const { addToBottom } = useSettings();
   const { openCapture } = useCapture();
   const navigate = useNavigate();
   const user = useAuthUser();
@@ -98,7 +100,7 @@ export function InboxPage() {
       )}
       <InboxPanel
         items={items}
-        onAdd={(title) => dispatch({ type: 'addInboxItem', id: newId(), title, now: nowIso() })}
+        onAdd={(title) => dispatch({ type: 'addInboxItem', id: newId(), title, atTop: !addToBottom, now: nowIso() })}
         onProcess={setProcessingId}
         onProcessAll={() => {
           setQueue(items.map((n) => n.id));

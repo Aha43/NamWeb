@@ -8,7 +8,7 @@ import type { NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } f
 import { canAddPrerequisite, subtreeIds } from './lenses';
 
 export type Intent =
-  | { type: 'addInboxItem'; id: string; title: string; now: string }
+  | { type: 'addInboxItem'; id: string; title: string; atTop?: boolean; now: string }
   | { type: 'convertInboxToNext'; id: string; now: string }
   | { type: 'convertInboxToAction'; id: string; status: NodeStatus; parentId?: string; now: string }
   | { type: 'convertInboxToProject'; id: string; parentId?: string; now: string }
@@ -20,8 +20,8 @@ export type Intent =
   | { type: 'renameTag'; from: string; to: string }
   | { type: 'deleteTag'; tag: string }
   | { type: 'updateResources'; id: string; resources: Resource[]; now: string }
-  | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; now: string }
-  | { type: 'addSubProject'; parentId: string; id: string; title: string; now: string }
+  | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; atTop?: boolean; now: string }
+  | { type: 'addSubProject'; parentId: string; id: string; title: string; atTop?: boolean; now: string }
   | { type: 'moveNode'; id: string; newParentId: string; now: string }
   | { type: 'convertActionToProject'; id: string; now: string }
   | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
@@ -72,6 +72,13 @@ function newNode(id: string, title: string, now: string): NamNode {
     statusChangedAt: null,
     dueAt: null,
   };
+}
+
+/** Add `id` to a parent's children — at the top (default) or the bottom when `atTop === false`.
+ *  Driven by the "add new items at the bottom" preference, carried on the intent so replay is stable. */
+function placeChild(parent: NamNode, id: string, atTop?: boolean): void {
+  if (atTop === false) parent.childIds.push(id);
+  else parent.childIds.unshift(id);
 }
 
 /** Remove `id` from whichever node lists it as a child (in place on `doc`). */
@@ -210,8 +217,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
   switch (intent.type) {
     case 'addInboxItem': {
       next.nodes[intent.id] = newNode(intent.id, intent.title, intent.now);
-      // Prepend: the latest capture lands first, visible without scrolling.
-      next.nodes[next.inboxNodeId]?.childIds.unshift(intent.id);
+      // Top by default (latest capture visible without scrolling); bottom when the user prefers it.
+      const inbox = next.nodes[next.inboxNodeId];
+      if (inbox) placeChild(inbox, intent.id, intent.atTop);
       return next;
     }
     case 'convertInboxToNext': {
@@ -325,16 +333,14 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
         status: intent.status,
         statusChangedAt: intent.now,
       };
-      // Prepend: a freshly added action lands first, so it's visible without
-      // scrolling a long list (childIds is the shared display order).
-      next.nodes[intent.parentId].childIds.unshift(intent.id);
+      // Top by default (visible without scrolling a long list); bottom when the user prefers it.
+      placeChild(next.nodes[intent.parentId], intent.id, intent.atTop);
       return next;
     }
     case 'addSubProject': {
       if (!next.nodes[intent.parentId]) return next;
       next.nodes[intent.id] = { ...newNode(intent.id, intent.title, intent.now), project: true };
-      // Prepend, like addAction: a freshly created project lands first.
-      next.nodes[intent.parentId].childIds.unshift(intent.id);
+      placeChild(next.nodes[intent.parentId], intent.id, intent.atTop);
       return next;
     }
     case 'moveNode': {

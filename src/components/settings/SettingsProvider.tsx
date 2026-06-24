@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
-import { DATE_FORMAT_STORAGE_KEY, SettingsContext } from './settings-context';
+import { ADD_TO_BOTTOM_STORAGE_KEY, DATE_FORMAT_STORAGE_KEY, SettingsContext } from './settings-context';
 
 const DATE_FORMATS: DateFormat[] = ['medium', 'iso', 'dmy', 'mdy'];
 
@@ -14,8 +14,19 @@ function initialDateFormat(): DateFormat {
   return DEFAULT_DATE_FORMAT;
 }
 
+function initialAddToBottom(): boolean {
+  try {
+    return localStorage.getItem(ADD_TO_BOTTOM_STORAGE_KEY) === '1';
+  } catch {
+    return false; // default: add to top
+  }
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
+  // The persisted default; the effective value starts there and the inline toggle flips it (session).
+  const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
+  const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
 
   useEffect(() => {
     try {
@@ -25,7 +36,26 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [dateFormat]);
 
+  // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
+  useEffect(() => {
+    try {
+      localStorage.setItem(ADD_TO_BOTTOM_STORAGE_KEY, addToBottomDefault ? '1' : '0');
+    } catch {
+      // best-effort persistence
+    }
+  }, [addToBottomDefault]);
+
+  // Changing the default in Settings applies immediately (and becomes the new here-and-now value).
+  const setAddToBottomDefault = (value: boolean) => {
+    setDefaultState(value);
+    setAddToBottom(value);
+  };
+
   return (
-    <SettingsContext.Provider value={{ dateFormat, setDateFormat }}>{children}</SettingsContext.Provider>
+    <SettingsContext.Provider
+      value={{ dateFormat, setDateFormat, addToBottom, setAddToBottom, addToBottomDefault, setAddToBottomDefault }}
+    >
+      {children}
+    </SettingsContext.Provider>
   );
 }
