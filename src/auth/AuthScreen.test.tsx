@@ -59,6 +59,15 @@ describe('AuthScreen', () => {
     expect(isDevWorkspaceSelected()).toBe(false);
   });
 
+  it('cancels the create-account form back to sign in (top Cancel)', () => {
+    render(<AuthScreen />);
+    fireEvent.click(screen.getByRole('button', { name: /create an account/i }));
+    expect(screen.getByRole('button', { name: /^create account$/i })).toBeInTheDocument();
+    // The prominent top "← Back to sign in" returns to the sign-in form.
+    fireEvent.click(screen.getByRole('button', { name: '← Back to sign in' }));
+    expect(screen.getByRole('button', { name: /^sign in$/i })).toBeInTheDocument();
+  });
+
   it('signs up and shows a neutral "check your email" message', async () => {
     signUp.mockResolvedValue({ error: null });
     render(<AuthScreen />);
