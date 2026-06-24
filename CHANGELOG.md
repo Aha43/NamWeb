@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Act on a card without leaving Focus.** Each Focus card gets small controls: click its title to **open the editor**, a **pencil** to rename inline, a **copy** button for the name, and **delete** (with confirm). The deck flow is unchanged. Closes #365.
 
+- **Select and bulk-act in Done.** The Done view gets a select mode — tick several completed actions and **Restore to Next**, move to **Backlog**, or **delete** them in one go (for the ones that were not actually done). Closes #366.
+
 - **Focus from more places, and it glows.** The **Next**, **Backlog**, and **Due** views gain a Focus
   button that drops you straight into the deck (Due focuses what's due now — overdue + today). Every
   Focus icon now wears a deliberate **green glow** — the one splash of colour in the neutral theme —
