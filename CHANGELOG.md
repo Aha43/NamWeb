@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Act on a card without leaving Focus.** Each Focus card gets small controls: click its title to **open the editor**, a **pencil** to rename inline, a **copy** button for the name, and **delete** (with confirm). The deck flow is unchanged. Closes #365.
+
 - **Focus from more places, and it glows.** The **Next**, **Backlog**, and **Due** views gain a Focus
   button that drops you straight into the deck (Due focuses what's due now — overdue + today). Every
   Focus icon now wears a deliberate **green glow** — the one splash of colour in the neutral theme —

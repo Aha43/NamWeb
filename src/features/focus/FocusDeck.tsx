@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, FolderInput } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, FolderInput, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmButton } from '@/components/ui/confirm-button';
+import { CopyButton } from '@/components/ui/copy-button';
+import { Tooltip } from '@/components/ui/tooltip';
+import { InlineRename } from '../actions/InlineRename';
 import { useHasKeyboard } from '@/shell/useHasKeyboard';
 import type { FocusCard } from './focusCards';
 
@@ -17,6 +21,10 @@ export interface FocusDeckProps {
    */
   flipLabel?: string;
   onFlip?: (id: string) => void;
+  /** Small per-card controls (don't disrupt the deck): open the editor, rename inline, delete. */
+  onEditCard?: (id: string) => void;
+  onRenameCard?: (id: string, title: string) => void;
+  onDeleteCard?: (id: string) => void;
 }
 
 /**
@@ -24,8 +32,18 @@ export interface FocusDeckProps {
  * Done & advance, keyboard (←/→/Space/Esc), and swipe on touch. The card list is
  * live — marking Done (or re-triaging) removes the item upstream and the next card slides in.
  */
-export function FocusDeck({ cards, onDone, onExit, flipLabel, onFlip }: FocusDeckProps) {
+export function FocusDeck({
+  cards,
+  onDone,
+  onExit,
+  flipLabel,
+  onFlip,
+  onEditCard,
+  onRenameCard,
+  onDeleteCard,
+}: FocusDeckProps) {
   const [index, setIndex] = useState(0);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
   const hasKeyboard = useHasKeyboard();
 
@@ -44,6 +62,9 @@ export function FocusDeck({ cards, onDone, onExit, flipLabel, onFlip }: FocusDec
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
+      // Don't hijack keys while typing in the inline rename field (Space/arrows are text there).
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (e.key === 'ArrowRight') next();
       else if (e.key === 'ArrowLeft') prev();
       else if (e.key === ' ') {
@@ -87,10 +108,57 @@ export function FocusDeck({ cards, onDone, onExit, flipLabel, onFlip }: FocusDec
           transition={{ duration: reduceMotion ? 0 : 0.15 }}
           className="w-full max-w-lg cursor-grab rounded-2xl border border-border bg-card p-8 shadow-xs active:cursor-grabbing"
         >
+          {(onEditCard || onRenameCard || onDeleteCard) && (
+            <div className="mb-3 flex items-center justify-end gap-1">
+              {onRenameCard && renamingId !== current.id && (
+                <Tooltip label="Rename">
+                  <button
+                    type="button"
+                    aria-label={`Rename ${current.title}`}
+                    onClick={() => setRenamingId(current.id)}
+                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
+              )}
+              <CopyButton value={current.title} label={`name "${current.title}"`} />
+              {onDeleteCard && (
+                <ConfirmButton
+                  aria-label={`Delete ${current.title}`}
+                  message={`Delete "${current.title}"? This cannot be undone.`}
+                  onConfirm={() => onDeleteCard(current.id)}
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </ConfirmButton>
+              )}
+            </div>
+          )}
           {current.path.length > 0 && (
             <p className="mb-2 text-sm text-muted-foreground">{current.path.join(' › ')}</p>
           )}
-          <h2 className="text-2xl font-semibold leading-snug text-card-foreground">{current.title}</h2>
+          {onRenameCard && renamingId === current.id ? (
+            <InlineRename
+              title={current.title}
+              onCommit={(t) => {
+                onRenameCard(current.id, t);
+                setRenamingId(null);
+              }}
+              onCancel={() => setRenamingId(null)}
+            />
+          ) : onEditCard ? (
+            <button
+              type="button"
+              aria-label={`Edit ${current.title}`}
+              onClick={() => onEditCard(current.id)}
+              className="block w-full text-left"
+            >
+              <h2 className="text-2xl font-semibold leading-snug text-card-foreground">{current.title}</h2>
+            </button>
+          ) : (
+            <h2 className="text-2xl font-semibold leading-snug text-card-foreground">{current.title}</h2>
+          )}
           {current.description && (
             <p className="mt-4 whitespace-pre-wrap text-sm text-muted-foreground">{current.description}</p>
           )}
