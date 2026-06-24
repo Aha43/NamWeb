@@ -54,6 +54,40 @@ describe('CaptureSheet', () => {
     );
     expect(input).toHaveValue('');
   });
+
+  it('renders as a centered modal on desktop and still captures', () => {
+    // Force desktop width so CaptureSheet takes the Dialog branch.
+    const original = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+    try {
+      const ws = workspace();
+      render(
+        <ThemeProvider>
+          <WorkspaceContext.Provider value={ws}>
+            <CaptureSheet open onOpenChange={() => {}} />
+          </WorkspaceContext.Provider>
+        </ThemeProvider>,
+      );
+      const dialog = screen.getByRole('dialog');
+      const input = within(dialog).getByLabelText('Capture to inbox');
+      fireEvent.change(input, { target: { value: 'Desk note' } });
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+      expect(ws.dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'addInboxItem', title: 'Desk note' }),
+      );
+    } finally {
+      window.matchMedia = original;
+    }
+  });
 });
 
 describe('capture from the shell', () => {

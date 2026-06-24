@@ -48,6 +48,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Capture is a centered modal on desktop.** The quick-capture input used to slide in from the right
+  on desktop; it now opens as a centered dialog (the bottom sheet stays on phones for thumb reach).
+  Closes #342.
+
 - **Add actions and sub-projects right in their lists.** The separate collapsible "Add to project"
   panel is gone; the add-action row now lives in the Actions section and the add-sub-project row in
   the Sub-projects section (with the template tools), each always visible so you can add even when a
