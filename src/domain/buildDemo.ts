@@ -93,5 +93,16 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
   for (const capture of inboxCaptures) {
     doc = applyIntent(doc, { type: 'addInboxItem', id: newId(), title: capture.title, atTop: false, now: agoIso(capture.ago) });
   }
+
+  // Two toolbar bookmarks to show the feature on load: a project, and a tag filter. (Colors inlined
+  // from the bookmark palette — domain code stays free of the feature layer.)
+  doc = applyIntent(doc, {
+    type: 'addBookmark',
+    bookmark: { id: newId(), label: vacation.title, kind: 'project', projectId: vacation.id, color: '#3b82f6' },
+  });
+  doc = applyIntent(doc, {
+    type: 'addBookmark',
+    bookmark: { id: newId(), label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' },
+  });
   return doc;
 }

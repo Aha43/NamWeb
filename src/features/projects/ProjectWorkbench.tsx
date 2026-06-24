@@ -1,4 +1,4 @@
-import { Fragment, useState, type FormEvent } from 'react';
+import { Fragment, useState, type FormEvent, type ReactNode } from 'react';
 import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,8 @@ type MoveDirection = 'up' | 'down';
 
 export interface ProjectWorkbenchProps {
   project: NamNode;
+  /** Optional header control (e.g. the bookmark toggle), shown beside Summary. */
+  bookmarkSlot?: ReactNode;
   /** Ancestor projects, top-most first (excludes the current project). */
   breadcrumb: NamNode[];
   actions: ActionRowData[];
@@ -123,6 +125,7 @@ export interface ProjectWorkbenchProps {
  *  heat-map, or Kanban columns. */
 export function ProjectWorkbench({
   project,
+  bookmarkSlot,
   breadcrumb,
   actions,
   subProjects,
@@ -311,16 +314,19 @@ export function ProjectWorkbench({
           <ChevronRight className="h-3 w-3" />
           <span className="font-medium text-foreground">{project.title}</span>
         </nav>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="shrink-0 gap-1.5"
-          onClick={() => setSummaryOpen(true)}
-        >
-          <FileText className="h-4 w-4" />
-          Summary
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          {bookmarkSlot}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => setSummaryOpen(true)}
+          >
+            <FileText className="h-4 w-4" />
+            Summary
+          </Button>
+        </div>
       </div>
 
       {onSaveDetails && (

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, Pencil, Target } from 'lucide-react';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -38,6 +38,8 @@ export interface TagFilterPanelProps {
   onOpenView: (view: SavedView) => void;
   onRenameView?: (oldName: string, newName: string) => void;
   onDeleteView?: (name: string) => void;
+  /** Optional control (e.g. the bookmark toggle) shown beside Focus/Save when a filter is active. */
+  bookmarkSlot?: ReactNode;
 }
 
 /** Filter active actions by tags (AND), with saved views. Session-only selection. Presentational. */
@@ -62,6 +64,7 @@ export function TagFilterPanel({
   onOpenView,
   onRenameView,
   onDeleteView,
+  bookmarkSlot,
 }: TagFilterPanelProps) {
   const selectedSet = new Set(selected);
   const [newTag, setNewTag] = useState('');
@@ -232,6 +235,7 @@ export function TagFilterPanel({
             <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
               <span>{rows.length} {rows.length === 1 ? 'match' : 'matches'}</span>
               <div className="flex items-center gap-1.5">
+                {bookmarkSlot}
                 {onFocus && rows.length > 0 && (
                   <button
                     type="button"

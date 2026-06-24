@@ -42,6 +42,24 @@ export interface MissionControl {
   tags: string[];
 }
 
+export type BookmarkKind = 'project' | 'tagFilter';
+
+/** A saved quick-jump target shown as a colored icon in the toolbar. Synced in the workspace doc. */
+export interface Bookmark {
+  id: string;
+  /** Shown in the tooltip; defaults from the project name or the tag selection. */
+  label: string;
+  kind: BookmarkKind;
+  /** When kind === 'project'. */
+  projectId?: string;
+  /** When kind === 'tagFilter'. */
+  tags?: string[];
+  /** When kind === 'tagFilter': restrict to Next actions. */
+  nextOnly?: boolean;
+  /** A swatch color (hex) from the bookmark palette. */
+  color: string;
+}
+
 export interface TemplateNode {
   title: string;
   project: boolean;
@@ -65,4 +83,6 @@ export interface WorkspaceDocument {
   missionControls: MissionControl[];
   templates: ProjectTemplate[];
   viewOrders: Record<string, string[]>;
+  /** Toolbar quick-jump bookmarks. Optional: older/desktop documents may omit it (treat as []). */
+  bookmarks?: Bookmark[];
 }

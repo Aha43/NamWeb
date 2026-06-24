@@ -47,6 +47,13 @@ describe('buildDemo', () => {
     ]);
   });
 
+  it('seeds two toolbar bookmarks (a project and a tag filter)', () => {
+    const kinds = (doc.bookmarks ?? []).map((b) => b.kind);
+    expect(kinds).toEqual(['project', 'tagFilter']);
+    const project = doc.bookmarks?.find((b) => b.kind === 'project');
+    expect(project?.projectId).toBe(byTitle('Vacation in Italy 🇮🇹').id);
+  });
+
   it('project tags rub off onto their actions (inherited)', () => {
     const flights = byTitle('Book flights');
     expect(flights.tags).toEqual([]); // no own tag
