@@ -51,8 +51,9 @@ export function inboxItems(doc: WorkspaceDocument): NamNode[] {
 /** Next Actions = NEXT, non-project, non-structural, from anywhere in the tree. */
 export function nextActions(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);
+  const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter(
-    (n) => n.status === 'NEXT' && !n.project && !structural.has(n.id),
+    (n) => n.status === 'NEXT' && !n.project && !structural.has(n.id) && !archived.has(n.id),
   );
 }
 
@@ -125,6 +126,23 @@ export function archivedProjectIds(doc: WorkspaceDocument): Set<string> {
     }
   }
   return archived;
+}
+
+/**
+ * Every node within an archived subtree: any node whose own `status === 'ARCHIVED'`, plus all of
+ * its descendants. Archiving only ever sets ARCHIVED on a top-level project, so in practice this is
+ * "everything under an archived project" (the project, its sub-projects, and all their actions).
+ * Used to keep archived work out of the action-listing views (Next, Backlog, Due, Blocked, Done,
+ * tag context, Search), where descendant actions otherwise keep their NEXT/BACKLOG status.
+ */
+export function archivedNodeIds(doc: WorkspaceDocument): Set<string> {
+  const ids = new Set<string>();
+  for (const node of Object.values(doc.nodes)) {
+    if (node.status === 'ARCHIVED') {
+      for (const id of subtreeIds(doc, node.id)) ids.add(id);
+    }
+  }
+  return ids;
 }
 
 /** A project's direct child nodes, in `childIds` order, filtered by kind. */
@@ -262,9 +280,10 @@ export interface BlockedGroup {
 /** Blocked actions grouped by each active (non-DONE) prerequisite. Mirrors NamDesktop's BlockedLens. */
 export function blockedGroups(doc: WorkspaceDocument): BlockedGroup[] {
   const structural = structuralNodeIds(doc);
+  const archived = archivedNodeIds(doc);
   const byBlocker = new Map<string, NamNode[]>();
   for (const node of Object.values(doc.nodes)) {
-    if (node.project || node.status === 'DONE' || structural.has(node.id)) continue;
+    if (node.project || node.status === 'DONE' || structural.has(node.id) || archived.has(node.id)) continue;
     for (const bid of node.blockedBy) {
       const blocker = doc.nodes[bid];
       if (!blocker || blocker.status === 'DONE') continue;
@@ -291,8 +310,9 @@ export function dueGroups(doc: WorkspaceDocument, now: Date = new Date()): DueGr
   const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const groups: DueGroups = { overdue: [], today: [], thisWeek: [], later: [] };
   const structural = structuralNodeIds(doc);
+  const archived = archivedNodeIds(doc);
   for (const node of Object.values(doc.nodes)) {
-    if (node.project || node.status === 'DONE' || structural.has(node.id) || !node.dueAt) continue;
+    if (node.project || node.status === 'DONE' || structural.has(node.id) || archived.has(node.id) || !node.dueAt) continue;
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueAt);
     if (!match) continue;
     const due0 = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime();
@@ -322,8 +342,9 @@ export function contextItems(
   nextOnly = false,
 ): NamNode[] {
   const structural = structuralNodeIds(doc);
+  const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter((n) => {
-    if (n.project || n.status === 'DONE' || structural.has(n.id)) return false;
+    if (n.project || n.status === 'DONE' || structural.has(n.id) || archived.has(n.id)) return false;
     if (nextOnly && n.status !== 'NEXT') return false;
     if (requiredTags.length === 0) return true;
     const tags = new Set(effectiveTags(doc, n.id));
@@ -342,9 +363,10 @@ export function searchResults(doc: WorkspaceDocument, query: string): SearchResu
   const q = query.trim().toLowerCase();
   if (!q) return [];
   const structural = structuralNodeIds(doc);
+  const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes)
     .filter((n) => {
-      if (structural.has(n.id) || n.status === 'DONE') return false;
+      if (structural.has(n.id) || n.status === 'DONE' || archived.has(n.id)) return false;
       return n.title.toLowerCase().includes(q) || n.tags.some((t) => t.toLowerCase().includes(q));
     })
     .map((node) => ({ node, path: projectPath(doc, node.id) }));
@@ -353,8 +375,9 @@ export function searchResults(doc: WorkspaceDocument, query: string): SearchResu
 /** Done = DONE, non-project, non-structural — completed actions, kept for reference. */
 export function doneItems(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);
+  const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter(
-    (n) => n.status === 'DONE' && !n.project && !structural.has(n.id),
+    (n) => n.status === 'DONE' && !n.project && !structural.has(n.id) && !archived.has(n.id),
   );
 }
 
@@ -362,11 +385,13 @@ export function doneItems(doc: WorkspaceDocument): NamNode[] {
 export function backlogItems(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);
   const parents = buildParentIndex(doc);
+  const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter(
     (n) =>
       n.status === 'BACKLOG' &&
       !n.project &&
       !structural.has(n.id) &&
+      !archived.has(n.id) &&
       parents.get(n.id) !== doc.inboxNodeId,
   );
 }

@@ -3,6 +3,7 @@ import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import {
   allTags,
   applyViewOrder,
+  archivedNodeIds,
   archivedProjectIds,
   backlogItems,
   blockedGroups,
@@ -168,6 +169,46 @@ describe('archivedProjectIds', () => {
     const targets = projectMoveTargets(tree(), 'Live');
     // Only the archived top project and its sub-project exist besides Live → no valid targets.
     expect(targets.map((t) => t.id)).toEqual([]);
+  });
+});
+
+describe('archivedNodeIds — archived actions stay out of the action views', () => {
+  // projects/ Old(ARCHIVED)[oa(NEXT), ob(BACKLOG), od(DONE)] ; actions/ la(NEXT), lb(BACKLOG)
+  function tree(): WorkspaceDocument {
+    return workspace(
+      [
+        node('Old', { project: true, status: 'ARCHIVED', childIds: ['oa', 'ob', 'od'] }),
+        node('oa', { status: 'NEXT' }),
+        node('ob', { status: 'BACKLOG' }),
+        node('od', { status: 'DONE' }),
+        node('la', { status: 'NEXT' }),
+        node('lb', { status: 'BACKLOG' }),
+      ],
+      (d) => {
+        addChild(d, 'projects', 'Old');
+        addChild(d, 'actions', 'la');
+        addChild(d, 'actions', 'lb');
+      },
+    );
+  }
+
+  it('archivedNodeIds covers an archived project and all its descendants', () => {
+    const archived = archivedNodeIds(tree());
+    expect(archived.has('Old')).toBe(true);
+    expect(archived.has('oa')).toBe(true);
+    expect(archived.has('ob')).toBe(true);
+    expect(archived.has('od')).toBe(true);
+    expect(archived.has('la')).toBe(false);
+  });
+
+  it('nextActions and backlogItems exclude actions inside an archived project', () => {
+    const doc = tree();
+    expect(ids(nextActions(doc))).toEqual(['la']); // not oa
+    expect(ids(backlogItems(doc))).toEqual(['lb']); // not ob
+  });
+
+  it('doneItems excludes archived done actions too', () => {
+    expect(ids(doneItems(tree()))).toEqual([]); // od is archived
   });
 });
 
