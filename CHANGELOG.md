@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Select and bulk-act in Done.** The Done view gets a select mode — tick several completed actions and **Restore to Next**, move to **Backlog**, or **delete** them in one go (for the ones that were not actually done). Closes #366.
 
+- **Focus your Inbox.** The "Process inbox" button now wears the green Focus glow — one tap drops you into the one-at-a-time clarify deck (make it an action or project, file it under a project, or delete). Closes #368.
+
 - **Focus from more places, and it glows.** The **Next**, **Backlog**, and **Due** views gain a Focus
   button that drops you straight into the deck (Due focuses what's due now — overdue + today). Every
   Focus icon now wears a deliberate **green glow** — the one splash of colour in the neutral theme —
