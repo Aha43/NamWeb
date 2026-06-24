@@ -4,9 +4,13 @@ import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
 export interface SettingsContextValue {
   dateFormat: DateFormat;
   setDateFormat: (format: DateFormat) => void;
-  /** When true, new actions/projects/inbox items are appended (bottom) instead of prepended (top). */
+  /** Effective (here-and-now) new-item position: true = bottom, false = top. Session-scoped — it
+   *  starts from the default and the inline add-box toggle flips it; not persisted. */
   addToBottom: boolean;
   setAddToBottom: (value: boolean) => void;
+  /** The persisted default new-item position (set in Settings). New sessions start here. */
+  addToBottomDefault: boolean;
+  setAddToBottomDefault: (value: boolean) => void;
 }
 
 export const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -23,6 +27,8 @@ export function useSettings(): SettingsContextValue {
       setDateFormat: () => {},
       addToBottom: false,
       setAddToBottom: () => {},
+      addToBottomDefault: false,
+      setAddToBottomDefault: () => {},
     }
   );
 }

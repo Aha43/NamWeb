@@ -322,7 +322,7 @@ function ChangePassword() {
 }
 
 function PreferencesTab() {
-  const { dateFormat, setDateFormat, addToBottom, setAddToBottom } = useSettings();
+  const { dateFormat, setDateFormat, addToBottomDefault, setAddToBottomDefault } = useSettings();
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
@@ -348,15 +348,15 @@ function PreferencesTab() {
         <label className="flex items-start gap-2 text-sm text-foreground">
           <input
             type="checkbox"
-            checked={addToBottom}
-            onChange={(e) => setAddToBottom(e.target.checked)}
+            checked={addToBottomDefault}
+            onChange={(e) => setAddToBottomDefault(e.target.checked)}
             className="mt-0.5"
           />
-          <span>Add new items at the bottom</span>
+          <span>New items go to the bottom by default</span>
         </label>
         <p className="text-xs text-muted-foreground">
-          New actions, projects, and inbox captures land at the top by default. Turn this on to append
-          them at the bottom — handy when building an ordered, top-to-bottom list.
+          Your default position for new actions, projects, and inbox captures (off = top). You can flip
+          it just for now with the top/bottom toggle beside each add box; that resets to this default.
         </p>
       </div>
     </div>

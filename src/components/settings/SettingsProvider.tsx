@@ -24,7 +24,9 @@ function initialAddToBottom(): boolean {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
-  const [addToBottom, setAddToBottom] = useState<boolean>(initialAddToBottom);
+  // The persisted default; the effective value starts there and the inline toggle flips it (session).
+  const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
+  const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
 
   useEffect(() => {
     try {
@@ -34,16 +36,25 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [dateFormat]);
 
+  // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
   useEffect(() => {
     try {
-      localStorage.setItem(ADD_TO_BOTTOM_STORAGE_KEY, addToBottom ? '1' : '0');
+      localStorage.setItem(ADD_TO_BOTTOM_STORAGE_KEY, addToBottomDefault ? '1' : '0');
     } catch {
       // best-effort persistence
     }
-  }, [addToBottom]);
+  }, [addToBottomDefault]);
+
+  // Changing the default in Settings applies immediately (and becomes the new here-and-now value).
+  const setAddToBottomDefault = (value: boolean) => {
+    setDefaultState(value);
+    setAddToBottom(value);
+  };
 
   return (
-    <SettingsContext.Provider value={{ dateFormat, setDateFormat, addToBottom, setAddToBottom }}>
+    <SettingsContext.Provider
+      value={{ dateFormat, setDateFormat, addToBottom, setAddToBottom, addToBottomDefault, setAddToBottomDefault }}
+    >
       {children}
     </SettingsContext.Provider>
   );

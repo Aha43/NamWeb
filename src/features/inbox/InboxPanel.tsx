@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Pencil, Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
+import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { cn } from '@/lib/utils';
 import { formatAge } from '@/lib/dates';
 import { InlineRename } from '../actions/InlineRename';
@@ -40,6 +41,7 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
           placeholder="Add to inbox…"
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
         />
+        <AddPositionToggle />
         <Button type="submit">Add</Button>
       </form>
 

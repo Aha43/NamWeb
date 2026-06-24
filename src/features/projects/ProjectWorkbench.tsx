@@ -2,6 +2,7 @@ import { Fragment, useState, type FormEvent } from 'react';
 import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
+import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import {
@@ -729,6 +730,7 @@ function QuickAdd({
         placeholder={placeholder}
         className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
       />
+      <AddPositionToggle />
       <Button type="submit" variant="outline" size="sm">
         Add
       </Button>
