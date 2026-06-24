@@ -133,6 +133,16 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
         onSubmit={onSubmit}
         className="w-full max-w-sm space-y-4 rounded-xl border border-border bg-card p-6 shadow-xs"
       >
+        {(mode === 'signup' || mode === 'forgot') && (
+          <button
+            type="button"
+            onClick={() => go('signin')}
+            className="-mb-1 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline"
+          >
+            ← Back to sign in
+          </button>
+        )}
+
         <div className="flex flex-col items-center text-center">
           <LogoMark className="h-12 w-12 text-card-foreground" />
           <h1 className="mt-3 text-lg font-semibold tracking-tight text-card-foreground">{copy.title}</h1>

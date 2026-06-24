@@ -79,6 +79,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Create-account form has an obvious way back.** A prominent "← Back to sign in" now sits at the
+  top of the sign-up (and forgot-password) form, so heading back to normal sign-in is one click —
+  no hunting below the form. Closes #371.
+
 - **Help page refreshed.** Adds Search to the views list, a "Good to know" section covering tag
   rub-off, archiving projects, and quick row actions, and notes you can file an inbox item under an
   existing project while clarifying. Closes #361.
