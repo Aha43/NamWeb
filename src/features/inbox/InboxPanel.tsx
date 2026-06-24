@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { cn } from '@/lib/utils';
@@ -45,7 +45,8 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
 
       {onProcessAll && items.length > 0 && (
         <div className="flex justify-end">
-          <Button type="button" variant="outline" size="sm" onClick={onProcessAll}>
+          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onProcessAll}>
+            <Target className="h-4 w-4 focus-glow" />
             Process inbox ({items.length})
           </Button>
         </div>
