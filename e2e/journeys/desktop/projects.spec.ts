@@ -33,4 +33,16 @@ test.describe('projects workbench', () => {
     await breadcrumb.getByRole('button', { name: 'Roof repair' }).click();
     await expect(page.getByText('Buy shingles')).toBeVisible();
   });
+
+  // #343 — delete a project straight from the list, behind an anchored confirm.
+  test('delete a project from the list, after confirming', async ({ page }) => {
+    await page.goto('/projects');
+    await page.getByLabel('Add project').fill('Temp project');
+    await page.getByLabel('Add project').press('Enter');
+    await expect(page.getByRole('button', { name: 'Open Temp project' })).toBeVisible();
+
+    await page.getByRole('button', { name: 'Delete Temp project' }).click(); // arm the confirm popover
+    await page.getByRole('button', { name: 'Delete', exact: true }).click(); // confirm
+    await expect(page.getByRole('button', { name: 'Open Temp project' })).toHaveCount(0);
+  });
 });

@@ -111,4 +111,17 @@ describe('ProjectsPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Show archived (2)' }));
     expect(onToggleShowArchived).toHaveBeenCalled();
   });
+
+  it('deletes a project only after confirming, showing the count-aware message', () => {
+    const onDelete = vi.fn();
+    setup([project('p', 'Kitchen reno', { childIds: ['x'] })], {
+      onDelete,
+      deleteMessage: () => 'Delete the "Kitchen reno" project and its 3 items? This cannot be undone.',
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Kitchen reno' })); // arm the confirm
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(screen.getByText(/and its 3 items/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // confirm
+    expect(onDelete).toHaveBeenCalledWith('p');
+  });
 });

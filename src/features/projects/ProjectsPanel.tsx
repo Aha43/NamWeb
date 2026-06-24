@@ -1,6 +1,7 @@
 import { Fragment, useRef, useState, type FormEvent } from 'react';
-import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, Upload } from 'lucide-react';
+import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmButton } from '@/components/ui/confirm-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import {
@@ -42,6 +43,10 @@ export interface ProjectsPanelProps {
   /** Archive / unarchive a project (declutter the list using the ARCHIVED status). */
   onArchive?: (id: string) => void;
   onUnarchive?: (id: string) => void;
+  /** Delete a project (recursive); the row confirms inline before deleting. */
+  onDelete?: (id: string) => void;
+  /** Count-aware confirm message for a project's inline delete. */
+  deleteMessage?: (id: string) => string;
   /** "Show archived" toggle state + count of hidden archived projects. */
   showArchived?: boolean;
   onToggleShowArchived?: () => void;
@@ -62,6 +67,8 @@ export function ProjectsPanel({
   onImportWorkspace,
   onArchive,
   onUnarchive,
+  onDelete,
+  deleteMessage,
   showArchived,
   onToggleShowArchived,
   archivedCount = 0,
@@ -202,6 +209,16 @@ export function ProjectsPanel({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+          {onDelete && (
+            <ConfirmButton
+              aria-label={`Delete ${project.title}`}
+              message={deleteMessage?.(project.id) ?? `Delete the "${project.title}" project? This cannot be undone.`}
+              onConfirm={() => onDelete(project.id)}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </ConfirmButton>
           )}
           {!isArchived && drag?.handle}
           {onReorder && !isArchived && (
