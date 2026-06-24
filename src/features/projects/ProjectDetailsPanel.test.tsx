@@ -33,28 +33,55 @@ describe('ProjectDetailsPanel', () => {
     expect(screen.getByLabelText('Due')).toHaveValue('2026-07-01');
   });
 
-  it('reports the edited fields on Save, parsing a flexible due date', () => {
-    const onSave = vi.fn();
-    render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
-    fireEvent.change(screen.getByLabelText('Title'), { target: { value: '  Garden  ' } });
-    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '26-8-15' } });
-    fireEvent.click(screen.getByText('Done')); // status radio
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(onSave).toHaveBeenCalledWith({
-      title: 'Garden',
-      description: null,
-      tags: [],
-      dueAt: '2026-08-15',
-      status: 'DONE',
-      resources: [],
-    });
+  it('has no Save button — it autosaves', () => {
+    render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
   });
 
-  it('blocks Save on an invalid due date', () => {
+  it('autosaves a text field on blur, trimming the title', () => {
     const onSave = vi.fn();
     render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
-    fireEvent.change(screen.getByLabelText('Due'), { target: { value: 'whenever' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    const title = screen.getByLabelText('Title');
+    fireEvent.change(title, { target: { value: '  Garden  ' } });
+    expect(onSave).not.toHaveBeenCalled(); // not on every keystroke
+    fireEvent.blur(title);
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ title: 'Garden' }));
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+  });
+
+  it('autosaves the due date on blur, parsing a flexible date', () => {
+    const onSave = vi.fn();
+    render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
+    const due = screen.getByLabelText('Due');
+    fireEvent.change(due, { target: { value: '26-8-15' } });
+    fireEvent.blur(due);
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ dueAt: '2026-08-15' }));
+    expect(due).toHaveValue('2026-08-15'); // normalized in place
+  });
+
+  it('autosaves a status change immediately', () => {
+    const onSave = vi.fn();
+    render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
+    fireEvent.click(screen.getByText('Done')); // status radio
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ status: 'DONE' }));
+  });
+
+  it('does not autosave an empty title — restores the project value', () => {
+    const onSave = vi.fn();
+    render(<ProjectDetailsPanel project={project({ title: 'Roof' })} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
+    const title = screen.getByLabelText('Title');
+    fireEvent.change(title, { target: { value: '   ' } });
+    fireEvent.blur(title);
+    expect(onSave).not.toHaveBeenCalled();
+    expect(title).toHaveValue('Roof');
+  });
+
+  it('flags an invalid due date on blur and does not persist it', () => {
+    const onSave = vi.fn();
+    render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
+    const due = screen.getByLabelText('Due');
+    fireEvent.change(due, { target: { value: 'whenever' } });
+    fireEvent.blur(due);
     expect(onSave).not.toHaveBeenCalled();
     expect(screen.getByRole('alert')).toHaveTextContent(/date like/i);
   });

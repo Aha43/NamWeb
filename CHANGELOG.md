@@ -91,6 +91,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Project Details autosaves.** Editing a project's details inline on its workbench no longer needs a Save click — text fields (title, notes, due) save when you leave them, and status/tags/resources save as you change them, with a quiet "Saved" indicator. (The action editor dialog keeps its explicit Save/Cancel.) Closes #390.
+
 - **Help reflects the latest Focus and add-box features.** The Help page now describes Focus opening
   from Next/Backlog/Due/Done/Inbox with per-card actions and Done re-triage, Done's bulk select, and
   the top/bottom add toggle with its Settings default. Closes #380.
