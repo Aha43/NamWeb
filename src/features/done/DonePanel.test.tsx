@@ -25,4 +25,15 @@ describe('DonePanel', () => {
     expect(handlers.onBacklog).toHaveBeenCalledWith('x');
     expect(handlers.onDelete).toHaveBeenCalledWith('x');
   });
+
+  it('bulk-restores selected rows in select mode', () => {
+    const handlers = { onRestore: vi.fn(), onBacklog: vi.fn(), onDelete: vi.fn() };
+    render(<DonePanel rows={[row({ id: 'a', title: 'One' }), row({ id: 'b', title: 'Two' })]} {...handlers} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select One' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Two' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Restore to Next' }));
+    expect(handlers.onRestore).toHaveBeenCalledWith('a');
+    expect(handlers.onRestore).toHaveBeenCalledWith('b');
+  });
 });
