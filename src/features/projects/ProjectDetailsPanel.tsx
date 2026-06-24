@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,9 @@ const STATUSES: { value: NodeStatus; label: string }[] = [
  * Edit the current project's title, notes, tags, due date, status, and resources inline on its
  * workbench — the project's home surface — instead of in the overloaded action dialog. Collapsible
  * (controlled by the page, which persists the state and can force it open via an "edit details"
- * action). Seeded from `project`; reports the edited fields on Save and never mutates.
+ * action). Seeded from `project`; **autosaves** — text fields commit on blur, discrete controls
+ * (status, tags, resources) on change — via `onSave`, which the page diffs into granular intents.
+ * Never mutates.
  */
 export function ProjectDetailsPanel({
   project,
@@ -57,26 +59,54 @@ export function ProjectDetailsPanel({
   const [saved, setSaved] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) return;
-    const dueAt = parseFlexibleDate(due);
-    if (due.trim() && dueAt === null) {
-      setDueError(true);
-      return;
-    }
-    const trimmedDescription = description.trim();
+  // Build the edits snapshot from current state (with optional overrides for a just-changed discrete
+  // control, to dodge setState's async staleness) and report it. Never persists an empty title or an
+  // unparseable due — those fall back to the project's current value, so one bad field can't block
+  // saving the others. The page diffs this snapshot into per-field intents (one small synced write).
+  const commit = (override: Partial<{
+    title: string;
+    description: string;
+    tags: string;
+    due: string;
+    status: NodeStatus;
+    resources: Resource[];
+  }> = {}) => {
+    const rawTitle = (override.title ?? title).trim();
+    const rawDue = override.due ?? due;
+    const parsedDue = parseFlexibleDate(rawDue);
+    const trimmedDescription = (override.description ?? description).trim();
     onSave({
-      title: trimmedTitle,
+      title: rawTitle || project.title,
       description: trimmedDescription ? trimmedDescription : null,
-      tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
-      dueAt,
-      status,
-      resources,
+      tags: (override.tags ?? tags).split(',').map((t) => t.trim()).filter(Boolean),
+      dueAt: rawDue.trim() === '' ? null : (parsedDue ?? project.dueAt),
+      status: override.status ?? status,
+      resources: override.resources ?? resources,
     });
     setSaved(true);
-  }
+  };
+
+  // Text fields commit when focus leaves them.
+  const commitTitle = () => {
+    if (!title.trim()) {
+      setTitle(project.title); // never leave an empty title in the box
+      return;
+    }
+    commit();
+  };
+  const commitDue = () => {
+    if (due.trim() === '') {
+      commit({ due: '' });
+      return;
+    }
+    const iso = parseFlexibleDate(due);
+    if (iso === null) {
+      setDueError(true); // flag it, keep the persisted due
+      return;
+    }
+    setDue(iso); // normalize the entry to ISO
+    commit({ due: iso });
+  };
 
   return (
     <div className="rounded-lg border border-border">
@@ -94,7 +124,7 @@ export function ProjectDetailsPanel({
         )}
       </button>
       {!collapsed && (
-        <form onSubmit={submit} className="space-y-4 border-t border-border p-3">
+        <div className="space-y-4 border-t border-border p-3">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="project-title">Title</Label>
@@ -107,6 +137,7 @@ export function ProjectDetailsPanel({
                 setTitle(e.target.value);
                 setSaved(false);
               }}
+              onBlur={commitTitle}
             />
           </div>
           <div className="space-y-1.5">
@@ -121,10 +152,12 @@ export function ProjectDetailsPanel({
                 setDescription(e.target.value);
                 setSaved(false);
               }}
+              onBlur={() => commit()}
             />
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
+            {/* Tags commit when focus leaves the field — its onChange fires per keystroke. */}
+            <div className="space-y-1.5" onBlur={() => commit()}>
               <Label htmlFor="project-tags">Tags</Label>
               <TagsInput
                 id="project-tags"
@@ -149,10 +182,7 @@ export function ProjectDetailsPanel({
                   setSaved(false);
                   if (dueError) setDueError(false);
                 }}
-                onBlur={() => {
-                  const iso = parseFlexibleDate(due);
-                  if (iso) setDue(iso);
-                }}
+                onBlur={commitDue}
               />
               {dueError && (
                 <p role="alert" className="text-xs text-destructive">
@@ -181,7 +211,7 @@ export function ProjectDetailsPanel({
                     checked={status === s.value}
                     onChange={() => {
                       setStatus(s.value);
-                      setSaved(false);
+                      commit({ status: s.value });
                     }}
                   />
                   {s.label}
@@ -195,7 +225,7 @@ export function ProjectDetailsPanel({
               resources={resources}
               onChange={(r) => {
                 setResources(r);
-                setSaved(false);
+                commit({ resources: r });
               }}
             />
           </div>
@@ -212,22 +242,27 @@ export function ProjectDetailsPanel({
               </Button>
             </div>
           ) : (
-            <div className="flex items-center gap-3 border-t border-border pt-3">
-              {onDelete && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => setConfirmingDelete(true)}
-                  className="mr-auto text-destructive hover:text-destructive"
-                >
-                  Delete project
-                </Button>
-              )}
-              {saved && <span className="ml-auto text-xs text-muted-foreground">Saved</span>}
-              <Button type="submit">Save</Button>
-            </div>
+            (onDelete || saved) && (
+              <div className="flex items-center gap-3 border-t border-border pt-3">
+                {onDelete && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setConfirmingDelete(true)}
+                    className="mr-auto text-destructive hover:text-destructive"
+                  >
+                    Delete project
+                  </Button>
+                )}
+                {saved && (
+                  <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
+                    Saved
+                  </span>
+                )}
+              </div>
+            )
           )}
-        </form>
+        </div>
       )}
     </div>
   );
