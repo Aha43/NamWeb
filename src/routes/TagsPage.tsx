@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { allTags, contextItems } from '@/domain/lenses';
+import { allTags, contextItems, effectiveTags } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
@@ -23,8 +23,10 @@ export function TagsPage() {
   const tags = document ? allTags(document) : [];
   const tagCounts: Record<string, number> = {};
   if (document) {
+    // Count effective tags (own + inherited) so a rubbed-off project tag is reflected on every
+    // descendant, matching how filtering already treats it.
     for (const node of Object.values(document.nodes)) {
-      for (const t of node.tags) tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+      for (const t of effectiveTags(document, node.id)) tagCounts[t] = (tagCounts[t] ?? 0) + 1;
     }
   }
   // Only filter once at least one tag is chosen — an empty selection matches everything.

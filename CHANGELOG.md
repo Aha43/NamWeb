@@ -137,6 +137,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Inherited (rubbed-off) project tags now work like real tags everywhere.** Filtering already
+  honored them; now **Search** matches a node's inherited tags too, and the **Tags** view counts
+  reflect them — so a tag on a project behaves the same on its descendants as any tag they own.
+  Closes #349.
+
 - **Archived projects no longer leak their actions into the action views.** Actions inside an
   archived project kept their NEXT/BACKLOG status, so they still showed up in **Next** and **Backlog**
   (and Due, Blocked, Done, tag context, and Search). They're now excluded everywhere — archiving a
