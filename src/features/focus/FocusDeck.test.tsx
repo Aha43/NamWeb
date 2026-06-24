@@ -89,7 +89,7 @@ describe('FocusDeck', () => {
     expect(onRenameCard).toHaveBeenCalledWith('a', 'Do A v2');
     // Delete (confirm popover).
     fireEvent.click(screen.getByRole('button', { name: 'Delete Do A' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Delete', exact: true }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // the confirm (exact name)
     expect(onDeleteCard).toHaveBeenCalledWith('a');
   });
 

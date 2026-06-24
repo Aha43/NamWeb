@@ -25,6 +25,8 @@ export interface FocusDeckProps {
   onEditCard?: (id: string) => void;
   onRenameCard?: (id: string, title: string) => void;
   onDeleteCard?: (id: string) => void;
+  /** Label for the primary advance action (default "Done"). Done-focus uses e.g. "To Next". */
+  doneLabel?: string;
 }
 
 /**
@@ -41,6 +43,7 @@ export function FocusDeck({
   onEditCard,
   onRenameCard,
   onDeleteCard,
+  doneLabel = 'Done',
 }: FocusDeckProps) {
   const [index, setIndex] = useState(0);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -169,9 +172,9 @@ export function FocusDeck({
         <Button variant="outline" size="icon" aria-label="Previous" onClick={prev}>
           <ChevronLeft />
         </Button>
-        <Button size="lg" className="gap-2 px-8" aria-label="Mark done" onClick={done}>
+        <Button size="lg" className="gap-2 px-8" aria-label={doneLabel === 'Done' ? 'Mark done' : doneLabel} onClick={done}>
           <Check />
-          Done
+          {doneLabel}
         </Button>
         <Button variant="outline" size="icon" aria-label="Next" onClick={next}>
           <ChevronRight />
