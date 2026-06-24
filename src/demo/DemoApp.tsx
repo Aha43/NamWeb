@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthUserContext } from '@/auth/auth-context';
 import { CaptureProvider } from '@/capture/CaptureProvider';
 import { ActionEditorProvider } from '@/features/actions/ActionEditorProvider';
+import { ToastProvider } from '@/components/ui/toast/ToastProvider';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { DemoWorkspaceProvider } from './DemoWorkspaceProvider';
 import { DemoBanner } from './DemoBanner';
@@ -16,12 +17,14 @@ export function DemoApp({ onSignUp }: { onSignUp: () => void }) {
     <AuthUserContext.Provider value={DEMO_USER}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <DemoWorkspaceProvider onSignUp={onSignUp}>
-          <CaptureProvider>
-            <ActionEditorProvider>
-              <DemoBanner />
-              <AppRoutes />
-            </ActionEditorProvider>
-          </CaptureProvider>
+          <ToastProvider>
+            <CaptureProvider>
+              <ActionEditorProvider>
+                <DemoBanner />
+                <AppRoutes />
+              </ActionEditorProvider>
+            </CaptureProvider>
+          </ToastProvider>
         </DemoWorkspaceProvider>
       </BrowserRouter>
     </AuthUserContext.Provider>

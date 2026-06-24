@@ -11,12 +11,14 @@ export interface DonePanelProps {
   onRestore: (id: string) => void;
   onBacklog: (id: string) => void;
   onDelete: (id: string) => void;
+  /** Bulk delete with a single Undo toast; falls back to per-id `onDelete` when absent. */
+  onDeleteMany?: (ids: string[]) => void;
   onEdit?: (id: string) => void;
 }
 
 /** Done: completed actions with restore / backlog / delete — plus a select mode for bulk ops
  *  (you often spot several that were not actually done). Presentational. */
-export function DonePanel({ rows, onRestore, onBacklog, onDelete, onEdit }: DonePanelProps) {
+export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, onEdit }: DonePanelProps) {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -34,6 +36,12 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onEdit }: Done
   // Apply an action to each selected row, then clear the selection (stay in select mode).
   const bulk = (fn: (id: string) => void) => {
     for (const id of selected) fn(id);
+    setSelected(new Set());
+  };
+  const bulkDelete = () => {
+    const ids = [...selected];
+    if (onDeleteMany) onDeleteMany(ids);
+    else for (const id of ids) onDelete(id);
     setSelected(new Set());
   };
   const none = selected.size === 0;
@@ -88,8 +96,8 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onEdit }: Done
           </button>
           <ConfirmButton
             aria-label="Delete selected actions"
-            message={`Delete ${selected.size} selected action${selected.size === 1 ? '' : 's'}? This cannot be undone.`}
-            onConfirm={() => bulk(onDelete)}
+            message={`Delete ${selected.size} selected action${selected.size === 1 ? '' : 's'}?`}
+            onConfirm={bulkDelete}
             disabled={none}
             className="rounded-md px-2 py-0.5 font-medium text-destructive hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
           >
