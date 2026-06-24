@@ -81,3 +81,11 @@ describe('focusCards — due source', () => {
     expect(cards.map((c) => c.id)).toEqual(['overdue', 'today']);
   });
 });
+
+describe('focusCards — done source', () => {
+  it('queues completed actions (for re-triage)', () => {
+    // doc() has a2 as the only DONE action.
+    const cards = focusCards(doc(), 'done');
+    expect(cards.map((c) => c.id)).toEqual(['a2']);
+  });
+});

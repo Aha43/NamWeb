@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Focus your Done list.** Done gets its own glowing Focus entry — flip through completed cards to re-triage the ones that weren't really done: the primary action restores to **Next**, "Move to Backlog" parks it, or delete it. Closes #367.
+
 - **Act on a card without leaving Focus.** Each Focus card gets small controls: click its title to **open the editor**, a **pencil** to rename inline, a **copy** button for the name, and **delete** (with confirm). The deck flow is unchanged. Closes #365.
 
 - **Select and bulk-act in Done.** The Done view gets a select mode — tick several completed actions and **Restore to Next**, move to **Backlog**, or **delete** them in one go (for the ones that were not actually done). Closes #366.
