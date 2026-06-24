@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The demo starts with a few things in the Inbox.** "Try the demo" now lands with a handful of raw captures waiting to clarify — one of which naturally belongs under an existing project — so the Capture → Clarify loop and the Inbox Focus deck have something to act on right away. Closes #382.
+
 - **Focus your Done list.** Done gets its own glowing Focus entry — flip through completed cards to re-triage the ones that weren't really done: the primary action restores to **Next**, "Move to Backlog" parks it, or delete it. Closes #367.
 
 - **Act on a card without leaving Focus.** Each Focus card gets small controls: click its title to **open the editor**, a **pencil** to rename inline, a **copy** button for the name, and **delete** (with confirm). The deck flow is unchanged. Closes #365.
