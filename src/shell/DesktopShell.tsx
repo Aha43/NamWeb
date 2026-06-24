@@ -102,7 +102,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 <Tooltip label={focus.hint}>
                   <Button asChild variant="outline" className="justify-start gap-2">
                     <NavLink to="/focus">
-                      <Target />
+                      <Target className="focus-glow" />
                       Focus
                     </NavLink>
                   </Button>

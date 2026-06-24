@@ -1,9 +1,9 @@
-import { backlogItems, contextItems, nextActions, projectActions, projectPath } from '@/domain/lenses';
+import { backlogItems, contextItems, dueGroups, nextActions, projectActions, projectPath } from '@/domain/lenses';
 import type { WorkspaceDocument } from '@/domain/types';
 
-/** What to work through: the global Next/Backlog queues, one project's open direct actions, or the
- *  active actions matching a tag filter (the Tags view's "Focus" button). */
-export type FocusSource = 'next' | 'backlog' | { project: string } | { tags: string[]; nextOnly: boolean };
+/** What to work through: the global Next/Backlog queues, the due-now set (overdue + today), one
+ *  project's open direct actions, or the active actions matching a tag filter. */
+export type FocusSource = 'next' | 'backlog' | 'due' | { project: string } | { tags: string[]; nextOnly: boolean };
 
 export interface FocusCard {
   id: string;
@@ -23,7 +23,10 @@ export function focusCards(doc: WorkspaceDocument, source: FocusSource): FocusCa
           contextItems(doc, source.tags, source.nextOnly)
       : source === 'backlog'
         ? backlogItems(doc)
-        : nextActions(doc);
+        : source === 'due'
+          ? // The due-now queue: overdue first, then today's due actions.
+            [...dueGroups(doc).overdue, ...dueGroups(doc).today]
+          : nextActions(doc);
   return nodes.map((n) => ({
     id: n.id,
     title: n.title,

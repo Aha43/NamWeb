@@ -347,7 +347,7 @@ export function ProjectWorkbench({
           {onFocus && actions.length > 0 && (
             <div className="flex justify-end">
               <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onFocus}>
-                <Target className="h-4 w-4" />
+                <Target className="h-4 w-4 focus-glow" />
                 Focus
               </Button>
             </div>
@@ -419,7 +419,7 @@ export function ProjectWorkbench({
                       onClick={onFocus}
                       className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
-                      <Target className="h-4 w-4" />
+                      <Target className="h-4 w-4 focus-glow" />
                     </button>
                   </Tooltip>
                 )}

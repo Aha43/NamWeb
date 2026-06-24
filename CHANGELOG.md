@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Focus from more places, and it glows.** The **Next**, **Backlog**, and **Due** views gain a Focus
+  button that drops you straight into the deck (Due focuses what's due now — overdue + today). Every
+  Focus icon now wears a deliberate **green glow** — the one splash of colour in the neutral theme —
+  so the "go do it" action stands out. The deck itself is unchanged. Closes #363.
+
 - **Try NAM without an account.** A "Try the demo" link on the sign-in screen (and a `/demo` URL)
   drops you straight into a populated workspace — relatable sample projects (a trip, getting a dog)
   plus the Learn NAM project — so you can capture, clarify, Focus, tag, and browse with no sign-up.

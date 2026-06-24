@@ -9,6 +9,13 @@
   padding-inline: 1rem;
 }
 
+/* The Focus accent — the one deliberate splash of colour in an otherwise neutral theme, so the
+ * "go do it" Focus action stands out and invites use. Applied to every Focus (Target) icon. */
+@utility focus-glow {
+  color: rgb(34 197 94); /* green-500 */
+  filter: drop-shadow(0 0 5px rgb(34 197 94 / 0.55));
+}
+
 @theme {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));

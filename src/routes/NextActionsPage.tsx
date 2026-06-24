@@ -4,6 +4,7 @@ import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
 import { NextActionsPanel } from '@/features/next-actions/NextActionsPanel';
+import { FocusButton } from '@/features/focus/FocusButton';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
@@ -33,7 +34,13 @@ export function NextActionsPage() {
   }
 
   return (
-    <NextActionsPanel
+    <div className="space-y-3">
+      {ordered.length > 0 && (
+        <div className="flex justify-end">
+          <FocusButton to="/focus" label="Focus your Next actions" />
+        </div>
+      )}
+      <NextActionsPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
       onAdd={
         document
@@ -65,6 +72,7 @@ export function NextActionsPage() {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
       }}
-    />
+      />
+    </div>
   );
 }

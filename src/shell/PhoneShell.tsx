@@ -58,7 +58,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
           </button>
         </div>
 
-        <BottomLink to="/focus" label="Focus" icon={Target} />
+        <BottomLink to="/focus" label="Focus" icon={Target} iconClassName="focus-glow" />
 
         <button
           type="button"
@@ -144,7 +144,17 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
   );
 }
 
-function BottomLink({ to, label, icon: Icon }: { to: string; label: string; icon: LucideIcon }) {
+function BottomLink({
+  to,
+  label,
+  icon: Icon,
+  iconClassName,
+}: {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  iconClassName?: string;
+}) {
   return (
     <NavLink
       to={to}
@@ -155,7 +165,7 @@ function BottomLink({ to, label, icon: Icon }: { to: string; label: string; icon
         )
       }
     >
-      <Icon className="h-5 w-5" />
+      <Icon className={cn('h-5 w-5', iconClassName)} />
       {label}
     </NavLink>
   );
