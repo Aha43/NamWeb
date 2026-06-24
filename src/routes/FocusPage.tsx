@@ -23,6 +23,7 @@ export function FocusPage() {
   const tags = useMemo(() => (tagsParam ? tagsParam.split(',').filter(Boolean) : []), [tagsParam]);
   const isTag = !projectId && tags.length > 0;
   const sourceParam = params.get('source');
+  const isDue = !projectId && !isTag && sourceParam === 'due';
   // Memoized so the object sources are stable across renders (keeps the cards useMemo honest).
   const source: FocusSource = useMemo(
     () =>
@@ -32,7 +33,9 @@ export function FocusPage() {
           ? { tags, nextOnly }
           : sourceParam === 'backlog'
             ? 'backlog'
-            : 'next',
+            : sourceParam === 'due'
+              ? 'due'
+              : 'next',
     [projectId, tags, nextOnly, sourceParam],
   );
   const sourceKey = projectId
@@ -41,17 +44,20 @@ export function FocusPage() {
       ? `tags:${tagsParam}:${nextOnly}`
       : sourceParam === 'backlog'
         ? 'backlog'
-        : 'next';
+        : sourceParam === 'due'
+          ? 'due'
+          : 'next';
   const projectTitle = projectId && document ? document.nodes[projectId]?.title : undefined;
-  const scopedLabel = projectId ? (projectTitle ?? 'project') : tags.join(', ');
-  // Re-triage flip only makes sense for a single-status queue (flat Next/Backlog).
-  const flat = !projectId && !isTag;
+  const scopedLabel = projectId ? (projectTitle ?? 'project') : isDue ? 'due' : tags.join(', ');
+  // A scoped deck (project / tags / due) mixes statuses, so no flat Next↔Backlog re-triage flip.
+  const flat = !projectId && !isTag && !isDue;
 
   const cards = useMemo(() => (document ? focusCards(document, source) : []), [document, source]);
   const exit = () => {
     if (projectId) navigate(`/projects/${projectId}`);
     // Return to Tags with the same selection/Next-only that launched Focus, not a bare /tags.
     else if (isTag) navigate({ pathname: '/tags', search: tagFilterParams(tags, nextOnly).toString() });
+    else if (isDue) navigate('/due');
     else navigate(sourceParam === 'backlog' ? '/backlog' : '/next');
   };
 
@@ -62,7 +68,7 @@ export function FocusPage() {
           <X />
         </Button>
 
-        {projectId || isTag ? (
+        {projectId || isTag || isDue ? (
           <span className="truncate px-3 text-sm font-medium text-foreground">
             Focus: {scopedLabel}
           </span>

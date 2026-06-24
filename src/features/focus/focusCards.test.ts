@@ -51,3 +51,33 @@ describe('focusCards — tag source', () => {
     expect(cards.map((c) => c.id)).toEqual(['a3']);
   });
 });
+
+describe('focusCards — due source', () => {
+  // Date-only, local — matches how dueGroups parses dueAt (focusCards calls dueGroups with today).
+  function localDate(offsetDays: number): string {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function dueDoc(): WorkspaceDocument {
+    const nodes: Record<string, NamNode> = {
+      root: node('root', { project: true, childIds: ['inbox', 'projects', 'actions'] }),
+      inbox: node('inbox', { project: true }),
+      projects: node('projects', { project: true }),
+      actions: node('actions', { project: true, childIds: ['overdue', 'today', 'later'] }),
+      overdue: node('overdue', { title: 'Overdue', status: 'NEXT', dueAt: localDate(-1) }),
+      today: node('today', { title: 'Today', status: 'NEXT', dueAt: localDate(0) }),
+      later: node('later', { title: 'Later', status: 'BACKLOG', dueAt: localDate(30) }),
+    };
+    return {
+      formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox',
+      projectsNodeId: 'projects', nextActionsNodeId: 'actions',
+      nodes, registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
+    };
+  }
+
+  it('queues the due-now set (overdue + today), excluding later', () => {
+    const cards = focusCards(dueDoc(), 'due');
+    expect(cards.map((c) => c.id)).toEqual(['overdue', 'today']);
+  });
+});

@@ -2,6 +2,7 @@ import { dueGroups } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { DuePanel, type DueRowGroups } from '@/features/due/DuePanel';
+import { FocusButton } from '@/features/focus/FocusButton';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -20,8 +21,17 @@ export function DuePage() {
     groups = { overdue: rows(g.overdue), today: rows(g.today), thisWeek: rows(g.thisWeek), later: rows(g.later) };
   }
 
+  // The `due` Focus source is the due-now set (overdue + today); offer Focus only when it's non-empty.
+  const hasDueNow = groups.overdue.length > 0 || groups.today.length > 0;
+
   return (
-    <DuePanel
+    <div className="space-y-3">
+      {hasDueNow && (
+        <div className="flex justify-end">
+          <FocusButton to="/focus?source=due" label="Focus what's due now" />
+        </div>
+      )}
+      <DuePanel
       groups={groups}
       onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
       onEdit={openEditor}
@@ -30,6 +40,7 @@ export function DuePage() {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
       }}
-    />
+      />
+    </div>
   );
 }

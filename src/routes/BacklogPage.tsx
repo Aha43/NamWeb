@@ -4,6 +4,7 @@ import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
 import { BacklogPanel } from '@/features/backlog/BacklogPanel';
+import { FocusButton } from '@/features/focus/FocusButton';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
@@ -33,7 +34,13 @@ export function BacklogPage() {
   }
 
   return (
-    <BacklogPanel
+    <div className="space-y-3">
+      {ordered.length > 0 && (
+        <div className="flex justify-end">
+          <FocusButton to="/focus?source=backlog" label="Focus your Backlog" />
+        </div>
+      )}
+      <BacklogPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
       sortMode={sortMode}
       onCycleSort={cycleSort}
@@ -65,6 +72,7 @@ export function BacklogPage() {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
       }}
-    />
+      />
+    </div>
   );
 }

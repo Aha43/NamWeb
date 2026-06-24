@@ -238,7 +238,7 @@ export function TagFilterPanel({
                     onClick={onFocus}
                     className="flex items-center gap-1 rounded-md border border-input px-2.5 py-1 font-medium text-foreground hover:bg-accent"
                   >
-                    <Target className="h-3.5 w-3.5" />
+                    <Target className="h-3.5 w-3.5 focus-glow" />
                     Focus
                   </button>
                 )}
