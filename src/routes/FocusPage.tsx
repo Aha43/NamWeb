@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { nowIso } from '@/lib/local';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { useActionEditor } from '@/features/actions/action-editor-context';
+import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { FocusDeck } from '@/features/focus/FocusDeck';
 import { focusCards, type FocusSource } from '@/features/focus/focusCards';
 import { tagFilterParams } from '@/features/tags/tagFilterParams';
@@ -14,6 +16,8 @@ export function FocusPage() {
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { document, dispatch } = useWorkspaceContext();
+  const { openEditor } = useActionEditor();
+  const deleteNode = useDeleteNode();
 
   // Scoped focus precedence: a project (?project=<id>), then a tag filter (?tags=home&next=1, from the
   // Tags view), else the global Next/Backlog toggle.
@@ -112,6 +116,12 @@ export function FocusPage() {
             : undefined
         }
         onExit={exit}
+        onEditCard={(id) => openEditor(id)}
+        onRenameCard={(id, title) => {
+          const node = document?.nodes[id];
+          if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
+        }}
+        onDeleteCard={(id) => deleteNode(id)}
       />
     </div>
   );

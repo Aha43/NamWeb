@@ -64,6 +64,35 @@ describe('FocusDeck', () => {
     expect(screen.queryByRole('button', { name: /^Move to/ })).not.toBeInTheDocument();
   });
 
+  it('exposes per-card open / rename / delete controls when wired', () => {
+    const onEditCard = vi.fn();
+    const onRenameCard = vi.fn();
+    const onDeleteCard = vi.fn();
+    render(
+      <FocusDeck
+        cards={three}
+        onDone={vi.fn()}
+        onExit={vi.fn()}
+        onEditCard={onEditCard}
+        onRenameCard={onRenameCard}
+        onDeleteCard={onDeleteCard}
+      />,
+    );
+    // Click the title → open the editor.
+    fireEvent.click(screen.getByRole('button', { name: 'Edit Do A' }));
+    expect(onEditCard).toHaveBeenCalledWith('a');
+    // Pencil → inline rename → commit.
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Do A' }));
+    const input = screen.getByRole('textbox', { name: 'Rename Do A' });
+    fireEvent.change(input, { target: { value: 'Do A v2' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(onRenameCard).toHaveBeenCalledWith('a', 'Do A v2');
+    // Delete (confirm popover).
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Do A' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete', exact: true }));
+    expect(onDeleteCard).toHaveBeenCalledWith('a');
+  });
+
   it('shows an empty-queue state that guides what to do next', () => {
     const { onExit } = setup([]);
     expect(screen.getByText('All clear 🎉')).toBeInTheDocument();
