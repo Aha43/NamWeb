@@ -53,6 +53,11 @@ describe('InboxPanel', () => {
     expect(onDelete).toHaveBeenCalledWith('a');
   });
 
+  it('offers a copy-name button on each inbox row', () => {
+    setup([item('a', 'Buy milk')]);
+    expect(screen.getByRole('button', { name: 'Copy name "Buy milk"' })).toBeInTheDocument();
+  });
+
   it('pencil triggers inline rename (not an editor) and commits via onRename', () => {
     const onRename = vi.fn();
     render(

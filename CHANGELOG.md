@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Copy a name from any list row.** Action rows, project rows, and inbox rows now have a small
+  copy button that puts the item's name on the clipboard — no need to open the editor first.
+  Closes #350.
+
 - **Delete a project straight from the projects list.** Project rows gain a trash button. It asks to
   confirm first — with a count-aware message ("…and its N items") for a non-empty project, since the
   whole subtree is removed. Closes #343.

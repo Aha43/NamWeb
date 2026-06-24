@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
 import { ConfirmButton } from '@/components/ui/confirm-button';
+import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
@@ -112,6 +113,7 @@ export function ActionRow({
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
+        <CopyButton value={row.title} label={`name "${row.title}"`} className="p-1.5" />
         {onRename && !renaming && (
           <Tooltip label={`Rename ${row.title}`}>
             <button

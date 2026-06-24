@@ -2,6 +2,7 @@ import { Fragment, useRef, useState, type FormEvent } from 'react';
 import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, Trash2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmButton } from '@/components/ui/confirm-button';
+import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import {
@@ -152,6 +153,7 @@ export function ProjectsPanel({
             )}
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
+          <CopyButton value={project.title} label={`name "${project.title}"`} className="p-1.5" />
           {onRename && (
             <Tooltip label={`Rename ${project.title}`}>
               <button
