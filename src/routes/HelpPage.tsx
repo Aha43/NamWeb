@@ -63,6 +63,25 @@ export function HelpPage() {
 
       <div className="space-y-2">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Keyboard shortcuts</h2>
+        <p className="text-sm text-muted-foreground">Anywhere in the app:</p>
+        <ul className="space-y-1 text-sm text-muted-foreground">
+          <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">c</kbd> — capture a thought</li>
+          <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">/</kbd> — jump to search</li>
+          <li>
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">g</kbd> then a letter — go to a view:{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">i</kbd> Inbox,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">n</kbd> Next,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">b</kbd> Backlog,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">d</kbd> Due,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">k</kbd> Blocked,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">p</kbd> Projects,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">o</kbd> Goals,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">t</kbd> Tags,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">e</kbd> Done,{' '}
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">f</kbd> Focus
+          </li>
+          <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">?</kbd> — open this Help page</li>
+        </ul>
         <p className="text-sm text-muted-foreground">In Focus mode:</p>
         <ul className="space-y-1 text-sm text-muted-foreground">
           <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">←</kbd> / <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">→</kbd> — previous / next card</li>

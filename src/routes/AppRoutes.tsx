@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { useGlobalShortcuts } from '@/shell/useGlobalShortcuts';
 import { ShellLayout } from './ShellLayout';
 import { InboxPage } from './InboxPage';
 import { NextActionsPage } from './NextActionsPage';
@@ -21,6 +22,7 @@ import { NotFound } from './NotFound';
 const FocusPage = lazy(() => import('./FocusPage').then((m) => ({ default: m.FocusPage })));
 
 export function AppRoutes() {
+  useGlobalShortcuts();
   return (
     <Routes>
       {/* Immersive execution surface — no shell chrome; lazily loaded. */}
