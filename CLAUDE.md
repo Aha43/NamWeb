@@ -84,6 +84,14 @@ to commit?":**
 4. **Pause for the user to test on the preview.** Merge only when they explicitly say so
    (`gh pr merge <#> --squash --delete-branch`) — merge is the one step that still needs a go-ahead.
 
+**Phrase the test steps for the preview around the demo.** Every preview carries the no-account
+**"Try the demo"** path (sign-in screen, or `…/demo`) — a populated local workspace, no login (see
+`docs/features/demo-workspace/design.md`). For **client-side** changes (UI + domain: lists, editor,
+Focus, tags, projects, etc.) write the how-to-test as *"open **Try the demo** and …"* — fastest for
+the user, disposable data, a Reset button, and it exercises the same code. Reserve "sign in and …"
+for changes that genuinely need a real session: Supabase sync / conflict-retry / realtime, auth
+(sign-up/verify/reset), the Account page (delete/export), or MCP — the demo can't exercise those.
+
 The CF preview — not local `npm run dev` — is the default surface the user tests on.
 
 ### Auto-sprints
