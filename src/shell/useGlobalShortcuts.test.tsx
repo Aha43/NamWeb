@@ -1,0 +1,97 @@
+import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { CaptureContext } from '@/capture/capture-context';
+import { TOOLBAR_SEARCH_ID, useGlobalShortcuts } from './useGlobalShortcuts';
+
+function Harness({ withSearchBox = false }: { withSearchBox?: boolean }) {
+  useGlobalShortcuts();
+  const location = useLocation();
+  return (
+    <div>
+      <span data-testid="path">{location.pathname}</span>
+      {withSearchBox && <input id={TOOLBAR_SEARCH_ID} aria-label="Search workspace" />}
+      <input aria-label="some field" />
+    </div>
+  );
+}
+
+function setup(openCapture = vi.fn(), opts?: { withSearchBox?: boolean }) {
+  render(
+    <CaptureContext.Provider value={{ openCapture }}>
+      <MemoryRouter initialEntries={['/inbox']}>
+        <Routes>
+          <Route path="*" element={<Harness withSearchBox={opts?.withSearchBox} />} />
+        </Routes>
+      </MemoryRouter>
+    </CaptureContext.Provider>,
+  );
+  return { openCapture };
+}
+
+const path = () => screen.getByTestId('path').textContent;
+
+afterEach(() => vi.restoreAllMocks());
+
+describe('useGlobalShortcuts', () => {
+  it('opens capture on "c"', () => {
+    const { openCapture } = setup();
+    fireEvent.keyDown(window, { key: 'c' });
+    expect(openCapture).toHaveBeenCalledOnce();
+  });
+
+  it('navigates with the g-then-letter chord', () => {
+    setup();
+    fireEvent.keyDown(window, { key: 'g' });
+    fireEvent.keyDown(window, { key: 'n' });
+    expect(path()).toBe('/next');
+
+    fireEvent.keyDown(window, { key: 'g' });
+    fireEvent.keyDown(window, { key: 'b' });
+    expect(path()).toBe('/backlog');
+  });
+
+  it('opens Help on "?"', () => {
+    setup();
+    fireEvent.keyDown(window, { key: '?' });
+    expect(path()).toBe('/help');
+  });
+
+  it('focuses the toolbar search on "/" when present (no navigation)', () => {
+    setup(vi.fn(), { withSearchBox: true });
+    fireEvent.keyDown(window, { key: '/' });
+    expect(document.activeElement).toBe(document.getElementById(TOOLBAR_SEARCH_ID));
+    expect(path()).toBe('/inbox'); // didn't navigate away
+  });
+
+  it('falls back to navigating to Search on "/" when the box is absent', () => {
+    setup();
+    fireEvent.keyDown(window, { key: '/' });
+    expect(path()).toBe('/search');
+  });
+
+  it('does nothing while typing in an input', () => {
+    const { openCapture } = setup();
+    const field = screen.getByLabelText('some field');
+    field.focus();
+    fireEvent.keyDown(field, { key: 'c' });
+    fireEvent.keyDown(field, { key: 'g' });
+    fireEvent.keyDown(field, { key: 'n' });
+    expect(openCapture).not.toHaveBeenCalled();
+    expect(path()).toBe('/inbox');
+  });
+
+  it('ignores Ctrl/Cmd combos so browser shortcuts pass through', () => {
+    const { openCapture } = setup();
+    fireEvent.keyDown(window, { key: 'c', metaKey: true });
+    fireEvent.keyDown(window, { key: 'c', ctrlKey: true });
+    expect(openCapture).not.toHaveBeenCalled();
+  });
+
+  it('forgets a lone "g" that is not followed by a mapped key', () => {
+    setup();
+    fireEvent.keyDown(window, { key: 'g' });
+    fireEvent.keyDown(window, { key: 'z' }); // not a destination → reset, no nav
+    expect(path()).toBe('/inbox');
+  });
+});

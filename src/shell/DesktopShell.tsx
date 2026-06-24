@@ -10,6 +10,7 @@ import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
 import { SIDEBAR_GROUPS, focus } from './nav';
+import { TOOLBAR_SEARCH_ID } from './useGlobalShortcuts';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
 import {
@@ -184,6 +185,7 @@ function ToolbarSearch() {
     <div className="relative">
       <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <input
+        id={TOOLBAR_SEARCH_ID}
         type="search"
         aria-label="Search workspace"
         value={value}
