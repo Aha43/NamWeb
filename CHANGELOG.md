@@ -95,6 +95,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Tags moved back to the sidebar.** With bookmarking now handling quick-jump, Tags' filtering role is what matters — so it sits in the sidebar (under "Find") with the other surfaces instead of the toolbar. Closes #399.
+
 - **Clearer, honest sync messages.** A sync notice now distinguishes a benign reconcile ("A newer change from another device was applied here" — amber, auto-dismisses) from a real failure ("Couldn't save your last change" — red, **stays put with a Retry**), so a change that didn't reach the server never quietly reads as saved. Closes #394.
 
 - **Project Details autosaves.** Editing a project's details inline on its workbench no longer needs a Save click — text fields (title, notes, due) save when you leave them, and status/tags/resources save as you change them, with a quiet "Saved" indicator. (The action editor dialog keeps its explicit Save/Cancel.) Closes #390.

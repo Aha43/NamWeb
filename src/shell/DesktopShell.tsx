@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen, Plus, Search, Tag, Target } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Plus, Search, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -68,13 +68,6 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             </Button>
           </Tooltip>
           <ToolbarSearch />
-          <Tooltip label="Tags">
-            <Button asChild variant="ghost" size="icon" aria-label="Tags">
-              <NavLink to="/tags">
-                <Tag />
-              </NavLink>
-            </Button>
-          </Tooltip>
           <BookmarkBar />
         </div>
         <div className="flex shrink-0 items-center gap-1">
