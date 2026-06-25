@@ -20,7 +20,7 @@ export function ReorderControls({
           aria-label={`Move ${title} up`}
           disabled={!onUp}
           onClick={onUp}
-          className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+          className="rounded-sm p-1 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
         >
           <ChevronUp className="h-4 w-4" />
         </button>
@@ -31,7 +31,7 @@ export function ReorderControls({
           aria-label={`Move ${title} down`}
           disabled={!onDown}
           onClick={onDown}
-          className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
+          className="rounded-sm p-1 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
         >
           <ChevronDown className="h-4 w-4" />
         </button>

@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Undo a delete.** Deleting an action or project (single, in Focus, or several at once in Done) now shows a brief **"Deleted … · Undo"** toast that puts it back — the whole subtree and any blocked-by links restored to where they were. Closes #392.
 
+- **Bookmarks on your phone.** The "More" sheet now lists your bookmarks (labeled rows, tap to jump, tap × to remove) — previously they were desktop-only. Plus friendlier touch targets: row action buttons (copy/rename/delete), the reorder chevrons, and the bookmark remove ✕ are bigger and now reveal on touch instead of depending on hover. Closes #393.
+
 - **App-wide keyboard shortcuts.** Press <kbd>c</kbd> to capture, <kbd>/</kbd> to jump to search, <kbd>?</kbd> to open Help, and <kbd>g</kbd> then a letter to go to a view (e.g. `g n` for Next, `g b` for Backlog). They never fire while you're typing in a field, and leave Ctrl/Cmd combos to the browser. Documented in Help. Closes #384.
 
 - **Act on a Focus card with the keyboard.** In Focus mode, press <kbd>e</kbd> to open the editor, <kbd>r</kbd> to rename, <kbd>f</kbd> to move (re-triage to the other queue), and <kbd>Del</kbd> to delete (with the usual confirm) — alongside the existing arrows/Space/Esc. Each is a no-op when that action isn't available for the deck. Closes #385.

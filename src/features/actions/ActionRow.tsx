@@ -122,14 +122,14 @@ export function ActionRow({
         )}
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <CopyButton value={row.title} label={`name "${row.title}"`} className="p-1.5" />
+        <CopyButton value={row.title} label={`name "${row.title}"`} className="p-2" />
         {onRename && !renaming && (
           <Tooltip label={`Rename ${row.title}`}>
             <button
               type="button"
               aria-label={`Rename ${row.title}`}
               onClick={() => setRenaming(true)}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
@@ -145,7 +145,7 @@ export function ActionRow({
                 : `Delete "${row.title}"?`
             }
             onConfirm={onDelete}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+            className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </ConfirmButton>

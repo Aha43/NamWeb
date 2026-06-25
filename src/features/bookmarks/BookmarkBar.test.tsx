@@ -76,6 +76,17 @@ describe('BookmarkBar', () => {
     const button = screen.getByRole('button', { name: 'Go to bookmark: Vacation' });
     expect(button).toBeDisabled();
   });
+
+  it('list variant shows visible labels and navigates + fires onNavigate (phone)', () => {
+    const onNavigate = vi.fn();
+    const workspace = ws([{ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' }]);
+    renderWithWs(<BookmarkBar variant="list" onNavigate={onNavigate} />, workspace);
+    // The label is visible text (not just a tooltip) for touch.
+    expect(screen.getByText('#home')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Go to bookmark: #home' }));
+    expect(screen.getByTestId('path').textContent).toBe('/tags?tags=home');
+    expect(onNavigate).toHaveBeenCalled();
+  });
 });
 
 describe('AddBookmarkButton', () => {

@@ -13,6 +13,9 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
+import { BookmarkBar } from '@/features/bookmarks/BookmarkBar';
+import { bookmarksOf } from '@/features/bookmarks/bookmarks';
+import { useWorkspaceContext } from '@/store/workspace-context';
 import { cn } from '@/lib/utils';
 import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
 import { MORE_GROUPS } from './nav';
@@ -105,6 +108,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
                 ))}
               </div>
             ))}
+            <MoreBookmarks onNavigate={() => setMoreOpen(false)} />
           </nav>
 
           <NavLink
@@ -140,6 +144,20 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
           </div>
         </SheetContent>
       </Sheet>
+    </div>
+  );
+}
+
+/** The Bookmarks group in the More sheet — only when there are any (BookmarkBar self-hides too). */
+function MoreBookmarks({ onNavigate }: { onNavigate: () => void }) {
+  const { document } = useWorkspaceContext();
+  if (!document || bookmarksOf(document).length === 0) return null;
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
+        Bookmarks
+      </span>
+      <BookmarkBar variant="list" onNavigate={onNavigate} />
     </div>
   );
 }
