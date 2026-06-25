@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { cn } from '@/lib/utils';
+import { TOUCH_TARGET } from '@/lib/touch';
 import { formatAge } from '@/lib/dates';
 import { InlineRename } from '../actions/InlineRename';
 import type { NamNode } from '../../domain/types';
@@ -100,7 +101,7 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
                   type="button"
                   aria-label={`Rename ${item.title}`}
                   onClick={() => setRenamingId(item.id)}
-                  className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
@@ -117,7 +118,7 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
                 type="button"
                 aria-label={`Delete ${item.title}`}
                 onClick={() => onDelete(item.id)}
-                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+                className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive', TOUCH_TARGET)}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
