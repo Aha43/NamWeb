@@ -49,11 +49,13 @@ export interface NavGroup {
 
 /** Desktop sidebar, grouped so the eye gets short sections instead of one long list. **Capture** and
  *  **Focus** are promoted to buttons above the list (the two "do" actions, mirroring the phone), and
- *  **Tags** + **Search** live in the toolbar — so none of those appear here. */
+ *  **Search** lives in the toolbar. **Tags** sits here under "Find" — with bookmarking owning
+ *  quick-jump, Tags' filtering role is what matters, so it belongs with the surfaces. */
 export const SIDEBAR_GROUPS: NavGroup[] = [
   { items: [inbox, next] },
   { label: 'Views', items: [backlog, due, blocked, done] },
   { label: 'Organize', items: [projects, goals, templates] },
+  { label: 'Find', items: [tags] },
 ];
 
 /** Phone "More" sheet: the surfaces that aren't on the bottom bar (Inbox / Next / Focus + Capture),
