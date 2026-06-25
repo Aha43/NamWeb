@@ -83,6 +83,10 @@ export interface ProjectWorkbenchProps {
   moveTargets?: (id: string) => { id: string; label: string }[];
   /** Make a sub-project a child of `targetId` (or top-level). */
   onMoveInto?: (id: string, targetId: string) => void;
+  /** Candidate destinations to move an action to: parent project / sibling projects / Free actions. */
+  actionMoveTargets?: (id: string) => { id: string; label: string }[];
+  /** Move an action under `targetId` (a project, or the Free-actions root). */
+  onMoveActionInto?: (id: string, targetId: string) => void;
   /** Hand-order a direct action within the project (reorders the project's childIds). */
   onMoveAction?: (id: string, direction: MoveDirection) => void;
   /** Hand-order a direct sub-project within the project. */
@@ -156,6 +160,8 @@ export function ProjectWorkbench({
   onRename,
   moveTargets,
   onMoveInto,
+  actionMoveTargets,
+  onMoveActionInto,
   onMoveAction,
   onMoveSubProject,
   onReorderActions,
@@ -211,6 +217,12 @@ export function ProjectWorkbench({
     onAddTagToActions?.([...selected], tag);
     setSelected(new Set());
   };
+  const bulkMove = (targetId: string) => {
+    for (const id of selected) onMoveActionInto?.(id, targetId);
+    setSelected(new Set());
+  };
+  // All listed actions are direct children of this project, so they share the same destinations.
+  const moveActionTargets = actionMoveTargets && actions[0] ? actionMoveTargets(actions[0].id) : [];
   // Delete the project's own done actions (direct only, no recursion) via a modal confirm.
   const doneActions = actions.filter((a) => a.status === 'DONE');
   const [deleteDoneOpen, setDeleteDoneOpen] = useState(false);
@@ -467,6 +479,23 @@ export function ProjectWorkbench({
                       <DropdownMenuItem onSelect={() => bulkSetStatus('DONE')}>Done</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                  {onMoveActionInto && moveActionTargets.length > 0 && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        disabled={selected.size === 0}
+                        className="rounded-md px-2 py-0.5 font-medium text-foreground outline-hidden hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                      >
+                        Move to ▾
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                        {moveActionTargets.map((t) => (
+                          <DropdownMenuItem key={t.id} onSelect={() => bulkMove(t.id)}>
+                            {t.label}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                   {onAddTagToActions && (
                     <PromptButton
                       aria-label="Add tag to selected"
@@ -520,6 +549,28 @@ export function ProjectWorkbench({
                           onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
                           onDown={index < actions.length - 1 ? () => onMoveAction(row.id, 'down') : undefined}
                         />
+                      )}
+                      {onMoveActionInto && moveActionTargets.length > 0 && (
+                        <DropdownMenu>
+                          <Tooltip label="Move to another project">
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label={`Move ${row.title} to another project`}
+                                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                              >
+                                <FolderInput className="h-3.5 w-3.5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                          </Tooltip>
+                          <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
+                            {moveActionTargets.map((t) => (
+                              <DropdownMenuItem key={t.id} onSelect={() => onMoveActionInto(row.id, t.id)}>
+                                {t.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                       <StatusMenu
                         status={row.status}

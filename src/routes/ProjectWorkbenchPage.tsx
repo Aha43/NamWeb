@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { allTags, buildPath, effectiveTags, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
+import { actionMoveTargets, allTags, buildPath, effectiveTags, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
@@ -230,6 +230,8 @@ export function ProjectWorkbenchPage() {
       }}
       moveTargets={(subId) => projectMoveTargets(document, subId)}
       onMoveInto={(subId, targetId) => dispatch({ type: 'moveNode', id: subId, newParentId: targetId, now: nowIso() })}
+      actionMoveTargets={(actionId) => actionMoveTargets(document, actionId)}
+      onMoveActionInto={(actionId, targetId) => dispatch({ type: 'moveNode', id: actionId, newParentId: targetId, now: nowIso() })}
       onConvertToAction={
         project.childIds.length === 0
           ? () => dispatch({ type: 'convertProjectToAction', id, status: 'NEXT', now: nowIso() })
