@@ -326,11 +326,11 @@ export function buildServer(
   server.registerTool(
     'add_action',
     {
-      description: 'Add an action to a project. Defaults to status NEXT.',
+      description: 'Add an action to a project. Defaults to status BACKLOG (matches NamDesktop).',
       inputSchema: {
         project_id: z.string().describe('UUID of the project to add the action to'),
         title: z.string().describe('Action title'),
-        status: z.enum(NODE_STATUSES).optional().describe('Defaults to NEXT'),
+        status: z.enum(NODE_STATUSES).optional().describe('Defaults to BACKLOG'),
       },
     },
     ({ project_id, title, status }) =>
@@ -341,7 +341,7 @@ export function buildServer(
           parentId: project_id,
           id: newId(),
           title,
-          status: status ?? 'NEXT',
+          status: status ?? 'BACKLOG',
           now: nowIso(),
         };
       }),
