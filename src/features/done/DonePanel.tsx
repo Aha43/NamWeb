@@ -4,6 +4,7 @@ import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { TOUCH_TARGET } from '@/lib/touch';
 import type { ActionRowData } from '../actions/rows';
 
 export interface DonePanelProps {
@@ -67,6 +68,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
             onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
             className={cn(
               'rounded-md p-1 hover:bg-accent hover:text-foreground',
+              TOUCH_TARGET,
               selectMode ? 'text-foreground' : 'text-muted-foreground',
             )}
           >

@@ -3,6 +3,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { Button } from './button';
 import { Tooltip } from './tooltip';
 import { cn } from '@/lib/utils';
+import { TOUCH_TARGET } from '@/lib/touch';
 
 const MAX_SUGGESTIONS = 8;
 
@@ -75,7 +76,7 @@ export function PromptButton({
     >
       <Tooltip label={tip}>
         <Popover.Trigger asChild>
-          <button type="button" {...trigger}>
+          <button type="button" {...trigger} className={cn(TOUCH_TARGET, trigger.className)}>
             {children}
           </button>
         </Popover.Trigger>

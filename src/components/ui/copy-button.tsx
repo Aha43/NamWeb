@@ -1,6 +1,7 @@
 import { Check, Copy } from 'lucide-react';
 import { useCopyToClipboard } from '@/lib/useCopyToClipboard';
 import { cn } from '@/lib/utils';
+import { TOUCH_TARGET } from '@/lib/touch';
 
 /**
  * A small icon button that copies `value` to the clipboard, flashing a check on success.
@@ -18,6 +19,7 @@ export function CopyButton({ value, label, className }: { value: string; label: 
       onClick={() => copy(value)}
       className={cn(
         'rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
+        TOUCH_TARGET,
         className,
       )}
     >
