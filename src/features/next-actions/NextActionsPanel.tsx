@@ -58,24 +58,27 @@ export function NextActionsPanel({
 
   return (
     <section>
-      {onAdd && (
-        <form onSubmit={submitAdd} className="mb-4 flex gap-2">
-          <input
-            aria-label="Add a next action"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Add a next action…"
-            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
-          />
-          <AddPositionToggle />
-          <Button type="submit">Add</Button>
-        </form>
-      )}
-      {sortMode && onCycleSort && rows.length > 0 && (
-        <div className="mb-2 flex justify-end">
-          <SortButton mode={sortMode} onCycle={onCycleSort} />
-        </div>
-      )}
+      {/* Pin the add box + sort so you can always capture/sort while the list scrolls under. */}
+      <div className="sticky top-0 z-10 bg-background pt-1">
+        {onAdd && (
+          <form onSubmit={submitAdd} className="mb-4 flex gap-2">
+            <input
+              aria-label="Add a next action"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Add a next action…"
+              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
+            />
+            <AddPositionToggle />
+            <Button type="submit">Add</Button>
+          </form>
+        )}
+        {sortMode && onCycleSort && rows.length > 0 && (
+          <div className="mb-2 flex justify-end">
+            <SortButton mode={sortMode} onCycle={onCycleSort} />
+          </div>
+        )}
+      </div>
       {rows.length === 0 ? (
         <EmptyState hint="The things you've decided to do now. Add one above, or capture a thought and process it to Next.">
           No next actions yet
