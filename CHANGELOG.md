@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **See an item's notes on hover.** Action/project rows with a description now show it as a tooltip when you hover the title (long notes are truncated). Closes #203.
+
 - **Undo a delete.** Deleting an action or project (single, in Focus, or several at once in Done) now shows a brief **"Deleted … · Undo"** toast that puts it back — the whole subtree and any blocked-by links restored to where they were. Closes #392.
 
 - **Bookmarks on your phone.** The "More" sheet now lists your bookmarks (labeled rows, tap to jump, tap × to remove) — previously they were desktop-only. Plus friendlier touch targets: row action buttons (copy/rename/delete), the reorder chevrons, and the bookmark remove ✕ are bigger and now reveal on touch instead of depending on hover. Closes #393.

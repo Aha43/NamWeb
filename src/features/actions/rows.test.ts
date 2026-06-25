@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from '@/domain/types';
-import { toActionRow } from './rows';
+import { descriptionTooltip, toActionRow } from './rows';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -29,5 +29,29 @@ describe('toActionRow', () => {
     const row = toActionRow(doc(), doc().nodes['a']);
     expect(row.tags).toEqual(['urgent']); // own only
     expect(row.inheritedTags).toEqual(['office']); // inherited from the project, not duplicated
+  });
+
+  it('carries the node description', () => {
+    const d = doc();
+    d.nodes['a'].description = 'some notes';
+    expect(toActionRow(d, d.nodes['a']).description).toBe('some notes');
+  });
+});
+
+describe('descriptionTooltip', () => {
+  it('returns undefined for empty/whitespace/null', () => {
+    expect(descriptionTooltip(null)).toBeUndefined();
+    expect(descriptionTooltip('')).toBeUndefined();
+    expect(descriptionTooltip('   ')).toBeUndefined();
+  });
+
+  it('returns a short description as-is (trimmed)', () => {
+    expect(descriptionTooltip('  hello  ')).toBe('hello');
+  });
+
+  it('truncates a long description to ≤200 chars with an ellipsis', () => {
+    const tip = descriptionTooltip('x'.repeat(300))!;
+    expect(tip.length).toBeLessThanOrEqual(200);
+    expect(tip.endsWith('…')).toBe(true);
   });
 });
