@@ -31,10 +31,14 @@ function renderContent(value: UseWorkspace) {
 }
 
 describe('ShellContent — no workspace yet', () => {
-  it('offers to bootstrap a workspace instead of pointing at the desktop app', () => {
-    renderContent(ws({ noRemote: true }));
+  it('offers to bootstrap a fresh workspace and reassures desktop-first users (Check again re-pulls)', () => {
+    const retry = vi.fn();
+    renderContent(ws({ noRemote: true, retry }));
     expect(screen.getByRole('button', { name: 'Create workspace' })).toBeInTheDocument();
-    expect(screen.queryByText(/desktop app/i)).not.toBeInTheDocument();
+    // Desktop-first users aren't stranded: a reassurance + a "Check again" that re-pulls.
+    expect(screen.getByText(/already use nam on the desktop/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Check again' }));
+    expect(retry).toHaveBeenCalledOnce();
   });
 
   it('invokes createWorkspace when the button is clicked', () => {
