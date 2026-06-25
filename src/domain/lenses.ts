@@ -170,6 +170,38 @@ export interface ProjectMoveTarget {
 }
 
 /**
+ * Where an **action** can be moved (from the project it's in): its **parent project** (one level up;
+ * "Free actions" when the action sits in a top-level project), its **sibling projects** (other
+ * projects under the same parent), and **Free actions** (the loose-actions root). Excludes archived
+ * projects and the action's current container. Actions only — empty for projects.
+ */
+export function actionMoveTargets(doc: WorkspaceDocument, actionId: string): ProjectMoveTarget[] {
+  const action = doc.nodes[actionId];
+  if (!action || action.project) return [];
+  const containerId = Object.values(doc.nodes).find((n) => n.childIds.includes(actionId))?.id;
+  if (!containerId) return [];
+  const container = doc.nodes[containerId];
+  const archived = archivedProjectIds(doc);
+  const targets: ProjectMoveTarget[] = [];
+  const labelFor = (n: NamNode) => [...projectPath(doc, n.id), n.title].join(' › ');
+
+  if (container?.project) {
+    const parentId = Object.values(doc.nodes).find((n) => n.childIds.includes(containerId))?.id;
+    const parent = parentId ? doc.nodes[parentId] : undefined;
+    // Move up to the enclosing project (only when the container's parent is itself a project).
+    if (parent?.project && !archived.has(parent.id)) targets.push({ id: parent.id, label: labelFor(parent) });
+    // Sibling projects: other projects under the container's parent.
+    for (const cid of parent?.childIds ?? []) {
+      const n = doc.nodes[cid];
+      if (n?.project && cid !== containerId && !archived.has(cid)) targets.push({ id: cid, label: labelFor(n) });
+    }
+  }
+  // Free actions (the loose-actions root) — unless the action is already there.
+  if (containerId !== doc.nextActionsNodeId) targets.push({ id: doc.nextActionsNodeId, label: 'Free actions' });
+  return targets;
+}
+
+/**
  * Projects that `id` can be moved into (made a sub-project of): a **"Top level"** entry first when
  * `id` is currently nested, then its **current project siblings** (same parent), then every other
  * project labelled by path. Excludes `id` itself, its own subtree, and its current parent.
