@@ -103,6 +103,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **The add box stays put while the list scrolls.** On Inbox, Next, and Backlog, the add box (and the sort/Process controls) is pinned at the top — scroll a long list and you can still capture or add without scrolling back up. Closes #149.
 
+- **Desktop-first users aren't stranded on the no-workspace screen.** When you sign in and no workspace has synced yet, the welcome screen now reassures you that desktop data appears here once it's pushed to the cloud (same account), with a **Check again** button to re-pull — instead of only offering to create a fresh (empty) one. Closes #143.
+
 - **Tags moved back to the sidebar.** With bookmarking now handling quick-jump, Tags' filtering role is what matters — so it sits in the sidebar (under "Find") with the other surfaces instead of the toolbar. Closes #399.
 
 - **Bigger tap targets on touch.** Icon buttons (copy, delete/confirm, rename/prompt, the Done select toggle, and `size="icon"` buttons) now guarantee a ~44px hit area on touch devices, while staying compact for mouse. Closes #310.

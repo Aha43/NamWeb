@@ -21,10 +21,19 @@ export function ShellContent() {
   if (ws.noRemote) {
     return (
       <Centered>
-        <p className="text-foreground">Welcome to Nam 👋</p>
-        <p className="mt-1">Let's set up your workspace — it takes a second.</p>
+        <p className="text-foreground">Welcome to NAM 👋</p>
+        <p className="mt-1">Start a fresh workspace — it takes a second.</p>
         <Button className="mt-4" onClick={ws.createWorkspace} disabled={ws.creating}>
           {ws.creating ? 'Creating…' : 'Create workspace'}
+        </Button>
+        {/* Don't strand desktop-first users: their data appears here once the desktop app has
+            pushed to the cloud — they just need to wait/re-check, not create a fresh (empty) one. */}
+        <p className="mt-6 border-t border-border pt-4 text-xs">
+          Already use NAM on the desktop? Your work shows up here once the desktop app has synced to
+          the cloud — make sure you're signed in with the same account, then check again.
+        </p>
+        <Button variant="outline" size="sm" className="mt-2" onClick={ws.retry} disabled={ws.creating}>
+          Check again
         </Button>
       </Centered>
     );
