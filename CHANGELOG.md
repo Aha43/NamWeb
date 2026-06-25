@@ -99,6 +99,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **MCP `add_action` defaults to Backlog.** New actions added via the MCP tool now default to **BACKLOG** (was NEXT), matching NamDesktop — capture first, promote to Next deliberately. Pass `status` to override. Closes #211.
+
 - **Tags moved back to the sidebar.** With bookmarking now handling quick-jump, Tags' filtering role is what matters — so it sits in the sidebar (under "Find") with the other surfaces instead of the toolbar. Closes #399.
 
 - **Bigger tap targets on touch.** Icon buttons (copy, delete/confirm, rename/prompt, the Done select toggle, and `size="icon"` buttons) now guarantee a ~44px hit area on touch devices, while staying compact for mouse. Closes #310.

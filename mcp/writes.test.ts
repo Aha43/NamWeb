@@ -137,19 +137,19 @@ describe('NamWeb MCP write tools', () => {
     expect(commitIntent).not.toHaveBeenCalled();
   });
 
-  it('add_action defaults to NEXT and attaches to the project', async () => {
+  it('add_action defaults to BACKLOG and attaches to the project (matches NamDesktop)', async () => {
     await call('add_action', { project_id: 'p1', title: 'Do' });
     expect(committedIntent()).toMatchObject({
       type: 'addAction',
       parentId: 'p1',
-      status: 'NEXT',
+      status: 'BACKLOG',
       title: 'Do',
     });
   });
 
   it('add_action honours an explicit status', async () => {
-    await call('add_action', { project_id: 'p1', title: 'Later', status: 'BACKLOG' });
-    expect(committedIntent()).toMatchObject({ type: 'addAction', status: 'BACKLOG' });
+    await call('add_action', { project_id: 'p1', title: 'Now', status: 'NEXT' });
+    expect(committedIntent()).toMatchObject({ type: 'addAction', status: 'NEXT' });
   });
 
   it('add_next_action roots a NEXT action under nextActionsNodeId', async () => {
