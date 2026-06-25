@@ -1,26 +1,29 @@
 # NamWeb
 
-> The web companion to [NamDesktop](https://github.com/Aha43/NamDesktop) — a fast, ubiquitous
-> capture and triage surface for when you are away from your main machine.
+> A fast, GTD-inspired **capture, triage, and focus** app for the web — on your phone, tablet, or
+> laptop. Standalone and usable on its own; optionally syncs with [NamDesktop](https://github.com/Aha43/NamDesktop).
 
 ---
 
 ## What is NamWeb?
 
-NamDesktop is a local-first, GTD-inspired desktop app where your work lives as a single node
-tree. NamWeb is its **lightweight companion**: the thing you reach for on a phone or tablet to
-capture a thought, see what is next, and tick something done — always in sync with the desktop
-through the shared cloud backend.
+NamWeb is a full web app for getting things out of your head and acting on them: capture a thought,
+clarify it into a **Next** action, a **Backlog** item, or a **Project**, then **Focus** through your
+work one card at a time. Your work lives as a single node tree — projects, sub-projects, and actions
+with tags, due dates, and prerequisites.
 
-It is **not** a replacement for the desktop app. Serious project management (workbench, drag
-ordering, tags, Mission Control, templates) stays on the desktop. NamWeb is deliberately small:
-fast to open, fast to use, always in sync.
+You can use NamWeb entirely on its own (create an account and go — or try the no-account
+**demo**). When you also run **NamDesktop**, the two stay in sync through a shared cloud backend, so
+the same workspace is live on your desktop and on the web.
+
+NamDesktop remains the heavier desktop surface for some power workflows (e.g. richer Mission
+Control), but NamWeb is a first-class product, not a thin remote: capture, clarify, projects and a
+workbench, tags and filtering, Focus, bookmarks, keyboard shortcuts, and undo all live here.
 
 ## Status
 
-**Bootstrapping.** This repo currently holds project conventions and the design thread carried
-over from NamDesktop. The frontend stack and first epics (web API, web app) are decided in a
-planning session before implementation begins — see `docs/features/web-app/design.md`.
+**Live.** NamWeb is in active use and shipping features continuously. See `CHANGELOG.md` for what's
+landed and `docs/features/` for design docs.
 
 ## Relationship to NamDesktop
 
