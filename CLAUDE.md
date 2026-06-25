@@ -58,6 +58,10 @@ target the local Supabase stack run from NamDesktop (`make supabase-start`).
   Include `Closes #<number>` in every non-chore commit.
 - **Always check the current branch before committing.** If on `main`, warn and stop.
   All feature work must go on a feature branch.
+- **`main` is branch-protected** (since 2026-06-25): direct pushes are rejected — every change lands
+  via a PR, the **`check`** CI job (lint + typecheck + test + build) must pass, and history is linear
+  (squash-merge). No required reviews (solo-friendly: you can merge your own PR once `check` is green);
+  admins can't bypass, so don't rely on direct-to-`main` pushes.
 - **Default feature branch name is `feature/next`.** Rename it to something descriptive
   before opening a PR.
 - When completing a GitHub issue, update the `## [Unreleased]` section of `CHANGELOG.md`
