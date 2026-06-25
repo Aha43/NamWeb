@@ -42,7 +42,44 @@ export type Intent =
   | { type: 'seedProject'; parentId: string; nodes: SeedNode[]; now: string }
   | { type: 'groupIntoSubProject'; parentId: string; subProjectId: string; title: string; actionIds: string[]; now: string }
   | { type: 'deleteRecursive'; id: string }
-  | { type: 'deleteLeaf'; id: string };
+  | { type: 'deleteLeaf'; id: string }
+  | { type: 'restoreNodes'; capture: DeletionCapture };
+
+/**
+ * Everything needed to put a deleted node (and its subtree) back exactly where it was — captured
+ * *before* the delete so an Undo can replay it. `nodes[0]` is the subtree root; `blockedRefs` are the
+ * external `blockedBy` links that `deleteRecursive` strips from other nodes.
+ */
+export interface DeletionCapture {
+  nodes: NamNode[];
+  parentId: string;
+  index: number;
+  blockedRefs: { nodeId: string; blockedId: string }[];
+}
+
+/** Snapshot a node + its subtree for a possible Undo. Returns null if the node isn't there. */
+export function captureDeletion(doc: WorkspaceDocument, id: string): DeletionCapture | null {
+  const node = doc.nodes[id];
+  if (!node) return null;
+  const subtree = subtreeIds(doc, id);
+  // Root first, so restore re-attaches the right id; the rest are descendants (order doesn't matter).
+  const nodes = [node, ...[...subtree].filter((n) => n !== id).map((n) => doc.nodes[n])]
+    .filter((n): n is NamNode => Boolean(n))
+    .map((n) => structuredClone(n));
+  const parentId = parentOf(doc, id);
+  const parent = parentId ? doc.nodes[parentId] : undefined;
+  const blockedRefs: { nodeId: string; blockedId: string }[] = [];
+  for (const other of Object.values(doc.nodes)) {
+    if (subtree.has(other.id)) continue;
+    for (const b of other.blockedBy) if (subtree.has(b)) blockedRefs.push({ nodeId: other.id, blockedId: b });
+  }
+  return {
+    nodes,
+    parentId: parentId ?? doc.rootNodeId,
+    index: parent ? Math.max(0, parent.childIds.indexOf(id)) : 0,
+    blockedRefs,
+  };
+}
 
 /** Trimmed, lower-cased, de-duplicated, non-empty — mirrors NamDesktop tag handling. */
 export function normalizeTags(tags: string[]): string[] {
@@ -198,7 +235,8 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'renameTag' ||
     intent.type === 'deleteTag' ||
     intent.type === 'addBookmark' ||
-    intent.type === 'removeBookmark'
+    intent.type === 'removeBookmark' ||
+    intent.type === 'restoreNodes'
   ) {
     return true; // operate on a document-level list, not a node
   }
@@ -503,6 +541,22 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!next.nodes[intent.id]) return next;
       detach(next, intent.id);
       delete next.nodes[intent.id];
+      return next;
+    }
+    case 'restoreNodes': {
+      const { nodes, parentId, index, blockedRefs } = intent.capture;
+      const root = nodes[0];
+      if (!root || next.nodes[root.id]) return next; // nothing to restore, or already back
+      for (const node of nodes) next.nodes[node.id] = structuredClone(node);
+      const parent = next.nodes[parentId] ?? next.nodes[next.rootNodeId];
+      if (parent && !parent.childIds.includes(root.id)) {
+        parent.childIds.splice(Math.min(index, parent.childIds.length), 0, root.id);
+      }
+      // Re-attach external blockedBy links that the delete stripped.
+      for (const ref of blockedRefs) {
+        const n = next.nodes[ref.nodeId];
+        if (n && !n.blockedBy.includes(ref.blockedId)) n.blockedBy.push(ref.blockedId);
+      }
       return next;
     }
   }
