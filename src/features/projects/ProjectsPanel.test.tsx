@@ -38,6 +38,12 @@ describe('ProjectsPanel', () => {
     expect(onOpen).toHaveBeenCalledWith('p');
   });
 
+  it('still opens a project that has a description (notes ride as a hover tooltip)', () => {
+    const { onOpen } = setup([project('p', 'Kitchen reno', { description: 'Full gut, 8 weeks' })]);
+    fireEvent.click(screen.getByRole('button', { name: 'Open Kitchen reno' }));
+    expect(onOpen).toHaveBeenCalledWith('p');
+  });
+
   it('offers a copy-name button on each project row', () => {
     setup([project('p', 'Kitchen reno')]);
     expect(screen.getByRole('button', { name: 'Copy name "Kitchen reno"' })).toBeInTheDocument();

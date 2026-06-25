@@ -6,6 +6,7 @@ import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
+import { descriptionTooltip } from '../actions/rows';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -115,6 +116,7 @@ export function ProjectsPanel({
   const renderRow = (project: NamNode, index: number, drag?: SortableRowRender) => {
     const isArchived = project.status === 'ARCHIVED';
     const targets = onMoveInto && !isArchived && moveTargets ? moveTargets(project.id) : [];
+    const descTip = descriptionTooltip(project.description);
     return (
     <li
       ref={drag?.setNodeRef}
@@ -131,6 +133,7 @@ export function ProjectsPanel({
         </div>
       ) : (
         <>
+          <Tooltip label={descTip}>
           <button
             type="button"
             aria-label={`Open ${project.title}`}
@@ -138,7 +141,11 @@ export function ProjectsPanel({
             className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
           >
             <span className="min-w-0 flex-1">
-              <TruncatedTitle text={project.title} className="text-sm text-foreground" />
+              {descTip ? (
+                <span className="block truncate text-sm text-foreground">{project.title}</span>
+              ) : (
+                <TruncatedTitle text={project.title} className="text-sm text-foreground" />
+              )}
               {project.tags.length > 0 && (
                 <span className="mt-0.5 flex flex-wrap gap-1">
                   {project.tags.map((tag) => (
@@ -154,6 +161,7 @@ export function ProjectsPanel({
             )}
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
+          </Tooltip>
           <CopyButton value={project.title} label={`name "${project.title}"`} className="p-1.5" />
           {onRename && (
             <Tooltip label={`Rename ${project.title}`}>

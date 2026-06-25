@@ -4,7 +4,7 @@ import type { ActionRowData } from '../actions/rows';
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
 
 function actionRow(id: string, title: string): ActionRowData {
-  return { id, title, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null };
+  return { id, title, description: null, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null };
 }
 
 const columns: WorkbenchColumn[] = [

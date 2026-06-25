@@ -9,7 +9,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
 import { ProjectPathLinks } from './ProjectPathLinks';
-import type { ActionRowData } from './rows';
+import { descriptionTooltip, type ActionRowData } from './rows';
 
 const DUE_TONE: Record<DueTone, string> = {
   overdue: 'text-red-600 dark:text-red-400',
@@ -50,6 +50,24 @@ export function ActionRow({
   const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat) : null;
   const age = row.touchedAt ? formatAge(row.touchedAt) : null;
   const [renaming, setRenaming] = useState(false);
+
+  // When a row has notes, hovering its title shows them (truncated). Use a plain truncating title
+  // then (its own full-title tooltip would otherwise nest inside this one).
+  const descTip = descriptionTooltip(row.description);
+  const titleInner = descTip ? (
+    <span className="block truncate text-sm text-foreground">{row.title}</span>
+  ) : (
+    <TruncatedTitle text={row.title} className="text-sm text-foreground" />
+  );
+  const titleEl = onEdit ? (
+    // Click the title to open the editor (replaces the old slider/edit icon).
+    <button type="button" aria-label={`Edit ${row.title}`} onClick={onEdit} className="block w-full text-left">
+      {titleInner}
+    </button>
+  ) : (
+    titleInner
+  );
+
   return (
     <li
       ref={dragRef}
@@ -73,18 +91,10 @@ export function ActionRow({
             onCommit={(t) => { onRename(t); setRenaming(false); }}
             onCancel={() => setRenaming(false)}
           />
-        ) : onEdit ? (
-          // Click the title to open the editor (replaces the old slider/edit icon).
-          <button
-            type="button"
-            aria-label={`Edit ${row.title}`}
-            onClick={onEdit}
-            className="block w-full text-left"
-          >
-            <TruncatedTitle text={row.title} className="text-sm text-foreground" />
-          </button>
+        ) : descTip ? (
+          <Tooltip label={descTip}>{titleEl}</Tooltip>
         ) : (
-          <TruncatedTitle text={row.title} className="text-sm text-foreground" />
+          titleEl
         )}
         {(row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || due || age || row.hasResources) && (
           <div className="mt-0.5 flex flex-wrap items-center gap-1">

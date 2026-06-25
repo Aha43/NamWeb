@@ -4,7 +4,7 @@ import type { ActionRowData } from '../actions/rows';
 import { DonePanel } from './DonePanel';
 
 function row(overrides: Partial<ActionRowData> = {}): ActionRowData {
-  return { id: 'a', title: 'Buy milk', status: 'DONE', path: [], tags: [], dueAt: null, touchedAt: null, ...overrides };
+  return { id: 'a', title: 'Buy milk', description: null, status: 'DONE', path: [], tags: [], dueAt: null, touchedAt: null, ...overrides };
 }
 
 describe('DonePanel', () => {

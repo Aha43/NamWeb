@@ -13,7 +13,7 @@ function pnode(id: string, title: string, partial: Partial<NamNode> = {}): NamNo
 }
 
 function actionRow(id: string, title: string): ActionRowData {
-  return { id, title, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null };
+  return { id, title, description: null, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null };
 }
 
 function setup(over: Partial<React.ComponentProps<typeof ProjectWorkbench>> = {}) {

@@ -5,7 +5,7 @@ import type { SavedView } from '../../domain/types';
 import { TagFilterPanel } from './TagFilterPanel';
 
 function row(id: string, title: string): ActionRowData {
-  return { id, title, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null };
+  return { id, title, description: null, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null };
 }
 
 function setup(over: Partial<React.ComponentProps<typeof TagFilterPanel>> = {}) {

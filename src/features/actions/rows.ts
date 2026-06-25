@@ -6,6 +6,8 @@ import type { ProjectPathSegment } from './ProjectPathLinks';
 export interface ActionRowData {
   id: string;
   title: string;
+  /** Free-text notes — shown as a row tooltip (truncated) when present. */
+  description: string | null;
   status: NodeStatus;
   /** Ancestor projects (top-most first) — id + title so each can link to its project. */
   path: ProjectPathSegment[];
@@ -21,10 +23,19 @@ export interface ActionRowData {
   descendantCount?: number;
 }
 
+/** The row title's hover tooltip: the node's notes, trimmed and length-capped — or undefined when
+ *  there are none (so no tooltip is armed). */
+export function descriptionTooltip(description: string | null): string | undefined {
+  const trimmed = description?.trim();
+  if (!trimmed) return undefined;
+  return trimmed.length > 200 ? `${trimmed.slice(0, 199)}…` : trimmed;
+}
+
 export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowData {
   return {
     id: node.id,
     title: node.title,
+    description: node.description,
     status: node.status,
     path: buildPath(doc, node.id).map((n) => ({ id: n.id, title: n.title })),
     tags: node.tags,

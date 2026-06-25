@@ -4,7 +4,7 @@ import type { ActionRowData } from '../actions/rows';
 import { DuePanel, type DueRowGroups } from './DuePanel';
 
 function row(id: string, title: string): ActionRowData {
-  return { id, title, status: 'NEXT', path: [], tags: [], dueAt: '2026-06-01', touchedAt: null };
+  return { id, title, description: null, status: 'NEXT', path: [], tags: [], dueAt: '2026-06-01', touchedAt: null };
 }
 
 const EMPTY: DueRowGroups = { overdue: [], today: [], thisWeek: [], later: [] };
