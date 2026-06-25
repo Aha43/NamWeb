@@ -9,6 +9,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
 import { ProjectPathLinks } from './ProjectPathLinks';
+import { TOUCH_TARGET } from '@/lib/touch';
 import { descriptionTooltip, type ActionRowData } from './rows';
 
 const DUE_TONE: Record<DueTone, string> = {
@@ -139,7 +140,7 @@ export function ActionRow({
               type="button"
               aria-label={`Rename ${row.title}`}
               onClick={() => setRenaming(true)}
-              className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+              className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>

@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react';
 import * as Popover from '@radix-ui/react-popover';
 import { Button } from './button';
 import { Tooltip } from './tooltip';
+import { cn } from '@/lib/utils';
+import { TOUCH_TARGET } from '@/lib/touch';
 
 /**
  * A button that asks for confirmation in a small popover **anchored to itself** — so the
@@ -31,7 +33,7 @@ export function ConfirmButton({
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Tooltip label={tip}>
         <Popover.Trigger asChild>
-          <button type="button" {...trigger}>
+          <button type="button" {...trigger} className={cn(TOUCH_TARGET, trigger.className)}>
             {children}
           </button>
         </Popover.Trigger>
