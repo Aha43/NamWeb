@@ -33,26 +33,29 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
 
   return (
     <section className="space-y-4">
-      <form onSubmit={submit} className="flex gap-2">
-        <input
-          aria-label="Quick add"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Add to inbox…"
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
-        />
-        <AddPositionToggle />
-        <Button type="submit">Add</Button>
-      </form>
+      {/* Pin the add box + Process button so they stay reachable while the inbox list scrolls. */}
+      <div className="sticky top-0 z-10 space-y-4 bg-background pt-1">
+        <form onSubmit={submit} className="flex gap-2">
+          <input
+            aria-label="Quick add"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Add to inbox…"
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
+          />
+          <AddPositionToggle />
+          <Button type="submit">Add</Button>
+        </form>
 
-      {onProcessAll && items.length > 0 && (
-        <div className="flex justify-end">
-          <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onProcessAll}>
-            <Target className="h-4 w-4 focus-glow" />
-            Process inbox ({items.length})
-          </Button>
-        </div>
-      )}
+        {onProcessAll && items.length > 0 && (
+          <div className="flex justify-end">
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onProcessAll}>
+              <Target className="h-4 w-4 focus-glow" />
+              Process inbox ({items.length})
+            </Button>
+          </div>
+        )}
+      </div>
 
       {items.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Inbox zero. Nothing to process.</p>

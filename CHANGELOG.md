@@ -101,6 +101,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **MCP `add_action` defaults to Backlog.** New actions added via the MCP tool now default to **BACKLOG** (was NEXT), matching NamDesktop — capture first, promote to Next deliberately. Pass `status` to override. Closes #211.
 
+- **The add box stays put while the list scrolls.** On Inbox, Next, and Backlog, the add box (and the sort/Process controls) is pinned at the top — scroll a long list and you can still capture or add without scrolling back up. Closes #149.
+
 - **Tags moved back to the sidebar.** With bookmarking now handling quick-jump, Tags' filtering role is what matters — so it sits in the sidebar (under "Find") with the other surfaces instead of the toolbar. Closes #399.
 
 - **Bigger tap targets on touch.** Icon buttons (copy, delete/confirm, rename/prompt, the Done select toggle, and `size="icon"` buttons) now guarantee a ~44px hit area on touch devices, while staying compact for mouse. Closes #310.

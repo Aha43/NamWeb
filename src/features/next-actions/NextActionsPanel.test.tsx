@@ -21,6 +21,15 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('No next actions yet')).toBeInTheDocument();
   });
 
+  it('pins the add box in a sticky header so it stays reachable while the list scrolls', () => {
+    render(
+      <MemoryRouter>
+        <NextActionsPanel rows={[row()]} onAdd={vi.fn()} onSetStatus={vi.fn()} onRename={vi.fn()} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByLabelText('Add a next action').closest('.sticky')).not.toBeNull();
+  });
+
   it('renders title, project path (as links), tags, and a formatted due hint', () => {
     setup([
       row({
