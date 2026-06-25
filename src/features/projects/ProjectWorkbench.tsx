@@ -24,7 +24,7 @@ import { ColumnView, type WorkbenchColumn } from './ColumnView';
 import { ProjectSummaryDialog } from './ProjectSummaryDialog';
 import { ProjectDetailsPanel } from './ProjectDetailsPanel';
 import type { ActionEdits } from '../actions/ActionDialog';
-import type { ActionRowData } from '../actions/rows';
+import { descriptionTooltip, type ActionRowData } from '../actions/rows';
 import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
 import type { NamNode, NodeStatus } from '../../domain/types';
@@ -221,6 +221,7 @@ export function ProjectWorkbench({
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
   const renderSub = (sub: NamNode, index: number, drag?: SortableRowRender) => {
     const subTargets = onMoveInto && moveTargets ? moveTargets(sub.id) : [];
+    const subDescTip = descriptionTooltip(sub.description);
     return (
     <li
       ref={drag?.setNodeRef}
@@ -237,18 +238,24 @@ export function ProjectWorkbench({
         </div>
       ) : (
         <>
+          <Tooltip label={subDescTip}>
           <button
             type="button"
             aria-label={`Open ${sub.title}`}
             onClick={() => onOpenProject(sub.id)}
             className="flex flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
           >
-            <TruncatedTitle text={sub.title} className="min-w-0 flex-1 text-sm text-foreground" />
+            {subDescTip ? (
+              <span className="block min-w-0 flex-1 truncate text-sm text-foreground">{sub.title}</span>
+            ) : (
+              <TruncatedTitle text={sub.title} className="min-w-0 flex-1 text-sm text-foreground" />
+            )}
             {sub.childIds.length > 0 && (
               <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
             )}
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
+          </Tooltip>
           <Tooltip label={`Rename ${sub.title}`}>
             <button
               type="button"

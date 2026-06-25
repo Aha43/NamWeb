@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- **See an item's notes on hover.** Action/project rows with a description now show it as a tooltip when you hover the title (long notes are truncated). Closes #203.
+- **See an item's notes on hover.** Action **and project** rows with a description now show it as a tooltip when you hover the title — in the action lists, the Projects list, and workbench sub-projects (long notes are truncated). Closes #203.
 
 - **Undo a delete.** Deleting an action or project (single, in Focus, or several at once in Done) now shows a brief **"Deleted … · Undo"** toast that puts it back — the whole subtree and any blocked-by links restored to where they were. Closes #392.
 
