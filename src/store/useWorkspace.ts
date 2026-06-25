@@ -14,6 +14,16 @@ import { applyIntent, type Intent } from '../domain/mutations';
 import { commitIntent, type WorkspaceSnapshot } from './commit';
 import type { WorkspaceDocument } from '../domain/types';
 
+/**
+ * A cross-surface sync notice. `info` (e.g. "applied a change from another device") auto-dismisses;
+ * `error` (a write didn't reach the server) is **sticky** and offers Retry — so a local-only change
+ * never silently reads as saved.
+ */
+export interface SyncNotice {
+  kind: 'info' | 'error';
+  message: string;
+}
+
 export interface UseWorkspace {
   document: WorkspaceDocument | null;
   loading: boolean;
@@ -25,15 +35,19 @@ export interface UseWorkspace {
   creating: boolean;
   /** Bootstrap an empty workspace for a brand-new (web-only) user. */
   createWorkspace: () => void;
-  /** Transient sync notice (conflict reloaded / sync failed); auto-dismisses, or clearNotice. */
-  notice: string | null;
+  /** Cross-surface sync notice — `info` auto-dismisses; `error` is sticky with Retry. */
+  notice: SyncNotice | null;
   clearNotice: () => void;
   /** Re-run the initial load (used by the load-error retry). */
   retry: () => void;
+  /** Re-push the current local document after a failed write (the error-notice Retry). */
+  retrySync: () => void;
   dispatch: (intent: Intent) => void;
 }
 
 const NOTICE_TIMEOUT_MS = 4000;
+const INFO_FROM_DEVICE = 'A newer change from another device was applied here.';
+const ERROR_SAVE = 'Couldn’t save your last change. Check your connection, then retry.';
 
 export function useWorkspace(): UseWorkspace {
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
@@ -41,10 +55,13 @@ export function useWorkspace(): UseWorkspace {
   const [error, setError] = useState<string | null>(null);
   const [noRemote, setNoRemote] = useState(false);
   const [creating, setCreating] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<SyncNotice | null>(null);
 
   // Last server-confirmed snapshot — the base every commit guards against.
   const committedRef = useRef<WorkspaceSnapshot | null>(null);
+  // Latest optimistic snapshot (incl. unsynced edits) — what Retry re-pushes after a failed write.
+  const snapshotRef = useRef<WorkspaceSnapshot | null>(null);
+  snapshotRef.current = snapshot;
   const queueRef = useRef<Promise<void>>(Promise.resolve());
   // Outstanding local commits. While > 0 a write owns the row, so we ignore
   // Realtime nudges (the version guard reconciles in-flight writes itself).
@@ -89,7 +106,7 @@ export function useWorkspace(): UseWorkspace {
     } else if (result.kind === 'conflict') {
       await load();
     } else {
-      setNotice(result.message ?? 'Could not create workspace');
+      setNotice({ kind: 'error', message: result.message ?? 'Could not create workspace.' });
     }
     setCreating(false);
   }, [load]);
@@ -108,7 +125,7 @@ export function useWorkspace(): UseWorkspace {
     const snap = { document: result.document, version: result.version };
     committedRef.current = snap;
     setSnapshot(snap);
-    setNotice('Updated from another device');
+    setNotice({ kind: 'info', message: 'Updated from another device.' });
   }, []);
 
   // Subscribe to the workspace change feed once we know the signed-in user.
@@ -130,9 +147,10 @@ export function useWorkspace(): UseWorkspace {
     };
   }, [reconcileFromRemote]);
 
-  // Auto-dismiss the transient sync notice.
+  // Auto-dismiss only `info` notices; errors stay until dismissed or retried (don't let a
+  // local-only change quietly disappear from view as if it had saved).
   useEffect(() => {
-    if (!notice) return;
+    if (notice?.kind !== 'info') return;
     const timer = setTimeout(() => setNotice(null), NOTICE_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [notice]);
@@ -149,7 +167,8 @@ export function useWorkspace(): UseWorkspace {
         const result = await commitIntent(supabase, workspaceNameRef.current, base, intent);
         committedRef.current = result.snapshot;
         setSnapshot(result.snapshot);
-        if (result.outcome !== 'synced') setNotice(result.message ?? 'Sync failed');
+        if (result.outcome === 'error') setNotice({ kind: 'error', message: ERROR_SAVE });
+        else if (result.outcome === 'reloaded') setNotice({ kind: 'info', message: INFO_FROM_DEVICE });
       })
       .finally(() => {
         inFlightRef.current -= 1;
@@ -158,6 +177,32 @@ export function useWorkspace(): UseWorkspace {
 
   const clearNotice = useCallback(() => setNotice(null), []);
   const retry = useCallback(() => void load(), [load]);
+
+  // Retry a failed write: re-push the current local document, guarded on the last confirmed version.
+  const retrySync = useCallback(() => {
+    const base = committedRef.current;
+    const current = snapshotRef.current;
+    if (!base || !current) return;
+    setNotice(null);
+    inFlightRef.current += 1;
+    queueRef.current = queueRef.current
+      .then(async () => {
+        const result = await push(supabase, workspaceNameRef.current, current.document, base.version);
+        if (result.kind === 'ok') {
+          const snap = { document: current.document, version: result.version };
+          committedRef.current = snap;
+          setSnapshot(snap);
+        } else if (result.kind === 'conflict') {
+          setNotice({ kind: 'info', message: INFO_FROM_DEVICE });
+          await load();
+        } else {
+          setNotice({ kind: 'error', message: ERROR_SAVE });
+        }
+      })
+      .finally(() => {
+        inFlightRef.current -= 1;
+      });
+  }, [load]);
 
   return {
     document: snapshot?.document ?? null,
@@ -169,6 +214,7 @@ export function useWorkspace(): UseWorkspace {
     notice,
     clearNotice,
     retry,
+    retrySync,
     dispatch,
   };
 }

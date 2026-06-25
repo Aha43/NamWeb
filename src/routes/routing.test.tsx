@@ -59,7 +59,7 @@ function workspace(overrides: Partial<UseWorkspace> = {}): UseWorkspace {
   return {
     document: document(), loading: false, error: null, noRemote: false, creating: false,
     createWorkspace: vi.fn(), notice: null,
-    clearNotice: vi.fn(), retry: vi.fn(), dispatch: vi.fn(), ...overrides,
+    clearNotice: vi.fn(), retry: vi.fn(), retrySync: vi.fn(), dispatch: vi.fn(), ...overrides,
   };
 }
 
@@ -211,8 +211,8 @@ describe('routing', () => {
 
   it('shows a dismissible sync notice across routes', () => {
     const clearNotice = vi.fn();
-    renderAt('/next', { notice: 'Reloaded — synced from another device', clearNotice });
-    expect(screen.getByRole('status')).toHaveTextContent('Reloaded');
+    renderAt('/next', { notice: { kind: 'info', message: 'Updated from another device.' }, clearNotice });
+    expect(screen.getByRole('status')).toHaveTextContent('Updated from another device');
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(clearNotice).toHaveBeenCalledOnce();
   });

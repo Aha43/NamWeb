@@ -57,7 +57,7 @@ describe('useWorkspace — Realtime signal-then-pull', () => {
     await waitFor(() =>
       expect((view.result.current.document as unknown as { tag: string }).tag).toBe('v2'),
     );
-    expect(view.result.current.notice).toBe('Updated from another device');
+    expect(view.result.current.notice).toEqual({ kind: 'info', message: 'Updated from another device.' });
   });
 
   it('ignores an echo at the same version', async () => {

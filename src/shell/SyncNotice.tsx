@@ -1,18 +1,36 @@
+import { cn } from '@/lib/utils';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
-/** Transient cross-surface sync notice (conflict reloaded / sync failed). */
+/**
+ * Cross-surface sync notice. `info` (amber) reports a benign reconcile and auto-dismisses; `error`
+ * (red) means a change didn't reach the server — it stays put and offers **Retry**, so a local-only
+ * edit never reads as saved.
+ */
 export function SyncNotice() {
   const ws = useWorkspaceContext();
   if (!ws.notice) return null;
+  const isError = ws.notice.kind === 'error';
   return (
     <div
-      role="status"
-      className="flex items-center justify-between bg-amber-100 px-4 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+      role={isError ? 'alert' : 'status'}
+      className={cn(
+        'flex items-center justify-between gap-3 px-4 py-2 text-sm',
+        isError
+          ? 'bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200'
+          : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
+      )}
     >
-      <span>{ws.notice}</span>
-      <button type="button" onClick={ws.clearNotice} className="font-medium hover:underline">
-        Dismiss
-      </button>
+      <span className="min-w-0">{ws.notice.message}</span>
+      <div className="flex shrink-0 items-center gap-3">
+        {isError && (
+          <button type="button" onClick={ws.retrySync} className="font-medium hover:underline">
+            Retry
+          </button>
+        )}
+        <button type="button" onClick={ws.clearNotice} className="font-medium hover:underline">
+          Dismiss
+        </button>
+      </div>
     </div>
   );
 }

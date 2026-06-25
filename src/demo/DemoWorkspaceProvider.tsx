@@ -56,6 +56,7 @@ export function DemoWorkspaceProvider({ onSignUp, children }: { onSignUp: () => 
     notice: null,
     clearNotice: () => {},
     retry: () => {},
+    retrySync: () => {},
     dispatch,
   };
 
