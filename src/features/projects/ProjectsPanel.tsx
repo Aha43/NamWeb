@@ -17,6 +17,9 @@ import { SortableList } from '@/components/dnd/SortableList';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { InlineRename } from '../actions/InlineRename';
 import { ReorderControls } from '../actions/ReorderControls';
+import { useIsDesktop } from '@/shell/useIsDesktop';
+import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
+import type { PickerTarget } from './picker/pickerModel';
 import type { NamNode } from '../../domain/types';
 
 /** A project the row can be moved into (made a sub-project of). */
@@ -80,6 +83,13 @@ export function ProjectsPanel({
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  // Desktop: the Finder-style move picker (#425). Phone keeps the inline dropdown.
+  const isDesktop = useIsDesktop();
+  const [moveRequest, setMoveRequest] = useState<{
+    title: string;
+    targets: PickerTarget[];
+    onConfirm: (id: string) => void;
+  } | null>(null);
 
   async function onImportFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -200,26 +210,45 @@ export function ProjectsPanel({
             </Tooltip>
           )}
           {onMoveInto && targets.length > 0 && (
-            <DropdownMenu>
+            isDesktop ? (
               <Tooltip label="Move into another project">
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label={`Move ${project.title} into another project`}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  >
-                    <FolderInput className="h-3.5 w-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
+                <button
+                  type="button"
+                  aria-label={`Move ${project.title} into another project`}
+                  onClick={() =>
+                    setMoveRequest({
+                      title: `Move "${project.title}" to…`,
+                      targets,
+                      onConfirm: (id) => onMoveInto(project.id, id),
+                    })
+                  }
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <FolderInput className="h-3.5 w-3.5" />
+                </button>
               </Tooltip>
-              <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
-                {targets.map((t) => (
-                  <DropdownMenuItem key={t.id} onSelect={() => onMoveInto(project.id, t.id)}>
-                    {t.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            ) : (
+              <DropdownMenu>
+                <Tooltip label="Move into another project">
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={`Move ${project.title} into another project`}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <FolderInput className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                </Tooltip>
+                <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
+                  {targets.map((t) => (
+                    <DropdownMenuItem key={t.id} onSelect={() => onMoveInto(project.id, t.id)}>
+                      {t.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
           )}
           {onDelete && (
             <ConfirmButton
@@ -328,6 +357,21 @@ export function ProjectsPanel({
             )}
           </ul>
         </SortableList>
+      )}
+
+      {moveRequest && (
+        <ProjectPickerDialog
+          open
+          onOpenChange={(o) => {
+            if (!o) setMoveRequest(null);
+          }}
+          title={moveRequest.title}
+          targets={moveRequest.targets}
+          onConfirm={(id) => {
+            moveRequest.onConfirm(id);
+            setMoveRequest(null);
+          }}
+        />
       )}
     </section>
   );
