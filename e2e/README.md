@@ -51,7 +51,7 @@ Overridable via env: `E2E_EMAIL`, `E2E_PASSWORD`, `E2E_BASE_URL`, `VITE_SUPABASE
 
 To drive failure states, set `test.use({ restOptions: … })`: `failFirstGet` makes the initial
 pull fail once (the load-error + Retry path), `alwaysConflict` makes every push conflict (so the
-"Reloaded" sync notice surfaces).
+reconcile sync notice — "A newer change from another device was applied here." — surfaces).
 
 No new infrastructure per surface — that's the point of the harness.
 

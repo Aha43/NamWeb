@@ -74,9 +74,18 @@ target the local Supabase stack run from NamDesktop (`make supabase-start`).
 
 ### Delivery: ship a PR with a Cloudflare preview link
 
-Once a feature is built and **locally green** (typecheck, lint, full unit suite, and the relevant
-mocked e2e journey all pass), **deliver it for review automatically — do not pause to ask "want me
-to commit?":**
+Once a feature is built and **locally green** (typecheck, lint, full unit suite, and the **full
+mocked e2e suite** — `npm run e2e:mocked`, not just the journey you touched — all pass), **deliver
+it for review automatically — do not pause to ask "want me to commit?":**
+
+> **Run the whole mocked e2e suite, not just the relevant journey.** Use `npm run e2e:mocked`
+> (mocked-desktop + mocked-phone — exactly what the nightly `e2e-mocked` job runs; network-mocked,
+> so no Supabase needed). It's ~10s and it is the gate that stops cross-feature drift: a change can
+> pass its own journey while silently breaking another (autosave removing a Save button, a new
+> copy/undo-toast colliding with a selector, a reworded notice). The nightly is only a catch-all;
+> `e2e-mocked` does **not** run per-PR, so local is the real gate. This applies to a **single issue
+> and to each auto-sprint branch** before its PR. (`npm run e2e` additionally runs the real-Supabase
+> smoke specs, which need the local stack up — not part of this gate.)
 
 1. Commit (`Closes #<number>` + the standard co-author line).
 2. Push the feature branch and open the PR.
@@ -111,8 +120,9 @@ A way to run a batch of related work end-to-end. The shape:
 4. **One issue → one independent branch off `main` → one PR.** Branches are independent (parallel,
    each independently mergeable), not stacked. If two issues genuinely conflict or depend on each
    other, flag it and sequence just those — don't silently stack everything.
-5. Each PR follows the **Delivery** loop above: locally green → commit → push → PR with **how to
-   test** + the **Cloudflare branch-preview link**.
+5. Each PR follows the **Delivery** loop above: locally green (incl. the **full mocked e2e suite**,
+   `npm run e2e:mocked`, on that branch — see Delivery) → commit → push → PR with **how to test** +
+   the **Cloudflare branch-preview link**.
 6. **Never merge during the sprint.** The deliverable is N PRs (each with test notes + a CF link)
    left open for the user. Merge only after they've tested — or explicitly said a PR can be merged.
 
@@ -121,7 +131,8 @@ A way to run a batch of related work end-to-end. The shape:
 A feature issue is complete when:
 - the feature works (verified by running it; for UI, on the Cloudflare PR preview)
 - relevant tests are added or updated
-- all existing tests pass
+- all existing tests pass — including the **full mocked e2e suite** (`npm run e2e:mocked`), not just
+  the journey you touched; if your change broke another journey, update it before delivering
 - no obvious domain invariant is weakened
 
 ## Process notes

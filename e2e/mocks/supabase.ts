@@ -107,7 +107,7 @@ export interface RestMockOptions {
   /** The first pull (initial load) returns a 500, then recovers — drives the error + Retry path. */
   failFirstGet?: boolean;
   /** Every push reports a guard-miss, so a commit runs the full conflict → replay → give-up
-   *  and surfaces the "Reloaded" sync notice. */
+   *  and surfaces the reconcile sync notice ("A newer change from another device was applied here."). */
   alwaysConflict?: boolean;
 }
 
