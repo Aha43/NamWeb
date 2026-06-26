@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **A Finder-style picker for "Move to…" on desktop.** Moving an action from the editor now opens a macOS-Finder-style **column picker** — click a project to reveal its sub-projects in the next column and drill down to the exact destination, instead of scanning a long flat dropdown. Projects you can't move into (e.g. the item's own subtree) show greyed but stay navigable. Phone keeps the lightweight native select. First step toward one shared picker across all the "move / file under" surfaces. Closes #423.
+
 - **Delete a sub-project from its row.** Sub-project rows in a project's List view now have a trash button (with a confirm) — previously only top-level projects could be deleted from a row. Deleting one with children removes the whole subtree, with an Undo toast, just like the top-level delete. Closes #419.
 
 - **Install to your home screen and land on the Inbox.** Added a web-app manifest with a fixed `start_url`, so a freshly installed home-screen icon always opens the app at the Inbox — instead of freezing to whatever page happened to be open when you added it. Closes #417.

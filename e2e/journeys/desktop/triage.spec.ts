@@ -144,7 +144,11 @@ test.describe('reshape', () => {
     await page.goto('/next');
     await page.getByRole('button', { name: 'Edit Fix sink' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Move / make project' }).click();
-    await page.getByLabel('Move to').selectOption({ label: 'Home' });
+    // Desktop now uses the Finder-style column picker (#423) instead of a native select.
+    await page.getByRole('dialog').getByRole('button', { name: 'Move to…' }).click();
+    const picker = page.getByRole('dialog', { name: /Move "Fix sink" to/ });
+    await picker.getByRole('button', { name: 'Home' }).click();
+    await picker.getByRole('button', { name: 'Move here' }).click();
 
     await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
     await page.getByRole('button', { name: 'Open Home' }).click();
