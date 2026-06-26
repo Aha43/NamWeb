@@ -18,6 +18,8 @@ import { ResourcesEditor } from './ResourcesEditor';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tooltip } from '@/components/ui/tooltip';
+import { useIsDesktop } from '@/shell/useIsDesktop';
+import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
 import { cn } from '@/lib/utils';
 
 // Mac shows ⌘; everyone else Ctrl. Best-effort platform sniff for the shortcut hints.
@@ -70,6 +72,7 @@ export function ActionDialog({
   onMakeProject,
   moveTargets,
   onMove,
+  onCreateProject,
   blockers,
   blockerCandidates,
   wouldUnblock,
@@ -91,6 +94,9 @@ export function ActionDialog({
   onMakeProject?: () => void;
   moveTargets?: MoveTarget[];
   onMove?: (targetId: string) => void;
+  /** Create a project under `parentId` (null = top level) and return its id — powers the picker's
+   *  "New project here". */
+  onCreateProject?: (parentId: string | null, title: string) => string;
   blockers?: Blocker[];
   blockerCandidates?: MoveTarget[];
   wouldUnblock?: string[];
@@ -110,6 +116,8 @@ export function ActionDialog({
   const [status, setStatus] = useState<NodeStatus>(node.status);
   const [resources, setResources] = useState<Resource[]>(node.resources);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [movePickerOpen, setMovePickerOpen] = useState(false);
+  const isDesktop = useIsDesktop();
 
   function doSave() {
     const trimmedTitle = title.trim();
@@ -288,23 +296,41 @@ export function ActionDialog({
                   </Button>
                 )}
                 {moveTargets && onMove && (
-                  <select
-                    aria-label="Move to"
-                    defaultValue=""
-                    onChange={(e) => {
-                      if (e.target.value) onMove(e.target.value);
-                    }}
-                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
-                  >
-                    <option value="" disabled>
-                      Move to…
-                    </option>
-                    {moveTargets.map((target) => (
-                      <option key={target.id} value={target.id}>
-                        {target.label}
+                  // Desktop gets the Finder-style column picker; phone keeps the lightweight native
+                  // select (the picker's columns are fiddly on a small screen).
+                  isDesktop ? (
+                    <>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setMovePickerOpen(true)}>
+                        Move to…
+                      </Button>
+                      <ProjectPickerDialog
+                        open={movePickerOpen}
+                        onOpenChange={setMovePickerOpen}
+                        title={`Move "${node.title}" to…`}
+                        targets={moveTargets}
+                        onConfirm={onMove}
+                        onCreateProject={onCreateProject}
+                      />
+                    </>
+                  ) : (
+                    <select
+                      aria-label="Move to"
+                      defaultValue=""
+                      onChange={(e) => {
+                        if (e.target.value) onMove(e.target.value);
+                      }}
+                      className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
+                    >
+                      <option value="" disabled>
+                        Move to…
                       </option>
-                    ))}
-                  </select>
+                      {moveTargets.map((target) => (
+                        <option key={target.id} value={target.id}>
+                          {target.label}
+                        </option>
+                      ))}
+                    </select>
+                  )
                 )}
               </div>
             </CollapsibleSection>
