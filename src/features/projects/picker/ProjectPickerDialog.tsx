@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { PromptButton } from '@/components/ui/prompt-button';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { projectPath } from '@/domain/lenses';
 import { cn } from '@/lib/utils';
@@ -27,6 +28,11 @@ export interface ProjectPickerDialogProps {
   /** Optionally pre-highlight a destination (e.g. the current parent). */
   initialSelectedId?: string;
   onConfirm: (targetId: string) => void;
+  /**
+   * When provided, enables "New project here": create a sub-project under the current location
+   * (the navigated-into project, or `null` = top level) and move into it. Returns the new id.
+   */
+  onCreateProject?: (parentId: string | null, title: string) => string;
 }
 
 /**
@@ -42,6 +48,7 @@ export function ProjectPickerDialog({
   targets,
   initialSelectedId,
   onConfirm,
+  onCreateProject,
 }: ProjectPickerDialogProps) {
   const { document } = useWorkspaceContext();
   const allowed = useMemo(() => new Set(targets.map((t) => t.id)), [targets]);
@@ -73,6 +80,20 @@ export function ProjectPickerDialog({
   const confirm = () => {
     if (selectedId && allowed.has(selectedId)) {
       onConfirm(selectedId);
+      onOpenChange(false);
+    }
+  };
+
+  // "New project here": create under the navigated-into project (a selected real project), or at the
+  // top level when nothing/a special root is selected. Only offered where that location is a valid
+  // destination (so you can't create inside the moving item's own greyed subtree).
+  const createParentId = selectedId && document.nodes[selectedId]?.project ? selectedId : null;
+  const createParentLabel = createParentId ? document.nodes[createParentId]?.title : null;
+  const canCreateHere = Boolean(onCreateProject) && (createParentId === null || allowed.has(createParentId));
+  const createProject = (title: string) => {
+    const newId = onCreateProject?.(createParentId, title);
+    if (newId) {
+      onConfirm(newId);
       onOpenChange(false);
     }
   };
@@ -139,16 +160,29 @@ export function ProjectPickerDialog({
             ))}
           </div>
         </DialogBody>
-        <DialogFooter className="items-center gap-2 border-t border-border px-6 py-4">
-          <span className="mr-auto min-w-0 flex-1 truncate text-xs text-muted-foreground">
-            {crumb ?? 'Nothing selected'}
-          </span>
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button type="button" disabled={!canConfirm} onClick={confirm}>
-            {confirmLabel}
-          </Button>
+        <DialogFooter className="flex-col items-stretch gap-3 border-t border-border px-6 py-4 sm:flex-col">
+          <span className="min-w-0 truncate text-xs text-muted-foreground">{crumb ?? 'Nothing selected'}</span>
+          <div className="flex items-center gap-2">
+            {canCreateHere && (
+              <PromptButton
+                label="New project name"
+                placeholder="New project…"
+                submitLabel="Create"
+                onSubmit={createProject}
+                className="rounded-md border border-input px-2.5 py-1 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                ＋ New project{createParentLabel ? ` in “${createParentLabel}”` : ' (top level)'}
+              </PromptButton>
+            )}
+            <div className="ml-auto flex gap-2">
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="button" disabled={!canConfirm} onClick={confirm}>
+                {confirmLabel}
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

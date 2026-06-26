@@ -5,7 +5,7 @@ import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
 import { allTags, archivedProjectIds, canAddPrerequisite, effectiveTags, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
 import { useDeleteNode } from './useDeleteNode';
-import { nowIso } from '@/lib/local';
+import { newId, nowIso } from '@/lib/local';
 
 /** Same tag list (already normalized) — avoids dispatching a no-op tag update. */
 function sameTags(a: string[], b: string[]): boolean {
@@ -106,6 +106,22 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     setEditingId(null);
   }
 
+  // Create a project under `parentId` (null = top level) and return its id — for the picker's
+  // "New project here", which then moves the node into it.
+  function createProject(parentId: string | null, title: string): string {
+    if (!document) return '';
+    const id = newId();
+    dispatch({
+      type: 'addSubProject',
+      parentId: parentId ?? document.projectsNodeId,
+      id,
+      title,
+      atTop: true,
+      now: nowIso(),
+    });
+    return id;
+  }
+
   function save(edits: ActionEdits) {
     if (!node) return;
     const now = nowIso();
@@ -144,6 +160,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           onMakeProject={node.project ? undefined : makeProject}
           moveTargets={moveTargets}
           onMove={move}
+          onCreateProject={createProject}
           blockers={blockers}
           blockerCandidates={blockerCandidates}
           wouldUnblock={wouldUnblock}

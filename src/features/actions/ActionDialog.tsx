@@ -72,6 +72,7 @@ export function ActionDialog({
   onMakeProject,
   moveTargets,
   onMove,
+  onCreateProject,
   blockers,
   blockerCandidates,
   wouldUnblock,
@@ -93,6 +94,9 @@ export function ActionDialog({
   onMakeProject?: () => void;
   moveTargets?: MoveTarget[];
   onMove?: (targetId: string) => void;
+  /** Create a project under `parentId` (null = top level) and return its id — powers the picker's
+   *  "New project here". */
+  onCreateProject?: (parentId: string | null, title: string) => string;
   blockers?: Blocker[];
   blockerCandidates?: MoveTarget[];
   wouldUnblock?: string[];
@@ -305,6 +309,7 @@ export function ActionDialog({
                         title={`Move "${node.title}" to…`}
                         targets={moveTargets}
                         onConfirm={onMove}
+                        onCreateProject={onCreateProject}
                       />
                     </>
                   ) : (
