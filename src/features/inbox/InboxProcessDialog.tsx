@@ -35,6 +35,7 @@ export function InboxProcessDialog({
   onOpenChange,
   onResolve,
   projectTargets = [],
+  onCreateProject,
   onDelete,
   onSkip,
   remaining,
@@ -45,6 +46,9 @@ export function InboxProcessDialog({
   onResolve: (resolution: ProcessResolution) => void;
   /** Existing projects the item can be filed/nested under (breadcrumb-labeled). */
   projectTargets?: ProjectTarget[];
+  /** Create a project under `parentId` (null = top level) and return its id — powers the picker's
+   *  "New project here". */
+  onCreateProject?: (parentId: string | null, title: string) => string;
   /** Deck mode (process-all): delete the current item and advance. */
   onDelete?: () => void;
   /** Deck mode: leave the item in the inbox and advance to the next. */
@@ -98,6 +102,7 @@ export function InboxProcessDialog({
             targets={[{ id: '', label: defaultLabel }, ...projectTargets]}
             initialSelectedId={targetId}
             onConfirm={setTargetId}
+            onCreateProject={onCreateProject}
           />
         </div>
       );

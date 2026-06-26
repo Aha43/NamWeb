@@ -125,6 +125,19 @@ export function InboxPage() {
           }}
           onResolve={resolve}
           projectTargets={projectTargets}
+          onCreateProject={(parentId, title) => {
+            if (!document) return '';
+            const id = newId();
+            dispatch({
+              type: 'addSubProject',
+              parentId: parentId ?? document.projectsNodeId,
+              id,
+              title,
+              atTop: !addToBottom,
+              now: nowIso(),
+            });
+            return id;
+          }}
           {...(inDeck
             ? {
                 remaining: queue.length - pos,
