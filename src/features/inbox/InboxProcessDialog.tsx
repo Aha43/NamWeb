@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -7,6 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useIsDesktop } from '@/shell/useIsDesktop';
+import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
 import type { NamNode } from '@/domain/types';
 
 /** A project the clarified item can be filed under. */
@@ -52,6 +55,8 @@ export function InboxProcessDialog({
   const [step, setStep] = useState<'kind' | 'action' | 'project'>('kind');
   // '' = the default location (Free actions for an action, Top level for a project).
   const [targetId, setTargetId] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const isDesktop = useIsDesktop();
   const deck = Boolean(onSkip); // process-all flow: parent swaps in the next item
   const parentId = targetId || undefined;
 
@@ -65,8 +70,39 @@ export function InboxProcessDialog({
     setStep('kind');
   }
 
-  const picker = (defaultLabel: string, fieldLabel: string) =>
-    projectTargets.length > 0 ? (
+  const picker = (defaultLabel: string, fieldLabel: string) => {
+    if (projectTargets.length === 0) return null;
+    // Desktop: a button showing the current choice that opens the Finder-style column picker; it only
+    // SETS the destination (the resolve buttons below still commit). Phone keeps the native select.
+    if (isDesktop) {
+      const current =
+        targetId === '' ? defaultLabel : projectTargets.find((t) => t.id === targetId)?.label ?? defaultLabel;
+      return (
+        <div className="flex flex-col gap-1 text-sm">
+          <span className="text-muted-foreground">{fieldLabel}</span>
+          <Button
+            type="button"
+            variant="outline"
+            aria-label={fieldLabel}
+            className="justify-between font-normal"
+            onClick={() => setPickerOpen(true)}
+          >
+            <span className="truncate">{current}</span>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+          </Button>
+          <ProjectPickerDialog
+            open={pickerOpen}
+            onOpenChange={setPickerOpen}
+            title={fieldLabel}
+            confirmLabel="Choose"
+            targets={[{ id: '', label: defaultLabel }, ...projectTargets]}
+            initialSelectedId={targetId}
+            onConfirm={setTargetId}
+          />
+        </div>
+      );
+    }
+    return (
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-muted-foreground">{fieldLabel}</span>
         <select
@@ -83,7 +119,8 @@ export function InboxProcessDialog({
           ))}
         </select>
       </label>
-    ) : null;
+    );
+  };
 
   return (
     <Dialog
