@@ -33,3 +33,26 @@ test('move an action via the column picker, drilling into a nested project', asy
   await expect.poll(() => doc.current().nodes['plumb'].childIds).toContain('tiles');
   await expect.poll(() => doc.current().nodes[doc.current().nextActionsNodeId].childIds).not.toContain('tiles');
 });
+
+test('create a new sub-project from the picker and move into it', async ({ page, doc }) => {
+  await page.goto('/next');
+  await page.getByRole('button', { name: 'Edit Buy tiles' }).click();
+  await page.getByRole('button', { name: 'Move / make project' }).click();
+  await page.getByRole('button', { name: 'Move to…' }).click();
+
+  const picker = page.getByRole('dialog', { name: /Move "Buy tiles" to/ });
+  // Navigate into Home Reno, then create a new sub-project there and move into it.
+  await picker.getByRole('button', { name: 'Home Reno' }).click();
+  await picker.getByRole('button', { name: /New project in/ }).click();
+  await page.getByLabel('New project name').fill('Annex');
+  await page.getByLabel('New project name').press('Enter');
+
+  // A new project "Annex" exists under Home Reno and the action moved into it.
+  await expect
+    .poll(() => {
+      const d = doc.current();
+      const annex = d.nodes['home'].childIds.map((id) => d.nodes[id]).find((n) => n?.title === 'Annex');
+      return annex?.childIds ?? [];
+    })
+    .toContain('tiles');
+});
