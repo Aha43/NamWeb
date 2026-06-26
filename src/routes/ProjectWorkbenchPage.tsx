@@ -253,6 +253,18 @@ export function ProjectWorkbenchPage() {
       deleteSubProjectMessage={deleteSubProjectMessage}
       actionMoveTargets={(actionId) => actionMoveTargets(document, actionId)}
       onMoveActionInto={(actionId, targetId) => dispatch({ type: 'moveNode', id: actionId, newParentId: targetId, now: nowIso() })}
+      onCreateProject={(parentId, title) => {
+        const newProjectId = newId();
+        dispatch({
+          type: 'addSubProject',
+          parentId: parentId ?? document.projectsNodeId,
+          id: newProjectId,
+          title,
+          atTop: !addToBottom,
+          now: nowIso(),
+        });
+        return newProjectId;
+      }}
       onConvertToAction={
         project.childIds.length === 0
           ? () => dispatch({ type: 'convertProjectToAction', id, status: 'NEXT', now: nowIso() })
