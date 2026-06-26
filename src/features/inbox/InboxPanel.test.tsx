@@ -64,7 +64,10 @@ describe('InboxPanel', () => {
       <InboxPanel items={[item('a', 'Buy milk')]} onAdd={vi.fn()} onProcess={vi.fn()} onDelete={vi.fn()} onRename={onRename} />,
     );
     // The pencil opens the inline editor in-place rather than opening the action dialog.
-    fireEvent.click(screen.getByRole('button', { name: 'Rename Buy milk' }));
+    const pencil = screen.getByRole('button', { name: 'Rename Buy milk' });
+    // It's a comfortable touch target on phones (coarse-pointer min size) — #411.
+    expect(pencil.className).toContain('[@media(pointer:coarse)]:min-h-11');
+    fireEvent.click(pencil);
     const input = screen.getByRole('textbox', { name: 'Rename Buy milk' });
     fireEvent.change(input, { target: { value: 'Buy oat milk' } });
     fireEvent.keyDown(input, { key: 'Enter' });

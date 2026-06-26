@@ -202,6 +202,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **You can rename an inbox item on mobile.** The inbox rename pencil (and delete) were tiny tap targets that the touch pass had missed — they're now comfortably sized on phones, so a single tap starts an inline rename. Closes #411.
+
 - **Inherited (rubbed-off) project tags now work like real tags everywhere.** Filtering already
   honored them; now **Search** matches a node's inherited tags too, and the **Tags** view counts
   reflect them — so a tag on a project behaves the same on its descendants as any tag they own.
