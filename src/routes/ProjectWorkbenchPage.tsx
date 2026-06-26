@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { actionMoveTargets, allTags, buildPath, effectiveTags, projectActions, projectMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
+import { actionMoveTargets, actionMoveTargetsAll, allTags, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
@@ -248,10 +248,12 @@ export function ProjectWorkbenchPage() {
         if (node) dispatch({ type: 'updateNode', id: actionId, title, description: node.description, now: nowIso() });
       }}
       moveTargets={(subId) => projectMoveTargets(document, subId)}
+      quickMoveTargets={(subId) => projectQuickMoveTargets(document, subId)}
       onMoveInto={(subId, targetId) => dispatch({ type: 'moveNode', id: subId, newParentId: targetId, now: nowIso() })}
       onDeleteSubProject={deleteNode}
       deleteSubProjectMessage={deleteSubProjectMessage}
       actionMoveTargets={(actionId) => actionMoveTargets(document, actionId)}
+      actionBrowseTargets={(actionId) => actionMoveTargetsAll(document, actionId)}
       onMoveActionInto={(actionId, targetId) => dispatch({ type: 'moveNode', id: actionId, newParentId: targetId, now: nowIso() })}
       onCreateProject={(parentId, title) => {
         const newProjectId = newId();

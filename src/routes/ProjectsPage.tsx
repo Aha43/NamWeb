@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { projectMoveTargets, projects, reorderKindWithinChildren, subtreeIds } from '@/domain/lenses';
+import { projectMoveTargets, projectQuickMoveTargets, projects, reorderKindWithinChildren, subtreeIds } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
 import { importSeedFromJson } from '@/domain/importWorkspace';
 import { newId, nowIso } from '@/lib/local';
@@ -73,6 +73,7 @@ export function ProjectsPage() {
         });
       }}
       moveTargets={(id) => (document ? projectMoveTargets(document, id) : [])}
+      quickMoveTargets={(id) => (document ? projectQuickMoveTargets(document, id) : [])}
       onMoveInto={(id, targetId) => {
         if (!document) return;
         dispatch({ type: 'moveNode', id, newParentId: targetId, now: nowIso() });
