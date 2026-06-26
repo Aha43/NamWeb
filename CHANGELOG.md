@@ -12,6 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **The column picker now drives every "move into a project" on desktop.** The workbench "move sub-project", "move action", and bulk "move selected", plus "move project" in the Projects list, all open the same Finder-style column picker (the row's folder icon now opens it). Reordering and the kanban drag are unchanged. Phone keeps the inline dropdowns. Closes #425.
 
+- **Inbox triage uses the column picker to file items (desktop).** When processing an inbox item, "File under" / "Nest under" now open the Finder-style column picker to choose the destination project — including creating a new project on the spot to file into. The resolve button still commits. Phone keeps the native select. Closes #426.
+
 - **Delete a sub-project from its row.** Sub-project rows in a project's List view now have a trash button (with a confirm) — previously only top-level projects could be deleted from a row. Deleting one with children removes the whole subtree, with an Undo toast, just like the top-level delete. Closes #419.
 
 - **Install to your home screen and land on the Inbox.** Added a web-app manifest with a fixed `start_url`, so a freshly installed home-screen icon always opens the app at the Inbox — instead of freezing to whatever page happened to be open when you added it. Closes #417.

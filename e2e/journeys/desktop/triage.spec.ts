@@ -85,8 +85,11 @@ test.describe('inbox processing', () => {
 
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: /one action/i }).click();
-    // The "File under" picker is present and offers the existing project.
-    await dialog.getByRole('combobox', { name: 'File under' }).selectOption({ label: 'Kitchen Reno' });
+    // The "File under" control opens the column picker (desktop, #426); choose the existing project.
+    await dialog.getByRole('button', { name: 'File under' }).click();
+    const filePicker = page.getByRole('dialog', { name: 'File under' });
+    await filePicker.getByRole('button', { name: 'Kitchen Reno', exact: true }).click();
+    await filePicker.getByRole('button', { name: 'Choose' }).click();
     await dialog.getByRole('button', { name: /do it next/i }).click();
 
     // The action landed inside the project, not in Free actions.
@@ -113,9 +116,10 @@ test.describe('inbox processing — archived projects', () => {
 
     const dialog = page.getByRole('dialog');
     await dialog.getByRole('button', { name: /one action/i }).click();
-    const picker = dialog.getByRole('combobox', { name: 'File under' });
-    await expect(picker.getByRole('option', { name: 'Live Reno' })).toHaveCount(1);
-    await expect(picker.getByRole('option', { name: 'Old Reno' })).toHaveCount(0);
+    await dialog.getByRole('button', { name: 'File under' }).click();
+    const filePicker = page.getByRole('dialog', { name: 'File under' });
+    await expect(filePicker.getByRole('button', { name: 'Live Reno', exact: true })).toHaveCount(1);
+    await expect(filePicker.getByRole('button', { name: 'Old Reno', exact: true })).toHaveCount(0);
   });
 });
 
