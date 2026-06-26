@@ -25,16 +25,16 @@ test.describe('sync conflict', () => {
     restOptions: { alwaysConflict: true },
   });
 
-  test('a failed push surfaces the dismissible Reloaded notice', async ({ page }) => {
+  test('a failed push surfaces the dismissible reconcile notice', async ({ page }) => {
     await page.goto('/next');
     await expect(page.getByText('Email Bob')).toBeVisible();
 
-    // Any write now conflicts on every attempt → the commit gives up and reloads.
+    // Any write now conflicts on every attempt → the commit gives up and reconciles from the server.
     await page.getByRole('button', { name: /Status of Email Bob/ }).click();
     await page.getByRole('menuitem', { name: 'Done' }).click();
 
     const notice = page.getByRole('status');
-    await expect(notice).toContainText('Reloaded');
+    await expect(notice).toContainText('newer change from another device');
     await notice.getByRole('button', { name: 'Dismiss' }).click();
     await expect(page.getByRole('status')).toHaveCount(0);
   });

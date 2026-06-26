@@ -21,8 +21,9 @@ test('edit a sub-project’s tags via the workbench Details panel', async ({ pag
   await page.getByRole('button', { name: 'Open Plumbing' }).click();
   await expect(page).toHaveURL(/\/projects\/sp1/);
   await page.getByRole('button', { name: 'Details' }).click();
-  await page.getByLabel('Tags').fill('home');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  const tags = page.getByLabel('Tags');
+  await tags.fill('home');
+  await tags.blur(); // the Details panel autosaves — tags commit on blur, there is no Save button
 
   await expect.poll(() => doc.current().nodes['sp1'].tags).toEqual(['home']);
 });
@@ -53,6 +54,8 @@ test('delete an action from the workbench via the editor (with confirm)', async 
   await dialog.getByRole('button', { name: 'Delete' }).click(); // arm the inline confirm
   await dialog.getByRole('button', { name: 'Delete' }).click(); // confirm
 
-  await expect(page.getByText('Buy tiles')).toHaveCount(0);
+  // The undo toast briefly echoes the deleted title, so assert the row is gone (its edit button)
+  // rather than page-wide text, which would also match the toast.
+  await expect(page.getByRole('button', { name: 'Edit Buy tiles' })).toHaveCount(0);
   await expect.poll(() => doc.current().nodes['a1']).toBeUndefined();
 });
