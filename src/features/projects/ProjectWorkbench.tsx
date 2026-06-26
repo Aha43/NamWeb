@@ -83,6 +83,10 @@ export interface ProjectWorkbenchProps {
   moveTargets?: (id: string) => { id: string; label: string }[];
   /** Make a sub-project a child of `targetId` (or top-level). */
   onMoveInto?: (id: string, targetId: string) => void;
+  /** Inline delete (with confirm) for a sub-project row, recursive when it has descendants. */
+  onDeleteSubProject?: (id: string) => void;
+  /** Count-aware confirm message for a sub-project delete. */
+  deleteSubProjectMessage?: (id: string) => string;
   /** Candidate destinations to move an action to: parent project / sibling projects / Free actions. */
   actionMoveTargets?: (id: string) => { id: string; label: string }[];
   /** Move an action under `targetId` (a project, or the Free-actions root). */
@@ -160,6 +164,8 @@ export function ProjectWorkbench({
   onRename,
   moveTargets,
   onMoveInto,
+  onDeleteSubProject,
+  deleteSubProjectMessage,
   actionMoveTargets,
   onMoveActionInto,
   onMoveAction,
@@ -299,6 +305,16 @@ export function ProjectWorkbench({
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+          )}
+          {onDeleteSubProject && (
+            <ConfirmButton
+              aria-label={`Delete ${sub.title}`}
+              message={deleteSubProjectMessage?.(sub.id) ?? `Delete the "${sub.title}" sub-project? This cannot be undone.`}
+              onConfirm={() => onDeleteSubProject(sub.id)}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </ConfirmButton>
           )}
           {drag?.handle}
           {onMoveSubProject && (
