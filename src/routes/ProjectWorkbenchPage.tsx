@@ -90,6 +90,17 @@ export function ProjectWorkbenchPage() {
     deleteNode(id);
   };
 
+  // Count-aware confirm for deleting a sub-project from its row (#419). Deleting one keeps us on this
+  // workbench (the current project survives), so — unlike deleteProject — no post-delete redirect.
+  const deleteSubProjectMessage = (subId: string) => {
+    const sub = document.nodes[subId];
+    if (!sub) return 'Delete this sub-project? This cannot be undone.';
+    const subDescendants = subtreeIds(document, subId).size - 1;
+    return subDescendants > 0
+      ? `Delete the "${sub.title}" sub-project and its ${subDescendants} item${subDescendants === 1 ? '' : 's'}? This cannot be undone.`
+      : `Delete the "${sub.title}" sub-project? This cannot be undone.`;
+  };
+
   // Sections collapse by default on open (#279); when you add to one, expand it so the new item is
   // visible rather than dropped into a collapsed section.
   const ensureSectionExpanded = (section: 'actions' | 'subprojects') => {
@@ -230,6 +241,8 @@ export function ProjectWorkbenchPage() {
       }}
       moveTargets={(subId) => projectMoveTargets(document, subId)}
       onMoveInto={(subId, targetId) => dispatch({ type: 'moveNode', id: subId, newParentId: targetId, now: nowIso() })}
+      onDeleteSubProject={deleteNode}
+      deleteSubProjectMessage={deleteSubProjectMessage}
       actionMoveTargets={(actionId) => actionMoveTargets(document, actionId)}
       onMoveActionInto={(actionId, targetId) => dispatch({ type: 'moveNode', id: actionId, newParentId: targetId, now: nowIso() })}
       onConvertToAction={
