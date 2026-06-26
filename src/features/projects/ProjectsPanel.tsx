@@ -19,6 +19,7 @@ import { InlineRename } from '../actions/InlineRename';
 import { ReorderControls } from '../actions/ReorderControls';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
+import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
 import type { NamNode } from '../../domain/types';
 
@@ -38,8 +39,10 @@ export interface ProjectsPanelProps {
   onReorder?: (orderedIds: string[]) => void;
   /** Mount drag-and-drop (desktop). The up/down buttons are the always-on fallback. */
   dndEnabled?: boolean;
-  /** Candidate projects to move `id` into (siblings first), excluding itself + its subtree. */
+  /** All projects `id` can move into (the "Browse all projects…" picker set). */
   moveTargets?: (id: string) => MoveTarget[];
+  /** Proximate destinations (Top level + siblings) for the quick menu. */
+  quickMoveTargets?: (id: string) => MoveTarget[];
   /** Make `id` a sub-project of `targetId`. */
   onMoveInto?: (id: string, targetId: string) => void;
   /** Create a project under `parentId` (null = top level) and return its id — powers the picker's
@@ -71,6 +74,7 @@ export function ProjectsPanel({
   onReorder,
   dndEnabled,
   moveTargets,
+  quickMoveTargets,
   onMoveInto,
   onCreateProject,
   onAddLearnNam,
@@ -130,6 +134,7 @@ export function ProjectsPanel({
   const renderRow = (project: NamNode, index: number, drag?: SortableRowRender) => {
     const isArchived = project.status === 'ARCHIVED';
     const targets = onMoveInto && !isArchived && moveTargets ? moveTargets(project.id) : [];
+    const quickTargets = onMoveInto && !isArchived && quickMoveTargets ? quickMoveTargets(project.id) : [];
     const descTip = descriptionTooltip(project.description);
     return (
     <li
@@ -215,22 +220,20 @@ export function ProjectsPanel({
           )}
           {onMoveInto && targets.length > 0 && (
             isDesktop ? (
-              <Tooltip label="Move into another project">
-                <button
-                  type="button"
-                  aria-label={`Move ${project.title} into another project`}
-                  onClick={() =>
-                    setMoveRequest({
-                      title: `Move "${project.title}" to…`,
-                      targets,
-                      onConfirm: (id) => onMoveInto(project.id, id),
-                    })
-                  }
-                  className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                >
-                  <FolderInput className="h-3.5 w-3.5" />
-                </button>
-              </Tooltip>
+              <MoveTargetMenu
+                label={`Move ${project.title} into another project`}
+                quickTargets={quickTargets}
+                onPick={(id) => onMoveInto(project.id, id)}
+                onBrowse={() =>
+                  setMoveRequest({
+                    title: `Move "${project.title}" to…`,
+                    targets,
+                    onConfirm: (id) => onMoveInto(project.id, id),
+                  })
+                }
+              >
+                <FolderInput className="h-3.5 w-3.5" />
+              </MoveTargetMenu>
             ) : (
               <DropdownMenu>
                 <Tooltip label="Move into another project">

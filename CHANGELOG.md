@@ -109,6 +109,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Fast move to a parent/sibling is back, with the picker one click away.** On desktop, the "move into another project" control (workbench sub-project / action / bulk move, and the Projects list) now opens a **quick menu** of the proximate destinations — the **parent project**, **sibling projects**, and **Free actions** / **Top level** — for one-click moves, plus **"Browse all projects…"** that opens the Finder-style column picker for anywhere else. Restores the immediacy the picker had buried. Phone keeps its dropdown. Closes #431.
+
 - **MCP `add_action` defaults to Backlog.** New actions added via the MCP tool now default to **BACKLOG** (was NEXT), matching NamDesktop — capture first, promote to Next deliberately. Pass `status` to override. Closes #211.
 
 - **The add box stays put while the list scrolls.** On Inbox, Next, and Backlog, the add box (and the sort/Process controls) is pinned at the top — scroll a long list and you can still capture or add without scrolling back up. Closes #149.

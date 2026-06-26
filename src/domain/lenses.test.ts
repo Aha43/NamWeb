@@ -20,7 +20,9 @@ import {
   inboxItems,
   nextActions,
   projectActions,
+  actionMoveTargetsAll,
   projectMoveTargets,
+  projectQuickMoveTargets,
   projectPath,
   projects,
   reorderKindWithinChildren,
@@ -139,6 +141,70 @@ describe('projectMoveTargets', () => {
     expect(idsList).not.toContain('a1'); // self excluded
     // a2 (sibling) comes before B (other).
     expect(idsList.indexOf('a2')).toBeLessThan(idsList.indexOf('B'));
+  });
+});
+
+describe('projectQuickMoveTargets', () => {
+  // projects/ A[a1, a2] , B
+  function tree(): WorkspaceDocument {
+    const d = workspace(
+      [
+        node('A', { project: true, childIds: ['a1', 'a2'] }),
+        node('a1', { project: true }),
+        node('a2', { project: true }),
+        node('B', { project: true }),
+      ],
+      (doc) => {
+        addChild(doc, 'projects', 'A');
+        addChild(doc, 'projects', 'B');
+      },
+    );
+    return d;
+  }
+
+  it('nested project: Top level + same-parent siblings only (no distant projects)', () => {
+    const targets = projectQuickMoveTargets(tree(), 'a1');
+    expect(targets[0]).toEqual({ id: 'projects', label: 'Top level' });
+    const idsList = targets.map((t) => t.id);
+    expect(idsList).toContain('a2'); // sibling
+    expect(idsList).not.toContain('B'); // distant project — only in the full browse set
+    expect(idsList).not.toContain('A'); // parent
+    expect(idsList).not.toContain('a1'); // self
+  });
+
+  it('top-level project: sibling top-level projects only, no Top level entry', () => {
+    expect(projectQuickMoveTargets(tree(), 'A').map((t) => t.id)).toEqual(['B']);
+  });
+});
+
+describe('actionMoveTargetsAll', () => {
+  // projects/ A[act1] , B ; archived C — act1 is an action under A.
+  function tree(): WorkspaceDocument {
+    return workspace(
+      [
+        node('A', { project: true, childIds: ['act1'] }),
+        node('act1', { project: false }),
+        node('B', { project: true }),
+        node('C', { project: true, status: 'ARCHIVED' }),
+      ],
+      (d) => {
+        addChild(d, 'projects', 'A');
+        addChild(d, 'projects', 'B');
+        addChild(d, 'projects', 'C');
+      },
+    );
+  }
+
+  it('offers Free actions + every non-archived project (browse superset)', () => {
+    const idsList = actionMoveTargetsAll(tree(), 'act1').map((t) => t.id);
+    expect(idsList[0]).toBe('actions'); // Free actions first
+    expect(idsList).toContain('A'); // including the action's own current project
+    expect(idsList).toContain('B');
+    expect(idsList).not.toContain('C'); // archived excluded
+  });
+
+  it('returns nothing for a project (actions only)', () => {
+    expect(actionMoveTargetsAll(tree(), 'A')).toEqual([]);
   });
 });
 

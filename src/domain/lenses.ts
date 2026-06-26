@@ -202,6 +202,44 @@ export function actionMoveTargets(doc: WorkspaceDocument, actionId: string): Pro
 }
 
 /**
+ * Every place an **action** can be moved to: **Free actions** plus **every non-archived project**
+ * (any depth), labelled by path. The "browse anywhere" superset of {@link actionMoveTargets}
+ * (which is just the proximate parent/siblings/Free). Used to feed the column picker's full target
+ * set for an action.
+ */
+export function actionMoveTargetsAll(doc: WorkspaceDocument, actionId: string): ProjectMoveTarget[] {
+  const action = doc.nodes[actionId];
+  if (!action || action.project) return [];
+  const archived = archivedProjectIds(doc);
+  const targets: ProjectMoveTarget[] = [{ id: doc.nextActionsNodeId, label: 'Free actions' }];
+  for (const candidate of Object.values(doc.nodes)) {
+    if (!candidate.project || archived.has(candidate.id)) continue;
+    targets.push({ id: candidate.id, label: [...projectPath(doc, candidate.id), candidate.title].join(' › ') });
+  }
+  return targets;
+}
+
+/**
+ * The **proximate** destinations for moving a project `id`: a **"Top level"** entry (only when `id`
+ * is currently nested) plus its **sibling projects** (same parent). The quick subset of
+ * {@link projectMoveTargets} (which also lists every other project) — for the fast-move menu.
+ */
+export function projectQuickMoveTargets(doc: WorkspaceDocument, id: string): ProjectMoveTarget[] {
+  if (!doc.nodes[id]) return [];
+  const excluded = subtreeIds(doc, id);
+  const archived = archivedProjectIds(doc);
+  const parentId = Object.values(doc.nodes).find((n) => n.childIds.includes(id))?.id;
+  const topLevel: ProjectMoveTarget[] =
+    parentId && parentId !== doc.projectsNodeId ? [{ id: doc.projectsNodeId, label: 'Top level' }] : [];
+  const parent = parentId ? doc.nodes[parentId] : undefined;
+  const siblings = (parent?.childIds ?? [])
+    .filter((cid) => Boolean(doc.nodes[cid]?.project) && !excluded.has(cid) && !archived.has(cid))
+    .map((cid) => doc.nodes[cid]!)
+    .map((n) => ({ id: n.id, label: [...projectPath(doc, n.id), n.title].join(' › ') }));
+  return [...topLevel, ...siblings];
+}
+
+/**
  * Projects that `id` can be moved into (made a sub-project of): a **"Top level"** entry first when
  * `id` is currently nested, then its **current project siblings** (same parent), then every other
  * project labelled by path. Excludes `id` itself, its own subtree, and its current parent.
