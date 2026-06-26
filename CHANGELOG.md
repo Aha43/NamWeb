@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Install to your home screen and land on the Inbox.** Added a web-app manifest with a fixed `start_url`, so a freshly installed home-screen icon always opens the app at the Inbox — instead of freezing to whatever page happened to be open when you added it. Closes #417.
+
 - **See an item's notes on hover.** Action **and project** rows with a description now show it as a tooltip when you hover the title — in the action lists, the Projects list, and workbench sub-projects (long notes are truncated). Closes #203.
 
 - **Move actions between projects.** On a project workbench, move an action (or several, in select mode) to a **sibling project**, **up to the parent project**, or out to **Free actions** — via a "Move to…" menu on the row and in the bulk bar. (From a top-level project, "up" means Free actions.) Closes #398.
