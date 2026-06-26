@@ -202,6 +202,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Switching a project's view now shows the change even when Sub-projects is collapsed.** The List / Heat-map / Column switch only restyles the Sub-projects section, so picking a view while that section was folded looked like nothing happened. Selecting a view now expands the section so the chosen layout is actually visible. Closes #418.
+
 - **You can rename an inbox item on mobile.** The inbox rename pencil (and delete) were tiny tap targets that the touch pass had missed — they're now comfortably sized on phones, so a single tap starts an inline rename. Closes #411.
 
 - **Inherited (rubbed-off) project tags now work like real tags everywhere.** Filtering already

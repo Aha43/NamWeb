@@ -13,7 +13,7 @@ import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
 import type { WorkbenchColumn } from '@/features/projects/ColumnView';
 import { missionStats } from '@/features/projects/missionStats';
 import { projectSummaryMarkdown } from '@/domain/projectSummary';
-import { useViewMode } from '@/features/projects/useViewMode';
+import { useViewMode, type ViewMode } from '@/features/projects/useViewMode';
 import { useCollapsedColumns } from '@/features/projects/useCollapsedColumns';
 import { useColumnWidths } from '@/features/projects/useColumnWidths';
 import { useCollapsedDetails } from '@/features/projects/useCollapsedDetails';
@@ -96,6 +96,14 @@ export function ProjectWorkbenchPage() {
     if (collapsedSections.has(section)) toggleSection(section);
   };
 
+  // The view switch (list / heat-map / column) only changes how sub-projects render, all inside the
+  // (collapsible) Sub-projects section. Picking a view while that section is folded shows no visible
+  // change, which reads as "nothing happened" — so expand it on explicit selection (#418).
+  const selectViewMode = (next: ViewMode) => {
+    setMode(next);
+    ensureSectionExpanded('subprojects');
+  };
+
   // Column mode is desktop-only and needs sub-projects; otherwise fall back to a list.
   const hasSubs = subProjectNodes.length > 0;
   const viewMode = !hasSubs ? 'list' : mode === 'column' && !isDesktop ? 'list' : mode;
@@ -166,7 +174,7 @@ export function ProjectWorkbenchPage() {
       subProjectStats={hasSubs ? missionStats(document, id) : undefined}
       buildSummary={(options) => projectSummaryMarkdown(document, id, options)}
       viewMode={viewMode}
-      onSetViewMode={setMode}
+      onSetViewMode={selectViewMode}
       columnAvailable={isDesktop}
       columns={columns}
       onOpenProject={(pid) => navigate(`/projects/${pid}`)}
