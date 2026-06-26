@@ -27,6 +27,9 @@ import type { ActionEdits } from '../actions/ActionDialog';
 import { descriptionTooltip, type ActionRowData } from '../actions/rows';
 import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
+import { useIsDesktop } from '@/shell/useIsDesktop';
+import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
+import type { PickerTarget } from './picker/pickerModel';
 import type { NamNode, NodeStatus } from '../../domain/types';
 
 type MoveDirection = 'up' | 'down';
@@ -91,6 +94,9 @@ export interface ProjectWorkbenchProps {
   actionMoveTargets?: (id: string) => { id: string; label: string }[];
   /** Move an action under `targetId` (a project, or the Free-actions root). */
   onMoveActionInto?: (id: string, targetId: string) => void;
+  /** Create a project under `parentId` (null = top level) and return its id — powers the picker's
+   *  "New project here". */
+  onCreateProject?: (parentId: string | null, title: string) => string;
   /** Hand-order a direct action within the project (reorders the project's childIds). */
   onMoveAction?: (id: string, direction: MoveDirection) => void;
   /** Hand-order a direct sub-project within the project. */
@@ -168,6 +174,7 @@ export function ProjectWorkbench({
   deleteSubProjectMessage,
   actionMoveTargets,
   onMoveActionInto,
+  onCreateProject,
   onMoveAction,
   onMoveSubProject,
   onReorderActions,
@@ -232,6 +239,14 @@ export function ProjectWorkbench({
   // Delete the project's own done actions (direct only, no recursion) via a modal confirm.
   const doneActions = actions.filter((a) => a.status === 'DONE');
   const [deleteDoneOpen, setDeleteDoneOpen] = useState(false);
+  // Desktop: one shared Finder-style picker for the "move into another project" controls (#425).
+  // Phone keeps the inline dropdowns. A single instance is driven by the latest open request.
+  const isDesktop = useIsDesktop();
+  const [moveRequest, setMoveRequest] = useState<{
+    title: string;
+    targets: PickerTarget[];
+    onConfirm: (id: string) => void;
+  } | null>(null);
   const deleteDone = () => {
     if (onDeleteAction) for (const a of doneActions) onDeleteAction(a.id);
   };
@@ -285,26 +300,45 @@ export function ProjectWorkbench({
             </button>
           </Tooltip>
           {onMoveInto && subTargets.length > 0 && (
-            <DropdownMenu>
+            isDesktop ? (
               <Tooltip label="Move into another project">
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label={`Move ${sub.title} into another project`}
-                    className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-                  >
-                    <FolderInput className="h-3.5 w-3.5" />
-                  </button>
-                </DropdownMenuTrigger>
+                <button
+                  type="button"
+                  aria-label={`Move ${sub.title} into another project`}
+                  onClick={() =>
+                    setMoveRequest({
+                      title: `Move "${sub.title}" to…`,
+                      targets: subTargets,
+                      onConfirm: (id) => onMoveInto(sub.id, id),
+                    })
+                  }
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                >
+                  <FolderInput className="h-3.5 w-3.5" />
+                </button>
               </Tooltip>
-              <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
-                {subTargets.map((t) => (
-                  <DropdownMenuItem key={t.id} onSelect={() => onMoveInto(sub.id, t.id)}>
-                    {t.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            ) : (
+              <DropdownMenu>
+                <Tooltip label="Move into another project">
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={`Move ${sub.title} into another project`}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                    >
+                      <FolderInput className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                </Tooltip>
+                <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
+                  {subTargets.map((t) => (
+                    <DropdownMenuItem key={t.id} onSelect={() => onMoveInto(sub.id, t.id)}>
+                      {t.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
           )}
           {onDeleteSubProject && (
             <ConfirmButton
@@ -496,21 +530,38 @@ export function ProjectWorkbench({
                     </DropdownMenuContent>
                   </DropdownMenu>
                   {onMoveActionInto && moveActionTargets.length > 0 && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
+                    isDesktop ? (
+                      <button
+                        type="button"
                         disabled={selected.size === 0}
-                        className="rounded-md px-2 py-0.5 font-medium text-foreground outline-hidden hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                        onClick={() =>
+                          setMoveRequest({
+                            title: `Move ${selected.size} action${selected.size === 1 ? '' : 's'} to…`,
+                            targets: moveActionTargets,
+                            onConfirm: bulkMove,
+                          })
+                        }
+                        className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
                       >
                         Move to ▾
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-                        {moveActionTargets.map((t) => (
-                          <DropdownMenuItem key={t.id} onSelect={() => bulkMove(t.id)}>
-                            {t.label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                      </button>
+                    ) : (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          disabled={selected.size === 0}
+                          className="rounded-md px-2 py-0.5 font-medium text-foreground outline-hidden hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+                        >
+                          Move to ▾
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                          {moveActionTargets.map((t) => (
+                            <DropdownMenuItem key={t.id} onSelect={() => bulkMove(t.id)}>
+                              {t.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    )
                   )}
                   {onAddTagToActions && (
                     <PromptButton
@@ -567,6 +618,24 @@ export function ProjectWorkbench({
                         />
                       )}
                       {onMoveActionInto && moveActionTargets.length > 0 && (
+                        isDesktop ? (
+                          <Tooltip label="Move to another project">
+                            <button
+                              type="button"
+                              aria-label={`Move ${row.title} to another project`}
+                              onClick={() =>
+                                setMoveRequest({
+                                  title: `Move "${row.title}" to…`,
+                                  targets: moveActionTargets,
+                                  onConfirm: (id) => onMoveActionInto(row.id, id),
+                                })
+                              }
+                              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                            >
+                              <FolderInput className="h-3.5 w-3.5" />
+                            </button>
+                          </Tooltip>
+                        ) : (
                         <DropdownMenu>
                           <Tooltip label="Move to another project">
                             <DropdownMenuTrigger asChild>
@@ -587,6 +656,7 @@ export function ProjectWorkbench({
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        )
                       )}
                       <StatusMenu
                         status={row.status}
@@ -714,6 +784,22 @@ export function ProjectWorkbench({
         confirmLabel="Delete"
         onConfirm={deleteDone}
       />
+
+      {moveRequest && (
+        <ProjectPickerDialog
+          open
+          onOpenChange={(o) => {
+            if (!o) setMoveRequest(null);
+          }}
+          title={moveRequest.title}
+          targets={moveRequest.targets}
+          onConfirm={(id) => {
+            moveRequest.onConfirm(id);
+            setMoveRequest(null);
+          }}
+          onCreateProject={onCreateProject}
+        />
+      )}
     </section>
   );
 }
