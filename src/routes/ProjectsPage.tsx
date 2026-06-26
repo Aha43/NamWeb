@@ -77,6 +77,19 @@ export function ProjectsPage() {
         if (!document) return;
         dispatch({ type: 'moveNode', id, newParentId: targetId, now: nowIso() });
       }}
+      onCreateProject={(parentId, title) => {
+        if (!document) return '';
+        const id = newId();
+        dispatch({
+          type: 'addSubProject',
+          parentId: parentId ?? document.projectsNodeId,
+          id,
+          title,
+          atTop: !addToBottom,
+          now: nowIso(),
+        });
+        return id;
+      }}
       onRename={(id, title) => {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });

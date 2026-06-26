@@ -37,3 +37,23 @@ test('move a sub-project into another project via the workbench picker', async (
 
   await expect.poll(() => doc.current().nodes['work'].childIds).toContain('bath');
 });
+
+test('create a new project from the workbench picker and move into it', async ({ page, doc }) => {
+  await page.goto('/projects/home');
+  await expandWorkbench(page);
+
+  await page.getByRole('button', { name: 'Move Bathroom into another project' }).click();
+  const picker = page.getByRole('dialog', { name: /Move "Bathroom" to/ });
+  // Create a brand-new top-level project and move Bathroom into it.
+  await picker.getByRole('button', { name: /New project/ }).click();
+  await page.getByLabel('New project name').fill('Renovations');
+  await page.getByLabel('New project name').press('Enter');
+
+  await expect
+    .poll(() => {
+      const d = doc.current();
+      const proj = d.nodes[d.projectsNodeId].childIds.map((id) => d.nodes[id]).find((n) => n?.title === 'Renovations');
+      return proj?.childIds ?? [];
+    })
+    .toContain('bath');
+});

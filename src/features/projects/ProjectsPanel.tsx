@@ -42,6 +42,9 @@ export interface ProjectsPanelProps {
   moveTargets?: (id: string) => MoveTarget[];
   /** Make `id` a sub-project of `targetId`. */
   onMoveInto?: (id: string, targetId: string) => void;
+  /** Create a project under `parentId` (null = top level) and return its id — powers the picker's
+   *  "New project here". */
+  onCreateProject?: (parentId: string | null, title: string) => string;
   /** Seed the hands-on "Learn NAM" onboarding project (also a safe demo — delete to tidy up). */
   onAddLearnNam?: () => void;
   /** Import a workspace JSON export under a new timestamped project. Returns an error to show. */
@@ -69,6 +72,7 @@ export function ProjectsPanel({
   dndEnabled,
   moveTargets,
   onMoveInto,
+  onCreateProject,
   onAddLearnNam,
   onImportWorkspace,
   onArchive,
@@ -371,6 +375,7 @@ export function ProjectsPanel({
             moveRequest.onConfirm(id);
             setMoveRequest(null);
           }}
+          onCreateProject={onCreateProject}
         />
       )}
     </section>

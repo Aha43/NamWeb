@@ -94,6 +94,9 @@ export interface ProjectWorkbenchProps {
   actionMoveTargets?: (id: string) => { id: string; label: string }[];
   /** Move an action under `targetId` (a project, or the Free-actions root). */
   onMoveActionInto?: (id: string, targetId: string) => void;
+  /** Create a project under `parentId` (null = top level) and return its id — powers the picker's
+   *  "New project here". */
+  onCreateProject?: (parentId: string | null, title: string) => string;
   /** Hand-order a direct action within the project (reorders the project's childIds). */
   onMoveAction?: (id: string, direction: MoveDirection) => void;
   /** Hand-order a direct sub-project within the project. */
@@ -171,6 +174,7 @@ export function ProjectWorkbench({
   deleteSubProjectMessage,
   actionMoveTargets,
   onMoveActionInto,
+  onCreateProject,
   onMoveAction,
   onMoveSubProject,
   onReorderActions,
@@ -793,6 +797,7 @@ export function ProjectWorkbench({
             moveRequest.onConfirm(id);
             setMoveRequest(null);
           }}
+          onCreateProject={onCreateProject}
         />
       )}
     </section>
