@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- **Fold a whole project with one key.** On a project workbench, press <kbd>x</kbd> to collapse or expand **all three sections at once** — Details, Actions, and Sub-projects. If anything is open it folds everything down to the add rows; if all are folded it opens them up. Never fires while you're typing in a field. Documented in Help. Closes #436.
+- **Fold project sections from the keyboard.** On a project workbench, press <kbd>x</kbd> to toggle **Details**, <kbd>y</kbd> to toggle **Actions**, and <kbd>z</kbd> to toggle **Sub-projects** — collapse or expand each section without reaching for the mouse. Never fires while you're typing in a field. Documented in Help. Closes #436.
 
 - **A Finder-style picker for "Move to…" on desktop.** Moving an action from the editor now opens a macOS-Finder-style **column picker** — click a project to reveal its sub-projects in the next column and drill down to the exact destination, instead of scanning a long flat dropdown. Projects you can't move into (e.g. the item's own subtree) show greyed but stay navigable. You can also **create a new project right where you've navigated** ("＋ New project here") and move straight into it. Phone keeps the lightweight native select. First step toward one shared picker across all the "move / file under" surfaces. Closes #423.
 

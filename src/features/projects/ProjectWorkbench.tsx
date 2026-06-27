@@ -208,25 +208,23 @@ export function ProjectWorkbench({
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
   const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
 
-  // `x` collapses/expands all three workbench sections at once (Details + Actions + Sub-projects),
-  // so you can fold the whole project to the add rows or open it all without reaching for the mouse
-  // (#436). Scoped to the workbench because this component is only mounted there. "Toggle all": if
-  // anything is open, collapse everything; otherwise expand everything. Ignores typing/modifier/IME.
+  // Per-section collapse/expand shortcuts on the workbench: `x` Details, `y` Actions, `z`
+  // Sub-projects (#436). One key per section so each is predictable, rather than one overloaded
+  // "toggle all". Scoped to the workbench because this component is only mounted there; ignores
+  // typing/modifier/IME so it never fires mid-edit or steals browser/OS combos.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key !== 'x' || e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+      if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
       if (isTypingTarget(e.target)) return;
+      if (e.key === 'x') onToggleDetails();
+      else if (e.key === 'y') onToggleSection('actions');
+      else if (e.key === 'z') onToggleSection('subprojects');
+      else return;
       e.preventDefault();
-      const aCollapsed = collapsedSections?.has('actions') ?? false;
-      const sCollapsed = collapsedSections?.has('subprojects') ?? false;
-      const collapseAll = !detailsCollapsed || !aCollapsed || !sCollapsed; // anything open → collapse all
-      if (detailsCollapsed !== collapseAll) onToggleDetails();
-      if (aCollapsed !== collapseAll) onToggleSection('actions');
-      if (sCollapsed !== collapseAll) onToggleSection('subprojects');
     }
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [detailsCollapsed, collapsedSections, onToggleDetails, onToggleSection]);
+  }, [onToggleDetails, onToggleSection]);
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   // Multi-select on the project's actions (session-only) for bulk delete.
