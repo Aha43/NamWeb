@@ -147,6 +147,41 @@ describe('ProjectWorkbench', () => {
     expect(onSetViewMode).toHaveBeenCalledWith('column');
   });
 
+  it('toggles due-date sort from the workbench toolbar (#437)', () => {
+    const onToggleDueSort = vi.fn();
+    setup({ onToggleDueSort });
+    fireEvent.click(screen.getByRole('button', { name: /Sort: manual order/i }));
+    expect(onToggleDueSort).toHaveBeenCalled();
+  });
+
+  it('hides action reorder controls while sorted by due, shows them otherwise (#437)', () => {
+    const rows = [actionRow('a', 'Get quotes'), actionRow('b', 'Measure')];
+    const { rerender } = render(
+      <ProjectWorkbench
+        project={pnode('p', 'Kitchen reno')}
+        breadcrumb={[]}
+        actions={rows}
+        subProjects={[]}
+        onOpenProject={vi.fn()} onOpenProjects={vi.fn()} onAddAction={vi.fn()}
+        onAddSubProject={vi.fn()} onSetStatus={vi.fn()} onEdit={vi.fn()} onRename={vi.fn()}
+        onMoveAction={vi.fn()} dueSorted={false}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Move Measure up' })).toBeInTheDocument();
+    rerender(
+      <ProjectWorkbench
+        project={pnode('p', 'Kitchen reno')}
+        breadcrumb={[]}
+        actions={rows}
+        subProjects={[]}
+        onOpenProject={vi.fn()} onOpenProjects={vi.fn()} onAddAction={vi.fn()}
+        onAddSubProject={vi.fn()} onSetStatus={vi.fn()} onEdit={vi.fn()} onRename={vi.fn()}
+        onMoveAction={vi.fn()} dueSorted
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Move Measure up' })).not.toBeInTheDocument();
+  });
+
   it('applies a template from the picker', () => {
     const onApplyTemplate = vi.fn();
     setup({ templateNames: ['Starter'], onApplyTemplate });

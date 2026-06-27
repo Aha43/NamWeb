@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
+import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
@@ -140,6 +140,10 @@ export interface ProjectWorkbenchProps {
   /** Collapsed sections (Actions / Sub-projects) for List & Heat-map + toggle (persisted by the page). */
   collapsedSections?: Set<string>;
   onToggleSection?: (section: 'actions' | 'subprojects') => void;
+  /** Sort actions by due date (soonest first, undated last) instead of manual order — applies to the
+   *  list and the Kanban cards. While on, manual reorder of actions is suppressed (#437). */
+  dueSorted?: boolean;
+  onToggleDueSort?: () => void;
 }
 
 /** A project's workbench: breadcrumb, its direct actions, and its sub-projects — as a list, a
@@ -203,9 +207,13 @@ export function ProjectWorkbench({
   onApplyTemplate,
   collapsedSections,
   onToggleSection = () => {},
+  dueSorted = false,
+  onToggleDueSort,
 }: ProjectWorkbenchProps) {
   const isColumn = viewMode === 'column';
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
+  // Whether there's anything for the "by due" toggle to act on (list rows or any column's cards).
+  const anyActions = actions.length > 0 || columns.some((c) => c.actions.length > 0);
   const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
 
   // Per-section collapse/expand shortcuts on the workbench: `x` Details, `y` Actions, `z`
@@ -441,8 +449,15 @@ export function ProjectWorkbench({
         />
       )}
 
-      {subProjects.length > 0 && (
-        <ViewSwitch mode={viewMode} onSet={onSetViewMode} columnAvailable={columnAvailable} />
+      {(anyActions || subProjects.length > 0) && (
+        <div className="flex items-center justify-end gap-2">
+          {onToggleDueSort && anyActions && (
+            <DueSortToggle sorted={dueSorted} onToggle={onToggleDueSort} />
+          )}
+          {subProjects.length > 0 && (
+            <ViewSwitch mode={viewMode} onSet={onSetViewMode} columnAvailable={columnAvailable} />
+          )}
+        </div>
       )}
       </div>
 
@@ -465,6 +480,7 @@ export function ProjectWorkbench({
           onMoveActionToColumn={onMoveActionToColumn}
           onMoveColumn={onMoveColumn}
           dndEnabled={dndEnabled}
+          dueSorted={dueSorted}
           onSetStatus={onSetStatus}
           onEdit={onEdit}
           onDelete={onDeleteAction}
@@ -637,12 +653,12 @@ export function ProjectWorkbench({
                   onDelete={onDeleteAction}
                   onRename={onRename}
                   onReorder={onReorderActions}
-                  dndEnabled={dndEnabled}
+                  dndEnabled={dndEnabled && !dueSorted}
                   selectedIds={selectMode ? selected : undefined}
                   onToggleSelect={selectMode ? toggleSelect : undefined}
                   renderActions={(row, index) => (
                     <>
-                      {onMoveAction && (
+                      {onMoveAction && !dueSorted && (
                         <ReorderControls
                           title={row.title}
                           onUp={index > 0 ? () => onMoveAction(row.id, 'up') : undefined}
@@ -832,6 +848,30 @@ export function ProjectWorkbench({
         />
       )}
     </section>
+  );
+}
+
+/** A binary toggle for the workbench action order: manual (childIds) ↔ by due date. Sits beside the
+ *  view switch so it's reachable from both the list and the column board. */
+function DueSortToggle({ sorted, onToggle }: { sorted: boolean; onToggle: () => void }) {
+  return (
+    <Tooltip label={sorted ? 'Sorting by due date — click for manual order' : 'Manual order — click to sort by due date'}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-pressed={sorted}
+        aria-label={sorted ? 'Sort: by due date. Click for manual order.' : 'Sort: manual order. Click to sort by due date.'}
+        className={cn(
+          'inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
+          sorted
+            ? 'bg-accent text-accent-foreground'
+            : 'text-muted-foreground hover:bg-accent hover:text-foreground',
+        )}
+      >
+        <ArrowDownUp className="h-3.5 w-3.5" />
+        {sorted ? 'By due' : 'Manual'}
+      </button>
+    </Tooltip>
   );
 }
 

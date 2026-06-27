@@ -22,3 +22,19 @@ export function sortNodes(nodes: NamNode[], mode: SortMode): NamNode[] {
   const sorted = [...nodes].sort((a, b) => key(a).localeCompare(key(b)));
   return mode === 'fifo' ? sorted : sorted.reverse();
 }
+
+/**
+ * Sort by due date, soonest first; undated items keep to the end. Dates are ISO `YYYY-MM-DD`
+ * strings, which sort chronologically as plain text. A stable sort (V8) preserves the incoming
+ * (manual) order among items that share a due date — and among the undated tail. Used by the
+ * workbench's "by due" toggle (the calendar-board enabler, #437). Works on anything carrying a
+ * `dueAt` (nodes and action rows alike); never mutates the input.
+ */
+export function sortByDue<T extends { dueAt: string | null }>(items: T[]): T[] {
+  return [...items].sort((a, b) => {
+    if (a.dueAt === b.dueAt) return 0;
+    if (!a.dueAt) return 1; // undated → after everything dated
+    if (!b.dueAt) return -1;
+    return a.dueAt.localeCompare(b.dueAt);
+  });
+}

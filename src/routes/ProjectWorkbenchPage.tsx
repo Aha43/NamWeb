@@ -7,7 +7,8 @@ import type { NamNode } from '@/domain/types';
 import type { ClonedTemplateNode } from '@/domain/mutations';
 import type { TemplateNode } from '@/domain/types';
 import type { ActionEdits } from '@/features/actions/ActionDialog';
-import { toActionRow } from '@/features/actions/rows';
+import { toActionRow, type ActionRowData } from '@/features/actions/rows';
+import { sortByDue } from '@/features/actions/sort';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
 import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
 import type { WorkbenchColumn } from '@/features/projects/ColumnView';
@@ -18,6 +19,7 @@ import { useCollapsedColumns } from '@/features/projects/useCollapsedColumns';
 import { useColumnWidths } from '@/features/projects/useColumnWidths';
 import { useCollapsedDetails } from '@/features/projects/useCollapsedDetails';
 import { useCollapsedSections } from '@/features/projects/useCollapsedSections';
+import { useDueSort } from '@/features/projects/useDueSort';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useSettings } from '@/components/settings/settings-context';
 import { useActionEditor } from '@/features/actions/action-editor-context';
@@ -41,6 +43,7 @@ export function ProjectWorkbenchPage() {
   const { widths: columnWidths, setWidth: setColumnWidth, resetWidth: resetColumnWidth } = useColumnWidths(id);
   const [detailsCollapsed, toggleDetails] = useCollapsedDetails(id);
   const [collapsedSections, toggleSection] = useCollapsedSections(id);
+  const [dueSorted, toggleDueSort] = useDueSort(id);
   const isDesktop = useIsDesktop();
   // Where to land after this project is deleted. Stashed at delete time (while the node still
   // exists) so the "project gone" guard below can redirect there deterministically — an imperative
@@ -53,7 +56,11 @@ export function ProjectWorkbenchPage() {
 
   const actionNodes = projectActions(document, id);
   const subProjectNodes = subProjects(document, id);
-  const actions = actionNodes.map((n) => toActionRow(document, n));
+  // When the "by due" toggle is on, order action rows soonest-due first (undated last) instead of the
+  // manual childIds order — for the list, and within each Kanban column (#437). Manual reorder is
+  // suppressed while sorted (the workbench gates its controls on `dueSorted`).
+  const sortRows = (rows: ActionRowData[]) => (dueSorted ? sortByDue(rows) : rows);
+  const actions = sortRows(actionNodes.map((n) => toActionRow(document, n)));
 
   // Save the current project's edited details (inline Details panel) — dispatch only the intents
   // for fields that actually changed, mirroring the action editor's save.
@@ -126,7 +133,7 @@ export function ProjectWorkbenchPage() {
       id: sp.id,
       title: sp.title,
       isUnsorted: false,
-      actions: projectActions(document, sp.id).map((n) => toActionRow(document, n)),
+      actions: sortRows(projectActions(document, sp.id).map((n) => toActionRow(document, n))),
     })),
   ];
 
@@ -209,6 +216,8 @@ export function ProjectWorkbenchPage() {
       onResetColumnWidth={resetColumnWidth}
       collapsedSections={collapsedSections}
       onToggleSection={toggleSection}
+      dueSorted={dueSorted}
+      onToggleDueSort={toggleDueSort}
       onAddAction={(title) => {
         // New project actions land in BACKLOG (not NEXT) so they don't flood Next/Focus before
         // you've triaged them — matches NamDesktop's default. Issue #210.
