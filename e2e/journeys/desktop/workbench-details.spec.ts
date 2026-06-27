@@ -43,8 +43,13 @@ test('edit a sub-project on its own workbench', async ({ page, doc }) => {
   // Open the sub-project from its parent workbench, then edit it via its Details panel.
   await page.getByRole('button', { name: 'Open Plumbing' }).click();
   await expect(page).toHaveURL(/\/projects\/sub/);
+  // Wait for the parent workbench to actually unmount before editing. The URL flips first; under load
+  // the parent's panel can still be painted, and a too-eager edit lands on the parent (#444). "Open
+  // Plumbing" only exists on the parent (it lists the sub), so its absence means the sub has rendered.
+  await expect(page.getByRole('button', { name: 'Open Plumbing' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Details' }).click();
   const title = page.getByRole('textbox', { name: 'Title' });
+  await expect(title).toHaveValue('Plumbing'); // the sub's Details panel, not the parent's
   await title.fill('Pipework');
   await title.blur(); // autosave commits on blur — no Save button
 

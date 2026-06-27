@@ -49,6 +49,18 @@ describe('ProjectDetailsPanel', () => {
     expect(screen.getByText('Saved')).toBeInTheDocument();
   });
 
+  it('autosaves tags on blur, even when typed-then-blurred in one go (#444)', () => {
+    const onSave = vi.fn();
+    render(
+      <ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} availableTags={['home']} />,
+    );
+    const tags = screen.getByLabelText('Tags');
+    // Type then immediately blur — the commit reads the ref, so the just-typed value isn't lost.
+    fireEvent.change(tags, { target: { value: 'home' } });
+    fireEvent.blur(tags);
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ tags: ['home'] }));
+  });
+
   it('autosaves the due date on blur, parsing a flexible date', () => {
     const onSave = vi.fn();
     render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);

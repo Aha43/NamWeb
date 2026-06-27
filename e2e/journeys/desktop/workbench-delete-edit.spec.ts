@@ -20,7 +20,12 @@ test('edit a sub-project’s tags via the workbench Details panel', async ({ pag
   // A sub-project is edited on its own workbench Details panel (#269) — open it, then expand Details.
   await page.getByRole('button', { name: 'Open Plumbing' }).click();
   await expect(page).toHaveURL(/\/projects\/sp1/);
+  // Wait for the parent workbench to actually unmount before editing. The URL flips first; under load
+  // the parent's panel can still be painted, and a too-eager edit lands on the parent (#444). "Open
+  // Plumbing" only exists on the parent (it lists the sub), so its absence means the sub has rendered.
+  await expect(page.getByRole('button', { name: 'Open Plumbing' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Details' }).click();
+  await expect(page.getByRole('textbox', { name: 'Title' })).toHaveValue('Plumbing'); // the sub's panel
   const tags = page.getByLabel('Tags');
   await tags.fill('home');
   await tags.blur(); // the Details panel autosaves — tags commit on blur, there is no Save button
