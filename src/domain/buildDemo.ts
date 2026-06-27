@@ -29,6 +29,18 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
     return d.toISOString();
   };
 
+  // A date on a given day of a month `monthOffset` from now (local), for the calendar-board demo.
+  const inMonth = (monthOffset: number, day: number): string => {
+    const d = new Date(now.getFullYear(), now.getMonth() + monthOffset, day);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  };
+  // The month name `monthOffset` from now (e.g. "June") — used as month sub-project titles.
+  const monthName = (monthOffset: number): string =>
+    new Date(now.getFullYear(), now.getMonth() + monthOffset, 1).toLocaleString('en-US', { month: 'long' });
+
   // Captured up-front so the deposit can be blocked by reserving the hotel (by id, within the seed).
   const reserveHotelId = newId();
 
@@ -68,6 +80,52 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
     ],
   };
 
+  // A calendar-board project: months as sub-projects, each holding dated cards (the workflow behind
+  // epic #439). Open it in Column view → one column per month; toggle "By due" to order each column's
+  // cards by date. The direct actions and every month's cards are listed deliberately *out* of date
+  // order, with one undated direct action, so the By-due sort is visibly different from manual (#437).
+  const gardenBoard: SeedNode = {
+    id: newId(),
+    title: 'Garden makeover 🌿',
+    project: true,
+    tags: ['home'],
+    description: 'A month-by-month plan — open in Column view and use “By due” to order each month by date.',
+    children: [
+      { id: newId(), title: 'Pick new plants', status: 'NEXT', dueAt: inMonth(0, 25) },
+      { id: newId(), title: 'Get quotes from landscapers', status: 'NEXT', dueAt: inMonth(0, 10) },
+      { id: newId(), title: 'Decide on a budget', status: 'BACKLOG' }, // undated → sorts last
+      { id: newId(), title: 'Measure the back fence', status: 'NEXT', dueAt: inMonth(0, 18) },
+      {
+        id: newId(),
+        title: monthName(0),
+        project: true,
+        children: [
+          { id: newId(), title: 'Clear the old beds', status: 'BACKLOG', dueAt: inMonth(0, 20) },
+          { id: newId(), title: 'Order soil & mulch', status: 'BACKLOG', dueAt: inMonth(0, 6) },
+        ],
+      },
+      {
+        id: newId(),
+        title: monthName(1),
+        project: true,
+        children: [
+          { id: newId(), title: 'Plant the hedges', status: 'BACKLOG', dueAt: inMonth(1, 14) },
+          { id: newId(), title: 'Build raised beds', status: 'BACKLOG', dueAt: inMonth(1, 3) },
+          { id: newId(), title: 'Install drip irrigation', status: 'BACKLOG', dueAt: inMonth(1, 22) },
+        ],
+      },
+      {
+        id: newId(),
+        title: monthName(2),
+        project: true,
+        children: [
+          { id: newId(), title: 'Lay the patio', status: 'BACKLOG', dueAt: inMonth(2, 9) },
+          { id: newId(), title: 'Set up garden lighting', status: 'BACKLOG', dueAt: inMonth(2, 17) },
+        ],
+      },
+    ],
+  };
+
   // Loose actions (no project) to fill Next/Backlog and the tag list.
   const freeActions: SeedNode[] = [
     { id: newId(), title: 'Call the dentist', status: 'NEXT', tags: ['@phone'], dueAt: dueIn(-2) }, // overdue
@@ -76,7 +134,7 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
   ];
 
   let doc = createDefaultWorkspace();
-  doc = applyIntent(doc, { type: 'seedProject', parentId: doc.projectsNodeId, nodes: [vacation, dog], now: nowIso });
+  doc = applyIntent(doc, { type: 'seedProject', parentId: doc.projectsNodeId, nodes: [vacation, dog, gardenBoard], now: nowIso });
   // The Learn NAM project teaches the method, alongside the relatable sample projects.
   doc = applyIntent(doc, { type: 'seedProject', parentId: doc.projectsNodeId, nodes: [buildLearnNam(newId, now)], now: nowIso });
   doc = applyIntent(doc, { type: 'seedProject', parentId: doc.nextActionsNodeId, nodes: freeActions, now: nowIso });
