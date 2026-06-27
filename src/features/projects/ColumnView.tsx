@@ -16,7 +16,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { cn } from '@/lib/utils';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
-import { ActionList, ActionRow } from '../actions/ActionRow';
+import { ActionRow } from '../actions/ActionRow';
 import { InlineRename } from '../actions/InlineRename';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
@@ -114,6 +114,7 @@ export function ColumnView({
   const renderRow = (col: WorkbenchColumn, row: ActionRowData, index: number, drag?: SortableRowRender) => (
     <ActionRow
       row={row}
+      variant="card"
       dragRef={drag?.setNodeRef}
       dragStyle={drag?.style}
       onEdit={() => onEdit(row.id)}
@@ -144,7 +145,7 @@ export function ColumnView({
     const label = col.isUnsorted ? 'Unsorted' : col.title;
     const rows =
       col.actions.length > 0 ? (
-        <ActionList>
+        <ul className="flex flex-col gap-1.5">
           {col.actions.map((row, index) =>
             dnd ? (
               <SortableRow key={row.id} id={row.id} label={row.title}>
@@ -154,7 +155,7 @@ export function ColumnView({
               <Fragment key={row.id}>{renderRow(col, row, index)}</Fragment>
             ),
           )}
-        </ActionList>
+        </ul>
       ) : null;
 
     return (

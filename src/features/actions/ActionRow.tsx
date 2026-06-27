@@ -31,6 +31,7 @@ export function ActionRow({
   selectable = false,
   selected = false,
   onSelectedChange,
+  variant = 'row',
 }: {
   row: ActionRowData;
   actions: ReactNode;
@@ -46,10 +47,15 @@ export function ActionRow({
   selectable?: boolean;
   selected?: boolean;
   onSelectedChange?: (selected: boolean) => void;
+  /** `row` (default) = the horizontal list row. `card` = a compact Kanban card for the Column view:
+   *  title on its own line, no project path/age, controls in a hover-revealed footer (#445). */
+  variant?: 'row' | 'card';
 }) {
   const { dateFormat } = useSettings();
   const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat) : null;
-  const age = row.touchedAt ? formatAge(row.touchedAt) : null;
+  const isCard = variant === 'card';
+  // The age label is list-only noise on a Kanban card (nearly every card would read "today").
+  const age = !isCard && row.touchedAt ? formatAge(row.touchedAt) : null;
   const [renaming, setRenaming] = useState(false);
 
   // When a row has notes, hovering its title shows them (truncated). Use a plain truncating title
@@ -58,7 +64,7 @@ export function ActionRow({
   const titleInner = descTip ? (
     <span className="block truncate text-sm text-foreground">{row.title}</span>
   ) : (
-    <TruncatedTitle text={row.title} className="text-sm text-foreground" />
+    <TruncatedTitle text={row.title} className="block text-sm text-foreground" />
   );
   const titleEl = onEdit ? (
     // Click the title to open the editor (replaces the old slider/edit icon).
@@ -69,98 +75,136 @@ export function ActionRow({
     titleInner
   );
 
+  const checkbox = selectable ? (
+    <input
+      type="checkbox"
+      aria-label={`Select ${row.title}`}
+      checked={selected}
+      onChange={(e) => onSelectedChange?.(e.target.checked)}
+      className="shrink-0"
+    />
+  ) : null;
+
+  const titleNode =
+    renaming && onRename ? (
+      <InlineRename
+        title={row.title}
+        onCommit={(t) => { onRename(t); setRenaming(false); }}
+        onCancel={() => setRenaming(false)}
+      />
+    ) : descTip ? (
+      <Tooltip label={descTip}>{titleEl}</Tooltip>
+    ) : (
+      titleEl
+    );
+
+  const hasMeta = row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || !!due || !!age || !!row.hasResources;
+  const metaNode = hasMeta ? (
+    <div className="mt-0.5 flex flex-wrap items-center gap-1">
+      {row.hasResources && (
+        <Paperclip aria-label="Has resources" className="h-3 w-3 text-muted-foreground" />
+      )}
+      {row.tags.map((tag) => (
+        <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+          {tag}
+        </span>
+      ))}
+      {row.inheritedTags?.map((tag) => (
+        <span
+          key={`inh-${tag}`}
+          title="From project"
+          className="rounded bg-muted px-1.5 py-0.5 text-[11px] italic text-muted-foreground"
+        >
+          {tag}
+        </span>
+      ))}
+      {due && (
+        <span className={cn('text-[11px] font-medium whitespace-nowrap', DUE_TONE[due.tone])}>Due {due.label}</span>
+      )}
+      {age && (
+        <span
+          className={cn(
+            'text-[11px]',
+            age.stale ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground',
+          )}
+        >
+          {age.label}
+        </span>
+      )}
+    </div>
+  ) : null;
+
+  const actionsNode = (
+    <>
+      <CopyButton value={row.title} label={`name "${row.title}"`} className="p-2" />
+      {onRename && !renaming && (
+        <Tooltip label={`Rename ${row.title}`}>
+          <button
+            type="button"
+            aria-label={`Rename ${row.title}`}
+            onClick={() => setRenaming(true)}
+            className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        </Tooltip>
+      )}
+      {actions}
+      {onDelete && (
+        <ConfirmButton
+          aria-label={`Delete ${row.title}`}
+          message={
+            (row.descendantCount ?? 0) > 0
+              ? `Delete "${row.title}" and its ${row.descendantCount} item${row.descendantCount === 1 ? '' : 's'}?`
+              : `Delete "${row.title}"?`
+          }
+          onConfirm={onDelete}
+          className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </ConfirmButton>
+      )}
+    </>
+  );
+
+  // Kanban card: title gets a full line; controls drop to a footer that fades in on hover/focus so
+  // they never compete with the title for the column's narrow width (#445). (Column view is desktop,
+  // so hover-reveal is fine; the footer stays in the DOM — opacity, not display — for a11y + tests.)
+  if (isCard) {
+    return (
+      <li
+        ref={dragRef}
+        style={dragStyle}
+        className="group list-none rounded-md border border-border bg-card/60 p-2 transition-colors hover:bg-accent/40"
+      >
+        <div className="flex items-start gap-2">
+          {checkbox}
+          <div className="min-w-0 flex-1">
+            {titleNode}
+            {metaNode}
+          </div>
+        </div>
+        <div className="mt-1 flex items-center justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+          {actionsNode}
+        </div>
+      </li>
+    );
+  }
+
   return (
     <li
       ref={dragRef}
       style={dragStyle}
       className="flex items-center gap-2 px-3 py-2 transition-colors even:bg-muted/40 hover:bg-accent/40"
     >
-      {selectable && (
-        <input
-          type="checkbox"
-          aria-label={`Select ${row.title}`}
-          checked={selected}
-          onChange={(e) => onSelectedChange?.(e.target.checked)}
-          className="shrink-0"
-        />
-      )}
+      {checkbox}
       <div className="min-w-0 flex-1">
         <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />
-        {renaming && onRename ? (
-          <InlineRename
-            title={row.title}
-            onCommit={(t) => { onRename(t); setRenaming(false); }}
-            onCancel={() => setRenaming(false)}
-          />
-        ) : descTip ? (
-          <Tooltip label={descTip}>{titleEl}</Tooltip>
-        ) : (
-          titleEl
-        )}
-        {(row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || due || age || row.hasResources) && (
-          <div className="mt-0.5 flex flex-wrap items-center gap-1">
-            {row.hasResources && (
-              <Paperclip aria-label="Has resources" className="h-3 w-3 text-muted-foreground" />
-            )}
-            {row.tags.map((tag) => (
-              <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                {tag}
-              </span>
-            ))}
-            {row.inheritedTags?.map((tag) => (
-              <span
-                key={`inh-${tag}`}
-                title="From project"
-                className="rounded bg-muted px-1.5 py-0.5 text-[11px] italic text-muted-foreground"
-              >
-                {tag}
-              </span>
-            ))}
-            {due && (
-              <span className={cn('text-[11px] font-medium', DUE_TONE[due.tone])}>Due {due.label}</span>
-            )}
-            {age && (
-              <span
-                className={cn(
-                  'text-[11px]',
-                  age.stale ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground',
-                )}
-              >
-                {age.label}
-              </span>
-            )}
-          </div>
-        )}
+        {titleNode}
+        {metaNode}
       </div>
       <div className="flex shrink-0 items-center gap-1">
-        <CopyButton value={row.title} label={`name "${row.title}"`} className="p-2" />
-        {onRename && !renaming && (
-          <Tooltip label={`Rename ${row.title}`}>
-            <button
-              type="button"
-              aria-label={`Rename ${row.title}`}
-              onClick={() => setRenaming(true)}
-              className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
-            >
-              <Pencil className="h-3.5 w-3.5" />
-            </button>
-          </Tooltip>
-        )}
-        {actions}
-        {onDelete && (
-          <ConfirmButton
-            aria-label={`Delete ${row.title}`}
-            message={
-              (row.descendantCount ?? 0) > 0
-                ? `Delete "${row.title}" and its ${row.descendantCount} item${row.descendantCount === 1 ? '' : 's'}?`
-                : `Delete "${row.title}"?`
-            }
-            onConfirm={onDelete}
-            className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </ConfirmButton>
-        )}
+        {actionsNode}
       </div>
     </li>
   );

@@ -220,6 +220,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Readable cards in the Column (Kanban) view.** Column cards used the full list-row layout, which didn't fit a narrow column — titles collapsed to a few characters and the due date wrapped down several lines. Cards now have a compact layout: the **title gets its own full line** (truncated with an on-hover full-name tooltip), the **due date sits on one line**, the redundant project path and "age" label are gone, and the row of action buttons (status, edit, rename, delete, drag, reorder) **moves to a footer that appears on hover** so it never crowds the title. Closes #445.
+
 - **⌘/Ctrl+Enter now reliably saves the action editor.** The save shortcut used to miss intermittently when focus sat in one of the editor's pop-up controls (the tag suggestions, the "Move to…" picker, a date popover) — those render outside the form, so the keystroke never reached it. The shortcut now listens at the document level while the dialog is open, so it fires no matter which control has focus (still ignoring plain Enter and IME composition). Closes #435.
 
 - **Switching a project's view now shows the change even when Sub-projects is collapsed.** The List / Heat-map / Column switch only restyles the Sub-projects section, so picking a view while that section was folded looked like nothing happened. Selecting a view now expands the section so the chosen layout is actually visible. Closes #418.
