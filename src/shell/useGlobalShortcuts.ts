@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCapture } from '@/capture/capture-context';
+import { useSettings } from '@/components/settings/settings-context';
 
 /** The `g`-then-letter chord destinations (Gmail/Linear-style). Mnemonics where they fit. */
 const GO_TO: Record<string, string> = {
@@ -37,6 +38,7 @@ export function isTypingTarget(target: EventTarget | null): boolean {
  * App-wide keyboard shortcuts (power users, physical keyboard). Mounted once inside the router so a
  * single `window` listener owns global keys:
  *   - `c` → open Quick capture
+ *   - `t` → flip the add-to-top / add-to-bottom toggle (all add boxes)
  *   - `/` → focus the toolbar search (falls back to navigating to Search if the box isn't mounted)
  *   - `g` then a letter → jump between views (see GO_TO)
  *   - `?` → open Help
@@ -47,6 +49,7 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 export function useGlobalShortcuts(): void {
   const navigate = useNavigate();
   const { openCapture } = useCapture();
+  const { addToBottom, setAddToBottom } = useSettings();
   const pendingG = useRef(false);
   const timer = useRef<number | null>(null);
 
@@ -86,6 +89,12 @@ export function useGlobalShortcuts(): void {
           event.preventDefault();
           openCapture();
           break;
+        case 't':
+          // Flip the shared add-to-top/bottom toggle (all add boxes) — keyboard mirror of the
+          // AddPositionToggle button (#450).
+          event.preventDefault();
+          setAddToBottom(!addToBottom);
+          break;
         case '/': {
           event.preventDefault();
           const search = document.getElementById(TOOLBAR_SEARCH_ID) as HTMLInputElement | null;
@@ -109,5 +118,5 @@ export function useGlobalShortcuts(): void {
       window.removeEventListener('keydown', onKeyDown);
       clearChord();
     };
-  }, [navigate, openCapture]);
+  }, [navigate, openCapture, addToBottom, setAddToBottom]);
 }
