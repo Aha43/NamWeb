@@ -109,6 +109,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
+- **Quick-move an action *down* into a sub-project.** The fast move menu for an action now also lists its current project's own **sub-projects**, so when a project shows sub-projects you can drop an action straight into one — alongside the existing up (parent) and sideways (siblings). Closes #433.
+
 - **Fast move to a parent/sibling is back, with the picker one click away.** On desktop, the "move into another project" control (workbench sub-project / action / bulk move, and the Projects list) now opens a **quick menu** of the proximate destinations — the **parent project**, **sibling projects**, and **Free actions** / **Top level** — for one-click moves, plus **"Browse all projects…"** that opens the Finder-style column picker for anywhere else. Restores the immediacy the picker had buried. Phone keeps its dropdown. Closes #431.
 
 - **MCP `add_action` defaults to Backlog.** New actions added via the MCP tool now default to **BACKLOG** (was NEXT), matching NamDesktop — capture first, promote to Next deliberately. Pass `status` to override. Closes #211.

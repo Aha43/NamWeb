@@ -25,9 +25,16 @@ const ids = (doc: ReturnType<typeof build>, actionId: string) =>
   actionMoveTargets(doc, actionId).map((t) => t.id);
 
 describe('actionMoveTargets', () => {
-  it('top-level project action → sibling projects + Free actions (no parent project)', () => {
+  it('top-level project action → sibling projects + own sub-projects (down) + Free actions', () => {
     const doc = build();
-    expect(ids(doc, 'a1').sort()).toEqual([doc.nextActionsNodeId, 'B'].sort());
+    // a1 is in A (top-level): no parent project; sibling = B; down into A's sub-project A1; Free.
+    expect(ids(doc, 'a1').sort()).toEqual([doc.nextActionsNodeId, 'A1', 'B'].sort());
+  });
+
+  it('omits an archived sub-project from the down targets', () => {
+    let doc = build();
+    doc = applyIntent(doc, { type: 'setStatus', id: 'A1', status: 'ARCHIVED', now: 't' });
+    expect(ids(doc, 'a1')).not.toContain('A1');
   });
 
   it('nested project action → parent project + siblings + Free actions', () => {

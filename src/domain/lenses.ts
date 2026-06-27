@@ -172,8 +172,9 @@ export interface ProjectMoveTarget {
 /**
  * Where an **action** can be moved (from the project it's in): its **parent project** (one level up;
  * "Free actions" when the action sits in a top-level project), its **sibling projects** (other
- * projects under the same parent), and **Free actions** (the loose-actions root). Excludes archived
- * projects and the action's current container. Actions only — empty for projects.
+ * projects under the same parent), **down** into its current project's own **sub-projects**, and
+ * **Free actions** (the loose-actions root). Excludes archived projects and the action's current
+ * container. Actions only — empty for projects.
  */
 export function actionMoveTargets(doc: WorkspaceDocument, actionId: string): ProjectMoveTarget[] {
   const action = doc.nodes[actionId];
@@ -194,6 +195,11 @@ export function actionMoveTargets(doc: WorkspaceDocument, actionId: string): Pro
     for (const cid of parent?.childIds ?? []) {
       const n = doc.nodes[cid];
       if (n?.project && cid !== containerId && !archived.has(cid)) targets.push({ id: cid, label: labelFor(n) });
+    }
+    // Down: this project's own sub-projects (move the action a level deeper).
+    for (const cid of container.childIds) {
+      const n = doc.nodes[cid];
+      if (n?.project && !archived.has(cid)) targets.push({ id: cid, label: labelFor(n) });
     }
   }
   // Free actions (the loose-actions root) — unless the action is already there.

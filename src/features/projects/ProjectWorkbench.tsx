@@ -93,7 +93,7 @@ export interface ProjectWorkbenchProps {
   onDeleteSubProject?: (id: string) => void;
   /** Count-aware confirm message for a sub-project delete. */
   deleteSubProjectMessage?: (id: string) => string;
-  /** Proximate action destinations (parent / siblings / Free actions) for the quick menu. */
+  /** Proximate action destinations (parent / siblings / sub-projects / Free actions) for the quick menu. */
   actionMoveTargets?: (id: string) => { id: string; label: string }[];
   /** All projects an action can move into (the "Browse all projects…" picker set). */
   actionBrowseTargets?: (id: string) => { id: string; label: string }[];

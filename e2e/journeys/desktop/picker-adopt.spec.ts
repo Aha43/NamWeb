@@ -12,6 +12,7 @@ test.use({
     .project('beta', 'Beta')
     .project('home', 'Home')
     .project('bath', 'Bathroom', { under: 'home' })
+    .action('tidy', 'Tidy up', { under: 'home' })
     .project('work', 'Work')
     .build(),
 });
@@ -39,6 +40,18 @@ test('move a sub-project to a distant project via Browse → picker', async ({ p
   await picker.getByRole('button', { name: 'Move here' }).click();
 
   await expect.poll(() => doc.current().nodes['work'].childIds).toContain('bath');
+});
+
+test('quick-move an action down into its project’s sub-project via the menu', async ({ page, doc }) => {
+  await page.goto('/projects/home');
+  await expandWorkbench(page);
+
+  // "Tidy up" lives in Home; Home has sub-project Bathroom → it's a one-click "down" target.
+  await page.getByRole('button', { name: 'Move Tidy up to another project' }).click();
+  await page.getByRole('menuitem', { name: 'Bathroom', exact: true }).click();
+
+  await expect.poll(() => doc.current().nodes['bath'].childIds).toContain('tidy');
+  await expect(page.getByRole('dialog')).toHaveCount(0); // quick move — no picker dialog
 });
 
 test('create a new project from the Browse picker and move into it', async ({ page, doc }) => {
