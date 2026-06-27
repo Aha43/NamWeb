@@ -8,6 +8,7 @@ import { TagsInput } from '../actions/TagsInput';
 import { InheritedTags } from '../actions/InheritedTags';
 import { ResourcesEditor } from '../actions/ResourcesEditor';
 import { CopyButton } from '@/components/ui/copy-button';
+import { Tooltip } from '@/components/ui/tooltip';
 import type { ActionEdits } from '../actions/ActionDialog';
 import { cn } from '@/lib/utils';
 import { parseFlexibleDate } from '@/lib/dates';
@@ -110,19 +111,21 @@ export function ProjectDetailsPanel({
 
   return (
     <div className="rounded-lg border border-border">
-      <button
-        type="button"
-        aria-expanded={!collapsed}
-        onClick={onToggle}
-        className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
-      >
-        <span>Details</span>
-        {collapsed ? (
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        )}
-      </button>
+      <Tooltip label={`${collapsed ? 'Expand' : 'Collapse'} Details (x)`}>
+        <button
+          type="button"
+          aria-expanded={!collapsed}
+          onClick={onToggle}
+          className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
+        >
+          <span>Details</span>
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+      </Tooltip>
       {!collapsed && (
         <div className="space-y-4 border-t border-border p-3">
           <div className="space-y-1.5">

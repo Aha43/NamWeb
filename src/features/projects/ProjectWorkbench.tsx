@@ -486,6 +486,7 @@ export function ProjectWorkbench({
                     count={actions.length}
                     collapsed={sectionCollapsed('actions')}
                     onToggle={() => onToggleSection('actions')}
+                    shortcutKey="y"
                   />
                 </div>
                 {actions.length > 0 && onDeleteAction && (
@@ -704,6 +705,7 @@ export function ProjectWorkbench({
                 count={subProjects.length}
                 collapsed={sectionCollapsed('subprojects')}
                 onToggle={() => onToggleSection('subprojects')}
+                shortcutKey="z"
               />
               {/* Add-sub-project row + template tools live in the Sub-projects section, always reachable. */}
               <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
@@ -871,31 +873,37 @@ function ViewSwitch({
   );
 }
 
-/** A collapsible section heading (Actions / Sub-projects) for the List & Heat-map views. */
+/** A collapsible section heading (Actions / Sub-projects) for the List & Heat-map views. The
+ *  tooltip names the keyboard shortcut that toggles this section (#436). */
 function SectionHeader({
   label,
   count,
   collapsed,
   onToggle,
+  shortcutKey,
 }: {
   label: string;
   count: number;
   collapsed: boolean;
   onToggle: () => void;
+  /** The key that toggles this section, shown in the tooltip (e.g. `y` for Actions). */
+  shortcutKey?: string;
 }) {
   return (
-    <button
-      type="button"
-      aria-expanded={!collapsed}
-      onClick={onToggle}
-      className="flex w-full items-center gap-1 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground"
-    >
-      {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-      <span>{label}</span>
-      <span aria-hidden className="normal-case">
-        {count}
-      </span>
-    </button>
+    <Tooltip label={`${collapsed ? 'Expand' : 'Collapse'} ${label}${shortcutKey ? ` (${shortcutKey})` : ''}`}>
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        onClick={onToggle}
+        className="flex w-full items-center gap-1 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground"
+      >
+        {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        <span>{label}</span>
+        <span aria-hidden className="normal-case">
+          {count}
+        </span>
+      </button>
+    </Tooltip>
   );
 }
 
