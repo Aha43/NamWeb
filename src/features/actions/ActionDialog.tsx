@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import {
   Dialog,
@@ -144,20 +144,29 @@ export function ActionDialog({
     doSave();
   }
 
+  // ⌘/Ctrl+Enter saves from anywhere in the dialog. A document-level listener (while open) instead
+  // of a form `onKeyDown` so it fires even when focus sits in a *portaled* Radix control — the Tags
+  // suggestion popover, the Move-to picker, a date popover — whose DOM lives outside the form and so
+  // never bubbles keydown to it (the #435 intermittent miss). A ref keeps the latest save closure
+  // without re-subscribing on every keystroke; IME composition is left to compose.
+  const saveRef = useRef(doSave);
+  saveRef.current = doSave;
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.isComposing) {
+        e.preventDefault();
+        saveRef.current();
+      }
+    }
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="flex flex-col gap-0 overflow-hidden p-0">
-        <form
-          onSubmit={submit}
-          onKeyDown={(e) => {
-            // ⌘/Ctrl+Enter saves from anywhere in the form (Enter alone adds a newline in notes).
-            if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
-              e.preventDefault();
-              doSave();
-            }
-          }}
-          className="flex min-h-0 flex-1 flex-col"
-        >
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader className="border-b border-border px-6 pb-4 pt-6 text-left">
             <DialogTitle>{isProject ? 'Edit project' : 'Edit action'}</DialogTitle>
             <DialogDescription>Update the title, notes, tags, due date, and status.</DialogDescription>

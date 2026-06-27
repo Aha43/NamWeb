@@ -53,6 +53,34 @@ describe('ActionDialog', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
+  it('saves on Ctrl/Cmd+Enter even when focus is in a portaled control outside the form (#435)', () => {
+    // The bug: a form `onKeyDown` misses keydowns from portaled Radix popovers (Tags/Move/date),
+    // whose DOM lives outside the form subtree. The document-level listener catches them — modeled
+    // here by dispatching the keydown on `document` itself, which a form handler would never see.
+    const onSave = vi.fn();
+    render(<ActionDialog node={node({ title: 'Keep' })} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.keyDown(document, { key: 'Enter', metaKey: true });
+    expect(onSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not save on plain Enter or during IME composition', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node({ title: 'Keep' })} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.keyDown(document, { key: 'Enter' });
+    fireEvent.keyDown(document, { key: 'Enter', metaKey: true, isComposing: true });
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('stops listening once closed', () => {
+    const onSave = vi.fn();
+    const { rerender } = render(
+      <ActionDialog node={node({ title: 'Keep' })} open onOpenChange={vi.fn()} onSave={onSave} />,
+    );
+    rerender(<ActionDialog node={node({ title: 'Keep' })} open={false} onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.keyDown(document, { key: 'Enter', metaKey: true });
+    expect(onSave).not.toHaveBeenCalled();
+  });
+
   it('reports the edited fields and chosen status on save, parsing a flexible due date', () => {
     const onSave = vi.fn();
     const onOpenChange = vi.fn();
