@@ -233,7 +233,10 @@ describe('ProjectWorkbench', () => {
     setup({
       actions: [actionRow('a', 'Get quotes'), actionRow('b', 'Buy paint')],
       onDeleteAction: vi.fn(),
-      actionMoveTargets: () => [{ id: 'B', label: 'Project B' }, { id: 'free', label: 'Free actions' }],
+      actionMoveTargets: () => [
+        { id: 'B', label: 'Project B', kind: 'sibling' },
+        { id: 'free', label: 'Free actions', kind: 'free' },
+      ],
       onMoveActionInto,
     });
     fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
@@ -249,7 +252,7 @@ describe('ProjectWorkbench', () => {
     const onMoveActionInto = vi.fn();
     setup({
       actions: [actionRow('a', 'Get quotes')],
-      actionMoveTargets: () => [{ id: 'free', label: 'Free actions' }],
+      actionMoveTargets: () => [{ id: 'free', label: 'Free actions', kind: 'free' }],
       onMoveActionInto,
     });
     fireEvent.keyDown(screen.getByRole('button', { name: 'Move Get quotes to another project' }), { key: 'Enter' });

@@ -21,6 +21,7 @@ import { useIsDesktop } from '@/shell/useIsDesktop';
 import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
 import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
+import type { QuickMoveTarget } from '@/domain/lenses';
 import type { NamNode } from '../../domain/types';
 
 /** A project the row can be moved into (made a sub-project of). */
@@ -42,7 +43,7 @@ export interface ProjectsPanelProps {
   /** All projects `id` can move into (the "Browse all projects…" picker set). */
   moveTargets?: (id: string) => MoveTarget[];
   /** Proximate destinations (Top level + siblings) for the quick menu. */
-  quickMoveTargets?: (id: string) => MoveTarget[];
+  quickMoveTargets?: (id: string) => QuickMoveTarget[];
   /** Make `id` a sub-project of `targetId`. */
   onMoveInto?: (id: string, targetId: string) => void;
   /** Create a project under `parentId` (null = top level) and return its id — powers the picker's

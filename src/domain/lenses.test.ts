@@ -164,7 +164,7 @@ describe('projectQuickMoveTargets', () => {
 
   it('nested project: Top level + same-parent siblings only (no distant projects)', () => {
     const targets = projectQuickMoveTargets(tree(), 'a1');
-    expect(targets[0]).toEqual({ id: 'projects', label: 'Top level' });
+    expect(targets[0]).toEqual({ id: 'projects', label: 'Top level', kind: 'toplevel' });
     const idsList = targets.map((t) => t.id);
     expect(idsList).toContain('a2'); // sibling
     expect(idsList).not.toContain('B'); // distant project — only in the full browse set

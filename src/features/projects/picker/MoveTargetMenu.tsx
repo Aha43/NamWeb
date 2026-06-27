@@ -1,4 +1,4 @@
-import { type ReactNode } from 'react';
+import { Fragment, type ReactNode } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import type { PickerTarget } from './pickerModel';
+import type { QuickMoveTarget } from '@/domain/lenses';
 
 /** Show just the leaf for a ` › `-joined path label — the proximate menu stays compact. */
 function shortLabel(label: string): string {
@@ -16,14 +16,24 @@ function shortLabel(label: string): string {
   return parts[parts.length - 1] || label;
 }
 
-/**
- * The fast-move menu: a short list of **proximate** destinations (parent / siblings / Free or Top)
- * for one-click moves, plus a **"Browse all projects…"** item that opens the full column picker.
- * Restores the quick move-to-sibling/parent that the picker buried, while keeping the picker a click
- * away for anywhere else. Desktop only — callers keep the inline dropdown on phone.
- */
+/** Tooltip text that names the destination and its neighbour type (parent / sub-project / sibling). */
+function tooltipFor(t: QuickMoveTarget): string {
+  const name = shortLabel(t.label);
+  if (t.kind === 'parent') return `Move to ${name} (parent)`;
+  if (t.kind === 'subproject') return `Move to ${name} (sub-project)`;
+  if (t.kind === 'sibling') return `Move to ${name} (sibling)`;
+  return `Move to ${name}`; // free / top level — self-explanatory by name
+}
+
 const ICON_TRIGGER = 'rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground';
 
+/**
+ * The fast-move menu: proximate destinations grouped by direction — **up** (parent / Free / Top
+ * level) first, then **down** (the project's own sub-projects), then **sideways** (siblings) — each
+ * with a tooltip naming its type, so the kinds stay learnable without cluttering the labels. A final
+ * **"Browse all projects…"** opens the full column picker. Desktop only; callers keep the inline
+ * dropdown on phone.
+ */
 export function MoveTargetMenu({
   quickTargets,
   onPick,
@@ -33,8 +43,8 @@ export function MoveTargetMenu({
   disabled,
   children,
 }: {
-  /** Proximate destinations ({id,label}); labels may be ` › `-joined paths (shown by leaf). */
-  quickTargets: PickerTarget[];
+  /** Proximate destinations tagged by neighbour kind. */
+  quickTargets: QuickMoveTarget[];
   onPick: (id: string) => void;
   onBrowse: () => void;
   /** Accessible label for the trigger (e.g. `Move "Buy tiles" to another project`). */
@@ -45,6 +55,12 @@ export function MoveTargetMenu({
   /** The trigger content (e.g. a folder icon, or "Move to ▾"). */
   children: ReactNode;
 }) {
+  // Up (parent / Free / Top level), then down (sub-projects), then sideways (siblings).
+  const up = quickTargets.filter((t) => t.kind === 'parent' || t.kind === 'free' || t.kind === 'toplevel');
+  const down = quickTargets.filter((t) => t.kind === 'subproject');
+  const side = quickTargets.filter((t) => t.kind === 'sibling');
+  const groups = [up, down, side].filter((g) => g.length > 0);
+
   return (
     <DropdownMenu>
       <Tooltip label={disabled ? undefined : label}>
@@ -55,12 +71,17 @@ export function MoveTargetMenu({
         </DropdownMenuTrigger>
       </Tooltip>
       <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
-        {quickTargets.map((t) => (
-          <DropdownMenuItem key={t.id} onSelect={() => onPick(t.id)}>
-            {shortLabel(t.label)}
-          </DropdownMenuItem>
+        {groups.map((group, gi) => (
+          <Fragment key={gi}>
+            {gi > 0 && <DropdownMenuSeparator />}
+            {group.map((t) => (
+              <Tooltip key={t.id} label={tooltipFor(t)} side="right">
+                <DropdownMenuItem onSelect={() => onPick(t.id)}>{shortLabel(t.label)}</DropdownMenuItem>
+              </Tooltip>
+            ))}
+          </Fragment>
         ))}
-        {quickTargets.length > 0 && <DropdownMenuSeparator />}
+        {groups.length > 0 && <DropdownMenuSeparator />}
         <DropdownMenuItem onSelect={onBrowse}>Browse all projects…</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
