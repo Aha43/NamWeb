@@ -1,4 +1,4 @@
-import { Fragment, useState, type FormEvent, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import { descriptionTooltip, type ActionRowData } from '../actions/rows';
 import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
+import { isTypingTarget } from '@/shell/useGlobalShortcuts';
 import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
 import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
@@ -206,6 +207,24 @@ export function ProjectWorkbench({
   const isColumn = viewMode === 'column';
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
   const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
+
+  // Per-section collapse/expand shortcuts on the workbench: `x` Details, `y` Actions, `z`
+  // Sub-projects (#436). One key per section so each is predictable, rather than one overloaded
+  // "toggle all". Scoped to the workbench because this component is only mounted there; ignores
+  // typing/modifier/IME so it never fires mid-edit or steals browser/OS combos.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+      if (isTypingTarget(e.target)) return;
+      if (e.key === 'x') onToggleDetails();
+      else if (e.key === 'y') onToggleSection('actions');
+      else if (e.key === 'z') onToggleSection('subprojects');
+      else return;
+      e.preventDefault();
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onToggleDetails, onToggleSection]);
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   // Multi-select on the project's actions (session-only) for bulk delete.
@@ -467,6 +486,7 @@ export function ProjectWorkbench({
                     count={actions.length}
                     collapsed={sectionCollapsed('actions')}
                     onToggle={() => onToggleSection('actions')}
+                    shortcutKey="y"
                   />
                 </div>
                 {actions.length > 0 && onDeleteAction && (
@@ -685,6 +705,7 @@ export function ProjectWorkbench({
                 count={subProjects.length}
                 collapsed={sectionCollapsed('subprojects')}
                 onToggle={() => onToggleSection('subprojects')}
+                shortcutKey="z"
               />
               {/* Add-sub-project row + template tools live in the Sub-projects section, always reachable. */}
               <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
@@ -852,31 +873,37 @@ function ViewSwitch({
   );
 }
 
-/** A collapsible section heading (Actions / Sub-projects) for the List & Heat-map views. */
+/** A collapsible section heading (Actions / Sub-projects) for the List & Heat-map views. The
+ *  tooltip names the keyboard shortcut that toggles this section (#436). */
 function SectionHeader({
   label,
   count,
   collapsed,
   onToggle,
+  shortcutKey,
 }: {
   label: string;
   count: number;
   collapsed: boolean;
   onToggle: () => void;
+  /** The key that toggles this section, shown in the tooltip (e.g. `y` for Actions). */
+  shortcutKey?: string;
 }) {
   return (
-    <button
-      type="button"
-      aria-expanded={!collapsed}
-      onClick={onToggle}
-      className="flex w-full items-center gap-1 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground"
-    >
-      {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-      <span>{label}</span>
-      <span aria-hidden className="normal-case">
-        {count}
-      </span>
-    </button>
+    <Tooltip label={`${collapsed ? 'Expand' : 'Collapse'} ${label}${shortcutKey ? ` (${shortcutKey})` : ''}`}>
+      <button
+        type="button"
+        aria-expanded={!collapsed}
+        onClick={onToggle}
+        className="flex w-full items-center gap-1 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground"
+      >
+        {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        <span>{label}</span>
+        <span aria-hidden className="normal-case">
+          {count}
+        </span>
+      </button>
+    </Tooltip>
   );
 }
 

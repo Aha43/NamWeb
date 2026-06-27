@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Fold project sections from the keyboard.** On a project workbench, press <kbd>x</kbd> to toggle **Details**, <kbd>y</kbd> to toggle **Actions**, and <kbd>z</kbd> to toggle **Sub-projects** — collapse or expand each section without reaching for the mouse. Never fires while you're typing in a field. Documented in Help. Closes #436.
+
 - **A Finder-style picker for "Move to…" on desktop.** Moving an action from the editor now opens a macOS-Finder-style **column picker** — click a project to reveal its sub-projects in the next column and drill down to the exact destination, instead of scanning a long flat dropdown. Projects you can't move into (e.g. the item's own subtree) show greyed but stay navigable. You can also **create a new project right where you've navigated** ("＋ New project here") and move straight into it. Phone keeps the lightweight native select. First step toward one shared picker across all the "move / file under" surfaces. Closes #423.
 
 - **The column picker now drives every "move into a project" on desktop.** The workbench "move sub-project", "move action", and bulk "move selected", plus "move project" in the Projects list, all open the same Finder-style column picker (the row's folder icon now opens it). Reordering and the kanban drag are unchanged. Phone keeps the inline dropdowns. Closes #425.

@@ -43,6 +43,30 @@ describe('ProjectWorkbench', () => {
     expect(screen.getByRole('button', { name: 'Open Plumbing' })).toBeInTheDocument();
   });
 
+  it('toggles each section with its own key — x/y/z (#436)', () => {
+    const onToggleDetails = vi.fn();
+    const onToggleSection = vi.fn();
+    setup({ onSaveDetails: vi.fn(), onToggleDetails, onToggleSection });
+    fireEvent.keyDown(document.body, { key: 'x' });
+    expect(onToggleDetails).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(document.body, { key: 'y' });
+    expect(onToggleSection).toHaveBeenCalledWith('actions');
+    fireEvent.keyDown(document.body, { key: 'z' });
+    expect(onToggleSection).toHaveBeenCalledWith('subprojects');
+  });
+
+  it('ignores the section shortcuts while typing in a field (#436)', () => {
+    const onToggleDetails = vi.fn();
+    const onToggleSection = vi.fn();
+    setup({ onSaveDetails: vi.fn(), onToggleDetails, onToggleSection });
+    const input = screen.getByLabelText('Add action');
+    fireEvent.keyDown(input, { key: 'x' });
+    fireEvent.keyDown(input, { key: 'y' });
+    fireEvent.keyDown(input, { key: 'z' });
+    expect(onToggleDetails).not.toHaveBeenCalled();
+    expect(onToggleSection).not.toHaveBeenCalled();
+  });
+
   it('shows a Focus button on the actions header that enters focus', () => {
     const onFocus = vi.fn();
     setup({ onFocus });

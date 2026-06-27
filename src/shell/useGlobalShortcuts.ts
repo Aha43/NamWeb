@@ -22,7 +22,7 @@ const CHORD_WINDOW_MS = 1500;
 /** The id on the toolbar search input, so `/` can focus it from anywhere. */
 export const TOOLBAR_SEARCH_ID = 'toolbar-search';
 
-function isTypingTarget(target: EventTarget | null): boolean {
+export function isTypingTarget(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el) return false;
   return (
