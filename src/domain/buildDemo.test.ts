@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildDemo } from './buildDemo';
 import { blockedGroups, doneItems, dueGroups, effectiveTags, inboxItems, nextActions, projects } from './lenses';
+import { sortByDue } from '@/features/actions/sort';
 import type { NamNode } from './types';
 
 function counter(): () => string {
@@ -52,6 +53,19 @@ describe('buildDemo', () => {
     expect(kinds).toEqual(['project', 'tagFilter']);
     const project = doc.bookmarks?.find((b) => b.kind === 'project');
     expect(project?.projectId).toBe(byTitle('Vacation in Italy 🇮🇹').id);
+  });
+
+  it('includes a month-by-month board that exercises sort-by-due (#437)', () => {
+    const board = byTitle('Garden makeover 🌿');
+    const children = board.childIds.map((cid) => doc.nodes[cid]!);
+    // Months as sub-projects → Column view + the By-due toggle are meaningful here.
+    expect(children.filter((n) => n.project).length).toBeGreaterThanOrEqual(3);
+    // Direct actions are intentionally not in due order and include an undated one, so "By due"
+    // visibly reorders (soonest first, undated last).
+    const directActions = children.filter((n) => !n.project);
+    const sorted = sortByDue(directActions);
+    expect(sorted.map((n) => n.title)).not.toEqual(directActions.map((n) => n.title));
+    expect(sorted[sorted.length - 1]!.dueAt).toBeNull();
   });
 
   it('project tags rub off onto their actions (inherited)', () => {

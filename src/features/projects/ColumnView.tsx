@@ -64,6 +64,9 @@ export interface ColumnViewProps {
   ) => void;
   /** Mount drag-and-drop. Buttons + the editor's Move to… stay as fallbacks. */
   dndEnabled?: boolean;
+  /** When cards are sorted by due date, suppress within-column card reorder (the up/down buttons and
+   *  card drag) — the order is computed, not manual. Column reorder/collapse/resize stay available. */
+  dueSorted?: boolean;
   /** Reorder the columns themselves (i.e. the sub-projects) with left/right buttons. The Unsorted
    *  column is fixed first and is never moved. */
   onMoveColumn?: (columnId: string, direction: 'left' | 'right') => void;
@@ -91,6 +94,7 @@ export function ColumnView({
   onRename,
   onMoveActionToColumn,
   dndEnabled,
+  dueSorted,
   onMoveColumn,
   collapsed,
   onToggleCollapse,
@@ -103,7 +107,8 @@ export function ColumnView({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [renamingColId, setRenamingColId] = useState<string | null>(null);
-  const dnd = Boolean(dndEnabled && onMoveActionToColumn);
+  // While sorted by due, the card order is computed — no manual drag or up/down within a column.
+  const dnd = Boolean(dndEnabled && onMoveActionToColumn && !dueSorted);
 
   // One row; `drag` is supplied when the row is rendered inside a SortableContext.
   const renderRow = (col: WorkbenchColumn, row: ActionRowData, index: number, drag?: SortableRowRender) => (
@@ -117,11 +122,13 @@ export function ColumnView({
       actions={
         <div className="flex items-center gap-1">
           {drag?.handle}
-          <ReorderControls
-            title={row.title}
-            onUp={index > 0 ? () => onMoveAction(col.id, row.id, 'up') : undefined}
-            onDown={index < col.actions.length - 1 ? () => onMoveAction(col.id, row.id, 'down') : undefined}
-          />
+          {!dueSorted && (
+            <ReorderControls
+              title={row.title}
+              onUp={index > 0 ? () => onMoveAction(col.id, row.id, 'up') : undefined}
+              onDown={index < col.actions.length - 1 ? () => onMoveAction(col.id, row.id, 'down') : undefined}
+            />
+          )}
           <StatusMenu
             status={row.status}
             title={row.title}
