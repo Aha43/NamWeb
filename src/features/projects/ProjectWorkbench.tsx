@@ -31,6 +31,7 @@ import { useIsDesktop } from '@/shell/useIsDesktop';
 import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
 import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
+import type { QuickMoveTarget } from '@/domain/lenses';
 import type { NamNode, NodeStatus } from '../../domain/types';
 
 type MoveDirection = 'up' | 'down';
@@ -86,7 +87,7 @@ export interface ProjectWorkbenchProps {
   /** All projects a sub-project can move into (the "Browse all projects…" picker set). */
   moveTargets?: (id: string) => { id: string; label: string }[];
   /** Proximate sub-project destinations (Top level + siblings) for the quick menu. */
-  quickMoveTargets?: (id: string) => { id: string; label: string }[];
+  quickMoveTargets?: (id: string) => QuickMoveTarget[];
   /** Make a sub-project a child of `targetId` (or top-level). */
   onMoveInto?: (id: string, targetId: string) => void;
   /** Inline delete (with confirm) for a sub-project row, recursive when it has descendants. */
@@ -94,7 +95,7 @@ export interface ProjectWorkbenchProps {
   /** Count-aware confirm message for a sub-project delete. */
   deleteSubProjectMessage?: (id: string) => string;
   /** Proximate action destinations (parent / siblings / sub-projects / Free actions) for the quick menu. */
-  actionMoveTargets?: (id: string) => { id: string; label: string }[];
+  actionMoveTargets?: (id: string) => QuickMoveTarget[];
   /** All projects an action can move into (the "Browse all projects…" picker set). */
   actionBrowseTargets?: (id: string) => { id: string; label: string }[];
   /** Move an action under `targetId` (a project, or the Free-actions root). */

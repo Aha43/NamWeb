@@ -169,6 +169,14 @@ export interface ProjectMoveTarget {
   label: string;
 }
 
+/** Which neighbour direction a quick-move target is — drives the fast menu's grouping + tooltips. */
+export type MoveKind = 'parent' | 'subproject' | 'sibling' | 'free' | 'toplevel';
+
+/** A proximate move target tagged with its neighbour kind (for {@link actionMoveTargets} etc.). */
+export interface QuickMoveTarget extends ProjectMoveTarget {
+  kind: MoveKind;
+}
+
 /**
  * Where an **action** can be moved (from the project it's in): its **parent project** (one level up;
  * "Free actions" when the action sits in a top-level project), its **sibling projects** (other
@@ -176,34 +184,34 @@ export interface ProjectMoveTarget {
  * **Free actions** (the loose-actions root). Excludes archived projects and the action's current
  * container. Actions only — empty for projects.
  */
-export function actionMoveTargets(doc: WorkspaceDocument, actionId: string): ProjectMoveTarget[] {
+export function actionMoveTargets(doc: WorkspaceDocument, actionId: string): QuickMoveTarget[] {
   const action = doc.nodes[actionId];
   if (!action || action.project) return [];
   const containerId = Object.values(doc.nodes).find((n) => n.childIds.includes(actionId))?.id;
   if (!containerId) return [];
   const container = doc.nodes[containerId];
   const archived = archivedProjectIds(doc);
-  const targets: ProjectMoveTarget[] = [];
+  const targets: QuickMoveTarget[] = [];
   const labelFor = (n: NamNode) => [...projectPath(doc, n.id), n.title].join(' › ');
 
   if (container?.project) {
     const parentId = Object.values(doc.nodes).find((n) => n.childIds.includes(containerId))?.id;
     const parent = parentId ? doc.nodes[parentId] : undefined;
     // Move up to the enclosing project (only when the container's parent is itself a project).
-    if (parent?.project && !archived.has(parent.id)) targets.push({ id: parent.id, label: labelFor(parent) });
+    if (parent?.project && !archived.has(parent.id)) targets.push({ id: parent.id, label: labelFor(parent), kind: 'parent' });
     // Sibling projects: other projects under the container's parent.
     for (const cid of parent?.childIds ?? []) {
       const n = doc.nodes[cid];
-      if (n?.project && cid !== containerId && !archived.has(cid)) targets.push({ id: cid, label: labelFor(n) });
+      if (n?.project && cid !== containerId && !archived.has(cid)) targets.push({ id: cid, label: labelFor(n), kind: 'sibling' });
     }
     // Down: this project's own sub-projects (move the action a level deeper).
     for (const cid of container.childIds) {
       const n = doc.nodes[cid];
-      if (n?.project && !archived.has(cid)) targets.push({ id: cid, label: labelFor(n) });
+      if (n?.project && !archived.has(cid)) targets.push({ id: cid, label: labelFor(n), kind: 'subproject' });
     }
   }
   // Free actions (the loose-actions root) — unless the action is already there.
-  if (containerId !== doc.nextActionsNodeId) targets.push({ id: doc.nextActionsNodeId, label: 'Free actions' });
+  if (containerId !== doc.nextActionsNodeId) targets.push({ id: doc.nextActionsNodeId, label: 'Free actions', kind: 'free' });
   return targets;
 }
 
@@ -230,18 +238,20 @@ export function actionMoveTargetsAll(doc: WorkspaceDocument, actionId: string): 
  * is currently nested) plus its **sibling projects** (same parent). The quick subset of
  * {@link projectMoveTargets} (which also lists every other project) — for the fast-move menu.
  */
-export function projectQuickMoveTargets(doc: WorkspaceDocument, id: string): ProjectMoveTarget[] {
+export function projectQuickMoveTargets(doc: WorkspaceDocument, id: string): QuickMoveTarget[] {
   if (!doc.nodes[id]) return [];
   const excluded = subtreeIds(doc, id);
   const archived = archivedProjectIds(doc);
   const parentId = Object.values(doc.nodes).find((n) => n.childIds.includes(id))?.id;
-  const topLevel: ProjectMoveTarget[] =
-    parentId && parentId !== doc.projectsNodeId ? [{ id: doc.projectsNodeId, label: 'Top level' }] : [];
+  const topLevel: QuickMoveTarget[] =
+    parentId && parentId !== doc.projectsNodeId
+      ? [{ id: doc.projectsNodeId, label: 'Top level', kind: 'toplevel' }]
+      : [];
   const parent = parentId ? doc.nodes[parentId] : undefined;
   const siblings = (parent?.childIds ?? [])
     .filter((cid) => Boolean(doc.nodes[cid]?.project) && !excluded.has(cid) && !archived.has(cid))
     .map((cid) => doc.nodes[cid]!)
-    .map((n) => ({ id: n.id, label: [...projectPath(doc, n.id), n.title].join(' › ') }));
+    .map((n): QuickMoveTarget => ({ id: n.id, label: [...projectPath(doc, n.id), n.title].join(' › '), kind: 'sibling' }));
   return [...topLevel, ...siblings];
 }
 

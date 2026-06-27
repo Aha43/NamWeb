@@ -109,7 +109,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Changed
 
-- **Quick-move an action *down* into a sub-project.** The fast move menu for an action now also lists its current project's own **sub-projects**, so when a project shows sub-projects you can drop an action straight into one — alongside the existing up (parent) and sideways (siblings). Closes #433.
+- **Quick-move an action *down* into a sub-project, and a clearer move menu.** The fast move menu for an action now also lists its current project's own **sub-projects** (drop an action a level deeper). The menu is grouped by direction — **up** (parent / Free / Top level), then **down** (sub-projects), then **sideways** (siblings) — separated, with a tooltip on each item naming its type (e.g. *Move to Kitchen (sibling)*) so the kinds stay learnable without cluttering the labels. Applies to action and project moves alike. Closes #433.
 
 - **Fast move to a parent/sibling is back, with the picker one click away.** On desktop, the "move into another project" control (workbench sub-project / action / bulk move, and the Projects list) now opens a **quick menu** of the proximate destinations — the **parent project**, **sibling projects**, and **Free actions** / **Top level** — for one-click moves, plus **"Browse all projects…"** that opens the Finder-style column picker for anywhere else. Restores the immediacy the picker had buried. Phone keeps its dropdown. Closes #431.
 
