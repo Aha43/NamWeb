@@ -43,6 +43,45 @@ describe('ProjectWorkbench', () => {
     expect(screen.getByRole('button', { name: 'Open Plumbing' })).toBeInTheDocument();
   });
 
+  it('collapses all sections with the `x` shortcut when anything is open (#436)', () => {
+    const onToggleDetails = vi.fn();
+    const onToggleSection = vi.fn();
+    setup({
+      onSaveDetails: vi.fn(),
+      detailsCollapsed: false,
+      collapsedSections: new Set(),
+      onToggleDetails,
+      onToggleSection,
+    });
+    fireEvent.keyDown(document.body, { key: 'x' });
+    expect(onToggleDetails).toHaveBeenCalledTimes(1);
+    expect(onToggleSection).toHaveBeenCalledWith('actions');
+    expect(onToggleSection).toHaveBeenCalledWith('subprojects');
+  });
+
+  it('expands all sections with the `x` shortcut when everything is collapsed (#436)', () => {
+    const onToggleDetails = vi.fn();
+    const onToggleSection = vi.fn();
+    setup({
+      onSaveDetails: vi.fn(),
+      detailsCollapsed: true,
+      collapsedSections: new Set(['actions', 'subprojects']),
+      onToggleDetails,
+      onToggleSection,
+    });
+    fireEvent.keyDown(document.body, { key: 'x' });
+    expect(onToggleDetails).toHaveBeenCalledTimes(1);
+    expect(onToggleSection).toHaveBeenCalledWith('actions');
+    expect(onToggleSection).toHaveBeenCalledWith('subprojects');
+  });
+
+  it('ignores the `x` shortcut while typing in a field (#436)', () => {
+    const onToggleSection = vi.fn();
+    setup({ detailsCollapsed: false, collapsedSections: new Set(), onToggleSection });
+    fireEvent.keyDown(screen.getByLabelText('Add action'), { key: 'x' });
+    expect(onToggleSection).not.toHaveBeenCalled();
+  });
+
   it('shows a Focus button on the actions header that enters focus', () => {
     const onFocus = vi.fn();
     setup({ onFocus });

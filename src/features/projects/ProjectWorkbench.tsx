@@ -1,4 +1,4 @@
-import { Fragment, useState, type FormEvent, type ReactNode } from 'react';
+import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ import { descriptionTooltip, type ActionRowData } from '../actions/rows';
 import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
+import { isTypingTarget } from '@/shell/useGlobalShortcuts';
 import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
 import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
@@ -206,6 +207,26 @@ export function ProjectWorkbench({
   const isColumn = viewMode === 'column';
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
   const sectionCollapsed = (section: 'actions' | 'subprojects') => collapsedSections?.has(section) ?? false;
+
+  // `x` collapses/expands all three workbench sections at once (Details + Actions + Sub-projects),
+  // so you can fold the whole project to the add rows or open it all without reaching for the mouse
+  // (#436). Scoped to the workbench because this component is only mounted there. "Toggle all": if
+  // anything is open, collapse everything; otherwise expand everything. Ignores typing/modifier/IME.
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== 'x' || e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
+      if (isTypingTarget(e.target)) return;
+      e.preventDefault();
+      const aCollapsed = collapsedSections?.has('actions') ?? false;
+      const sCollapsed = collapsedSections?.has('subprojects') ?? false;
+      const collapseAll = !detailsCollapsed || !aCollapsed || !sCollapsed; // anything open → collapse all
+      if (detailsCollapsed !== collapseAll) onToggleDetails();
+      if (aCollapsed !== collapseAll) onToggleSection('actions');
+      if (sCollapsed !== collapseAll) onToggleSection('subprojects');
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [detailsCollapsed, collapsedSections, onToggleDetails, onToggleSection]);
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
   // Multi-select on the project's actions (session-only) for bulk delete.
