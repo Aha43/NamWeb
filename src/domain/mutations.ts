@@ -14,7 +14,7 @@ export type Intent =
   | { type: 'convertInboxToProject'; id: string; parentId?: string; now: string }
   | { type: 'setStatus'; id: string; status: NodeStatus; now: string }
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
-  | { type: 'setDue'; id: string; dueAt: string | null; now: string }
+  | { type: 'setDue'; id: string; dueAt: string | null; dueEndAt?: string | null; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
   | { type: 'registerTag'; tag: string }
   | { type: 'renameTag'; from: string; to: string }
@@ -322,6 +322,10 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const node = next.nodes[intent.id];
       if (!node) return next;
       node.dueAt = intent.dueAt;
+      // Only touch the end when the intent carries it (callers that don't manage ranges omit it,
+      // leaving any existing dueEndAt intact). Clearing the start clears the range.
+      if (intent.dueEndAt !== undefined) node.dueEndAt = intent.dueEndAt;
+      if (node.dueAt === null) node.dueEndAt = null;
       node.updatedAt = intent.now;
       return next;
     }

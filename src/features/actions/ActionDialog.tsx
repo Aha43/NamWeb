@@ -36,6 +36,8 @@ export interface ActionEdits {
   description: string | null;
   tags: string[];
   dueAt: string | null;
+  /** Optional end of a date range (inclusive); null = single date. Editor only emits it ≥ dueAt. */
+  dueEndAt?: string | null;
   status: NodeStatus;
   resources: Resource[];
 }
@@ -113,6 +115,8 @@ export function ActionDialog({
   const [tags, setTags] = useState(node.tags.join(', '));
   const [due, setDue] = useState(node.dueAt ?? '');
   const [dueError, setDueError] = useState(false);
+  const [dueEnd, setDueEnd] = useState(node.dueEndAt ?? '');
+  const [dueEndError, setDueEndError] = useState(false);
   const [status, setStatus] = useState<NodeStatus>(node.status);
   const [resources, setResources] = useState<Resource[]>(node.resources);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -127,12 +131,19 @@ export function ActionDialog({
       setDueError(true);
       return;
     }
+    // Optional end date: must parse, and be a real range (needs a start, and end ≥ start).
+    const dueEndAt = dueEnd.trim() ? parseFlexibleDate(dueEnd) : null;
+    if (dueEnd.trim() && (dueEndAt === null || !dueAt || dueEndAt < dueAt)) {
+      setDueEndError(true);
+      return;
+    }
     const trimmedDescription = description.trim();
     onSave({
       title: trimmedTitle,
       description: trimmedDescription ? trimmedDescription : null,
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       dueAt,
+      dueEndAt: dueAt ? dueEndAt : null,
       status,
       resources,
     });
@@ -198,25 +209,48 @@ export function ActionDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="action-due">Due</Label>
-              <Input
-                id="action-due"
-                placeholder="26-7-4"
-                value={due}
-                aria-invalid={dueError}
-                onChange={(e) => {
-                  setDue(e.target.value);
-                  if (dueError) setDueError(false);
-                }}
-                onBlur={() => {
-                  // Echo a canonical zero-padded ISO form (26-7-4 → 2026-07-04) to confirm
-                  // what was parsed. Leave unparseable text untouched (don't nag on blur).
-                  const iso = parseFlexibleDate(due);
-                  if (iso) setDue(iso);
-                }}
-              />
+              <div className="flex items-center gap-1.5">
+                <Input
+                  id="action-due"
+                  placeholder="26-7-4"
+                  value={due}
+                  aria-invalid={dueError}
+                  onChange={(e) => {
+                    setDue(e.target.value);
+                    if (dueError) setDueError(false);
+                  }}
+                  onBlur={() => {
+                    // Echo a canonical zero-padded ISO form (26-7-4 → 2026-07-04) to confirm
+                    // what was parsed. Leave unparseable text untouched (don't nag on blur).
+                    const iso = parseFlexibleDate(due);
+                    if (iso) setDue(iso);
+                  }}
+                />
+                <span className="shrink-0 text-xs text-muted-foreground">to</span>
+                <Input
+                  id="action-due-end"
+                  aria-label="Due end (optional)"
+                  placeholder="end (optional)"
+                  value={dueEnd}
+                  aria-invalid={dueEndError}
+                  onChange={(e) => {
+                    setDueEnd(e.target.value);
+                    if (dueEndError) setDueEndError(false);
+                  }}
+                  onBlur={() => {
+                    const iso = parseFlexibleDate(dueEnd);
+                    if (iso) setDueEnd(iso);
+                  }}
+                />
+              </div>
               {dueError && (
                 <p role="alert" className="text-xs text-destructive">
                   Use a date like 26-7-4 or 2026-07-04.
+                </p>
+              )}
+              {dueEndError && (
+                <p role="alert" className="text-xs text-destructive">
+                  The end needs a start date and must be on or after it.
                 </p>
               )}
             </div>

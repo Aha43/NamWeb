@@ -15,6 +15,8 @@ export interface ActionRowData {
   /** Tags inherited from ancestor projects ("rubbed off") — shown italic, can't be edited here. */
   inheritedTags?: string[];
   dueAt: string | null;
+  /** Optional end of a date range (inclusive); a range when set with `dueAt` and `>= dueAt`. */
+  dueEndAt?: string | null;
   /** For the age hint — updatedAt falling back to createdAt. */
   touchedAt: string | null;
   /** True when the node has attached resources (shows a paperclip). */
@@ -41,6 +43,7 @@ export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowDat
     tags: node.tags,
     inheritedTags: effectiveTags(doc, node.id).filter((t) => !node.tags.includes(t)),
     dueAt: node.dueAt,
+    dueEndAt: node.dueEndAt ?? null,
     touchedAt: node.updatedAt ?? node.createdAt,
     hasResources: node.resources.length > 0,
     descendantCount: subtreeIds(doc, node.id).size - 1,
