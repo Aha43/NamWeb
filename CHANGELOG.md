@@ -216,6 +216,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **⌘/Ctrl+Enter now reliably saves the action editor.** The save shortcut used to miss intermittently when focus sat in one of the editor's pop-up controls (the tag suggestions, the "Move to…" picker, a date popover) — those render outside the form, so the keystroke never reached it. The shortcut now listens at the document level while the dialog is open, so it fires no matter which control has focus (still ignoring plain Enter and IME composition). Closes #435.
+
 - **Switching a project's view now shows the change even when Sub-projects is collapsed.** The List / Heat-map / Column switch only restyles the Sub-projects section, so picking a view while that section was folded looked like nothing happened. Selecting a view now expands the section so the chosen layout is actually visible. Closes #418.
 
 - **You can rename an inbox item on mobile.** The inbox rename pencil (and delete) were tiny tap targets that the touch pass had missed — they're now comfortably sized on phones, so a single tap starts an inline rename. Closes #411.
