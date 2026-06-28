@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { actionMoveTargets, actionMoveTargetsAll, allTags, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects, subtreeIds } from '@/domain/lenses';
+import { actionMoveTargets, actionMoveTargetsAll, allTags, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
@@ -24,6 +24,7 @@ import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useSettings } from '@/components/settings/settings-context';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
+import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 /** Resolve a template subtree to concrete nodes (fresh ids) for applyTemplate. */
@@ -37,6 +38,7 @@ export function ProjectWorkbenchPage() {
   const { addToBottom } = useSettings();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
+  const { requestDeleteProject } = useDeleteProject();
   const navigate = useNavigate();
   const [mode, setMode] = useViewMode(id);
   const [collapsedColumns, toggleColumn] = useCollapsedColumns(id);
@@ -82,30 +84,14 @@ export function ProjectWorkbenchPage() {
 
   // Delete the whole project (recursive) from its Details panel, then climb to the parent project
   // (or the Projects list when it was top-level), since this workbench is about to vanish.
-  const descendants = subtreeIds(document, id).size - 1;
-  const deleteProjectMessage =
-    descendants > 0
-      ? `Delete the "${project.title}" project and its ${descendants} item${descendants === 1 ? '' : 's'}? This cannot be undone.`
-      : `Delete the "${project.title}" project? This cannot be undone.`;
-  // Delete the whole project (recursive). Stash the post-delete destination — the parent project,
-  // or the Projects list when this was top-level — before the node vanishes, then delete. The guard
-  // above performs the actual redirect, avoiding a race between an imperative navigate and the guard.
+  // Open the advanced-delete dialog. Stash the post-delete destination — parent project, or the
+  // Projects list when top-level — before requesting; once the project is gone the guard above
+  // redirects there (avoiding a race between an imperative navigate and the guard).
   const deleteProject = () => {
     const ancestors = buildPath(document, id); // top-most first; last is the immediate parent project
     const parentProject = ancestors[ancestors.length - 1];
     postDeleteNavRef.current = parentProject ? `/projects/${parentProject.id}` : '/projects';
-    deleteNode(id);
-  };
-
-  // Count-aware confirm for deleting a sub-project from its row (#419). Deleting one keeps us on this
-  // workbench (the current project survives), so — unlike deleteProject — no post-delete redirect.
-  const deleteSubProjectMessage = (subId: string) => {
-    const sub = document.nodes[subId];
-    if (!sub) return 'Delete this sub-project? This cannot be undone.';
-    const subDescendants = subtreeIds(document, subId).size - 1;
-    return subDescendants > 0
-      ? `Delete the "${sub.title}" sub-project and its ${subDescendants} item${subDescendants === 1 ? '' : 's'}? This cannot be undone.`
-      : `Delete the "${sub.title}" sub-project? This cannot be undone.`;
+    requestDeleteProject(id);
   };
 
   // Sections collapse by default on open (#279); when you add to one, expand it so the new item is
@@ -238,7 +224,6 @@ export function ProjectWorkbenchPage() {
       onSaveDetails={saveDetails}
       projectInheritedTags={effectiveTags(document, id).filter((t) => !project.tags.includes(t))}
       onDeleteProject={deleteProject}
-      deleteProjectMessage={deleteProjectMessage}
       onFocus={() => navigate(`/focus?project=${id}`)}
       onDeleteAction={deleteNode}
       onGroupSelected={(actionIds, title) =>
@@ -259,8 +244,7 @@ export function ProjectWorkbenchPage() {
       moveTargets={(subId) => projectMoveTargets(document, subId)}
       quickMoveTargets={(subId) => projectQuickMoveTargets(document, subId)}
       onMoveInto={(subId, targetId) => dispatch({ type: 'moveNode', id: subId, newParentId: targetId, now: nowIso() })}
-      onDeleteSubProject={deleteNode}
-      deleteSubProjectMessage={deleteSubProjectMessage}
+      onDeleteSubProject={(subId) => requestDeleteProject(subId)}
       actionMoveTargets={(actionId) => actionMoveTargets(document, actionId)}
       actionBrowseTargets={(actionId) => actionMoveTargetsAll(document, actionId)}
       onMoveActionInto={(actionId, targetId) => dispatch({ type: 'moveNode', id: actionId, newParentId: targetId, now: nowIso() })}

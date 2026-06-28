@@ -70,10 +70,8 @@ export interface ProjectWorkbenchProps {
   onSaveDetails?: (edits: ActionEdits) => void;
   /** Tags this project inherits from its ancestors ("rub-off") — shown read-only in Details. */
   projectInheritedTags?: string[];
-  /** Delete the current project (recursive); the Details panel confirms inline. */
+  /** Delete the current project — opens the advanced-delete dialog from the Details panel. */
   onDeleteProject?: () => void;
-  /** Count-aware confirm message for the project delete. */
-  deleteProjectMessage?: string;
   /** Enter Focus mode over this project's open direct actions. */
   onFocus?: () => void;
   /** Inline delete (with confirm) for a direct action row. */
@@ -91,10 +89,8 @@ export interface ProjectWorkbenchProps {
   quickMoveTargets?: (id: string) => QuickMoveTarget[];
   /** Make a sub-project a child of `targetId` (or top-level). */
   onMoveInto?: (id: string, targetId: string) => void;
-  /** Inline delete (with confirm) for a sub-project row, recursive when it has descendants. */
+  /** Delete a sub-project — opens the advanced-delete dialog (content disposition + undo). */
   onDeleteSubProject?: (id: string) => void;
-  /** Count-aware confirm message for a sub-project delete. */
-  deleteSubProjectMessage?: (id: string) => string;
   /** Proximate action destinations (parent / siblings / sub-projects / Free actions) for the quick menu. */
   actionMoveTargets?: (id: string) => QuickMoveTarget[];
   /** All projects an action can move into (the "Browse all projects…" picker set). */
@@ -172,7 +168,6 @@ export function ProjectWorkbench({
   onSaveDetails,
   projectInheritedTags = [],
   onDeleteProject,
-  deleteProjectMessage,
   onFocus,
   onDeleteAction,
   onGroupSelected,
@@ -183,7 +178,6 @@ export function ProjectWorkbench({
   quickMoveTargets,
   onMoveInto,
   onDeleteSubProject,
-  deleteSubProjectMessage,
   actionMoveTargets,
   actionBrowseTargets,
   onMoveActionInto,
@@ -378,14 +372,16 @@ export function ProjectWorkbench({
             )
           )}
           {onDeleteSubProject && (
-            <ConfirmButton
-              aria-label={`Delete ${sub.title}`}
-              message={deleteSubProjectMessage?.(sub.id) ?? `Delete the "${sub.title}" sub-project? This cannot be undone.`}
-              onConfirm={() => onDeleteSubProject(sub.id)}
-              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </ConfirmButton>
+            <Tooltip label={`Delete ${sub.title}`}>
+              <button
+                type="button"
+                aria-label={`Delete ${sub.title}`}
+                onClick={() => onDeleteSubProject(sub.id)}
+                className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
           )}
           {drag?.handle}
           {onMoveSubProject && (
@@ -445,7 +441,6 @@ export function ProjectWorkbench({
           availableTags={allTags}
           inheritedTags={projectInheritedTags}
           onDelete={onDeleteProject}
-          deleteConfirmMessage={deleteProjectMessage}
         />
       )}
 

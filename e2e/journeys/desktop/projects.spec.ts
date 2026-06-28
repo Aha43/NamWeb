@@ -41,8 +41,8 @@ test.describe('projects workbench', () => {
     await page.getByLabel('Add project').press('Enter');
     await expect(page.getByRole('button', { name: 'Open Temp project' })).toBeVisible();
 
-    await page.getByRole('button', { name: 'Delete Temp project' }).click(); // arm the confirm popover
-    await page.getByRole('button', { name: 'Delete', exact: true }).click(); // confirm
+    await page.getByRole('button', { name: 'Delete Temp project' }).click(); // opens the delete dialog
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete project' }).click(); // confirm (empty → no options)
     await expect(page.getByRole('button', { name: 'Open Temp project' })).toHaveCount(0);
   });
 });
