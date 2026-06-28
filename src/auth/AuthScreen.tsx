@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { LogoMark } from '@/components/brand/LogoMark';
+import { VersionBadge } from '@/components/VersionBadge';
 import { supabase } from '../lib/supabase';
 import { APP_NAME } from '../lib/app';
 import { DEV_WORKSPACE, isDevWorkspaceSelected, setWorkspaceName } from '../lib/workspace';
@@ -279,6 +280,8 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
             </button>
           </div>
         )}
+
+        <VersionBadge className="pt-1 text-center" />
       </form>
     </div>
   );
