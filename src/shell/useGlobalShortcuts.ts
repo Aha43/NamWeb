@@ -35,6 +35,18 @@ export function isTypingTarget(target: EventTarget | null): boolean {
 }
 
 /**
+ * True while a modal overlay owns interaction — any open Radix Dialog/AlertDialog (its content
+ * carries `role="dialog"`/`"alertdialog"` + `data-state="open"`, rendered in a portal). Global
+ * shortcuts are suspended then, so unmodified keys can't navigate or capture behind the modal. The
+ * dialog's own keys (Escape, Cmd/Ctrl+Enter) are handled by the dialog, not here. (#486)
+ */
+export function isModalOpen(): boolean {
+  return Boolean(
+    document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'),
+  );
+}
+
+/**
  * App-wide keyboard shortcuts (power users, physical keyboard). Mounted once inside the router so a
  * single `window` listener owns global keys:
  *   - `c` → open Quick capture
@@ -66,6 +78,8 @@ export function useGlobalShortcuts(): void {
       // Leave browser/OS combos (Cmd+K, Ctrl+F, …) and IME composition alone.
       if (event.metaKey || event.ctrlKey || event.altKey || event.isComposing) return;
       if (isTypingTarget(event.target)) return;
+      // A modal owns interaction — don't let app-wide shortcuts fire behind it (#486).
+      if (isModalOpen()) return;
 
       // Second key of a `g` chord: route, then reset (always consume the pending state).
       if (pendingG.current) {

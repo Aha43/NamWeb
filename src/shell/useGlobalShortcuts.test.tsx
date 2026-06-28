@@ -121,4 +121,24 @@ describe('useGlobalShortcuts', () => {
     fireEvent.keyDown(window, { key: 'z' }); // not a destination → reset, no nav
     expect(path()).toBe('/inbox');
   });
+
+  it('suspends shortcuts while a modal dialog is open (#486)', () => {
+    const { openCapture } = setup();
+    // Simulate an open Radix dialog/overlay in the DOM (portal-rendered in the real app).
+    const modal = document.createElement('div');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('data-state', 'open');
+    document.body.appendChild(modal);
+
+    fireEvent.keyDown(window, { key: 'c' }); // capture — must not open behind the modal
+    fireEvent.keyDown(window, { key: 'g' });
+    fireEvent.keyDown(window, { key: 'n' }); // nav chord — must not navigate
+    expect(openCapture).not.toHaveBeenCalled();
+    expect(path()).toBe('/inbox');
+
+    // With the modal gone, shortcuts work again.
+    modal.remove();
+    fireEvent.keyDown(window, { key: 'c' });
+    expect(openCapture).toHaveBeenCalledOnce();
+  });
 });
