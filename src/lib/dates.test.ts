@@ -1,5 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { formatAge, formatDate, formatDueHint, parseFlexibleDate } from './dates';
+import { formatAge, formatDate, formatDueHint, parseFlexibleDate, parseFlexibleTime } from './dates';
+
+describe('parseFlexibleTime (#493)', () => {
+  it('treats a bare number as the hour', () => {
+    expect(parseFlexibleTime('14')).toBe('14:00');
+    expect(parseFlexibleTime('9')).toBe('09:00');
+    expect(parseFlexibleTime('0')).toBe('00:00');
+  });
+  it('accepts HH:MM / H.MM and zero-pads', () => {
+    expect(parseFlexibleTime('14:30')).toBe('14:30');
+    expect(parseFlexibleTime('9:5')).toBe('09:05');
+    expect(parseFlexibleTime('14.30')).toBe('14:30');
+  });
+  it('accepts compact 3–4 digit forms', () => {
+    expect(parseFlexibleTime('1430')).toBe('14:30');
+    expect(parseFlexibleTime('930')).toBe('09:30');
+  });
+  it('rejects blanks and out-of-range / junk', () => {
+    expect(parseFlexibleTime('')).toBeNull();
+    expect(parseFlexibleTime('   ')).toBeNull();
+    expect(parseFlexibleTime('24:00')).toBeNull();
+    expect(parseFlexibleTime('12:60')).toBeNull();
+    expect(parseFlexibleTime('9pm')).toBeNull();
+  });
+});
 
 describe('parseFlexibleDate', () => {
   it('expands 2-digit years and zero-pads month/day', () => {

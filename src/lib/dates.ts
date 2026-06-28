@@ -59,6 +59,42 @@ export function parseFlexibleDate(text: string): string | null {
   return iso;
 }
 
+/**
+ * Parse flexible time-of-day entry to a local `"HH:MM"` (24h), à la the progressive "add hours, then
+ * minutes" input: `"14"`/`"9"` → hour only (`14:00`/`09:00`), `"1430"`/`"930"` → `14:30`/`09:30`,
+ * `"14:30"` / `"14.30"` → as written. Returns `null` for blank or anything out of range (hour 0–23,
+ * minute 0–59). See #493.
+ */
+export function parseFlexibleTime(text: string): string | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  let h: number;
+  let m: number;
+  const parts = trimmed.split(/[:.]/);
+  if (parts.length === 2) {
+    if (!/^\d{1,2}$/.test(parts[0]) || !/^\d{1,2}$/.test(parts[1])) return null;
+    h = Number(parts[0]);
+    m = Number(parts[1]);
+  } else if (parts.length === 1) {
+    const digits = parts[0];
+    if (!/^\d{1,4}$/.test(digits)) return null;
+    if (digits.length <= 2) {
+      h = Number(digits);
+      m = 0;
+    } else if (digits.length === 3) {
+      h = Number(digits.slice(0, 1));
+      m = Number(digits.slice(1));
+    } else {
+      h = Number(digits.slice(0, 2));
+      m = Number(digits.slice(2));
+    }
+  } else {
+    return null;
+  }
+  if (h < 0 || h > 23 || m < 0 || m > 59) return null;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
 export type DueTone = 'overdue' | 'today' | 'soon' | 'later';
 export interface DueHint {
   label: string;

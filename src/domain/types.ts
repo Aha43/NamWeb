@@ -35,6 +35,14 @@ export interface NamNode {
    * (it round-trips this field). Sort/grouping always key on the start (`dueAt`). See #438.
    */
   dueEndAt?: string | null;
+  /**
+   * Optional time of day for the start (`dueAt`) — local wall-clock `"HH:MM"` (24h, no timezone),
+   * e.g. a 14:30 appointment. Only meaningful with a `dueAt`; the range end (`dueEndAt`) stays
+   * date-only. Shared NamDesktop contract (round-trips via the workspace blob's unknown-field
+   * passthrough until desktop adds explicit support). Sort/grouping key on the date; time is a
+   * within-day tiebreak. See #493.
+   */
+  dueTime?: string | null;
 }
 
 export interface SavedView {

@@ -136,8 +136,19 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     if (!sameTags(tags, node.tags)) {
       dispatch({ type: 'updateTags', id: node.id, tags, now });
     }
-    if (edits.dueAt !== node.dueAt || (edits.dueEndAt ?? null) !== (node.dueEndAt ?? null)) {
-      dispatch({ type: 'setDue', id: node.id, dueAt: edits.dueAt, dueEndAt: edits.dueEndAt ?? null, now });
+    if (
+      edits.dueAt !== node.dueAt ||
+      (edits.dueEndAt ?? null) !== (node.dueEndAt ?? null) ||
+      (edits.dueTime ?? null) !== (node.dueTime ?? null)
+    ) {
+      dispatch({
+        type: 'setDue',
+        id: node.id,
+        dueAt: edits.dueAt,
+        dueEndAt: edits.dueEndAt ?? null,
+        dueTime: edits.dueTime ?? null,
+        now,
+      });
     }
     if (edits.status !== node.status) {
       dispatch({ type: 'setStatus', id: node.id, status: edits.status, now });

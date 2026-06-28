@@ -27,7 +27,7 @@ const SAVE_HINT =
   typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform)
     ? 'Save (⌘ + Enter)'
     : 'Save (Ctrl + Enter)';
-import { parseFlexibleDate } from '@/lib/dates';
+import { parseFlexibleDate, parseFlexibleTime } from '@/lib/dates';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
 
 /** The edited fields the dialog produces on save. Tags are raw (un-normalized). */
@@ -38,6 +38,8 @@ export interface ActionEdits {
   dueAt: string | null;
   /** Optional end of a date range (inclusive); null = single date. Editor only emits it ≥ dueAt. */
   dueEndAt?: string | null;
+  /** Optional time of day for the start (`"HH:MM"`, local); null = none. Emitted only with a dueAt. */
+  dueTime?: string | null;
   status: NodeStatus;
   resources: Resource[];
 }
@@ -117,6 +119,8 @@ export function ActionDialog({
   const [dueError, setDueError] = useState(false);
   const [dueEnd, setDueEnd] = useState(node.dueEndAt ?? '');
   const [dueEndError, setDueEndError] = useState(false);
+  const [dueTime, setDueTime] = useState(node.dueTime ?? '');
+  const [dueTimeError, setDueTimeError] = useState(false);
   const [status, setStatus] = useState<NodeStatus>(node.status);
   const [resources, setResources] = useState<Resource[]>(node.resources);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -137,6 +141,12 @@ export function ActionDialog({
       setDueEndError(true);
       return;
     }
+    // Optional time of day on the start: must parse when entered (and only kept with a date).
+    const dueTimeValue = dueTime.trim() ? parseFlexibleTime(dueTime) : null;
+    if (dueTime.trim() && dueTimeValue === null) {
+      setDueTimeError(true);
+      return;
+    }
     const trimmedDescription = description.trim();
     onSave({
       title: trimmedTitle,
@@ -144,6 +154,7 @@ export function ActionDialog({
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       dueAt,
       dueEndAt: dueAt ? dueEndAt : null,
+      dueTime: dueAt ? dueTimeValue : null,
       status,
       resources,
     });
@@ -210,14 +221,16 @@ export function ActionDialog({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="action-due">Due</Label>
-                {(due || dueEnd) && (
+                {(due || dueEnd || dueTime) && (
                   <button
                     type="button"
                     onClick={() => {
                       setDue('');
                       setDueEnd('');
+                      setDueTime('');
                       setDueError(false);
                       setDueEndError(false);
+                      setDueTimeError(false);
                     }}
                     className="text-xs text-muted-foreground hover:text-foreground"
                   >
@@ -242,6 +255,27 @@ export function ActionDialog({
                   if (iso) setDue(iso);
                 }}
               />
+              {/* Optional time of day on the start — type the hour, optionally the minutes (#493). */}
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 text-xs text-muted-foreground">at</span>
+                <Input
+                  id="action-due-time"
+                  aria-label="Due time (optional)"
+                  placeholder="14:30 (optional)"
+                  className="min-w-0 flex-1"
+                  value={dueTime}
+                  aria-invalid={dueTimeError}
+                  onChange={(e) => {
+                    setDueTime(e.target.value);
+                    if (dueTimeError) setDueTimeError(false);
+                  }}
+                  onBlur={() => {
+                    // Echo canonical HH:MM (14 → 14:00, 1430 → 14:30) to confirm what was parsed.
+                    const hhmm = parseFlexibleTime(dueTime);
+                    if (hhmm) setDueTime(hhmm);
+                  }}
+                />
+              </div>
               <div className="flex items-center gap-1.5">
                 <span className="shrink-0 text-xs text-muted-foreground">to</span>
                 <Input
@@ -269,6 +303,11 @@ export function ActionDialog({
               {dueEndError && (
                 <p role="alert" className="text-xs text-destructive">
                   The end needs a start date and must be on or after it.
+                </p>
+              )}
+              {dueTimeError && (
+                <p role="alert" className="text-xs text-destructive">
+                  Use a time like 14:30 or 9 (24-hour).
                 </p>
               )}
             </div>

@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Give a due date a time of day.** An action's Due now takes an optional **time** (a doctor's appointment at 14:30, a 09:00 call) — type it progressively: the hour alone works (`9` → 09:00), or `14:30` / `1430`. The row shows it after the date (*Due 12 Aug 14:30*), and the by-due sort orders within a day by time (all-day first). The range end stays date-only. Round-trips with NamDesktop. Closes #493.
+
 ## [0.3.1] - 2026-06-28
 
 Bug-fix patch from a code review — including a data-loss fix on failed-write Retry.
