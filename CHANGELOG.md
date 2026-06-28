@@ -10,7 +10,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Copy a project summary with the keyboard.** In the Summary dialog, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> copies the Markdown **and closes** the dialog; the Copy button now has a tooltip naming the shortcut. (The button itself still copies without closing, so you can keep tweaking the filters.) Closes #477.
+
 - **Capture keeps your last few items in view.** The capture dialog now lists the last 4 things you added this session under **Just added**, instead of letting each one vanish on Enter — handy when a thought relates to the previous one. Each is editable inline to fix a typo (it renames the real inbox item). The list is session-only and resets when you close the dialog. Closes #478.
+
+### Fixed
+
+- **Converting a project to an action lands where the action is.** Demoting a sub-project now drops you on its **parent** project's workbench (where the new action sits), and a top-level project — which becomes a *free* action — lands you on **Next**. Previously both bounced you to the top-level Projects list. Closes #479.
 
 ## [0.2.0] - 2026-06-28
 
