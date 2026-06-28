@@ -165,10 +165,18 @@ export function useWorkspace(): UseWorkspace {
         const base = committedRef.current;
         if (!base) return;
         const result = await commitIntent(supabase, workspaceNameRef.current, base, intent);
+        if (result.outcome === 'error') {
+          // The write failed. Keep the optimistic edit visible and leave `committedRef` at the
+          // confirmed base, so the edit stays recoverable: Retry re-pushes the current local
+          // document (with the edit) guarded on the right version. Do NOT adopt `result.snapshot`
+          // here — for an error it's the confirmed base, and assigning it would silently drop the
+          // edit and let a later re-push of the unchanged document masquerade as recovery (#484).
+          setNotice({ kind: 'error', message: ERROR_SAVE });
+          return;
+        }
         committedRef.current = result.snapshot;
         setSnapshot(result.snapshot);
-        if (result.outcome === 'error') setNotice({ kind: 'error', message: ERROR_SAVE });
-        else if (result.outcome === 'reloaded') setNotice({ kind: 'info', message: INFO_FROM_DEVICE });
+        if (result.outcome === 'reloaded') setNotice({ kind: 'info', message: INFO_FROM_DEVICE });
       })
       .finally(() => {
         inFlightRef.current -= 1;
