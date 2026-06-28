@@ -23,8 +23,8 @@ test('bulk-file selected inbox items as Next actions under a project', async ({ 
   await picker.getByRole('button', { name: 'Home', exact: true }).click();
   await picker.getByRole('button', { name: 'Choose' }).click();
 
-  // The verb now names the destination so the order is self-evident.
-  await page.getByRole('button', { name: '→ Next in Home' }).click();
+  // The "File into" chip shows the destination; the verb just commits.
+  await page.getByRole('button', { name: '→ Next' }).click();
 
   await expect.poll(() => doc.current().nodes['home'].childIds).toEqual(expect.arrayContaining(['i1', 'i2']));
   await expect.poll(() => doc.current().nodes['i1'].status).toBe('NEXT');

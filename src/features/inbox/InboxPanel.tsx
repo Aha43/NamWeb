@@ -72,12 +72,6 @@ export function InboxPanel({
   const targetLabel = bulkTarget
     ? (projectTargets.find((t) => t.id === bulkTarget)?.label ?? 'a project')
     : 'Top level / Free actions';
-  // Short name (last breadcrumb segment) that rides on the verb buttons, so each one shows where it
-  // files *before* you click — making the destination-then-verb order self-correcting.
-  const targetShort = bulkTarget
-    ? (projectTargets.find((t) => t.id === bulkTarget)?.label.split(' › ').pop() ?? 'project')
-    : null;
-  const inTarget = targetShort ? ` in ${targetShort}` : '';
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -150,7 +144,7 @@ export function InboxPanel({
               onClick={() => resolveSelected({ kind: 'action', status: 'NEXT', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              → Next{inTarget}
+              → Next
             </button>
             <button
               type="button"
@@ -158,7 +152,7 @@ export function InboxPanel({
               onClick={() => resolveSelected({ kind: 'action', status: 'BACKLOG', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              → Backlog{inTarget}
+              → Backlog
             </button>
             <button
               type="button"
@@ -166,7 +160,7 @@ export function InboxPanel({
               onClick={() => resolveSelected({ kind: 'project', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              Make projects{inTarget}
+              Make projects
             </button>
             {onBulkDelete && (
               <ConfirmButton
