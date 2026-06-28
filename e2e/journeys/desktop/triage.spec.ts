@@ -165,8 +165,11 @@ test.describe('reshape', () => {
     await page.getByRole('button', { name: 'Open Errand' }).click();
     await page.getByRole('button', { name: 'Convert to action' }).click();
 
-    // Redirected back to the list; it is no longer a project.
-    await expect(page).toHaveURL(/\/projects$/);
+    // A top-level leaf project becomes a free action, so we land on Next where it now lives (#479) —
+    // and it's gone from the Projects list.
+    await expect(page).toHaveURL(/\/next$/);
+    await expect(page.getByText('Errand')).toBeVisible();
+    await page.goto('/projects');
     await expect(page.getByRole('button', { name: 'Open Errand' })).toHaveCount(0);
   });
 });

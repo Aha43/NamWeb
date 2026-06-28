@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import { actionMoveTargets, actionMoveTargetsAll, allTags, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
+import { actionMoveTargets, actionMoveTargetsAll, allTags, buildParentIndex, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
@@ -262,7 +262,15 @@ export function ProjectWorkbenchPage() {
       }}
       onConvertToAction={
         project.childIds.length === 0
-          ? () => dispatch({ type: 'convertProjectToAction', id, status: 'NEXT', now: nowIso() })
+          ? () => {
+              // The node becomes an action, so the "not a project" guard below redirects. Aim it at
+              // where the action actually lands (#479): a sub-project's action stays under its
+              // parent → that workbench; a top-level project becomes a free action → /next.
+              const parent = buildParentIndex(document).get(id);
+              postDeleteNavRef.current =
+                parent && parent !== document.projectsNodeId ? `/projects/${parent}` : '/next';
+              dispatch({ type: 'convertProjectToAction', id, status: 'NEXT', now: nowIso() });
+            }
           : undefined
       }
       onSaveAsTemplate={(name) => dispatch({ type: 'saveAsTemplate', name, nodeId: id })}
