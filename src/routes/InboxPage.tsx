@@ -11,7 +11,7 @@ import {
 } from '@/features/inbox/InboxProcessDialog';
 import { GetStarted } from '@/features/onboarding/GetStarted';
 import { useGetStartedDismissed } from '@/features/onboarding/useGetStartedDismissed';
-import { useDeleteNodes } from '@/features/actions/useDeleteNode';
+import { useDeleteNode, useDeleteNodes } from '@/features/actions/useDeleteNode';
 import { useCapture } from '@/capture/capture-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useSettings } from '@/components/settings/settings-context';
@@ -21,6 +21,7 @@ export function InboxPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { addToBottom } = useSettings();
   const { openCapture } = useCapture();
+  const deleteNode = useDeleteNode();
   const deleteNodes = useDeleteNodes();
   const navigate = useNavigate();
   const user = useAuthUser();
@@ -133,7 +134,7 @@ export function InboxPage() {
           setQueue(items.map((n) => n.id));
           setPos(0);
         }}
-        onDelete={(id) => dispatch({ type: 'deleteLeaf', id })}
+        onDelete={(id) => deleteNode(id)}
         onRename={(id, title) => {
           const node = document?.nodes[id];
           if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
