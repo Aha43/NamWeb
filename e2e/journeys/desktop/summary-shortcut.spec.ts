@@ -15,5 +15,12 @@ test('press s on a workbench opens the Summary dialog', async ({ page }) => {
 
   // The `s` shortcut opens the dialog.
   await page.keyboard.press('s');
-  await expect(page.getByRole('dialog', { name: /Summary — Project/ })).toBeVisible();
+  const dialog = page.getByRole('dialog', { name: /Summary — Project/ });
+  await expect(dialog).toBeVisible();
+
+  // #477 — Copy carries a shortcut tooltip, and ⌘/Ctrl+Enter copies & closes.
+  await dialog.getByRole('button', { name: /Copy/ }).hover();
+  await expect(page.getByRole('tooltip')).toContainText('copies & closes');
+  await page.keyboard.press('Control+Enter');
+  await expect(dialog).toBeHidden();
 });
