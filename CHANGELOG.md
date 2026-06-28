@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Copy a project summary with the keyboard.** In the Summary dialog, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> copies the Markdown **and closes** the dialog; the Copy button now has a tooltip naming the shortcut. (The button itself still copies without closing, so you can keep tweaking the filters.) Closes #477.
+
 ## [0.2.0] - 2026-06-28
 
 A small UX pass: the version is reachable from the chrome, inbox delete is recoverable, and Summary

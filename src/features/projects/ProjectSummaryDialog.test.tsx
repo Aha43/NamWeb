@@ -30,4 +30,17 @@ describe('ProjectSummaryDialog', () => {
     expect(writeText).toHaveBeenCalledWith('# P (NEXT,BACKLOG,DONE)');
     await waitFor(() => expect(screen.getByRole('button', { name: /Copied/ })).toBeInTheDocument());
   });
+
+  it('⌘/Ctrl+Enter copies and closes (#477)', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    const onOpenChange = vi.fn();
+    const buildSummary = () => '# P (NEXT,BACKLOG) +subs';
+
+    render(<ProjectSummaryDialog open onOpenChange={onOpenChange} title="P" buildSummary={buildSummary} />);
+
+    fireEvent.keyDown(screen.getByLabelText('Project summary (Markdown)'), { key: 'Enter', ctrlKey: true });
+    expect(writeText).toHaveBeenCalledWith('# P (NEXT,BACKLOG) +subs');
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
 });
