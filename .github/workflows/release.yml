@@ -1,0 +1,51 @@
+name: Release
+
+# Cut a GitHub Release when a version tag is pushed. The release notes are the matching
+# CHANGELOG.md section, so the changelog stays the single source of truth. Separate from ci.yml
+# so the `check` PR gate is unaffected. See #465 and docs/RELEASING.md.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve version from tag
+        id: v
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag matches package.json
+        run: |
+          pkg=$(node -p "require('./package.json').version")
+          if [ "$pkg" != "${{ steps.v.outputs.version }}" ]; then
+            echo "::error::Tag ${{ steps.v.outputs.tag }} does not match package.json version $pkg"
+            exit 1
+          fi
+
+      - name: Extract changelog section
+        run: |
+          awk -v ver="${{ steps.v.outputs.version }}" '
+            $0 ~ "^## \\[" ver "\\]" { flag=1; next }
+            flag && (/^## / || /^\[.+\]: /) { flag=0 }
+            flag { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "Release ${{ steps.v.outputs.tag }}." > release-notes.md
+          fi
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.v.outputs.tag }}" \
+            --title "${{ steps.v.outputs.tag }}" \
+            --notes-file release-notes.md

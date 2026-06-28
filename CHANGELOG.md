@@ -2,9 +2,16 @@
 
 All notable changes to NamWeb are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project
+adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Pre-1.0 (`0.MINOR.PATCH`):
+minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
+
+## [0.1.0] - 2026-06-28
+
+First tagged release. NamWeb is the mobile-first web companion to NamDesktop — capture, triage, and
+focus against the same Supabase backend. Everything below shipped on the way here.
 
 ### Added
 
@@ -1030,3 +1037,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   `VERSION`), GitHub issue templates, and the web-app design thread carried over from NamDesktop
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
+
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Aha43/NamWeb/releases/tag/v0.1.0
