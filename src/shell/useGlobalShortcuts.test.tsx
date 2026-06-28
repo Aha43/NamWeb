@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { CaptureContext } from '@/capture/capture-context';
+import { SettingsContext, type SettingsContextValue } from '@/components/settings/settings-context';
+import { DEFAULT_DATE_FORMAT } from '@/lib/dates';
 import { TOOLBAR_SEARCH_ID, useGlobalShortcuts } from './useGlobalShortcuts';
 
 function Harness({ withSearchBox = false }: { withSearchBox?: boolean }) {
@@ -38,6 +40,31 @@ describe('useGlobalShortcuts', () => {
     const { openCapture } = setup();
     fireEvent.keyDown(window, { key: 'c' });
     expect(openCapture).toHaveBeenCalledOnce();
+  });
+
+  it('flips the add-to-top/bottom toggle on "t"', () => {
+    const setAddToBottom = vi.fn();
+    const settings: SettingsContextValue = {
+      dateFormat: DEFAULT_DATE_FORMAT,
+      setDateFormat: vi.fn(),
+      addToBottom: false,
+      setAddToBottom,
+      addToBottomDefault: false,
+      setAddToBottomDefault: vi.fn(),
+    };
+    render(
+      <SettingsContext.Provider value={settings}>
+        <CaptureContext.Provider value={{ openCapture: vi.fn() }}>
+          <MemoryRouter initialEntries={['/inbox']}>
+            <Routes>
+              <Route path="*" element={<Harness />} />
+            </Routes>
+          </MemoryRouter>
+        </CaptureContext.Provider>
+      </SettingsContext.Provider>,
+    );
+    fireEvent.keyDown(window, { key: 't' });
+    expect(setAddToBottom).toHaveBeenCalledWith(true); // false → flipped to bottom
   });
 
   it('navigates with the g-then-letter chord', () => {
