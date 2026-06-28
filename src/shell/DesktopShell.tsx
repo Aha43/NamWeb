@@ -9,7 +9,7 @@ import { BookmarkBar } from '@/features/bookmarks/BookmarkBar';
 import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
-import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
+import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
 import { SIDEBAR_GROUPS, focus } from './nav';
 import { TOOLBAR_SEARCH_ID } from './useGlobalShortcuts';
 import { ShellContent } from './ShellContent';
@@ -82,7 +82,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             <aside style={{ width }} className="flex shrink-0 flex-col overflow-y-auto p-4">
               <div className="flex items-center gap-2 px-2">
                 <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
-                <Tooltip label={APP_NAME}>
+                <Tooltip label={brandTooltip()}>
                   <h1 className="truncate text-lg font-semibold tracking-tight">{APP_SHORT_NAME}</h1>
                 </Tooltip>
               </div>

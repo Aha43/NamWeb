@@ -17,7 +17,7 @@ import { BookmarkBar } from '@/features/bookmarks/BookmarkBar';
 import { bookmarksOf } from '@/features/bookmarks/bookmarks';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { cn } from '@/lib/utils';
-import { APP_NAME, APP_SHORT_NAME } from '@/lib/app';
+import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
 import { MORE_GROUPS } from './nav';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -31,7 +31,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
     <div className="flex h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background px-4 py-3">
         <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
-        <Tooltip label={APP_NAME}>
+        <Tooltip label={brandTooltip()}>
           <h1 className="text-lg font-semibold tracking-tight">{APP_SHORT_NAME}</h1>
         </Tooltip>
       </header>
