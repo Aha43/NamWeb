@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Deleting an inbox item can be undone.** The inbox trash stays instant (no confirm dialog), but now shows the same short-lived **Undo** toast as delete elsewhere — so a mis-tap is one click to recover. Closes #471.
+
 ## [0.1.0] - 2026-06-28
 
 First tagged release. NamWeb is the mobile-first web companion to NamDesktop — capture, triage, and
