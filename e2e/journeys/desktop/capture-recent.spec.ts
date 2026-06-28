@@ -7,7 +7,7 @@ test.use({ seedDoc: new DocBuilder().build() });
 
 test('recent captures stay listed in the dialog and are editable', async ({ page, doc }) => {
   await page.goto('/inbox');
-  await page.getByRole('button', { name: 'Capture' }).click();
+  await page.getByRole('button', { name: 'Capture', exact: true }).click();
 
   const dialog = page.getByRole('dialog');
   const field = dialog.getByLabel('Capture to inbox');
@@ -35,6 +35,6 @@ test('recent captures stay listed in the dialog and are editable', async ({ page
   // The list is session-only: closing and reopening starts empty.
   await page.keyboard.press('Escape');
   await expect(dialog).toBeHidden();
-  await page.getByRole('button', { name: 'Capture' }).click();
+  await page.getByRole('button', { name: 'Capture', exact: true }).click();
   await expect(page.getByRole('dialog').getByText('Just added')).toHaveCount(0);
 });
