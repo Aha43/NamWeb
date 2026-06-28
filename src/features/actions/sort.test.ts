@@ -57,4 +57,15 @@ describe('sortByDue', () => {
     sortByDue(items);
     expect(items.map((i) => i.id)).toEqual(['a', 'b']);
   });
+
+  it('breaks a shared date by time of day, untimed first (#493)', () => {
+    const dt = (id: string, dueAt: string, dueTime: string | null) => ({ id, dueAt, dueTime });
+    const items = [
+      dt('a', '2026-07-01', '14:30'),
+      dt('b', '2026-07-01', null), // all-day → before timed
+      dt('c', '2026-07-01', '09:00'),
+      dt('d', '2026-06-30', '23:00'), // earlier date wins regardless of time
+    ];
+    expect(sortByDue(items).map((i) => i.id)).toEqual(['d', 'b', 'c', 'a']);
+  });
 });

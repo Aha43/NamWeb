@@ -17,6 +17,8 @@ export interface ActionRowData {
   dueAt: string | null;
   /** Optional end of a date range (inclusive); a range when set with `dueAt` and `>= dueAt`. */
   dueEndAt?: string | null;
+  /** Optional time of day for the start (`"HH:MM"`, local); shown after the date. */
+  dueTime?: string | null;
   /** For the age hint — updatedAt falling back to createdAt. */
   touchedAt: string | null;
   /** True when the node has attached resources (shows a paperclip). */
@@ -44,6 +46,7 @@ export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowDat
     inheritedTags: effectiveTags(doc, node.id).filter((t) => !node.tags.includes(t)),
     dueAt: node.dueAt,
     dueEndAt: node.dueEndAt ?? null,
+    dueTime: node.dueTime ?? null,
     touchedAt: node.updatedAt ?? node.createdAt,
     hasResources: node.resources.length > 0,
     descendantCount: subtreeIds(doc, node.id).size - 1,
