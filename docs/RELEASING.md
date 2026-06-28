@@ -10,8 +10,7 @@ stable.
 
 1. **Open a release PR** off `main`:
    - Bump the version: `npm version <X.Y.Z> --no-git-tag-version` (updates `package.json` +
-     `package-lock.json`). Keep `VERSION` in sync (it mirrors `package.json`; redundant — candidate
-     for removal).
+     `package-lock.json`).
    - In `CHANGELOG.md`, rename `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD`, add a fresh empty
      `## [Unreleased]` above it, and update the link definitions at the bottom
      (`[Unreleased]` compare range + a new `[X.Y.Z]` tag link).
