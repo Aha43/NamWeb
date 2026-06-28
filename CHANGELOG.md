@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Keyboard shortcuts no longer fire behind a dialog.** While a modal (e.g. the project-delete or summary dialog) is open, app-wide shortcuts like <kbd>c</kbd> (capture), <kbd>/</kbd> (search), <kbd>t</kbd>, and the <kbd>g</kbd>-then-letter navigation are suspended, so a keystroke meant for the dialog can't act on the app underneath. Dialog keys (Escape, ⌘/Ctrl+Enter) still work. Closes #486.
+
 ## [0.3.0] - 2026-06-28
 
 More small UX polish: keyboard copy for summaries, recent captures stay in view, and convert lands
