@@ -9,7 +9,9 @@ import { useSettings } from './settings-context';
  */
 export function AddPositionToggle({ className }: { className?: string }) {
   const { addToBottom, setAddToBottom } = useSettings();
-  const label = addToBottom ? 'New items add to the bottom (tap for top)' : 'New items add to the top (tap for bottom)';
+  const label = addToBottom
+    ? 'New items add to the bottom (tap, or press t, for top)'
+    : 'New items add to the top (tap, or press t, for bottom)';
   return (
     <Tooltip label={label}>
       <button
