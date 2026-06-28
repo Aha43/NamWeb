@@ -58,6 +58,31 @@ describe('InboxPanel', () => {
     expect(screen.getByRole('button', { name: 'Copy name "Buy milk"' })).toBeInTheDocument();
   });
 
+  it('bulk-triages selected items with one shared resolution (#458)', () => {
+    const onBulkResolve = vi.fn();
+    render(
+      <InboxPanel
+        items={[item('a', 'Buy milk'), item('b', 'Call Sam')]}
+        onAdd={vi.fn()}
+        onProcess={vi.fn()}
+        onDelete={vi.fn()}
+        onBulkResolve={onBulkResolve}
+      />,
+    );
+    // No bulk bar until you enter select mode.
+    expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Select items' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select all' }));
+    expect(screen.getByText('2 selected')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '→ Next' }));
+    expect(onBulkResolve).toHaveBeenCalledWith(['a', 'b'], { kind: 'action', status: 'NEXT', parentId: undefined });
+  });
+
+  it('hides the select toggle when bulk is not supported', () => {
+    setup([item('a', 'Buy milk')]);
+    expect(screen.queryByRole('button', { name: 'Select items' })).not.toBeInTheDocument();
+  });
+
   it('pencil triggers inline rename (not an editor) and commits via onRename', () => {
     const onRename = vi.fn();
     render(

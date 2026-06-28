@@ -11,6 +11,7 @@ import {
 } from '@/features/inbox/InboxProcessDialog';
 import { GetStarted } from '@/features/onboarding/GetStarted';
 import { useGetStartedDismissed } from '@/features/onboarding/useGetStartedDismissed';
+import { useDeleteNodes } from '@/features/actions/useDeleteNode';
 import { useCapture } from '@/capture/capture-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useSettings } from '@/components/settings/settings-context';
@@ -20,6 +21,7 @@ export function InboxPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { addToBottom } = useSettings();
   const { openCapture } = useCapture();
+  const deleteNodes = useDeleteNodes();
   const navigate = useNavigate();
   const user = useAuthUser();
   const [getStartedDismissed, dismissGetStarted] = useGetStartedDismissed(user.id);
@@ -63,6 +65,31 @@ export function InboxPage() {
     }
     return targets;
   }, [document, current]);
+
+  // All non-archived projects, for the bulk "File under" picker (inbox items have no own subtree to exclude).
+  const bulkProjectTargets = useMemo<ProjectTarget[]>(() => {
+    if (!document) return [];
+    const archived = archivedProjectIds(document);
+    const targets: ProjectTarget[] = [];
+    for (const candidate of Object.values(document.nodes)) {
+      if (!candidate.project || archived.has(candidate.id)) continue;
+      targets.push({ id: candidate.id, label: [...projectPath(document, candidate.id), candidate.title].join(' › ') });
+    }
+    return targets;
+  }, [document]);
+
+  // Apply one shared resolution to every selected inbox item (#458) — loops the same intents as
+  // single Process (no deck, no per-item undo, matching single Process).
+  function bulkResolve(ids: string[], resolution: ProcessResolution) {
+    const now = nowIso();
+    for (const id of ids) {
+      if (resolution.kind === 'project') {
+        dispatch({ type: 'convertInboxToProject', id, parentId: resolution.parentId, now });
+      } else {
+        dispatch({ type: 'convertInboxToAction', id, status: resolution.status, parentId: resolution.parentId, now });
+      }
+    }
+  }
 
   function endDeck() {
     setQueue(null);
@@ -111,6 +138,9 @@ export function InboxPage() {
           const node = document?.nodes[id];
           if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
         }}
+        onBulkResolve={bulkResolve}
+        onBulkDelete={(ids) => deleteNodes(ids)}
+        projectTargets={bulkProjectTargets}
       />
       {current && (
         <InboxProcessDialog
