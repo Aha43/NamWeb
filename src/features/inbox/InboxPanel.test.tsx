@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { NamNode } from '../../domain/types';
+import { SettingsContext, type SettingsContextValue } from '@/components/settings/settings-context';
+import { DEFAULT_DATE_FORMAT } from '@/lib/dates';
 import { InboxPanel } from './InboxPanel';
 
 function item(id: string, title: string): NamNode {
@@ -43,6 +45,51 @@ describe('InboxPanel', () => {
     fireEvent.change(screen.getByLabelText('Quick add'), { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(onAdd).not.toHaveBeenCalled();
+  });
+
+  it('Shift+Enter flips the add-position default and adds the item (#450)', () => {
+    const onAdd = vi.fn();
+    const setAddToBottom = vi.fn();
+    const settings: SettingsContextValue = {
+      dateFormat: DEFAULT_DATE_FORMAT,
+      setDateFormat: vi.fn(),
+      addToBottom: false,
+      setAddToBottom,
+      addToBottomDefault: false,
+      setAddToBottomDefault: vi.fn(),
+    };
+    render(
+      <SettingsContext.Provider value={settings}>
+        <InboxPanel items={[]} onAdd={onAdd} onProcess={vi.fn()} onDelete={vi.fn()} />
+      </SettingsContext.Provider>,
+    );
+    const input = screen.getByLabelText('Quick add');
+    fireEvent.change(input, { target: { value: 'Buy milk' } });
+    fireEvent.keyDown(input, { key: 'Enter', shiftKey: true });
+    expect(setAddToBottom).toHaveBeenCalledWith(true); // flipped from top (false) to bottom
+    expect(onAdd).toHaveBeenCalledWith('Buy milk');
+    expect(input).toHaveValue('');
+  });
+
+  it('plain Enter does not flip the add-position default', () => {
+    const setAddToBottom = vi.fn();
+    const settings: SettingsContextValue = {
+      dateFormat: DEFAULT_DATE_FORMAT,
+      setDateFormat: vi.fn(),
+      addToBottom: false,
+      setAddToBottom,
+      addToBottomDefault: false,
+      setAddToBottomDefault: vi.fn(),
+    };
+    render(
+      <SettingsContext.Provider value={settings}>
+        <InboxPanel items={[]} onAdd={vi.fn()} onProcess={vi.fn()} onDelete={vi.fn()} />
+      </SettingsContext.Provider>,
+    );
+    const input = screen.getByLabelText('Quick add');
+    fireEvent.change(input, { target: { value: 'Buy milk' } });
+    fireEvent.keyDown(input, { key: 'Enter' }); // plain Enter — handled by the form submit
+    expect(setAddToBottom).not.toHaveBeenCalled();
   });
 
   it('processes and deletes by id', () => {

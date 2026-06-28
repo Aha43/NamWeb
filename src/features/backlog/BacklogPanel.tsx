@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
+import { useAddBoxFlip } from '@/components/settings/useAddBoxFlip';
 import { EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -47,6 +48,8 @@ export function BacklogPanel({
   dndEnabled,
 }: BacklogPanelProps) {
   const [title, setTitle] = useState('');
+  // Shift+Enter: flip the add-to-top/bottom default and add this item at the flipped end too (#450).
+  const onAddKeyDown = useAddBoxFlip(onAdd ?? (() => {}), title, () => setTitle(''));
 
   function submitAdd(event: FormEvent) {
     event.preventDefault();
@@ -66,6 +69,7 @@ export function BacklogPanel({
               aria-label="Add to backlog"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={onAddKeyDown}
               placeholder="Add to backlog…"
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
             />

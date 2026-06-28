@@ -66,7 +66,7 @@ export function HelpPage() {
         <p className="text-sm text-muted-foreground">Anywhere in the app:</p>
         <ul className="space-y-1 text-sm text-muted-foreground">
           <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">c</kbd> — capture a thought</li>
-          <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">t</kbd> — flip new items add to top / bottom</li>
+          <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">t</kbd> — flip new items add to top / bottom (in an add box, <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Shift</kbd>+<kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">Enter</kbd> flips and adds)</li>
           <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">/</kbd> — jump to search</li>
           <li>
             <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">g</kbd> then a letter — go to a view:{' '}

@@ -3,6 +3,7 @@ import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderIn
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
+import { useAddBoxFlip } from '@/components/settings/useAddBoxFlip';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import {
@@ -957,6 +958,8 @@ function QuickAdd({
   onAdd: (title: string) => void;
 }) {
   const [title, setTitle] = useState('');
+  // Shift+Enter: flip the add-to-top/bottom default and add this item at the flipped end too (#450).
+  const onAddKeyDown = useAddBoxFlip(onAdd, title, () => setTitle(''));
   function submit(event: FormEvent) {
     event.preventDefault();
     const trimmed = title.trim();
@@ -970,6 +973,7 @@ function QuickAdd({
         aria-label={label}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={onAddKeyDown}
         placeholder={placeholder}
         className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
       />
