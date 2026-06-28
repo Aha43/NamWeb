@@ -1,12 +1,16 @@
 import { useState, type FormEvent } from 'react';
-import { Pencil, Target, Trash2 } from 'lucide-react';
+import { CheckSquare, Pencil, Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
+import { ConfirmButton } from '@/components/ui/confirm-button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { formatAge } from '@/lib/dates';
 import { InlineRename } from '../actions/InlineRename';
+import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
+import type { ProcessResolution, ProjectTarget } from './InboxProcessDialog';
 import type { NamNode } from '../../domain/types';
 
 export interface InboxPanelProps {
@@ -17,12 +21,57 @@ export interface InboxPanelProps {
   onProcessAll?: () => void;
   onDelete: (id: string) => void;
   onRename?: (id: string, title: string) => void;
+  /** Triage many selected items at once with one shared resolution (#458). */
+  onBulkResolve?: (ids: string[], resolution: ProcessResolution) => void;
+  /** Delete many selected items at once (single Undo). */
+  onBulkDelete?: (ids: string[]) => void;
+  /** Projects the bulk "File under" picker can target (breadcrumb-labeled). */
+  projectTargets?: ProjectTarget[];
 }
 
 /** Inbox: quick-add capture plus the list of unprocessed items. Pure/presentational. */
-export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, onRename }: InboxPanelProps) {
+export function InboxPanel({
+  items,
+  onAdd,
+  onProcess,
+  onProcessAll,
+  onDelete,
+  onRename,
+  onBulkResolve,
+  onBulkDelete,
+  projectTargets = [],
+}: InboxPanelProps) {
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  // Bulk select: triage several items with one shared decision (#458). Additive — per-item Process
+  // and the Process-all deck are untouched.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkTarget, setBulkTarget] = useState(''); // '' = default (Free actions / Top level)
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const bulkCapable = Boolean(onBulkResolve);
+
+  const toggle = (id: string) =>
+    setSelected((cur) => {
+      const next = new Set(cur);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const exitSelect = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+    setBulkTarget('');
+  };
+  const none = selected.size === 0;
+  const parentId = bulkTarget || undefined;
+  const resolveSelected = (resolution: ProcessResolution) => {
+    onBulkResolve?.([...selected], resolution);
+    setSelected(new Set());
+  };
+  const targetLabel = bulkTarget
+    ? (projectTargets.find((t) => t.id === bulkTarget)?.label ?? 'a project')
+    : 'Top level / Free actions';
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -48,15 +97,116 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
           <Button type="submit">Add</Button>
         </form>
 
-        {onProcessAll && items.length > 0 && (
-          <div className="flex justify-end">
-            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onProcessAll}>
-              <Target className="h-4 w-4 focus-glow" />
-              Process inbox ({items.length})
-            </Button>
+        {items.length > 0 && (
+          <div className="flex items-center justify-end gap-1">
+            {onProcessAll && (
+              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onProcessAll}>
+                <Target className="h-4 w-4 focus-glow" />
+                Process inbox ({items.length})
+              </Button>
+            )}
+            {bulkCapable && (
+              <Tooltip label={selectMode ? 'Exit select' : 'Select items'}>
+                <button
+                  type="button"
+                  aria-label={selectMode ? 'Exit select' : 'Select items'}
+                  aria-pressed={selectMode}
+                  onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
+                  className={cn(
+                    'rounded-md p-1.5 hover:bg-accent hover:text-foreground',
+                    TOUCH_TARGET,
+                    selectMode ? 'text-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  <CheckSquare className="h-4 w-4" />
+                </button>
+              </Tooltip>
+            )}
+          </div>
+        )}
+
+        {selectMode && (
+          <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
+            <span className="mr-1 text-muted-foreground">{selected.size} selected</span>
+            {/* Destination first: the verbs below file into whatever this is set to. */}
+            <Tooltip label={`Choose where the actions below file into (now: ${targetLabel})`}>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="max-w-[14rem] truncate rounded-md border border-input px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                File into: <span className="font-medium text-foreground">{targetLabel}</span> ▾
+              </button>
+            </Tooltip>
+            <button
+              type="button"
+              disabled={none}
+              onClick={() => resolveSelected({ kind: 'action', status: 'NEXT', parentId })}
+              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+            >
+              → Next
+            </button>
+            <button
+              type="button"
+              disabled={none}
+              onClick={() => resolveSelected({ kind: 'action', status: 'BACKLOG', parentId })}
+              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+            >
+              → Backlog
+            </button>
+            <button
+              type="button"
+              disabled={none}
+              onClick={() => resolveSelected({ kind: 'project', parentId })}
+              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+            >
+              Make projects
+            </button>
+            {onBulkDelete && (
+              <ConfirmButton
+                aria-label="Delete selected items"
+                message={`Delete ${selected.size} selected item${selected.size === 1 ? '' : 's'}?`}
+                onConfirm={() => {
+                  onBulkDelete([...selected]);
+                  setSelected(new Set());
+                }}
+                disabled={none}
+                className="rounded-md px-2 py-0.5 font-medium text-destructive hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+              >
+                Delete
+              </ConfirmButton>
+            )}
+            <button
+              type="button"
+              onClick={() => setSelected(new Set(items.map((n) => n.id)))}
+              disabled={selected.size === items.length}
+              className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            >
+              Select all
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelected(new Set())}
+              disabled={none}
+              className="rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            >
+              Clear
+            </button>
           </div>
         )}
       </div>
+
+      {pickerOpen && (
+        <ProjectPickerDialog
+          open={pickerOpen}
+          onOpenChange={setPickerOpen}
+          title="File selected items under…"
+          confirmLabel="Choose"
+          targets={[{ id: '', label: 'Default (Top level / Free actions)' }, ...projectTargets]}
+          initialSelectedId={bulkTarget}
+          onConfirm={setBulkTarget}
+        />
+      )}
 
       {items.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">Inbox zero. Nothing to process.</p>
@@ -64,6 +214,15 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
         <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {items.map((item) => (
             <li key={item.id} className="flex items-center gap-2 px-3 py-2 transition-colors even:bg-muted/40 hover:bg-accent/40">
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  aria-label={`Select ${item.title}`}
+                  checked={selected.has(item.id)}
+                  onChange={() => toggle(item.id)}
+                  className="shrink-0"
+                />
+              )}
               {renamingId === item.id && onRename ? (
                 <div className="flex-1">
                   <InlineRename
@@ -75,7 +234,7 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
               ) : (
                 <span
                   className="flex-1 text-sm text-foreground"
-                  onDoubleClick={onRename ? () => setRenamingId(item.id) : undefined}
+                  onDoubleClick={onRename && !selectMode ? () => setRenamingId(item.id) : undefined}
                 >
                   {item.title}
                 </span>
@@ -93,10 +252,10 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
                   </span>
                 ) : null;
               })()}
-              {renamingId !== item.id && (
+              {!selectMode && renamingId !== item.id && (
                 <CopyButton value={item.title} label={`name "${item.title}"`} className="p-1.5" />
               )}
-              {onRename && renamingId !== item.id && (
+              {!selectMode && onRename && renamingId !== item.id && (
                 <button
                   type="button"
                   aria-label={`Rename ${item.title}`}
@@ -106,22 +265,26 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
               )}
-              <button
-                type="button"
-                aria-label={`Process ${item.title}`}
-                onClick={() => onProcess(item.id)}
-                className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
-              >
-                Process…
-              </button>
-              <button
-                type="button"
-                aria-label={`Delete ${item.title}`}
-                onClick={() => onDelete(item.id)}
-                className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive', TOUCH_TARGET)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </button>
+              {!selectMode && (
+                <button
+                  type="button"
+                  aria-label={`Process ${item.title}`}
+                  onClick={() => onProcess(item.id)}
+                  className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
+                >
+                  Process…
+                </button>
+              )}
+              {!selectMode && (
+                <button
+                  type="button"
+                  aria-label={`Delete ${item.title}`}
+                  onClick={() => onDelete(item.id)}
+                  className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive', TOUCH_TARGET)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
             </li>
           ))}
         </ul>
