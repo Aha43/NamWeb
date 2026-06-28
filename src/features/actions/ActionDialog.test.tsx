@@ -116,6 +116,21 @@ describe('ActionDialog', () => {
     );
   });
 
+  it('clears the due date (and range) via Clear (#459)', () => {
+    const onSave = vi.fn();
+    render(
+      <ActionDialog
+        node={node({ title: 'Trip', dueAt: '2026-08-12', dueEndAt: '2026-08-16' })}
+        open
+        onOpenChange={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ dueAt: null, dueEndAt: null }));
+  });
+
   it('rejects an end date before the start (no save) (#438)', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);

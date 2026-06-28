@@ -230,6 +230,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Fixed
 
+- **Due dates fit, and you can clear them.** In the action editor the due field's start and end inputs now stack so a full date (e.g. *2026-07-04*) reads in each instead of being squeezed by the "to" layout, and a **Clear** link by the Due label empties the date (and its range) in one click. Closes #459.
+
 - **Readable cards in the Column (Kanban) view.** Column cards used the full list-row layout, which didn't fit a narrow column — titles collapsed to a few characters and the due date wrapped down several lines. Cards now have a compact layout: the **title gets its own full line** (truncated with an on-hover full-name tooltip), the **due date sits on one line**, the redundant project path and "age" label are gone, and the row of action buttons (status, edit, rename, delete, drag, reorder) **moves to a footer that appears on hover** so it never crowds the title. Closes #445.
 
 - **⌘/Ctrl+Enter now reliably saves the action editor.** The save shortcut used to miss intermittently when focus sat in one of the editor's pop-up controls (the tag suggestions, the "Move to…" picker, a date popover) — those render outside the form, so the keystroke never reached it. The shortcut now listens at the document level while the dialog is open, so it fires no matter which control has focus (still ignoring plain Enter and IME composition). Closes #435.
