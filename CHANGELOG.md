@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Converting a project to an action lands where the action is.** Demoting a sub-project now drops you on its **parent** project's workbench (where the new action sits), and a top-level project — which becomes a *free* action — lands you on **Next**. Previously both bounced you to the top-level Projects list. Closes #479.
+
 ## [0.2.0] - 2026-06-28
 
 A small UX pass: the version is reachable from the chrome, inbox delete is recoverable, and Summary
