@@ -398,7 +398,8 @@ export function ActionDialog({
                   <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => setConfirmingDelete(true)}
+                    // Projects open the advanced-delete dialog (it confirms); actions confirm inline here.
+                    onClick={() => (isProject ? onDelete() : setConfirmingDelete(true))}
                     className="text-destructive hover:text-destructive sm:mr-auto"
                   >
                     Delete

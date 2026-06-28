@@ -4,6 +4,7 @@ import { AuthUserContext } from './auth/auth-context';
 import { WorkspaceProvider } from './store/WorkspaceProvider';
 import { CaptureProvider } from './capture/CaptureProvider';
 import { ActionEditorProvider } from './features/actions/ActionEditorProvider';
+import { DeleteProjectProvider } from './features/projects/delete/DeleteProjectProvider';
 import { ToastProvider } from './components/ui/toast/ToastProvider';
 import { AppRoutes } from './routes/AppRoutes';
 
@@ -15,9 +16,11 @@ export function AuthedApp({ user }: { user: User }) {
         <WorkspaceProvider>
           <ToastProvider>
             <CaptureProvider>
-              <ActionEditorProvider>
-                <AppRoutes />
-              </ActionEditorProvider>
+              <DeleteProjectProvider>
+                <ActionEditorProvider>
+                  <AppRoutes />
+                </ActionEditorProvider>
+              </DeleteProjectProvider>
             </CaptureProvider>
           </ToastProvider>
         </WorkspaceProvider>

@@ -5,6 +5,7 @@ import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
 import { allTags, archivedProjectIds, canAddPrerequisite, effectiveTags, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
 import { useDeleteNode } from './useDeleteNode';
+import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { newId, nowIso } from '@/lib/local';
 
 /** Same tag list (already normalized) — avoids dispatching a no-op tag update. */
@@ -84,9 +85,12 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
   }, [node, document]);
 
   const deleteNode = useDeleteNode();
+  const { requestDeleteProject } = useDeleteProject();
   function remove() {
     if (!node) return;
-    deleteNode(node.id);
+    // Projects go through the advanced-delete dialog (content disposition); actions delete directly.
+    if (node.project) requestDeleteProject(node.id);
+    else deleteNode(node.id);
     setEditingId(null);
   }
 

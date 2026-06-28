@@ -98,7 +98,7 @@ describe('ProjectDetailsPanel', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(/date like/i);
   });
 
-  it('deletes behind an inline confirm (when wired)', () => {
+  it('requests delete (the advanced-delete dialog then confirms)', () => {
     const onDelete = vi.fn();
     render(
       <ProjectDetailsPanel
@@ -107,15 +107,9 @@ describe('ProjectDetailsPanel', () => {
         onToggle={vi.fn()}
         onSave={vi.fn()}
         onDelete={onDelete}
-        deleteConfirmMessage="Delete the Kitchen reno project?"
       />,
     );
-    // First click arms the confirm; it does not delete yet.
     fireEvent.click(screen.getByRole('button', { name: 'Delete project' }));
-    expect(onDelete).not.toHaveBeenCalled();
-    expect(screen.getByText('Delete the Kitchen reno project?')).toBeInTheDocument();
-    // The confirm deletes.
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalled();
   });
 

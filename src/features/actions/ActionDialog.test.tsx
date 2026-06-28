@@ -193,7 +193,7 @@ describe('ActionDialog', () => {
     expect(onAddPrerequisite).toHaveBeenCalledWith('c1');
   });
 
-  it('shows a Delete button (when wired) and an "Edit project" title for projects', () => {
+  it('deletes a project directly (the advanced-delete dialog confirms), with an "Edit project" title', () => {
     const onDelete = vi.fn();
     render(
       <ActionDialog
@@ -202,25 +202,20 @@ describe('ActionDialog', () => {
         onOpenChange={vi.fn()}
         onSave={vi.fn()}
         onDelete={onDelete}
-        deleteConfirmMessage="Delete the Roof project?"
       />,
     );
     expect(screen.getByText('Edit project')).toBeInTheDocument();
-    // First click arms the inline confirm; it does not delete yet.
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-    expect(onDelete).not.toHaveBeenCalled();
-    expect(screen.getByText(/Delete the/)).toBeInTheDocument();
-    // Second click (the confirm) deletes.
+    // Projects skip the inline confirm — Delete invokes onDelete (which opens the advanced dialog).
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalled();
   });
 
-  it('cancels the inline delete confirm without deleting', () => {
+  it('cancels the inline delete confirm without deleting (action)', () => {
     const onDelete = vi.fn();
     render(
-      <ActionDialog node={node({ project: true, title: 'Roof' })} open onOpenChange={vi.fn()} onSave={vi.fn()} onDelete={onDelete} />,
+      <ActionDialog node={node({ title: 'Tidy' })} open onOpenChange={vi.fn()} onSave={vi.fn()} onDelete={onDelete} />,
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // arm inline confirm (actions)
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onDelete).not.toHaveBeenCalled();
     // Back to the normal footer: Delete is available again.

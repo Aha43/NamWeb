@@ -37,16 +37,16 @@ test('edit a sub-project’s tags via the workbench Details panel', async ({ pag
 test('deleting a sub-project navigates to its parent project', async ({ page }) => {
   await page.goto('/projects/sp1');
   await page.getByRole('button', { name: 'Details' }).click();
-  await page.getByRole('button', { name: 'Delete project' }).click(); // arm the confirm
-  await page.getByRole('button', { name: 'Delete', exact: true }).click(); // confirm
+  await page.getByRole('button', { name: 'Delete project' }).click(); // Details → opens the delete dialog
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete project' }).click(); // confirm
   await expect(page).toHaveURL(/\/projects\/proj$/); // parent, not /projects
 });
 
 test('deleting a top-level project navigates to the Projects list', async ({ page }) => {
   await page.goto('/projects/proj');
   await page.getByRole('button', { name: 'Details' }).click();
-  await page.getByRole('button', { name: 'Delete project' }).click();
-  await page.getByRole('button', { name: 'Delete', exact: true }).click();
+  await page.getByRole('button', { name: 'Delete project' }).click(); // Details → opens the delete dialog
+  await page.getByRole('dialog').getByRole('button', { name: 'Delete project' }).click(); // confirm
   await expect(page).toHaveURL(/\/projects$/);
 });
 

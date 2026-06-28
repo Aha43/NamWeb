@@ -2,6 +2,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AuthUserContext } from '@/auth/auth-context';
 import { CaptureProvider } from '@/capture/CaptureProvider';
 import { ActionEditorProvider } from '@/features/actions/ActionEditorProvider';
+import { DeleteProjectProvider } from '@/features/projects/delete/DeleteProjectProvider';
 import { ToastProvider } from '@/components/ui/toast/ToastProvider';
 import { AppRoutes } from '@/routes/AppRoutes';
 import { DemoWorkspaceProvider } from './DemoWorkspaceProvider';
@@ -19,10 +20,12 @@ export function DemoApp({ onSignUp }: { onSignUp: () => void }) {
         <DemoWorkspaceProvider onSignUp={onSignUp}>
           <ToastProvider>
             <CaptureProvider>
-              <ActionEditorProvider>
-                <DemoBanner />
-                <AppRoutes />
-              </ActionEditorProvider>
+              <DeleteProjectProvider>
+                <ActionEditorProvider>
+                  <DemoBanner />
+                  <AppRoutes />
+                </ActionEditorProvider>
+              </DeleteProjectProvider>
             </CaptureProvider>
           </ToastProvider>
         </DemoWorkspaceProvider>
