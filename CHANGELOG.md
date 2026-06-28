@@ -8,9 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-28
+
+A small UX pass: the version is reachable from the chrome, inbox delete is recoverable, and Summary
+gets a shortcut.
+
 ### Added
 
-- **The version is on the NAM wordmark.** Hovering the **NAM** logo label now shows the full name plus the release and build — *Next Action Master · v0.1.0 · a1b2c3d* — so the version is reachable while signed in without opening Help. Hover-only, so it adds no clutter. Closes #469.
+- **The version is on the NAM wordmark.** Hovering the **NAM** logo label now shows the full name plus the release and build — *Next Action Master · v0.2.0 · a1b2c3d* — so the version is reachable while signed in without opening Help. Hover-only, so it adds no clutter. Closes #469.
 
 - **Summary has a keyboard shortcut and a tooltip.** On a project workbench, press <kbd>s</kbd> to open the Markdown **Summary** (never while typing), and hovering the button now names it and shows the shortcut. Documented in Help. Closes #472.
 
@@ -1048,5 +1053,6 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Aha43/NamWeb/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Aha43/NamWeb/releases/tag/v0.1.0
