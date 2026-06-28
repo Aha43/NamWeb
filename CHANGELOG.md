@@ -12,6 +12,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **A failed save no longer loses your edit on Retry.** When a write failed, the change was being reverted behind the sticky error notice, so **Retry** re-pushed the old document and could clear the error without restoring your edit. Now the failed edit stays visible and Retry re-pushes exactly that local change. Closes #484.
 
+- **Project delete always starts on the safe defaults.** The advanced delete dialog was remembering your previous **Delete the actions / sub-projects** choices across separate projects; it now resets to **Move/keep** every time it opens, matching the “never lose work by accident” rule. Closes #485.
+
 ## [0.3.0] - 2026-06-28
 
 More small UX polish: keyboard copy for summaries, recent captures stay in view, and convert lands
