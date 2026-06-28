@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **A failed save no longer loses your edit on Retry.** When a write failed, the change was being reverted behind the sticky error notice, so **Retry** re-pushed the old document and could clear the error without restoring your edit. Now the failed edit stays visible and Retry re-pushes exactly that local change. Closes #484.
+
+- **Project delete always starts on the safe defaults.** The advanced delete dialog was remembering your previous **Delete the actions / sub-projects** choices across separate projects; it now resets to **Move/keep** every time it opens, matching the “never lose work by accident” rule. Closes #485.
+
 - **Keyboard shortcuts no longer fire behind a dialog.** While a modal (e.g. the project-delete or summary dialog) is open, app-wide shortcuts like <kbd>c</kbd> (capture), <kbd>/</kbd> (search), <kbd>t</kbd>, and the <kbd>g</kbd>-then-letter navigation are suspended, so a keystroke meant for the dialog can't act on the app underneath. Dialog keys (Escape, ⌘/Ctrl+Enter) still work. Closes #486.
 
 ## [0.3.0] - 2026-06-28
