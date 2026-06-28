@@ -89,7 +89,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
 
               {/* The two "do" actions, foregrounded (mirrors the phone bottom bar). */}
               <div className="mt-4 flex flex-col gap-2">
-                <Tooltip label="Capture a thought">
+                <Tooltip label="Capture a thought · c">
                   <Button className="justify-start gap-2" onClick={openCapture}>
                     <Plus />
                     Capture
@@ -192,8 +192,15 @@ function ToolbarSearch() {
           );
         }}
         placeholder="Search…"
-        className="w-44 rounded-md border border-input bg-background py-1.5 pl-8 pr-2 text-sm outline-hidden focus:border-ring sm:w-64"
+        className="w-44 rounded-md border border-input bg-background py-1.5 pl-8 pr-7 text-sm outline-hidden focus:border-ring sm:w-64"
       />
+      {/* Discoverability: the "/" shortcut focuses this box (see useGlobalShortcuts). */}
+      <kbd
+        aria-hidden
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1 text-[10px] text-muted-foreground"
+      >
+        /
+      </kbd>
     </div>
   );
 }

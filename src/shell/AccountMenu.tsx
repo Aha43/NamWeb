@@ -48,6 +48,7 @@ export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
         <DropdownMenuItem onClick={() => navigate('/help')}>
           <HelpCircle className="mr-2 h-4 w-4" />
           Help
+          <kbd className="ml-auto rounded border border-border bg-muted px-1 text-[10px] text-muted-foreground">?</kbd>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={demo ? demo.signUp : onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
