@@ -3,7 +3,6 @@ import { Pencil, Target, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
-import { useAddBoxFlip } from '@/components/settings/useAddBoxFlip';
 import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { formatAge } from '@/lib/dates';
@@ -24,8 +23,6 @@ export interface InboxPanelProps {
 export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, onRename }: InboxPanelProps) {
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
-  // Shift+Enter: flip the add-to-top/bottom default and add this item at the flipped end too (#450).
-  const onAddKeyDown = useAddBoxFlip(onAdd, title, () => setTitle(''));
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -44,7 +41,6 @@ export function InboxPanel({ items, onAdd, onProcess, onProcessAll, onDelete, on
             aria-label="Quick add"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            onKeyDown={onAddKeyDown}
             placeholder="Add to inbox…"
             className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
           />

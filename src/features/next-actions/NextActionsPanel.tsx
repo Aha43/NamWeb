@@ -1,7 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
-import { useAddBoxFlip } from '@/components/settings/useAddBoxFlip';
 import { EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -48,8 +47,6 @@ export function NextActionsPanel({
   dndEnabled,
 }: NextActionsPanelProps) {
   const [title, setTitle] = useState('');
-  // Shift+Enter: flip the add-to-top/bottom default and add this item at the flipped end too (#450).
-  const onAddKeyDown = useAddBoxFlip(onAdd ?? (() => {}), title, () => setTitle(''));
 
   function submitAdd(event: FormEvent) {
     event.preventDefault();
@@ -69,7 +66,6 @@ export function NextActionsPanel({
               aria-label="Add a next action"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={onAddKeyDown}
               placeholder="Add a next action…"
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
             />

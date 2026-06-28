@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
-- **Flip new-item placement from the keyboard.** Press <kbd>t</kbd> anywhere to toggle whether new items add to the **top** or **bottom** — the keyboard mirror of the add-box toggle, applying to all add boxes at once. And right where you capture: **Shift+Enter** in any add box flips the default *and* drops the item you just typed at the flipped end — so you don't have to leave the field. Documented in Help. Closes #450.
+- **Flip new-item placement from the keyboard.** Press <kbd>t</kbd> anywhere to toggle whether new items add to the **top** or **bottom** — the keyboard mirror of the add-box toggle, applying to all add boxes at once. Never fires while typing; documented in Help. Closes #450.
 
 - **Fold project sections from the keyboard.** On a project workbench, press <kbd>x</kbd> to toggle **Details**, <kbd>y</kbd> to toggle **Actions**, and <kbd>z</kbd> to toggle **Sub-projects** — collapse or expand each section without reaching for the mouse. Never fires while you're typing in a field. Documented in Help. Closes #436.
 
