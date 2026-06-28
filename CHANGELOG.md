@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Select all in bulk select mode.** The Done view and the project workbench's action select-mode now have a **Select all** button next to Clear — tick everything in one go, then bulk-restore / -backlog / -delete (or move / tag / re-status on the workbench). Makes clearing out Done a two-click job. Closes #460.
+
 - **Deleting a project now lets you keep its contents.** Deleting a non-empty project opens a dialog where you choose, per kind, whether its **actions** and **sub-projects** move up — to the parent project, or to **Top level** / **Free actions** when it's a top-level project — or get deleted with it. Defaults to moving them (never lose work by accident), and the whole thing is a single **Undo**. Empty projects just confirm. Applies wherever you delete a project (Projects list, sub-project rows, the workbench Details panel, the editor). Closes #454.
 
 - **Give an action a date *range*, not just a due date.** The editor's Due field now has an optional **end** ("to") date, so multi-day things — a trip, a conference week — read as a span on the row (*Due 12 Aug – 16 Aug*). The start stays the sortable date, so due-sort and the Due view are unchanged. Round-trips safely with NamDesktop. Closes #438.
