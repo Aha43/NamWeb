@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Capture keeps your last few items in view.** The capture dialog now lists the last 4 things you added this session under **Just added**, instead of letting each one vanish on Enter — handy when a thought relates to the previous one. Each is editable inline to fix a typo (it renames the real inbox item). The list is session-only and resets when you close the dialog. Closes #478.
+
 ## [0.2.0] - 2026-06-28
 
 A small UX pass: the version is reachable from the chrome, inbox delete is recoverable, and Summary
