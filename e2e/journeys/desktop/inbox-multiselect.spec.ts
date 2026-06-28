@@ -18,13 +18,13 @@ test('bulk-file selected inbox items as Next actions under a project', async ({ 
   await page.getByRole('button', { name: 'Select all' }).click();
 
   // Choose a destination project for the batch.
-  await page.getByRole('button', { name: /File under/ }).click();
+  await page.getByRole('button', { name: /File into/ }).click();
   const picker = page.getByRole('dialog', { name: 'File selected items under…' });
   await picker.getByRole('button', { name: 'Home', exact: true }).click();
   await picker.getByRole('button', { name: 'Choose' }).click();
 
-  // One decision applies to all: → Next files both as NEXT actions under Home.
-  await page.getByRole('button', { name: '→ Next' }).click();
+  // The verb now names the destination so the order is self-evident.
+  await page.getByRole('button', { name: '→ Next in Home' }).click();
 
   await expect.poll(() => doc.current().nodes['home'].childIds).toEqual(expect.arrayContaining(['i1', 'i2']));
   await expect.poll(() => doc.current().nodes['i1'].status).toBe('NEXT');

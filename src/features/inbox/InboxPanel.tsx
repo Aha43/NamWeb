@@ -71,7 +71,13 @@ export function InboxPanel({
   };
   const targetLabel = bulkTarget
     ? (projectTargets.find((t) => t.id === bulkTarget)?.label ?? 'a project')
-    : 'default (Top level / Free actions)';
+    : 'Top level / Free actions';
+  // Short name (last breadcrumb segment) that rides on the verb buttons, so each one shows where it
+  // files *before* you click — making the destination-then-verb order self-correcting.
+  const targetShort = bulkTarget
+    ? (projectTargets.find((t) => t.id === bulkTarget)?.label.split(' › ').pop() ?? 'project')
+    : null;
+  const inTarget = targetShort ? ` in ${targetShort}` : '';
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -128,13 +134,23 @@ export function InboxPanel({
         {selectMode && (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
             <span className="mr-1 text-muted-foreground">{selected.size} selected</span>
+            {/* Destination first: the verbs below file into whatever this is set to. */}
+            <Tooltip label={`Choose where the actions below file into (now: ${targetLabel})`}>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="max-w-[14rem] truncate rounded-md border border-input px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                File into: <span className="font-medium text-foreground">{targetLabel}</span> ▾
+              </button>
+            </Tooltip>
             <button
               type="button"
               disabled={none}
               onClick={() => resolveSelected({ kind: 'action', status: 'NEXT', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              → Next
+              → Next{inTarget}
             </button>
             <button
               type="button"
@@ -142,7 +158,7 @@ export function InboxPanel({
               onClick={() => resolveSelected({ kind: 'action', status: 'BACKLOG', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              → Backlog
+              → Backlog{inTarget}
             </button>
             <button
               type="button"
@@ -150,17 +166,8 @@ export function InboxPanel({
               onClick={() => resolveSelected({ kind: 'project', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              Make projects
+              Make projects{inTarget}
             </button>
-            <Tooltip label={`File under: ${targetLabel}`}>
-              <button
-                type="button"
-                onClick={() => setPickerOpen(true)}
-                className="max-w-[12rem] truncate rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent"
-              >
-                File under: {targetLabel} ▾
-              </button>
-            </Tooltip>
             {onBulkDelete && (
               <ConfirmButton
                 aria-label="Delete selected items"
