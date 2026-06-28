@@ -107,9 +107,17 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
           </ConfirmButton>
           <button
             type="button"
+            onClick={() => setSelected(new Set(rows.map((r) => r.id)))}
+            disabled={selected.size === rows.length}
+            className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+          >
+            Select all
+          </button>
+          <button
+            type="button"
             onClick={() => setSelected(new Set())}
             disabled={none}
-            className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+            className="rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
             Clear
           </button>

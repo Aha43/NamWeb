@@ -631,9 +631,17 @@ export function ProjectWorkbench({
                   </ConfirmButton>
                   <button
                     type="button"
+                    onClick={() => setSelected(new Set(actions.map((a) => a.id)))}
+                    disabled={selected.size === actions.length}
+                    className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                  >
+                    Select all
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setSelected(new Set())}
                     disabled={selected.size === 0}
-                    className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                    className="rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
                     Clear
                   </button>
