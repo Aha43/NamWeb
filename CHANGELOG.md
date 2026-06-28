@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **The version is on the NAM wordmark.** Hovering the **NAM** logo label now shows the full name plus the release and build — *Next Action Master · v0.1.0 · a1b2c3d* — so the version is reachable while signed in without opening Help. Hover-only, so it adds no clutter. Closes #469.
+
 ## [0.1.0] - 2026-06-28
 
 First tagged release. NamWeb is the mobile-first web companion to NamDesktop — capture, triage, and
