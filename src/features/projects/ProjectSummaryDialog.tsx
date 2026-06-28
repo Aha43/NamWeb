@@ -10,6 +10,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import type { NodeStatus } from '@/domain/types';
 import type { SummaryOptions } from '@/domain/projectSummary';
 
@@ -40,9 +41,23 @@ export function ProjectSummaryDialog({
     return buildSummary({ statuses, includeSubProjects });
   }, [next, backlog, done, includeSubProjects, buildSummary]);
 
+  // ⌘/Ctrl+Enter — the "copy & close" power move (the Copy button alone stays copy-only so you can
+  // keep tweaking the include-filters).
+  function copyAndClose() {
+    copy(markdown);
+    onOpenChange(false);
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            copyAndClose();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Summary — {title}</DialogTitle>
           <DialogDescription>Markdown summary of this project's actions — copy and paste anywhere.</DialogDescription>
@@ -84,10 +99,12 @@ export function ProjectSummaryDialog({
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             Close
           </Button>
-          <Button type="button" onClick={() => copy(markdown)} className="gap-1.5">
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copied ? 'Copied' : 'Copy'}
-          </Button>
+          <Tooltip label="⌘/Ctrl+Enter copies & closes">
+            <Button type="button" onClick={() => copy(markdown)} className="gap-1.5">
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? 'Copied' : 'Copy'}
+            </Button>
+          </Tooltip>
         </DialogFooter>
       </DialogContent>
     </Dialog>
