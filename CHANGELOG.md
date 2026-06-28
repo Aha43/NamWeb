@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-28
+
+More small UX polish: keyboard copy for summaries, recent captures stay in view, and convert lands
+you in the right place.
+
 ### Added
 
 - **Copy a project summary with the keyboard.** In the Summary dialog, <kbd>⌘</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> copies the Markdown **and closes** the dialog; the Copy button now has a tooltip naming the shortcut. (The button itself still copies without closing, so you can keep tweaking the filters.) Closes #477.
@@ -1063,6 +1068,7 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Aha43/NamWeb/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Aha43/NamWeb/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Aha43/NamWeb/releases/tag/v0.1.0
