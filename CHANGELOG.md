@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-06-28
+
+Bug-fix patch from a code review — including a data-loss fix on failed-write Retry.
+
 ### Fixed
 
 - **A failed save no longer loses your edit on Retry.** When a write failed, the change was being reverted behind the sticky error notice, so **Retry** re-pushed the old document and could clear the error without restoring your edit. Now the failed edit stays visible and Retry re-pushes exactly that local change. Closes #484.
@@ -1076,7 +1080,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/Aha43/NamWeb/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Aha43/NamWeb/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Aha43/NamWeb/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Aha43/NamWeb/releases/tag/v0.1.0
