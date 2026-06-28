@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +41,14 @@ export function DeleteProjectDialog({
   // Default to keeping content (move up) — never lose work by accident.
   const [keepActions, setKeepActions] = useState(true);
   const [keepSubProjects, setKeepSubProjects] = useState(true);
+
+  // This component stays mounted across openings, so reset to the safe defaults whenever the dialog
+  // opens for a different project (or closes) — destructive radio choices must never carry over from
+  // a previous delete (#485).
+  useEffect(() => {
+    setKeepActions(true);
+    setKeepSubProjects(true);
+  }, [project?.id]);
 
   if (!project) return null;
   const hasContent = actionCount > 0 || subCount > 0;

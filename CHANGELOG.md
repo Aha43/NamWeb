@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Project delete always starts on the safe defaults.** The advanced delete dialog was remembering your previous **Delete the actions / sub-projects** choices across separate projects; it now resets to **Move/keep** every time it opens, matching the “never lose work by accident” rule. Closes #485.
+
 ## [0.3.0] - 2026-06-28
 
 More small UX polish: keyboard copy for summaries, recent captures stay in view, and convert lands
