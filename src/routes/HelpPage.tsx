@@ -86,7 +86,7 @@ export function HelpPage() {
         </ul>
         <p className="text-sm text-muted-foreground">On a project workbench:</p>
         <ul className="space-y-1 text-sm text-muted-foreground">
-          <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">x</kbd> — toggle Details · <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">y</kbd> — toggle Actions · <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">z</kbd> — toggle Sub-projects</li>
+          <li><kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">x</kbd> — toggle Details · <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">y</kbd> — toggle Actions · <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">z</kbd> — toggle Sub-projects · <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 text-xs">s</kbd> — open Summary</li>
         </ul>
         <p className="text-sm text-muted-foreground">In Focus mode:</p>
         <ul className="space-y-1 text-sm text-muted-foreground">
