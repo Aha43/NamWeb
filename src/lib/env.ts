@@ -8,3 +8,8 @@ export const APP_ENV: AppEnv =
   (import.meta.env.DEV ? 'development' : 'production');
 
 export const isProduction = APP_ENV === 'production';
+
+// Release version (from package.json) and the build's commit SHA, baked in at build time by
+// vite.config.ts. BUILD_SHA is empty for a local dev build. See #464.
+export const APP_VERSION: string = __APP_VERSION__;
+export const BUILD_SHA: string = __BUILD_SHA__;

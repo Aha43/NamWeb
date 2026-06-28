@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **The app now shows its version and build.** A small stamp — **NamWeb v0.1.0 · a1b2c3d** — appears in the Help page footer and on the sign-in / demo screen. The version comes from `package.json`; the short commit SHA (linked to the GitHub commit) identifies the exact build, so you can tell which Cloudflare preview you're on at a glance. A local dev build shows `dev`. Closes #464.
+
 - **Triage several inbox items at once.** The inbox has a new **select mode** (the checkbox button beside "Process inbox"): tick the items you want — or **Select all** — then apply one shared decision from the bulk bar. Set the destination with **File into: … ▾** (defaults to **Top level / Free actions**), then commit with **→ Next**, **→ Backlog**, or **Make projects** — they all file into whatever the chip shows. **Delete** removes the lot with a single Undo. It's additive — the per-item **Process…** dialog and the **Process inbox** deck are untouched for one-at-a-time clarifying. Closes #458.
 
 - **Select all in bulk select mode.** The Done view and the project workbench's action select-mode now have a **Select all** button next to Clear — tick everything in one go, then bulk-restore / -backlog / -delete (or move / tag / re-status on the workbench). Makes clearing out Done a two-click job. Closes #460.

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { Button } from '@/components/ui/button';
+import { VersionBadge } from '@/components/VersionBadge';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 /** A simple in-app help surface: how the app's loop works, what each surface is for, the keyboard
@@ -151,6 +152,10 @@ export function HelpPage() {
         </p>
         <Button variant="outline" onClick={addLearnNam}>Add the Learn NAM project 🥋</Button>
       </div>
+
+      <footer className="border-t border-border pt-4">
+        <VersionBadge />
+      </footer>
     </section>
   );
 }
