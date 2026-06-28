@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Summary has a keyboard shortcut and a tooltip.** On a project workbench, press <kbd>s</kbd> to open the Markdown **Summary** (never while typing), and hovering the button now names it and shows the shortcut. Documented in Help. Closes #472.
+
 ## [0.1.0] - 2026-06-28
 
 First tagged release. NamWeb is the mobile-first web companion to NamDesktop — capture, triage, and
