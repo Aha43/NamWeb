@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Triage several inbox items at once.** The inbox has a new **select mode** (the checkbox button beside "Process inbox"): tick the items you want — or **Select all** — then apply one shared decision from the bulk bar. Set the destination with **File into: … ▾** (defaults to **Top level / Free actions**), then commit with **→ Next**, **→ Backlog**, or **Make projects** — they all file into whatever the chip shows. **Delete** removes the lot with a single Undo. It's additive — the per-item **Process…** dialog and the **Process inbox** deck are untouched for one-at-a-time clarifying. Closes #458.
 
+- **Select all in bulk select mode.** The Done view and the project workbench's action select-mode now have a **Select all** button next to Clear — tick everything in one go, then bulk-restore / -backlog / -delete (or move / tag / re-status on the workbench). Makes clearing out Done a two-click job. Closes #460.
+
 - **Deleting a project now lets you keep its contents.** Deleting a non-empty project opens a dialog where you choose, per kind, whether its **actions** and **sub-projects** move up — to the parent project, or to **Top level** / **Free actions** when it's a top-level project — or get deleted with it. Defaults to moving them (never lose work by accident), and the whole thing is a single **Undo**. Empty projects just confirm. Applies wherever you delete a project (Projects list, sub-project rows, the workbench Details panel, the editor). Closes #454.
 
 - **Give an action a date *range*, not just a due date.** The editor's Due field now has an optional **end** ("to") date, so multi-day things — a trip, a conference week — read as a span on the row (*Due 12 Aug – 16 Aug*). The start stays the sortable date, so due-sort and the Due view are unchanged. Round-trips safely with NamDesktop. Closes #438.
@@ -229,6 +231,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   the action dialog and the panel), and the action editor no longer opens for project nodes. Closes #269.
 
 ### Fixed
+
+- **Due dates fit, and you can clear them.** In the action editor the due field's start and end inputs now stack so a full date (e.g. *2026-07-04*) reads in each instead of being squeezed by the "to" layout, and a **Clear** link by the Due label empties the date (and its range) in one click. Closes #459.
 
 - **Readable cards in the Column (Kanban) view.** Column cards used the full list-row layout, which didn't fit a narrow column — titles collapsed to a few characters and the due date wrapped down several lines. Cards now have a compact layout: the **title gets its own full line** (truncated with an on-hover full-name tooltip), the **due date sits on one line**, the redundant project path and "age" label are gone, and the row of action buttons (status, edit, rename, delete, drag, reorder) **moves to a footer that appears on hover** so it never crowds the title. Closes #445.
 

@@ -208,29 +208,47 @@ export function ActionDialog({
               <InheritedTags tags={inheritedTags} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="action-due">Due</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="action-due">Due</Label>
+                {(due || dueEnd) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDue('');
+                      setDueEnd('');
+                      setDueError(false);
+                      setDueEndError(false);
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {/* Stacked so each input gets the full column width — a full ISO date (2026-07-04) fits. */}
+              <Input
+                id="action-due"
+                placeholder="26-7-4"
+                value={due}
+                aria-invalid={dueError}
+                onChange={(e) => {
+                  setDue(e.target.value);
+                  if (dueError) setDueError(false);
+                }}
+                onBlur={() => {
+                  // Echo a canonical zero-padded ISO form (26-7-4 → 2026-07-04) to confirm
+                  // what was parsed. Leave unparseable text untouched (don't nag on blur).
+                  const iso = parseFlexibleDate(due);
+                  if (iso) setDue(iso);
+                }}
+              />
               <div className="flex items-center gap-1.5">
-                <Input
-                  id="action-due"
-                  placeholder="26-7-4"
-                  value={due}
-                  aria-invalid={dueError}
-                  onChange={(e) => {
-                    setDue(e.target.value);
-                    if (dueError) setDueError(false);
-                  }}
-                  onBlur={() => {
-                    // Echo a canonical zero-padded ISO form (26-7-4 → 2026-07-04) to confirm
-                    // what was parsed. Leave unparseable text untouched (don't nag on blur).
-                    const iso = parseFlexibleDate(due);
-                    if (iso) setDue(iso);
-                  }}
-                />
                 <span className="shrink-0 text-xs text-muted-foreground">to</span>
                 <Input
                   id="action-due-end"
                   aria-label="Due end (optional)"
                   placeholder="end (optional)"
+                  className="min-w-0 flex-1"
                   value={dueEnd}
                   aria-invalid={dueEndError}
                   onChange={(e) => {
