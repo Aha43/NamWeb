@@ -97,10 +97,34 @@ describe('ActionDialog', () => {
       description: null,
       tags: ['Home', 'phone'],
       dueAt: '2026-08-15',
+      dueEndAt: null,
       status: 'NEXT',
       resources: [],
     });
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('saves a due date range (start + end) via dueEndAt (#438)', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Trip' } });
+    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
+    fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '26-8-16' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ dueAt: '2026-08-12', dueEndAt: '2026-08-16' }),
+    );
+  });
+
+  it('rejects an end date before the start (no save) (#438)', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Trip' } });
+    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-16' } });
+    fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '2026-08-12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toBeInTheDocument();
   });
 
   it('echoes a canonical ISO due date on blur, leaving invalid text untouched', () => {

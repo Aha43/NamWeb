@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- **Give an action a date *range*, not just a due date.** The editor's Due field now has an optional **end** ("to") date, so multi-day things — a trip, a conference week — read as a span on the row (*Due 12 Aug – 16 Aug*). The start stays the sortable date, so due-sort and the Due view are unchanged. Round-trips safely with NamDesktop. Closes #438.
+
 - **Flip new-item placement from the keyboard.** Press <kbd>t</kbd> anywhere to toggle whether new items add to the **top** or **bottom** — the keyboard mirror of the add-box toggle, applying to all add boxes at once. Never fires while typing; documented in Help. Closes #450.
 
 - **Fold project sections from the keyboard.** On a project workbench, press <kbd>x</kbd> to toggle **Details**, <kbd>y</kbd> to toggle **Actions**, and <kbd>z</kbd> to toggle **Sub-projects** — collapse or expand each section without reaching for the mouse. Never fires while you're typing in a field. Documented in Help. Closes #436.

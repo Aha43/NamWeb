@@ -27,8 +27,14 @@ export interface NamNode {
   createdAt: string | null;
   updatedAt: string | null;
   statusChangedAt: string | null;
-  /** ISO-8601 local date (e.g. "2026-03-20") or null. */
+  /** ISO-8601 local date (e.g. "2026-03-20") or null. The start / sortable date. */
   dueAt: string | null;
+  /**
+   * Optional end of a date range (ISO local date, inclusive). A range exists iff this and `dueAt`
+   * are both set and `dueEndAt >= dueAt`; `dueAt` alone is a single date. Shared NamDesktop contract
+   * (it round-trips this field). Sort/grouping always key on the start (`dueAt`). See #438.
+   */
+  dueEndAt?: string | null;
 }
 
 export interface SavedView {

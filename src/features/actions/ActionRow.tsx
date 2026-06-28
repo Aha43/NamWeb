@@ -1,7 +1,7 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Paperclip, Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatAge, formatDueHint, type DueTone } from '@/lib/dates';
+import { formatAge, formatDate, formatDueHint, type DueTone } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -53,6 +53,9 @@ export function ActionRow({
 }) {
   const { dateFormat } = useSettings();
   const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat) : null;
+  // A date range: append the end date when it's set and not before the start.
+  const dueEnd =
+    row.dueAt && row.dueEndAt && row.dueEndAt >= row.dueAt ? formatDate(row.dueEndAt, dateFormat) : null;
   const isCard = variant === 'card';
   // The age label is list-only noise on a Kanban card (nearly every card would read "today").
   const age = !isCard && row.touchedAt ? formatAge(row.touchedAt) : null;
@@ -119,7 +122,10 @@ export function ActionRow({
         </span>
       ))}
       {due && (
-        <span className={cn('text-[11px] font-medium whitespace-nowrap', DUE_TONE[due.tone])}>Due {due.label}</span>
+        <span className={cn('text-[11px] font-medium whitespace-nowrap', DUE_TONE[due.tone])}>
+          Due {due.label}
+          {dueEnd && ` – ${dueEnd}`}
+        </span>
       )}
       {age && (
         <span

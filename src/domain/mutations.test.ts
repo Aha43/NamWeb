@@ -534,3 +534,29 @@ describe('deleteTag', () => {
     expect(intentTargetExists(workspace(), { type: 'renameTag', from: 'a', to: 'b' })).toBe(true);
   });
 });
+
+describe('setDue with a date range (#438)', () => {
+  it('sets both the start and the end', () => {
+    const next = applyIntent(workspace([node('a')]), {
+      type: 'setDue',
+      id: 'a',
+      dueAt: '2026-08-12',
+      dueEndAt: '2026-08-16',
+      now: NOW,
+    });
+    expect(next.nodes.a).toMatchObject({ dueAt: '2026-08-12', dueEndAt: '2026-08-16' });
+  });
+
+  it('leaves an existing end untouched when the intent omits dueEndAt', () => {
+    const doc = workspace([node('a', { dueAt: '2026-08-12', dueEndAt: '2026-08-16' })]);
+    const next = applyIntent(doc, { type: 'setDue', id: 'a', dueAt: '2026-08-13', now: NOW });
+    expect(next.nodes.a).toMatchObject({ dueAt: '2026-08-13', dueEndAt: '2026-08-16' });
+  });
+
+  it('clears the end when the start is cleared', () => {
+    const doc = workspace([node('a', { dueAt: '2026-08-12', dueEndAt: '2026-08-16' })]);
+    const next = applyIntent(doc, { type: 'setDue', id: 'a', dueAt: null, now: NOW });
+    expect(next.nodes.a.dueAt).toBeNull();
+    expect(next.nodes.a.dueEndAt).toBeNull();
+  });
+});
