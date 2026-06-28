@@ -51,19 +51,31 @@ target the local Supabase stack run from NamDesktop (`make supabase-start`).
 
 `npm run test` is this repo's equivalent of NamDesktop's `make test`; `npm run dev` of `make run`.
 
+## Environment & data
+
+- **Seed / clean / reset of the local dev workspace is a safe test-data action — proceed without
+  asking.** The local Supabase stack and the demo workspace hold disposable test data only. Pause
+  to confirm first **only** if production data is plausibly involved.
+
 ## Workflow
 
 - **Always work on a GitHub issue.** Never start implementation without a corresponding issue —
   either one created upfront or one we create together before coding begins.
   Include `Closes #<number>` in every non-chore commit.
 - **Always check the current branch before committing.** If on `main`, warn and stop.
-  All feature work must go on a feature branch.
+  All feature work must go on a feature branch. Confirm you're on the *intended* branch for
+  this issue — not a leftover branch from earlier work; if it doesn't exist yet, create it
+  from `main` first.
 - **`main` is branch-protected** (since 2026-06-25): direct pushes are rejected — every change lands
   via a PR, the **`check`** CI job (lint + typecheck + test + build) must pass, and history is linear
   (squash-merge). No required reviews (solo-friendly: you can merge your own PR once `check` is green);
   admins can't bypass, so don't rely on direct-to-`main` pushes.
 - **Default feature branch name is `feature/next`.** Rename it to something descriptive
   before opening a PR.
+- **Re-run tests after multi-file changes, not only at delivery.** Changes touching React
+  context/provider hooks (e.g. `useDeleteProject`) or e2e poll commands / URL aliases are the
+  usual culprits for silent breakage — run `npm run test` after such edits (and the full
+  `npm run e2e:mocked` before opening a PR, per Delivery).
 - When completing a GitHub issue, update the `## [Unreleased]` section of `CHANGELOG.md`
   before committing. Use `Added`, `Changed`, or `Fixed` as appropriate, and include
   `Closes #<number>` in the commit message.
