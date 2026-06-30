@@ -12,6 +12,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **Copy names from the Column (Kanban) view.** The action card's copy icon now has a hover tooltip, and each sub-project column header gains a copy button for the project name (with its own tooltip) — previously you couldn't copy a column's name there. Closes #501.
 
+### Fixed
+
+- **Drag cards between columns while sorted By due.** In the Column (Kanban) view, dragging a card to another column (which reparents it into that sub-project) now works even when sorted **By due** — the calendar-board gesture: move a card from one month to the next. Only *within-column* reorder stays disabled under By-due (its order is computed). Previously By-due switched off all drag. Closes #502.
+
 ## [0.4.0] - 2026-06-30
 
 Time-of-day on due dates — appointments land in NAM, not just all-day items.
