@@ -120,6 +120,33 @@ describe('ActionDialog', () => {
     );
   });
 
+  it('rejects a same-day range whose end time is before the start (#508)', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Window' } });
+    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
+    fireEvent.change(screen.getByLabelText('Due time (optional)'), { target: { value: '14:00' } });
+    fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '2026-08-12' } });
+    fireEvent.change(screen.getByLabelText('Due end time (optional)'), { target: { value: '09:00' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(/end can’t be before the start/);
+  });
+
+  it('allows a same-day range with end time after the start (#508)', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Window' } });
+    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
+    fireEvent.change(screen.getByLabelText('Due time (optional)'), { target: { value: '09:00' } });
+    fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '2026-08-12' } });
+    fireEvent.change(screen.getByLabelText('Due end time (optional)'), { target: { value: '17:30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ dueTime: '09:00', dueEndTime: '17:30' }),
+    );
+  });
+
   it('drops an end time when there is no end date (#500)', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);

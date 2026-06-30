@@ -18,6 +18,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **A same-day range can't end before it starts.** When a Due range's start and end are the *same day*, the editor now rejects an end time earlier than the start time (e.g. 14:00 → 09:00). Closes #508.
+
 - **Drag cards between columns while sorted By due.** In the Column (Kanban) view, dragging a card to another column (which reparents it into that sub-project) now works even when sorted **By due** — the calendar-board gesture: move a card from one month to the next. Only *within-column* reorder stays disabled under By-due (its order is computed). Previously By-due switched off all drag. Closes #502.
 
 ## [0.4.0] - 2026-06-30
