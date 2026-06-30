@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Give the range end a time too.** The Due **end** date now takes its own optional time (so a window can read *Due 12 Aug 09:00 – 12 Aug 17:30*), same progressive entry as the start. Round-trips with NamDesktop. Closes #500.
+
 ## [0.4.0] - 2026-06-30
 
 Time-of-day on due dates — appointments land in NAM, not just all-day items.

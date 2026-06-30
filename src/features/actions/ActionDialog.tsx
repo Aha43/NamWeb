@@ -40,6 +40,8 @@ export interface ActionEdits {
   dueEndAt?: string | null;
   /** Optional time of day for the start (`"HH:MM"`, local); null = none. Emitted only with a dueAt. */
   dueTime?: string | null;
+  /** Optional time of day for the range end (`"HH:MM"`, local); null = none. Emitted only with dueEndAt. */
+  dueEndTime?: string | null;
   status: NodeStatus;
   resources: Resource[];
 }
@@ -121,6 +123,8 @@ export function ActionDialog({
   const [dueEndError, setDueEndError] = useState(false);
   const [dueTime, setDueTime] = useState(node.dueTime ?? '');
   const [dueTimeError, setDueTimeError] = useState(false);
+  const [dueEndTime, setDueEndTime] = useState(node.dueEndTime ?? '');
+  const [dueEndTimeError, setDueEndTimeError] = useState(false);
   const [status, setStatus] = useState<NodeStatus>(node.status);
   const [resources, setResources] = useState<Resource[]>(node.resources);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -147,14 +151,22 @@ export function ActionDialog({
       setDueTimeError(true);
       return;
     }
+    // Optional time of day on the end: must parse when entered (and only kept with an end date).
+    const dueEndTimeValue = dueEndTime.trim() ? parseFlexibleTime(dueEndTime) : null;
+    if (dueEndTime.trim() && dueEndTimeValue === null) {
+      setDueEndTimeError(true);
+      return;
+    }
     const trimmedDescription = description.trim();
+    const endAt = dueAt ? dueEndAt : null;
     onSave({
       title: trimmedTitle,
       description: trimmedDescription ? trimmedDescription : null,
       tags: tags.split(',').map((t) => t.trim()).filter(Boolean),
       dueAt,
-      dueEndAt: dueAt ? dueEndAt : null,
+      dueEndAt: endAt,
       dueTime: dueAt ? dueTimeValue : null,
+      dueEndTime: endAt ? dueEndTimeValue : null,
       status,
       resources,
     });
@@ -221,16 +233,18 @@ export function ActionDialog({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="action-due">Due</Label>
-                {(due || dueEnd || dueTime) && (
+                {(due || dueEnd || dueTime || dueEndTime) && (
                   <button
                     type="button"
                     onClick={() => {
                       setDue('');
                       setDueEnd('');
                       setDueTime('');
+                      setDueEndTime('');
                       setDueError(false);
                       setDueEndError(false);
                       setDueTimeError(false);
+                      setDueEndTimeError(false);
                     }}
                     className="text-xs text-muted-foreground hover:text-foreground"
                   >
@@ -295,6 +309,26 @@ export function ActionDialog({
                   }}
                 />
               </div>
+              {/* Optional time of day on the end (#500). */}
+              <div className="flex items-center gap-1.5">
+                <span className="shrink-0 text-xs text-muted-foreground">at</span>
+                <Input
+                  id="action-due-end-time"
+                  aria-label="Due end time (optional)"
+                  placeholder="end time (optional)"
+                  className="min-w-0 flex-1"
+                  value={dueEndTime}
+                  aria-invalid={dueEndTimeError}
+                  onChange={(e) => {
+                    setDueEndTime(e.target.value);
+                    if (dueEndTimeError) setDueEndTimeError(false);
+                  }}
+                  onBlur={() => {
+                    const hhmm = parseFlexibleTime(dueEndTime);
+                    if (hhmm) setDueEndTime(hhmm);
+                  }}
+                />
+              </div>
               {dueError && (
                 <p role="alert" className="text-xs text-destructive">
                   Use a date like 26-7-4 or 2026-07-04.
@@ -305,7 +339,7 @@ export function ActionDialog({
                   The end needs a start date and must be on or after it.
                 </p>
               )}
-              {dueTimeError && (
+              {(dueTimeError || dueEndTimeError) && (
                 <p role="alert" className="text-xs text-destructive">
                   Use a time like 14:30 or 9 (24-hour).
                 </p>

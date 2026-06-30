@@ -32,3 +32,19 @@ test('a bare hour fills minutes (9 → 09:00)', async ({ page, doc }) => {
 
   await expect.poll(() => doc.current().nodes['appt'].dueTime).toBe('09:00');
 });
+
+test('the range end can carry its own time (#500)', async ({ page, doc }) => {
+  await page.goto('/next');
+
+  await page.getByRole('button', { name: 'Edit Doctor' }).click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Due', { exact: true }).fill('2026-08-12');
+  await dialog.getByLabel('Due time (optional)').fill('9');
+  await dialog.getByLabel('Due end (optional)').fill('2026-08-12');
+  await dialog.getByLabel('Due end time (optional)').fill('17:30');
+  await dialog.getByRole('button', { name: 'Save' }).click();
+
+  await expect.poll(() => doc.current().nodes['appt'].dueEndAt).toBe('2026-08-12');
+  await expect.poll(() => doc.current().nodes['appt'].dueEndTime).toBe('17:30');
+  await expect(page.getByText(/09:00 – .*17:30/)).toBeVisible();
+});

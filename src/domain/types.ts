@@ -43,6 +43,11 @@ export interface NamNode {
    * within-day tiebreak. See #493.
    */
   dueTime?: string | null;
+  /**
+   * Optional time of day for the range end (`dueEndAt`) — local wall-clock `"HH:MM"`. Only meaningful
+   * when `dueEndAt` is set. Same additive shared-contract treatment as `dueTime`. See #500.
+   */
+  dueEndTime?: string | null;
 }
 
 export interface SavedView {
