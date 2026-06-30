@@ -18,6 +18,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **A failed save can't lose a later edit either.** Extending the #484 fix: once a write fails, further edits no longer commit on top of the unconfirmed change (which could overwrite it on success) — they're held until **Retry**, which re-pushes the whole local document and recovers them all. A remote sync is also held off while a failed edit is pending. Closes #507.
+
 - **Drag cards between columns while sorted By due.** In the Column (Kanban) view, dragging a card to another column (which reparents it into that sub-project) now works even when sorted **By due** — the calendar-board gesture: move a card from one month to the next. Only *within-column* reorder stays disabled under By-due (its order is computed). Previously By-due switched off all drag. Closes #502.
 
 ## [0.4.0] - 2026-06-30
