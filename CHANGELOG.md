@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Denser Column (Kanban) cards.** A card at rest is now just its title + meta — the row of controls (copy / rename / status / drag / delete) no longer reserves empty space below; it floats in on hover/focus instead. More cards fit per column, with no layout jump when you hover. Closes #514.
+
 ## [0.5.0] - 2026-06-30
 
 Calendar-board polish — a date picker, end-date times, cross-month drag — plus three sync/data

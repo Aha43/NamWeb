@@ -23,12 +23,15 @@ test('switch to Column view and reorder within columns', async ({ page, doc }) =
   await expect(unsorted).toHaveText([/Alpha/, /Beta/]);
   await expect(phase1).toHaveText([/Sub-A/, /Sub-B/]);
 
-  // Reorder within the Unsorted column → reorders the project's childIds.
+  // Reorder within the Unsorted column → reorders the project's childIds. The card controls reveal
+  // on hover (collapsed/inert at rest, #514), so hover the card before clicking its reorder button.
+  await page.getByText('Alpha').locator('xpath=ancestor::li[1]').hover({ position: { x: 8, y: 6 } });
   await page.getByRole('button', { name: 'Move Alpha down' }).click();
   await expect(unsorted).toHaveText([/Beta/, /Alpha/]);
   await expect.poll(() => doc.current().nodes['proj'].childIds).toEqual(['a2', 'a1', 'sp1']);
 
   // Reorder within the Phase 1 column → reorders that sub-project's childIds.
+  await page.getByText('Sub-A').locator('xpath=ancestor::li[1]').hover({ position: { x: 8, y: 6 } });
   await page.getByRole('button', { name: 'Move Sub-A down' }).click();
   await expect(phase1).toHaveText([/Sub-B/, /Sub-A/]);
   await expect.poll(() => doc.current().nodes['sp1'].childIds).toEqual(['s2', 's1']);
