@@ -99,10 +99,35 @@ describe('ActionDialog', () => {
       dueAt: '2026-08-15',
       dueEndAt: null,
       dueTime: null,
+      dueEndTime: null,
       status: 'NEXT',
       resources: [],
     });
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('saves a time on the range end too (#500)', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Window' } });
+    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
+    fireEvent.change(screen.getByLabelText('Due time (optional)'), { target: { value: '9' } });
+    fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '2026-08-12' } });
+    fireEvent.change(screen.getByLabelText('Due end time (optional)'), { target: { value: '17:30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ dueAt: '2026-08-12', dueTime: '09:00', dueEndAt: '2026-08-12', dueEndTime: '17:30' }),
+    );
+  });
+
+  it('drops an end time when there is no end date (#500)', () => {
+    const onSave = vi.fn();
+    render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
+    fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'No end' } });
+    fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
+    fireEvent.change(screen.getByLabelText('Due end time (optional)'), { target: { value: '17:30' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ dueEndAt: null, dueEndTime: null }));
   });
 
   it('saves a time of day on the start, parsed from a bare hour (#493)', () => {

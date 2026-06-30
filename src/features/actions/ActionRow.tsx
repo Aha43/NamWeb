@@ -58,6 +58,8 @@ export function ActionRow({
     row.dueAt && row.dueEndAt && row.dueEndAt >= row.dueAt ? formatDate(row.dueEndAt, dateFormat) : null;
   // Optional time of day on the start, shown after the date (#493).
   const dueTime = row.dueAt && row.dueTime ? row.dueTime : null;
+  // Optional time of day on the end, shown after the end date (#500).
+  const dueEndTime = dueEnd && row.dueEndTime ? row.dueEndTime : null;
   const isCard = variant === 'card';
   // The age label is list-only noise on a Kanban card (nearly every card would read "today").
   const age = !isCard && row.touchedAt ? formatAge(row.touchedAt) : null;
@@ -128,6 +130,7 @@ export function ActionRow({
           Due {due.label}
           {dueTime && ` ${dueTime}`}
           {dueEnd && ` – ${dueEnd}`}
+          {dueEndTime && ` ${dueEndTime}`}
         </span>
       )}
       {age && (
