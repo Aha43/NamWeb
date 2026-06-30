@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-30
+
+Time-of-day on due dates — appointments land in NAM, not just all-day items.
+
 ### Added
 
 - **Give a due date a time of day.** An action's Due now takes an optional **time** (a doctor's appointment at 14:30, a 09:00 call) — type it progressively: the hour alone works (`9` → 09:00), or `14:30` / `1430`. The row shows it after the date (*Due 12 Aug 14:30*), and the by-due sort orders within a day by time (all-day first). The range end stays date-only. Round-trips with NamDesktop. Closes #493.
@@ -1084,7 +1088,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Aha43/NamWeb/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Aha43/NamWeb/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Aha43/NamWeb/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Aha43/NamWeb/compare/v0.1.0...v0.2.0
