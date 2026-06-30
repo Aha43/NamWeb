@@ -55,10 +55,37 @@ cost down. After addressing the findings, update `.codex-review` to the reviewed
 commit it. Reviews **complement** the test gate — they find logic bugs the suite can't; the suite
 finds flakes/regressions a point-in-time review can't.
 
+## Tutorial freshness (NamProduct)
+
+NamWeb is the source of UX change; the NamProduct "learn nam" site carries screenshot **slideshow
+tutorials** that go stale when a screen here changes. Same shape as the Codex cadence above —
+marker-driven, triggered on **change**, not a clock. The marker `.tutorials-synced` (repo root)
+records the last `main` commit whose UX was reflected in the tutorials.
+
+**Run `/refresh-tutorials` when any of these holds:**
+
+1. **Before cutting any release** (mandatory) — a release is a natural "is the learn-nam site still
+   accurate?" checkpoint.
+2. **A user-visible surface changed** since the marker — a view, the clarify/triage flow, the
+   workbench, Focus, etc. (Internal-only changes — sync, auth plumbing — don't move tutorials.)
+3. **Volume crossed the same low bar** as Codex — roughly ≥ 200 changed `src/` lines or ≥ 2 merged
+   feature PRs:
+   ```bash
+   git diff --shortstat "$(cat .tutorials-synced)"..main -- src/
+   ```
+
+The skill diffs since the marker, maps the change to affected tutorials
+(`src/tutorials/staleness.ts`), regenerates their screenshots from the demo workspace
+(`npm run tutorials:build`), opens a refresh issue in `Aha43/NamProduct`, and advances the marker.
+Full design: `docs/features/tutorial-sync/design.md`. This is **not** a CI gate — it produces assets
+and a downstream issue.
+
 ## Cutting a release
 
 0. **Run a Codex review first** (see *Code review cadence*) and address any findings, then update
    `.codex-review`.
+0.5. **Run `/refresh-tutorials`** (see *Tutorial freshness*) so the NamProduct tutorials reflect this
+   release's UX; address the regenerated slideshows and update `.tutorials-synced`.
 1. **Open a release PR** off `main`:
    - Bump the version: `npm version <X.Y.Z> --no-git-tag-version` (updates `package.json` +
      `package-lock.json`).

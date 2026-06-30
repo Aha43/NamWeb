@@ -11,6 +11,7 @@ minor = features (breaking changes allowed), patch = fixes.
 ### Added
 
 - **Give a due date a time of day.** An action's Due now takes an optional **time** (a doctor's appointment at 14:30, a 09:00 call) — type it progressively: the hour alone works (`9` → 09:00), or `14:30` / `1430`. The row shows it after the date (*Due 12 Aug 14:30*), and the by-due sort orders within a day by time (all-day first). The range end stays date-only. Round-trips with NamDesktop. Closes #493.
+- **Tutorial-sync routine** keeps NamProduct's "learn nam" screenshot tutorials in step with NamWeb's UX. A declarative catalog (`src/tutorials/catalog.ts`) drives a Playwright harness that screenshots the curated demo workspace into slideshows; a marker-based staleness mapper (modelled on the Codex review cadence, marker `.tutorials-synced`) maps a change to the tutorials it touched. The `/refresh-tutorials` skill — and a mandatory release-cut step — regenerates the affected slideshows and opens a refresh issue in NamProduct. Closes #495.
 
 ## [0.3.1] - 2026-06-28
 

@@ -51,6 +51,22 @@ export default defineConfig({
       use: { ...devices['iPhone 13'], storageState: MOCK_STORAGE_STATE },
       dependencies: ['mocked-setup'],
     },
+
+    // --- Tutorial screenshot capture (assets, not a test gate; excluded from e2e:mocked) ---
+    // Reuses the mocked-journey auth + seed plumbing to drive the curated demo workspace and
+    // screenshot it at both form factors. See e2e/tutorials/capture.spec.ts.
+    {
+      name: 'tutorials-desktop',
+      testMatch: '**/tutorials/**/*.spec.ts',
+      use: { ...devices['Desktop Chrome'], storageState: MOCK_STORAGE_STATE },
+      dependencies: ['mocked-setup'],
+    },
+    {
+      name: 'tutorials-phone',
+      testMatch: '**/tutorials/**/*.spec.ts',
+      use: { ...devices['iPhone 13'], storageState: MOCK_STORAGE_STATE },
+      dependencies: ['mocked-setup'],
+    },
   ],
   webServer: {
     // Own port + strictPort so we never reuse a hand-run dev server pointed at `default`.
