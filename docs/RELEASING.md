@@ -78,5 +78,17 @@ finds flakes/regressions a point-in-time review can't.
    `package.json`, extracts the matching `CHANGELOG.md` section, and publishes a **GitHub Release**
    with those notes.
 
+4. **Report a "footprint since last release"** alongside the release confirmation — a short
+   paragraph derived from git/gh (no telemetry), so the trail of work is visible, not just the next
+   step. Inputs:
+   ```bash
+   git log <prev-tag>..main --oneline
+   gh pr list --state merged --base main --json number,title,mergedAt \
+     --jq '[.[] | select(.mergedAt > "<prev-tag-date>")] | .[] | "#\(.number) \(.title)"'
+   ```
+   Cover: span (PRs merged, releases), and — most importantly — the **themes** and whether the work
+   is **converging vs polishing** (e.g. the "time domain" arc #438 → calendar-board → #493). It goes
+   in the human report, not the CHANGELOG/Release body.
+
 That's it — Cloudflare Pages continues to build/deploy from `main` as usual; the tag only drives the
 GitHub Release.
