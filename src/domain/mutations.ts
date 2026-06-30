@@ -163,6 +163,10 @@ export interface SeedNode {
   status?: NodeStatus;
   tags?: string[];
   dueAt?: string | null;
+  /** Range end + times — carried so import (and any seed) preserves full scheduling (#509). */
+  dueEndAt?: string | null;
+  dueTime?: string | null;
+  dueEndTime?: string | null;
   /** Prerequisite ids — must reference other nodes within the same seed. */
   blockedBy?: string[];
   resources?: Resource[];
@@ -179,6 +183,9 @@ function insertSeed(doc: WorkspaceDocument, parentId: string, nodes: SeedNode[],
     node.statusChangedAt = seed.status ? now : null;
     node.tags = normalizeTags(seed.tags ?? []);
     node.dueAt = seed.dueAt ?? null;
+    node.dueEndAt = seed.dueEndAt ?? null;
+    node.dueTime = seed.dueTime ?? null;
+    node.dueEndTime = seed.dueEndTime ?? null;
     node.blockedBy = seed.blockedBy ?? [];
     node.resources = seed.resources ?? [];
     doc.nodes[seed.id] = node;
