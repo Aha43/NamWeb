@@ -14,6 +14,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **Give the range end a time too.** The Due **end** date now takes its own optional time (so a window can read *Due 12 Aug 09:00 – 12 Aug 17:30*), same progressive entry as the start. Round-trips with NamDesktop. Closes #500.
 
+- **A calendar to pick dates from.** Each Due field (start, end, and a project's due) now has a small **calendar** button — open it to see the month, navigate, and click a day to fill the date. Handy when you're planning and want to see what weekday a date falls on. Typing `yy-mm-dd` is unchanged and stays the fast path. Closes #499.
+
 ### Fixed
 
 - **Drag cards between columns while sorted By due.** In the Column (Kanban) view, dragging a card to another column (which reparents it into that sub-project) now works even when sorted **By due** — the calendar-board gesture: move a card from one month to the next. Only *within-column* reorder stays disabled under By-due (its order is computed). Previously By-due switched off all drag. Closes #502.

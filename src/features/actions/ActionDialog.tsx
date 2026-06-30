@@ -28,6 +28,7 @@ const SAVE_HINT =
     ? 'Save (⌘ + Enter)'
     : 'Save (Ctrl + Enter)';
 import { parseFlexibleDate, parseFlexibleTime } from '@/lib/dates';
+import { DatePickerPopover } from '@/components/ui/date-picker';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
 
 /** The edited fields the dialog produces on save. Tags are raw (un-normalized). */
@@ -252,23 +253,31 @@ export function ActionDialog({
                   </button>
                 )}
               </div>
-              {/* Stacked so each input gets the full column width — a full ISO date (2026-07-04) fits. */}
-              <Input
-                id="action-due"
-                placeholder="26-7-4"
-                value={due}
-                aria-invalid={dueError}
-                onChange={(e) => {
-                  setDue(e.target.value);
-                  if (dueError) setDueError(false);
-                }}
-                onBlur={() => {
-                  // Echo a canonical zero-padded ISO form (26-7-4 → 2026-07-04) to confirm
-                  // what was parsed. Leave unparseable text untouched (don't nag on blur).
-                  const iso = parseFlexibleDate(due);
-                  if (iso) setDue(iso);
-                }}
-              />
+              {/* Type-in stays primary; the calendar button is an optional way to see weekdays (#499). */}
+              <div className="flex gap-1.5">
+                <Input
+                  id="action-due"
+                  className="min-w-0 flex-1"
+                  placeholder="26-7-4"
+                  value={due}
+                  aria-invalid={dueError}
+                  onChange={(e) => {
+                    setDue(e.target.value);
+                    if (dueError) setDueError(false);
+                  }}
+                  onBlur={() => {
+                    // Echo a canonical zero-padded ISO form (26-7-4 → 2026-07-04) to confirm
+                    // what was parsed. Leave unparseable text untouched (don't nag on blur).
+                    const iso = parseFlexibleDate(due);
+                    if (iso) setDue(iso);
+                  }}
+                />
+                <DatePickerPopover
+                  value={parseFlexibleDate(due)}
+                  onSelect={(isoDate) => { setDue(isoDate); setDueError(false); }}
+                  label="Pick a due date from a calendar"
+                />
+              </div>
               {/* Optional time of day on the start — type the hour, optionally the minutes (#493). */}
               <div className="flex items-center gap-1.5">
                 <span className="shrink-0 text-xs text-muted-foreground">at</span>
@@ -307,6 +316,11 @@ export function ActionDialog({
                     const iso = parseFlexibleDate(dueEnd);
                     if (iso) setDueEnd(iso);
                   }}
+                />
+                <DatePickerPopover
+                  value={parseFlexibleDate(dueEnd)}
+                  onSelect={(isoDate) => { setDueEnd(isoDate); setDueEndError(false); }}
+                  label="Pick an end date from a calendar"
                 />
               </div>
               {/* Optional time of day on the end (#500). */}
