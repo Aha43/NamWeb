@@ -66,6 +66,10 @@ export function useWorkspace(): UseWorkspace {
   // Outstanding local commits. While > 0 a write owns the row, so we ignore
   // Realtime nudges (the version guard reconciles in-flight writes itself).
   const inFlightRef = useRef(0);
+  // Set when a commit fails: the optimistic doc now holds an unconfirmed edit that only Retry (a
+  // whole-document re-push) can reconcile. While set, we pause draining further per-intent commits
+  // and skip Realtime reconcile, so neither can build on / clobber the unconfirmed state (#507).
+  const failedRef = useRef(false);
   // Frozen at mount: the workspace row chosen at login (e.g. `dev`) drives this session.
   const workspaceNameRef = useRef(getWorkspaceName());
 
@@ -78,6 +82,7 @@ export function useWorkspace(): UseWorkspace {
       const snap = { document: result.document, version: result.version };
       committedRef.current = snap;
       setSnapshot(snap);
+      failedRef.current = false; // a clean server state resolves any prior failed write
     } else if (result.kind === 'noRemote') {
       setNoRemote(true);
     } else {
@@ -117,6 +122,7 @@ export function useWorkspace(): UseWorkspace {
   // stale events are no-ops, and in-flight commits self-reconcile via the guard.
   const reconcileFromRemote = useCallback(async () => {
     if (inFlightRef.current > 0) return;
+    if (failedRef.current) return; // an unconfirmed failed edit is pending — don't let a remote pull clobber it
     const result = await pull(supabase, workspaceNameRef.current);
     if (result.kind !== 'ok') return;
     const base = committedRef.current;
@@ -164,6 +170,11 @@ export function useWorkspace(): UseWorkspace {
       .then(async () => {
         const base = committedRef.current;
         if (!base) return;
+        // A prior write failed: the optimistic doc holds unconfirmed edits that this intent's
+        // optimistic apply has already stacked onto `snapshot`. Don't commit it against the stale
+        // `committedRef` — that would push a document missing the earlier edits and, on success,
+        // overwrite them. Leave it for Retry, which re-pushes the whole current document (#507).
+        if (failedRef.current) return;
         const result = await commitIntent(supabase, workspaceNameRef.current, base, intent);
         if (result.outcome === 'error') {
           // The write failed. Keep the optimistic edit visible and leave `committedRef` at the
@@ -171,6 +182,7 @@ export function useWorkspace(): UseWorkspace {
           // document (with the edit) guarded on the right version. Do NOT adopt `result.snapshot`
           // here — for an error it's the confirmed base, and assigning it would silently drop the
           // edit and let a later re-push of the unchanged document masquerade as recovery (#484).
+          failedRef.current = true;
           setNotice({ kind: 'error', message: ERROR_SAVE });
           return;
         }
@@ -186,25 +198,31 @@ export function useWorkspace(): UseWorkspace {
   const clearNotice = useCallback(() => setNotice(null), []);
   const retry = useCallback(() => void load(), [load]);
 
-  // Retry a failed write: re-push the current local document, guarded on the last confirmed version.
+  // Retry a failed write: re-push the *whole* current local document (all unconfirmed edits),
+  // guarded on the last confirmed version.
   const retrySync = useCallback(() => {
-    const base = committedRef.current;
-    const current = snapshotRef.current;
-    if (!base || !current) return;
+    if (!committedRef.current || !snapshotRef.current) return;
     setNotice(null);
     inFlightRef.current += 1;
     queueRef.current = queueRef.current
       .then(async () => {
+        // Read the latest committed/optimistic state when the push actually runs (edits may have
+        // been made after Retry was clicked while the queue drained).
+        const base = committedRef.current;
+        const current = snapshotRef.current;
+        if (!base || !current) return;
         const result = await push(supabase, workspaceNameRef.current, current.document, base.version);
         if (result.kind === 'ok') {
           const snap = { document: current.document, version: result.version };
           committedRef.current = snap;
           setSnapshot(snap);
+          failedRef.current = false; // recovered — resume normal per-intent commits
         } else if (result.kind === 'conflict') {
           setNotice({ kind: 'info', message: INFO_FROM_DEVICE });
+          failedRef.current = false; // load() adopts the remote state, resolving the failure
           await load();
         } else {
-          setNotice({ kind: 'error', message: ERROR_SAVE });
+          setNotice({ kind: 'error', message: ERROR_SAVE }); // still failed — stay paused
         }
       })
       .finally(() => {
