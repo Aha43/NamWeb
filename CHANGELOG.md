@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-30
+
+Calendar-board polish — a date picker, end-date times, cross-month drag — plus three sync/data
+fixes from a code review.
+
 ### Added
 
 - **Copy names from the Column (Kanban) view.** The action card's copy icon now has a hover tooltip, and each sub-project column header gains a copy button for the project name (with its own tooltip) — previously you couldn't copy a column's name there. Closes #501.
@@ -1106,7 +1111,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Aha43/NamWeb/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Aha43/NamWeb/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Aha43/NamWeb/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/Aha43/NamWeb/compare/v0.2.0...v0.3.0
