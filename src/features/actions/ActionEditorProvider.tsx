@@ -139,7 +139,8 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     if (
       edits.dueAt !== node.dueAt ||
       (edits.dueEndAt ?? null) !== (node.dueEndAt ?? null) ||
-      (edits.dueTime ?? null) !== (node.dueTime ?? null)
+      (edits.dueTime ?? null) !== (node.dueTime ?? null) ||
+      (edits.dueEndTime ?? null) !== (node.dueEndTime ?? null)
     ) {
       dispatch({
         type: 'setDue',
@@ -147,6 +148,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
         dueAt: edits.dueAt,
         dueEndAt: edits.dueEndAt ?? null,
         dueTime: edits.dueTime ?? null,
+        dueEndTime: edits.dueEndTime ?? null,
         now,
       });
     }

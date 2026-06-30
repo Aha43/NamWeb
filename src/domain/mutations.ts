@@ -14,7 +14,7 @@ export type Intent =
   | { type: 'convertInboxToProject'; id: string; parentId?: string; now: string }
   | { type: 'setStatus'; id: string; status: NodeStatus; now: string }
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
-  | { type: 'setDue'; id: string; dueAt: string | null; dueEndAt?: string | null; dueTime?: string | null; now: string }
+  | { type: 'setDue'; id: string; dueAt: string | null; dueEndAt?: string | null; dueTime?: string | null; dueEndTime?: string | null; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
   | { type: 'registerTag'; tag: string }
   | { type: 'renameTag'; from: string; to: string }
@@ -326,10 +326,13 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       // them, leaving any existing value intact). Clearing the start clears the range and the time.
       if (intent.dueEndAt !== undefined) node.dueEndAt = intent.dueEndAt;
       if (intent.dueTime !== undefined) node.dueTime = intent.dueTime;
+      if (intent.dueEndTime !== undefined) node.dueEndTime = intent.dueEndTime;
       if (node.dueAt === null) {
         node.dueEndAt = null;
         node.dueTime = null;
       }
+      // The end time is meaningless without an end date.
+      if (!node.dueEndAt) node.dueEndTime = null;
       node.updatedAt = intent.now;
       return next;
     }
