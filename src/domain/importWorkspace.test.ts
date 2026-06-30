@@ -42,6 +42,15 @@ function allIds(seed: SeedNode): Set<string> {
   return out;
 }
 
+function findByTitle(seed: SeedNode, title: string): SeedNode | null {
+  if (seed.title === title) return seed;
+  for (const c of seed.children ?? []) {
+    const hit = findByTitle(c, title);
+    if (hit) return hit;
+  }
+  return null;
+}
+
 describe('parseImport', () => {
   it('accepts the export bundle and a bare document; rejects junk', () => {
     expect(parseImport(bundle([{ name: 'Main', document: doc() }]))).toHaveLength(1);
@@ -73,6 +82,26 @@ describe('buildImportSeed', () => {
     expect(roof.children?.[0]).toMatchObject({ title: 'Buy tiles', status: 'NEXT', tags: ['home'] });
     const free = seed.children![1];
     expect(free.blockedBy).toEqual([roof.children![0].id]); // remapped to the new A1 id
+  });
+
+  it('preserves all due scheduling metadata through import (#509)', () => {
+    const d = doc();
+    d.nodes['A1'] = {
+      ...d.nodes['A1'],
+      dueAt: '2026-08-12',
+      dueEndAt: '2026-08-16',
+      dueTime: '09:00',
+      dueEndTime: '17:30',
+    };
+    let n = 0;
+    const seed = buildImportSeed([{ name: 'Main', doc: d }], () => `n${n++}`, new Date('2026-06-20T00:00:00'));
+    const tiles = findByTitle(seed, 'Buy tiles');
+    expect(tiles).toMatchObject({
+      dueAt: '2026-08-12',
+      dueEndAt: '2026-08-16',
+      dueTime: '09:00',
+      dueEndTime: '17:30',
+    });
   });
 
   it('multiple workspaces: each becomes its own sub-project under the import root', () => {

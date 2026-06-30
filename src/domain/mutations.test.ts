@@ -242,6 +242,9 @@ describe('applyIntent', () => {
               status: 'BACKLOG',
               tags: ['Learn', 'learn'],
               dueAt: '2026-07-01',
+              dueEndAt: '2026-07-03',
+              dueTime: '09:00',
+              dueEndTime: '17:30',
               resources: [{ type: 'URI', value: 'https://usenam.app', description: null }],
             },
             { id: 'a3', title: 'Blocked one', status: 'BACKLOG', blockedBy: ['a2'] },
@@ -255,7 +258,14 @@ describe('applyIntent', () => {
     expect(next.nodes['demo'].childIds).toEqual(['a1', 'a2', 'a3']);
     // Rich fields land; DONE gets a statusChangedAt; tags normalized + registered.
     expect(next.nodes['a1']).toMatchObject({ status: 'DONE', statusChangedAt: NOW });
-    expect(next.nodes['a2']).toMatchObject({ status: 'BACKLOG', dueAt: '2026-07-01', tags: ['learn'] });
+    expect(next.nodes['a2']).toMatchObject({
+      status: 'BACKLOG',
+      dueAt: '2026-07-01',
+      dueEndAt: '2026-07-03',
+      dueTime: '09:00',
+      dueEndTime: '17:30',
+      tags: ['learn'],
+    });
     expect(next.nodes['a2'].resources).toHaveLength(1);
     expect(next.nodes['a3'].blockedBy).toEqual(['a2']);
     expect(next.registeredTags).toEqual(['learn']);
