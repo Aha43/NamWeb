@@ -15,6 +15,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
 import { Tooltip } from '@/components/ui/tooltip';
+import { CopyButton } from '@/components/ui/copy-button';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { ActionRow } from '../actions/ActionRow';
 import { InlineRename } from '../actions/InlineRename';
@@ -107,8 +108,10 @@ export function ColumnView({
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const [activeId, setActiveId] = useState<string | null>(null);
   const [renamingColId, setRenamingColId] = useState<string | null>(null);
-  // While sorted by due, the card order is computed — no manual drag or up/down within a column.
-  const dnd = Boolean(dndEnabled && onMoveActionToColumn && !dueSorted);
+  // Drag stays available even when sorted by due: cross-column drag reparents (and the target
+  // re-sorts by due), which is the calendar-board gesture (#502). Only *within-column* reorder is
+  // meaningless under by-due — it's suppressed in onDragEnd (and the up/down buttons are hidden).
+  const dnd = Boolean(dndEnabled && onMoveActionToColumn);
 
   // One row; `drag` is supplied when the row is rendered inside a SortableContext.
   const renderRow = (col: WorkbenchColumn, row: ActionRowData, index: number, drag?: SortableRowRender) => (
@@ -185,6 +188,9 @@ export function ColumnView({
             </button>
           )}
           <div className="flex shrink-0 items-center gap-1">
+            {!col.isUnsorted && renamingColId !== col.id && (
+              <CopyButton value={col.title} label={`name "${col.title}"`} tooltip />
+            )}
             {!col.isUnsorted && renamingColId !== col.id && (
               <Tooltip label={`Rename ${col.title}`}>
                 <button
@@ -318,7 +324,10 @@ export function ColumnView({
       String(active.id),
       String(over.id),
     );
-    if (drop) onMoveActionToColumn!(drop.actionId, drop.fromColumnId, drop.toColumnId, drop.targetActionIds);
+    if (!drop) return;
+    // Under by-due, a same-column drop is a no-op — the order is computed, not manual (#502).
+    if (dueSorted && drop.fromColumnId === drop.toColumnId) return;
+    onMoveActionToColumn!(drop.actionId, drop.fromColumnId, drop.toColumnId, drop.targetActionIds);
   }
 
   return (

@@ -19,4 +19,12 @@ describe('CopyButton', () => {
     render(<CopyButton value="   " label="title" />);
     expect(screen.getByRole('button', { name: 'Copy title' })).toBeDisabled();
   });
+
+  it('still copies when wrapped with a tooltip (#501)', async () => {
+    render(<CopyButton value="hello" label="name" tooltip />);
+    const btn = screen.getByRole('button', { name: 'Copy name' });
+    fireEvent.click(btn);
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('hello');
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Copied name' })).toBeInTheDocument());
+  });
 });

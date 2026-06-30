@@ -148,7 +148,7 @@ export function ActionRow({
 
   const actionsNode = (
     <>
-      <CopyButton value={row.title} label={`name "${row.title}"`} className="p-2" />
+      <CopyButton value={row.title} label={`name "${row.title}"`} className="p-2" tooltip />
       {onRename && !renaming && (
         <Tooltip label={`Rename ${row.title}`}>
           <button
