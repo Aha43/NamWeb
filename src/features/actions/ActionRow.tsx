@@ -179,15 +179,19 @@ export function ActionRow({
     </>
   );
 
-  // Kanban card: title gets a full line; controls drop to a footer that fades in on hover/focus so
-  // they never compete with the title for the column's narrow width (#445). (Column view is desktop,
-  // so hover-reveal is fine; the footer stays in the DOM — opacity, not display — for a11y + tests.)
+  // Kanban card: title gets a full line; controls float in (bottom-right) on hover/focus so they
+  // never compete with the title for the column's narrow width (#445). The control row is taken OUT
+  // of normal flow (absolute), so a resting card reserves no space for it — denser columns, more
+  // cards per column, and (unlike collapsing the height) no layout shift on hover, which kept the
+  // drag-and-drop stable (#514). It stays in the DOM (opacity, not `display:none`) so it's focusable
+  // for keyboard users (`focus-within` reveals it) and findable in tests; `pointer-events-none` at
+  // rest means it never blocks the card title underneath, and a backdrop keeps it legible on hover.
   if (isCard) {
     return (
       <li
         ref={dragRef}
         style={dragStyle}
-        className="group list-none rounded-md border border-border bg-card/60 p-2 transition-colors hover:bg-accent/40"
+        className="group relative list-none rounded-md border border-border bg-card/60 p-2 transition-colors hover:bg-accent/40"
       >
         <div className="flex items-start gap-2">
           {checkbox}
@@ -196,7 +200,7 @@ export function ActionRow({
             {metaNode}
           </div>
         </div>
-        <div className="mt-1 flex items-center justify-end gap-0.5 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+        <div className="pointer-events-none absolute bottom-1 right-1 flex items-center gap-0.5 rounded-md bg-card/95 opacity-0 shadow-sm transition-opacity focus-within:pointer-events-auto focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
           {actionsNode}
         </div>
       </li>

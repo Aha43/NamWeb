@@ -6,7 +6,7 @@ import { DocBuilder } from '../../mocks/docBuilder';
 test.use({
   seedDoc: new DocBuilder()
     .project('proj', 'Project')
-    .action('a1', 'Alpha', { under: 'proj' })
+    .action('a1', 'Alpha', { under: 'proj', tags: ['ctx'] }) // a meta line keeps the title clear of the hover footer
     .project('sp1', 'Phase 1', { under: 'proj' })
     .build(),
 });
@@ -21,10 +21,10 @@ test('copy icons carry tooltips in Column view, incl. the project name', async (
   await projectCopy.hover();
   await expect(page.getByRole('tooltip')).toContainText('Copy name "Phase 1"');
 
-  // The action card's copy icon has a tooltip too.
-  const card = page.getByText('Alpha');
-  await card.hover(); // reveal the card's hover footer
-  const actionCopy = page.getByRole('button', { name: 'Copy name "Alpha"' });
-  await actionCopy.hover();
+  // The action card's copy icon has a tooltip too. The controls are inert (pointer-events-none) at
+  // rest, so reveal them by hovering the card's top-left (clear of the bottom-right overlay), then
+  // hover the now-active copy icon.
+  await page.getByText('Alpha').locator('xpath=ancestor::li[1]').hover({ position: { x: 8, y: 6 } });
+  await page.getByRole('button', { name: 'Copy name "Alpha"' }).hover();
   await expect(page.getByRole('tooltip')).toContainText('Copy name "Alpha"');
 });
