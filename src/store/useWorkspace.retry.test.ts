@@ -78,4 +78,39 @@ describe('useWorkspace — failed write recovery (#484)', () => {
     await waitFor(() => expect(view.result.current.notice).toBeNull());
     expect(content(view)).toBe('baseX');
   });
+
+  it('a later edit after a failure does not erase the earlier one; Retry recovers both (#507)', async () => {
+    const view = await mountLoaded();
+
+    // First commit fails (edit X).
+    commitIntent.mockResolvedValueOnce({
+      snapshot: { document: { content: 'base' }, version: 1 },
+      outcome: 'error',
+      message: 'network',
+    });
+    await act(async () => {
+      view.result.current.dispatch({ add: 'X' } as never);
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(content(view)).toBe('baseX'));
+
+    // A second edit (Y) is dispatched while the failure is pending. Its commit must be SKIPPED
+    // (not run against the stale base), so it can't overwrite X on success.
+    await act(async () => {
+      view.result.current.dispatch({ add: 'Y' } as never);
+      await Promise.resolve();
+    });
+    expect(content(view)).toBe('baseXY'); // both edits visible
+    expect(commitIntent).toHaveBeenCalledTimes(1); // Y's commit was paused, not attempted
+
+    // Retry re-pushes the whole local doc — both edits — and recovers.
+    push.mockResolvedValueOnce({ kind: 'ok', version: 2 });
+    await act(async () => {
+      view.result.current.retrySync();
+      await Promise.resolve();
+    });
+    await waitFor(() => expect(push).toHaveBeenCalledWith(expect.anything(), 'dev', { content: 'baseXY' }, 1));
+    await waitFor(() => expect(view.result.current.notice).toBeNull());
+    expect(content(view)).toBe('baseXY');
+  });
 });
