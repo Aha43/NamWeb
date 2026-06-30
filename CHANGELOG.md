@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **A calendar to pick dates from.** Each Due field (start, end, and a project's due) now has a small **calendar** button — open it to see the month, navigate, and click a day to fill the date. Handy when you're planning and want to see what weekday a date falls on. Typing `yy-mm-dd` is unchanged and stays the fast path. Closes #499.
+
 ## [0.4.0] - 2026-06-30
 
 Time-of-day on due dates — appointments land in NAM, not just all-day items.

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePickerPopover } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { TagsInput } from '../actions/TagsInput';
@@ -171,18 +172,26 @@ export function ProjectDetailsPanel({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="project-due">Due</Label>
-              <Input
-                id="project-due"
-                placeholder="26-7-4"
-                value={due}
-                aria-invalid={dueError}
-                onChange={(e) => {
-                  setDue(e.target.value);
-                  setSaved(false);
-                  if (dueError) setDueError(false);
-                }}
-                onBlur={commitDue}
-              />
+              <div className="flex gap-1.5">
+                <Input
+                  id="project-due"
+                  className="min-w-0 flex-1"
+                  placeholder="26-7-4"
+                  value={due}
+                  aria-invalid={dueError}
+                  onChange={(e) => {
+                    setDue(e.target.value);
+                    setSaved(false);
+                    if (dueError) setDueError(false);
+                  }}
+                  onBlur={commitDue}
+                />
+                <DatePickerPopover
+                  value={parseFlexibleDate(due)}
+                  onSelect={(isoDate) => { setDue(isoDate); setDueError(false); commit({ due: isoDate }); }}
+                  label="Pick a due date from a calendar"
+                />
+              </div>
               {dueError && (
                 <p role="alert" className="text-xs text-destructive">
                   Use a date like 26-7-4 or 2026-07-04.
