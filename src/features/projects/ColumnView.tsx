@@ -15,6 +15,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { cn } from '@/lib/utils';
 import { Tooltip } from '@/components/ui/tooltip';
+import { CopyButton } from '@/components/ui/copy-button';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { ActionRow } from '../actions/ActionRow';
 import { InlineRename } from '../actions/InlineRename';
@@ -185,6 +186,9 @@ export function ColumnView({
             </button>
           )}
           <div className="flex shrink-0 items-center gap-1">
+            {!col.isUnsorted && renamingColId !== col.id && (
+              <CopyButton value={col.title} label={`name "${col.title}"`} tooltip />
+            )}
             {!col.isUnsorted && renamingColId !== col.id && (
               <Tooltip label={`Rename ${col.title}`}>
                 <button
