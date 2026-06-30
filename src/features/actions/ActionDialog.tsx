@@ -158,6 +158,12 @@ export function ActionDialog({
       setDueEndTimeError(true);
       return;
     }
+    // On a same-day range, the end time can't be before the start time (#508). HH:MM strings compare
+    // chronologically. (Different days are already ordered by the date check above.)
+    if (dueAt && dueEndAt && dueAt === dueEndAt && dueTimeValue && dueEndTimeValue && dueEndTimeValue < dueTimeValue) {
+      setDueEndTimeError(true);
+      return;
+    }
     const trimmedDescription = description.trim();
     const endAt = dueAt ? dueEndAt : null;
     onSave({
@@ -355,7 +361,7 @@ export function ActionDialog({
               )}
               {(dueTimeError || dueEndTimeError) && (
                 <p role="alert" className="text-xs text-destructive">
-                  Use a time like 14:30 or 9 (24-hour).
+                  Use a 24-hour time like 14:30 or 9 — and on the same day the end can’t be before the start.
                 </p>
               )}
             </div>
