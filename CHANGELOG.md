@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Copy names from the Column (Kanban) view.** The action card's copy icon now has a hover tooltip, and each sub-project column header gains a copy button for the project name (with its own tooltip) — previously you couldn't copy a column's name there. Closes #501.
+
 ## [0.4.0] - 2026-06-30
 
 Time-of-day on due dates — appointments land in NAM, not just all-day items.
