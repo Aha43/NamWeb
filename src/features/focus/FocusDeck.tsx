@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, FolderInput, Pencil, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -28,7 +29,7 @@ export interface FocusDeckProps {
   onEditCard?: (id: string) => void;
   onRenameCard?: (id: string, title: string) => void;
   onDeleteCard?: (id: string) => void;
-  /** Label for the primary advance action (default "Done"). Done-focus uses e.g. "To Next". */
+  /** Label for the primary advance action. Omit for the default ("Done"); Done-focus passes e.g. "To Next". */
   doneLabel?: string;
 }
 
@@ -46,8 +47,11 @@ export function FocusDeck({
   onEditCard,
   onRenameCard,
   onDeleteCard,
-  doneLabel = 'Done',
+  doneLabel,
 }: FocusDeckProps) {
+  const { t } = useTranslation();
+  const doneText = doneLabel ?? t('domain.status.done');
+  const doneAria = doneLabel ?? t('focus.markDone');
   const [index, setIndex] = useState(0);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
@@ -95,13 +99,13 @@ export function FocusDeck({
 
   // Keyboard hint, reflecting which per-card actions are wired in this deck.
   const keyboardHint = [
-    '← → or swipe to move',
-    'Space to mark done',
-    onEditCard && 'e edit',
-    onRenameCard && 'r rename',
-    onFlip && flipLabel && `f → ${flipLabel}`,
-    onDeleteCard && 'Del delete',
-    'Esc to exit',
+    t('focus.hintMove'),
+    t('focus.hintDone'),
+    onEditCard && t('focus.hintEdit'),
+    onRenameCard && t('focus.hintRename'),
+    onFlip && flipLabel && t('focus.hintFlip', { label: flipLabel }),
+    onDeleteCard && t('focus.hintDelete'),
+    t('focus.hintExit'),
   ]
     .filter(Boolean)
     .join(' · ');
@@ -109,12 +113,10 @@ export function FocusDeck({
   if (!current) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-        <p className="text-lg font-medium text-foreground">All clear 🎉</p>
-        <p className="max-w-xs text-sm text-muted-foreground">
-          Nothing left in this queue. Capture a thought or move an action to Next, then come back.
-        </p>
+        <p className="text-lg font-medium text-foreground">{t('focus.allClear')}</p>
+        <p className="max-w-xs text-sm text-muted-foreground">{t('focus.allClearHint')}</p>
         <Button variant="outline" onClick={onExit}>
-          Done
+          {t('focus.allClearButton')}
         </Button>
       </div>
     );
@@ -140,10 +142,10 @@ export function FocusDeck({
           {(onEditCard || onRenameCard || onDeleteCard) && (
             <div className="mb-3 flex items-center justify-end gap-1">
               {onRenameCard && renamingId !== current.id && (
-                <Tooltip label="Rename">
+                <Tooltip label={t('common.rename')}>
                   <button
                     type="button"
-                    aria-label={`Rename ${current.title}`}
+                    aria-label={t('actions.renameAria', { title: current.title })}
                     onClick={() => setRenamingId(current.id)}
                     className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
@@ -155,8 +157,8 @@ export function FocusDeck({
               {onDeleteCard && (
                 <ConfirmButton
                   id={DELETE_TRIGGER_ID}
-                  aria-label={`Delete ${current.title}`}
-                  message={`Delete "${current.title}"? This cannot be undone.`}
+                  aria-label={t('actions.deleteAria', { title: current.title })}
+                  message={t('focus.deleteConfirm', { title: current.title })}
                   onConfirm={() => onDeleteCard(current.id)}
                   className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
                 >
@@ -180,7 +182,7 @@ export function FocusDeck({
           ) : onEditCard ? (
             <button
               type="button"
-              aria-label={`Edit ${current.title}`}
+              aria-label={t('actions.editAria', { title: current.title })}
               onClick={() => onEditCard(current.id)}
               className="block w-full text-left"
             >
@@ -196,14 +198,14 @@ export function FocusDeck({
       </div>
 
       <div className="flex items-center justify-center gap-4 px-6 pb-10">
-        <Button variant="outline" size="icon" aria-label="Previous" onClick={prev}>
+        <Button variant="outline" size="icon" aria-label={t('focus.previous')} onClick={prev}>
           <ChevronLeft />
         </Button>
-        <Button size="lg" className="gap-2 px-8" aria-label={doneLabel === 'Done' ? 'Mark done' : doneLabel} onClick={done}>
+        <Button size="lg" className="gap-2 px-8" aria-label={doneAria} onClick={done}>
           <Check />
-          {doneLabel}
+          {doneText}
         </Button>
-        <Button variant="outline" size="icon" aria-label="Next" onClick={next}>
+        <Button variant="outline" size="icon" aria-label={t('focus.next')} onClick={next}>
           <ChevronRight />
         </Button>
       </div>
@@ -214,20 +216,20 @@ export function FocusDeck({
             variant="ghost"
             size="sm"
             className="gap-1.5 text-muted-foreground"
-            aria-label={`Move to ${flipLabel}`}
+            aria-label={t('focus.moveTo', { label: flipLabel })}
             onClick={flip}
           >
             <FolderInput className="h-4 w-4" />
-            Move to {flipLabel}
+            {t('focus.moveTo', { label: flipLabel })}
           </Button>
         </div>
       )}
 
-      <p className="text-center text-sm text-muted-foreground" aria-label="Progress" aria-live="polite">
+      <p className="text-center text-sm text-muted-foreground" aria-label={t('focus.progress')} aria-live="polite">
         {safeIndex + 1} / {len}
       </p>
       <p className="pb-6 pt-1 text-center text-xs text-muted-foreground/70">
-        {hasKeyboard ? keyboardHint : 'Swipe to move · tap Done'}
+        {hasKeyboard ? keyboardHint : t('focus.touchHint')}
       </p>
     </div>
   );
