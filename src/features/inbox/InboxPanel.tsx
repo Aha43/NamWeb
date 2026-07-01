@@ -255,7 +255,7 @@ export function InboxPanel({
                 ) : null;
               })()}
               {!selectMode && renamingId !== item.id && (
-                <CopyButton value={item.title} label={t('copy.name', { title: item.title })} className="p-1.5" />
+                <CopyButton value={item.title} label={t('copy.name', { title: item.title })} className="p-1.5" tooltip />
               )}
               {!selectMode && onRename && renamingId !== item.id && (
                 <Tooltip label={t('inbox.renameAria', { title: item.title })}>
