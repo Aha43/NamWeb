@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { EmptyState } from '../actions/ActionRow';
@@ -46,6 +47,7 @@ export function BacklogPanel({
   onReorder,
   dndEnabled,
 }: BacklogPanelProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
 
   function submitAdd(event: FormEvent) {
@@ -63,14 +65,14 @@ export function BacklogPanel({
         {onAdd && (
           <form onSubmit={submitAdd} className="mb-4 flex gap-2">
             <input
-              aria-label="Add to backlog"
+              aria-label={t('backlog.addAria')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Add to backlog…"
+              placeholder={t('backlog.addPlaceholder')}
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
             />
             <AddPositionToggle />
-            <Button type="submit">Add</Button>
+            <Button type="submit">{t('common.add')}</Button>
           </form>
         )}
         {sortMode && onCycleSort && rows.length > 0 && (
@@ -80,9 +82,7 @@ export function BacklogPanel({
         )}
       </div>
       {rows.length === 0 ? (
-        <EmptyState hint="Things to do later — not now. Park actions here, then promote them to Next when you're ready.">
-          Backlog is empty
-        </EmptyState>
+        <EmptyState hint={t('backlog.emptyHint')}>{t('backlog.empty')}</EmptyState>
       ) : (
         <ReorderableActionList
           rows={rows}

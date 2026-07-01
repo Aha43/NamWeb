@@ -9,10 +9,11 @@ export const NEXT_SORT_MODE: Record<SortMode, SortMode> = {
   lifo: 'none',
 };
 
+// i18n keys — the SortButton translates these at render (see src/locales, sort.*).
 export const SORT_LABEL: Record<SortMode, string> = {
-  none: 'Unsorted',
-  fifo: 'Oldest',
-  lifo: 'Newest',
+  none: 'sort.none',
+  fifo: 'sort.fifo',
+  lifo: 'sort.lifo',
 };
 
 /** Sort by creation time (ISO strings sort chronologically), falling back to updatedAt. */

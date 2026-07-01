@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@/components/ui/tooltip';
 
 /** Up/down controls for hand-ordering a row. A missing handler disables that direction (an end
@@ -12,12 +13,13 @@ export function ReorderControls({
   onUp?: () => void;
   onDown?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col">
-      <Tooltip label={onUp ? 'Move up' : ''}>
+      <Tooltip label={onUp ? t('list.moveUp') : ''}>
         <button
           type="button"
-          aria-label={`Move ${title} up`}
+          aria-label={t('list.moveUpAria', { title })}
           disabled={!onUp}
           onClick={onUp}
           className="rounded-sm p-1 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
@@ -25,10 +27,10 @@ export function ReorderControls({
           <ChevronUp className="h-4 w-4" />
         </button>
       </Tooltip>
-      <Tooltip label={onDown ? 'Move down' : ''}>
+      <Tooltip label={onDown ? t('list.moveDown') : ''}>
         <button
           type="button"
-          aria-label={`Move ${title} down`}
+          aria-label={t('list.moveDownAria', { title })}
           disabled={!onDown}
           onClick={onDown}
           className="rounded-sm p-1 text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"

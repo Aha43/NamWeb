@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CheckSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -20,6 +21,7 @@ export interface DonePanelProps {
 /** Done: completed actions with restore / backlog / delete — plus a select mode for bulk ops
  *  (you often spot several that were not actually done). Presentational. */
 export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, onEdit }: DonePanelProps) {
+  const { t } = useTranslation();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -50,9 +52,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
   if (rows.length === 0) {
     return (
       <section>
-        <EmptyState hint="Completed actions collect here — you can restore one to Next or move it back to Backlog anytime.">
-          Nothing done yet
-        </EmptyState>
+        <EmptyState hint={t('done.emptyHint')}>{t('done.empty')}</EmptyState>
       </section>
     );
   }
@@ -60,10 +60,10 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
   return (
     <section className="space-y-2">
       <div className="flex items-center justify-end">
-        <Tooltip label={selectMode ? 'Exit select' : 'Select actions'}>
+        <Tooltip label={selectMode ? t('list.exitSelect') : t('done.selectActions')}>
           <button
             type="button"
-            aria-label={selectMode ? 'Exit select' : 'Select actions'}
+            aria-label={selectMode ? t('list.exitSelect') : t('done.selectActions')}
             aria-pressed={selectMode}
             onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
             className={cn(
@@ -79,14 +79,14 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
 
       {selectMode && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
-          <span className="mr-1 text-muted-foreground">{selected.size} selected</span>
+          <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
           <button
             type="button"
             onClick={() => bulk(onRestore)}
             disabled={none}
             className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
           >
-            Restore to Next
+            {t('done.restoreToNext')}
           </button>
           <button
             type="button"
@@ -94,16 +94,16 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
             disabled={none}
             className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
           >
-            Backlog
+            {t('domain.status.backlog')}
           </button>
           <ConfirmButton
-            aria-label="Delete selected actions"
-            message={`Delete ${selected.size} selected action${selected.size === 1 ? '' : 's'}?`}
+            aria-label={t('done.deleteSelectedAria')}
+            message={t('done.deleteSelectedConfirm', { count: selected.size })}
             onConfirm={bulkDelete}
             disabled={none}
             className="rounded-md px-2 py-0.5 font-medium text-destructive hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
           >
-            Delete
+            {t('common.delete')}
           </ConfirmButton>
           <button
             type="button"
@@ -111,7 +111,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
             disabled={selected.size === rows.length}
             className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
-            Select all
+            {t('common.selectAll')}
           </button>
           <button
             type="button"
@@ -119,7 +119,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
             disabled={none}
             className="rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
           >
-            Clear
+            {t('common.clear')}
           </button>
         </div>
       )}
@@ -139,19 +139,19 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
                 <>
                   <button
                     type="button"
-                    aria-label={`Restore ${row.title} to next`}
+                    aria-label={t('done.restoreAria', { title: row.title })}
                     onClick={() => onRestore(row.id)}
                     className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
                   >
-                    Restore
+                    {t('done.restore')}
                   </button>
                   <button
                     type="button"
-                    aria-label={`Move ${row.title} to backlog`}
+                    aria-label={t('done.backlogAria', { title: row.title })}
                     onClick={() => onBacklog(row.id)}
                     className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
-                    Backlog
+                    {t('domain.status.backlog')}
                   </button>
                 </>
               )

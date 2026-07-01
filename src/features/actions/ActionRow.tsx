@@ -1,5 +1,6 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Paperclip, Pencil, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { formatAge, formatDate, formatDueHint, type DueTone } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
@@ -51,6 +52,7 @@ export function ActionRow({
    *  title on its own line, no project path/age, controls in a hover-revealed footer (#445). */
   variant?: 'row' | 'card';
 }) {
+  const { t } = useTranslation();
   const { dateFormat } = useSettings();
   const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat) : null;
   // A date range: append the end date when it's set and not before the start.
@@ -75,7 +77,7 @@ export function ActionRow({
   );
   const titleEl = onEdit ? (
     // Click the title to open the editor (replaces the old slider/edit icon).
-    <button type="button" aria-label={`Edit ${row.title}`} onClick={onEdit} className="block w-full text-left">
+    <button type="button" aria-label={t('actions.editAria', { title: row.title })} onClick={onEdit} className="block w-full text-left">
       {titleInner}
     </button>
   ) : (
@@ -85,7 +87,7 @@ export function ActionRow({
   const checkbox = selectable ? (
     <input
       type="checkbox"
-      aria-label={`Select ${row.title}`}
+      aria-label={t('actions.selectAria', { title: row.title })}
       checked={selected}
       onChange={(e) => onSelectedChange?.(e.target.checked)}
       className="shrink-0"
@@ -109,7 +111,7 @@ export function ActionRow({
   const metaNode = hasMeta ? (
     <div className="mt-0.5 flex flex-wrap items-center gap-1">
       {row.hasResources && (
-        <Paperclip aria-label="Has resources" className="h-3 w-3 text-muted-foreground" />
+        <Paperclip aria-label={t('actions.hasResources')} className="h-3 w-3 text-muted-foreground" />
       )}
       {row.tags.map((tag) => (
         <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
@@ -119,7 +121,7 @@ export function ActionRow({
       {row.inheritedTags?.map((tag) => (
         <span
           key={`inh-${tag}`}
-          title="From project"
+          title={t('actions.fromProject')}
           className="rounded bg-muted px-1.5 py-0.5 text-[11px] italic text-muted-foreground"
         >
           {tag}
@@ -127,7 +129,7 @@ export function ActionRow({
       ))}
       {due && (
         <span className={cn('text-[11px] font-medium whitespace-nowrap', DUE_TONE[due.tone])}>
-          Due {due.label}
+          {t('actions.dueLabel', { label: due.label })}
           {dueTime && ` ${dueTime}`}
           {dueEnd && ` – ${dueEnd}`}
           {dueEndTime && ` ${dueEndTime}`}
@@ -150,10 +152,10 @@ export function ActionRow({
     <>
       <CopyButton value={row.title} label={`name "${row.title}"`} className="p-2" tooltip />
       {onRename && !renaming && (
-        <Tooltip label={`Rename ${row.title}`}>
+        <Tooltip label={t('actions.renameAria', { title: row.title })}>
           <button
             type="button"
-            aria-label={`Rename ${row.title}`}
+            aria-label={t('actions.renameAria', { title: row.title })}
             onClick={() => setRenaming(true)}
             className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
           >
@@ -164,11 +166,11 @@ export function ActionRow({
       {actions}
       {onDelete && (
         <ConfirmButton
-          aria-label={`Delete ${row.title}`}
+          aria-label={t('actions.deleteAria', { title: row.title })}
           message={
             (row.descendantCount ?? 0) > 0
-              ? `Delete "${row.title}" and its ${row.descendantCount} item${row.descendantCount === 1 ? '' : 's'}?`
-              : `Delete "${row.title}"?`
+              ? t('actions.deleteConfirmWithChildren', { title: row.title, count: row.descendantCount })
+              : t('actions.deleteConfirm', { title: row.title })
           }
           onConfirm={onDelete}
           className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive"
