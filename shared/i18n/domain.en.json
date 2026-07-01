@@ -1,0 +1,14 @@
+{
+  "domain.blocked": "Blocked",
+  "domain.due": "Due",
+  "domain.focus": "Focus",
+  "domain.goals": "Goals",
+  "domain.inbox": "Inbox",
+  "domain.projects": "Projects",
+  "domain.search": "Search",
+  "domain.status.backlog": "Backlog",
+  "domain.status.done": "Done",
+  "domain.status.next": "Next",
+  "domain.tags": "Tags",
+  "domain.templates": "Templates"
+}

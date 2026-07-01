@@ -11,6 +11,17 @@
 > threaded through the commit/store layer); (2) `formatDate` month abbreviations (`MONTHS` in
 > `src/lib/dates.ts`) for the `medium` format. Neither blocks the bilingual experience.
 
+## Phase C — shared `domain.*` vocabulary + NamDesktop coordination
+
+The `domain.*` keys (12: the surface names + statuses) are the shareable subset. Phase C promotes them
+from a naming convention into an **explicit versioned artifact**:
+
+- **NamWeb side (this repo):** `translation.json` stays the source of truth; `scripts/export-domain-vocab.mjs`
+  (`npm run i18n:export-domain`) emits `shared/i18n/domain.{en,nb}.json` (ICU-message JSON), and
+  `npm run i18n:check` fails if they drift (CI-enforced). Contract documented in `shared/i18n/README.md`.
+- **NamDesktop side:** a coordination issue tracks vendoring these files and formatting via **ICU4J**
+  (`com.ibm.icu.text.MessageFormat`), so the shared vocabulary renders identically in both apps.
+
 ## Spike outcome (2026-07-01) — decision: **react-i18next**, not Lingui
 
 The day-1 spike wired **Lingui** (the original recommendation) end-to-end on one screen. It compiled
