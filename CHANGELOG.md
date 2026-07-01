@@ -10,7 +10,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
-- **Choose your language (English / Norsk).** A **Language** picker in **Settings → Preferences** switches the app's language, defaulting to your browser's on first run and persisting per device. Only the surfaces translated so far change today — the rest follows as translation lands (#400); date format stays a separate preference. Part of #518.
+- **The app now speaks Norwegian (Norsk).** Pick your language in **Settings → Preferences** (defaults to your browser's, persists per device) and the whole app follows — inbox, every action list, Focus, the editor, projects, tags, search, settings, and help. English is unchanged. Closes #400 (Phase B); date format stays a separate preference.
 
 ### Changed
 

@@ -153,7 +153,7 @@ export function FocusDeck({
                   </button>
                 </Tooltip>
               )}
-              <CopyButton value={current.title} label={`name "${current.title}"`} />
+              <CopyButton value={current.title} label={t('copy.name', { title: current.title })} />
               {onDeleteCard && (
                 <ConfirmButton
                   id={DELETE_TRIGGER_ID}

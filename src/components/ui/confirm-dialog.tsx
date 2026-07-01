@@ -7,6 +7,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 /**
  * A centered **modal** confirm — for heavier/bulk destructive actions where the small anchored
@@ -17,7 +18,7 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   message,
-  confirmLabel = 'Delete',
+  confirmLabel,
   destructive = true,
   onConfirm,
 }: {
@@ -29,6 +30,7 @@ export function ConfirmDialog({
   destructive?: boolean;
   onConfirm: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -38,7 +40,7 @@ export function ConfirmDialog({
         </DialogHeader>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
@@ -49,7 +51,7 @@ export function ConfirmDialog({
               onConfirm();
             }}
           >
-            {confirmLabel}
+            {confirmLabel ?? t('common.delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

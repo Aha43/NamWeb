@@ -2,6 +2,10 @@
 //  - parseFlexibleDate: relaxed text entry, ported from NamDesktop's
 //    ActionDialog.parseFlexibleDate.
 //  - formatDueHint: a compact, urgency-coloured due label for list rows.
+import type { TFunction } from 'i18next';
+
+/** Optional translator for the relative-word labels; absent → English (keeps pure-lib tests simple). */
+type Translate = TFunction | ((key: string, opts?: { count?: number }) => string);
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -111,6 +115,7 @@ export function formatDueHint(
   dueAt: string,
   now: Date = new Date(),
   format: DateFormat = DEFAULT_DATE_FORMAT,
+  t?: Translate,
 ): DueHint | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueAt);
   if (!match) return null;
@@ -120,8 +125,8 @@ export function formatDueHint(
   const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
 
   if (days < 0) return { label: formatDate(dueAt, format), tone: 'overdue' };
-  if (days === 0) return { label: 'Today', tone: 'today' };
-  if (days <= 7) return { label: `${days}d`, tone: 'soon' };
+  if (days === 0) return { label: t ? t('dates.dueToday') : 'Today', tone: 'today' };
+  if (days <= 7) return { label: t ? t('dates.days', { count: days }) : `${days}d`, tone: 'soon' };
   return { label: formatDate(dueAt, format), tone: 'later' };
 }
 
@@ -135,16 +140,16 @@ export interface AgeHint {
  * A compact relative age (d/w/m/y) for an ISO date-time, à la NamDesktop's Age
  * column. Returns `null` if the input can't be parsed.
  */
-export function formatAge(iso: string, now: Date = new Date()): AgeHint | null {
+export function formatAge(iso: string, now: Date = new Date(), t?: Translate): AgeHint | null {
   const then = Date.parse(iso);
   if (Number.isNaN(then)) return null;
   const days = Math.floor((now.getTime() - then) / 86_400_000);
   const stale = days > 7;
   let label: string;
-  if (days <= 0) label = 'today';
-  else if (days < 7) label = `${days}d`;
-  else if (days < 30) label = `${Math.floor(days / 7)}w`;
-  else if (days < 365) label = `${Math.floor(days / 30)}m`;
-  else label = `${Math.floor(days / 365)}y`;
+  if (days <= 0) label = t ? t('dates.ageToday') : 'today';
+  else if (days < 7) label = t ? t('dates.days', { count: days }) : `${days}d`;
+  else if (days < 30) label = t ? t('dates.weeks', { count: Math.floor(days / 7) }) : `${Math.floor(days / 7)}w`;
+  else if (days < 365) label = t ? t('dates.months', { count: Math.floor(days / 30) }) : `${Math.floor(days / 30)}m`;
+  else label = t ? t('dates.years', { count: Math.floor(days / 365) }) : `${Math.floor(days / 365)}y`;
   return { label, stale };
 }

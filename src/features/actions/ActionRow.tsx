@@ -54,7 +54,7 @@ export function ActionRow({
 }) {
   const { t } = useTranslation();
   const { dateFormat } = useSettings();
-  const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat) : null;
+  const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat, t) : null;
   // A date range: append the end date when it's set and not before the start.
   const dueEnd =
     row.dueAt && row.dueEndAt && row.dueEndAt >= row.dueAt ? formatDate(row.dueEndAt, dateFormat) : null;
@@ -64,7 +64,7 @@ export function ActionRow({
   const dueEndTime = dueEnd && row.dueEndTime ? row.dueEndTime : null;
   const isCard = variant === 'card';
   // The age label is list-only noise on a Kanban card (nearly every card would read "today").
-  const age = !isCard && row.touchedAt ? formatAge(row.touchedAt) : null;
+  const age = !isCard && row.touchedAt ? formatAge(row.touchedAt, undefined, t) : null;
   const [renaming, setRenaming] = useState(false);
 
   // When a row has notes, hovering its title shows them (truncated). Use a plain truncating title
@@ -150,7 +150,7 @@ export function ActionRow({
 
   const actionsNode = (
     <>
-      <CopyButton value={row.title} label={`name "${row.title}"`} className="p-2" tooltip />
+      <CopyButton value={row.title} label={t('copy.name', { title: row.title })} className="p-2" tooltip />
       {onRename && !renaming && (
         <Tooltip label={t('actions.renameAria', { title: row.title })}>
           <button

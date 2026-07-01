@@ -1,5 +1,6 @@
 import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import * as Popover from '@radix-ui/react-popover';
+import { useTranslation } from 'react-i18next';
 import { Button } from './button';
 import { Tooltip } from './tooltip';
 import { cn } from '@/lib/utils';
@@ -17,7 +18,7 @@ export function PromptButton({
   initialValue = '',
   label,
   placeholder,
-  submitLabel = 'Save',
+  submitLabel,
   suggestions,
   onSubmit,
   children,
@@ -33,6 +34,7 @@ export function PromptButton({
   onSubmit: (value: string) => void;
   children: ReactNode;
 } & Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'onSubmit'>) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initialValue);
   const [highlight, setHighlight] = useState(0);
@@ -118,7 +120,7 @@ export function PromptButton({
             {showList && (
               <ul
                 role="listbox"
-                aria-label="Suggestions"
+                aria-label={t('common.suggestions')}
                 className="mt-1 max-h-44 overflow-auto rounded-md border border-border bg-popover p-1"
               >
                 {matches.map((s, i) => (
@@ -147,10 +149,10 @@ export function PromptButton({
             )}
             <div className="mt-3 flex justify-end gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="submit" size="sm">
-                {submitLabel}
+                {submitLabel ?? t('common.save')}
               </Button>
             </div>
           </form>

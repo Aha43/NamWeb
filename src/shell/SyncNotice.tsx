@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
@@ -7,6 +8,7 @@ import { useWorkspaceContext } from '@/store/workspace-context';
  * edit never reads as saved.
  */
 export function SyncNotice() {
+  const { t } = useTranslation();
   const ws = useWorkspaceContext();
   if (!ws.notice) return null;
   const isError = ws.notice.kind === 'error';
@@ -24,11 +26,11 @@ export function SyncNotice() {
       <div className="flex shrink-0 items-center gap-3">
         {isError && (
           <button type="button" onClick={ws.retrySync} className="font-medium hover:underline">
-            Retry
+            {t('sync.retry')}
           </button>
         )}
         <button type="button" onClick={ws.clearNotice} className="font-medium hover:underline">
-          Dismiss
+          {t('sync.dismiss')}
         </button>
       </div>
     </div>

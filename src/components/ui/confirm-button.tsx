@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import * as Popover from '@radix-ui/react-popover';
+import { useTranslation } from 'react-i18next';
 import { Button } from './button';
 import { Tooltip } from './tooltip';
 import { cn } from '@/lib/utils';
@@ -13,7 +14,7 @@ import { TOUCH_TARGET } from '@/lib/touch';
  */
 export function ConfirmButton({
   message,
-  confirmLabel = 'Delete',
+  confirmLabel,
   destructive = true,
   onConfirm,
   children,
@@ -25,6 +26,7 @@ export function ConfirmButton({
   onConfirm: () => void;
   children: ReactNode;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   // Label the (icon) trigger from its own aria-label — no separate prop to keep in sync. Hidden
   // while the popover is open so the tooltip doesn't sit on top of the confirm.
@@ -48,7 +50,7 @@ export function ConfirmButton({
           <p className="text-sm text-foreground">{message}</p>
           <div className="mt-3 flex justify-end gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               type="button"
@@ -60,7 +62,7 @@ export function ConfirmButton({
                 onConfirm();
               }}
             >
-              {confirmLabel}
+              {confirmLabel ?? t('common.delete')}
             </Button>
           </div>
         </Popover.Content>

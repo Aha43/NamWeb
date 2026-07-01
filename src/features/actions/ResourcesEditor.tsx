@@ -36,7 +36,7 @@ export function ResourcesEditor({
             <li key={i} className="flex items-center gap-2 text-sm">
               <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{r.type}</span>
               <span className="min-w-0 flex-1 truncate text-foreground">{r.value}</span>
-              <CopyButton value={r.value} label={`resource ${r.value}`} />
+              <CopyButton value={r.value} label={t('copy.resource', { value: r.value })} />
               <button
                 type="button"
                 aria-label={t('editor.removeResourceAria', { value: r.value })}

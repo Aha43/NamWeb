@@ -1,4 +1,5 @@
 import { Check, Copy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '@/lib/useCopyToClipboard';
 import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
@@ -20,12 +21,14 @@ export function CopyButton({
   className?: string;
   tooltip?: boolean;
 }) {
+  const { t } = useTranslation();
   const { copied, copy } = useCopyToClipboard();
   const empty = value.trim().length === 0;
+  const wrap = copied ? t('common.copiedLabel', { label }) : t('common.copyLabel', { label });
   const button = (
     <button
       type="button"
-      aria-label={copied ? `Copied ${label}` : `Copy ${label}`}
+      aria-label={wrap}
       disabled={empty}
       onClick={() => copy(value)}
       className={cn(
@@ -38,5 +41,5 @@ export function CopyButton({
     </button>
   );
   // Only arm a tooltip when there's something to copy (a disabled button gets no pointer events).
-  return tooltip && !empty ? <Tooltip label={copied ? `Copied ${label}` : `Copy ${label}`}>{button}</Tooltip> : button;
+  return tooltip && !empty ? <Tooltip label={wrap}>{button}</Tooltip> : button;
 }
