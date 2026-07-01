@@ -17,8 +17,7 @@
     "e2e": "playwright test",
     "e2e:mocked": "playwright test --project=mocked-desktop --project=mocked-phone",
     "e2e:ui": "playwright test --ui",
-    "i18n:extract": "i18next",
-    "i18n:check": "i18next --fail-on-update",
+    "i18n:check": "node scripts/check-i18n.mjs",
     "mcp": "tsx --env-file=.env mcp/server.ts"
   },
   "dependencies": {
@@ -63,7 +62,6 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.6.0",
-    "i18next-parser": "^9.0.2",
     "jsdom": "^29.1.1",
     "postcss": "^8.4.47",
     "tailwindcss": "^4.3.1",
