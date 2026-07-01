@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { HelpCircle, Inbox, ListTodo, MoreHorizontal, Plus, Settings, Target, User, type LucideIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useCapture } from '@/capture/capture-context';
 import {
   Sheet,
@@ -24,6 +25,7 @@ import { SyncNotice } from './SyncNotice';
 
 /** Phone: capture + execution pushed to the front; everything else lives in the More sheet. */
 export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
+  const { t } = useTranslation();
   const [moreOpen, setMoreOpen] = useState(false);
   const { openCapture } = useCapture();
 
@@ -43,17 +45,17 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
       </main>
 
       <nav
-        aria-label="Primary"
+        aria-label={t('nav.primaryLandmark')}
         className="sticky bottom-0 grid grid-cols-5 items-end border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
       >
-        <BottomLink to="/inbox" label="Inbox" icon={Inbox} />
-        <BottomLink to="/next" label="Next" icon={ListTodo} />
+        <BottomLink to="/inbox" label={t('domain.inbox')} icon={Inbox} />
+        <BottomLink to="/next" label={t('domain.status.next')} icon={ListTodo} />
 
         {/* Capture — the headline action, front and center. */}
         <div className="flex justify-center">
           <button
             type="button"
-            aria-label="Capture"
+            aria-label={t('nav.capture')}
             onClick={openCapture}
             className="-mt-5 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95"
           >
@@ -61,7 +63,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
           </button>
         </div>
 
-        <BottomLink to="/focus" label="Focus" icon={Target} iconClassName="focus-glow" />
+        <BottomLink to="/focus" label={t('domain.focus')} icon={Target} iconClassName="focus-glow" />
 
         <button
           type="button"
@@ -69,28 +71,28 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
           className="flex flex-col items-center gap-0.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           <MoreHorizontal className="h-5 w-5" />
-          More
+          {t('nav.more')}
         </button>
       </nav>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle>More</SheetTitle>
-            <SheetDescription>Jump to any surface, or manage your session.</SheetDescription>
+            <SheetTitle>{t('nav.more')}</SheetTitle>
+            <SheetDescription>{t('nav.moreDesc')}</SheetDescription>
           </SheetHeader>
 
-          <nav aria-label="More" className="mt-4 flex flex-col gap-4">
+          <nav aria-label={t('nav.moreLandmark')} className="mt-4 flex flex-col gap-4">
             {MORE_GROUPS.map((group) => (
               <div key={group.label} className="flex flex-col gap-1">
                 <span className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
-                  {group.label}
+                  {group.label ? t(group.label) : null}
                 </span>
                 {group.items.map(({ to, label, icon: Icon, hint }) => (
                   <NavLink
                     key={to}
                     to={to}
-                    aria-label={label}
+                    aria-label={t(label)}
                     onClick={() => setMoreOpen(false)}
                     className={({ isActive }) =>
                       cn(
@@ -101,8 +103,8 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
                   >
                     <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
                     <span className="flex min-w-0 flex-col">
-                      <span className="text-sm font-medium leading-tight">{label}</span>
-                      {hint && <span className="truncate text-xs text-muted-foreground">{hint}</span>}
+                      <span className="text-sm font-medium leading-tight">{t(label)}</span>
+                      {hint && <span className="truncate text-xs text-muted-foreground">{t(hint)}</span>}
                     </span>
                   </NavLink>
                 ))}
@@ -117,7 +119,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
             className="mt-1 flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
           >
             <User className="h-4 w-4" />
-            Account
+            {t('nav.account')}
           </NavLink>
           <NavLink
             to="/account?tab=preferences"
@@ -125,7 +127,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
             className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
           >
             <Settings className="h-4 w-4" />
-            Settings
+            {t('nav.settings')}
           </NavLink>
           <NavLink
             to="/help"
@@ -133,13 +135,13 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
             className="flex w-full items-center gap-3 rounded-md px-2 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
           >
             <HelpCircle className="h-4 w-4" />
-            Help
+            {t('nav.help')}
           </NavLink>
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
             <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={onSignOut}>
-              Sign out
+              {t('nav.signOut')}
             </Button>
           </div>
         </SheetContent>
@@ -150,12 +152,13 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
 
 /** The Bookmarks group in the More sheet — only when there are any (BookmarkBar self-hides too). */
 function MoreBookmarks({ onNavigate }: { onNavigate: () => void }) {
+  const { t } = useTranslation();
   const { document } = useWorkspaceContext();
   if (!document || bookmarksOf(document).length === 0) return null;
   return (
     <div className="flex flex-col gap-1">
       <span className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
-        Bookmarks
+        {t('nav.bookmarks')}
       </span>
       <BookmarkBar variant="list" onNavigate={onNavigate} />
     </div>
