@@ -3,6 +3,8 @@
   "domain.status.backlog": "Etterslep",
   "domain.status.done": "Ferdig",
   "domain.status.next": "Neste",
+  "settings.language": "Språk",
+  "settings.languageHelp": "Velg appens språk. Datoformat er en separat innstilling.",
   "summary.close": "Lukk",
   "summary.copied": "Kopiert",
   "summary.copy": "Kopier",

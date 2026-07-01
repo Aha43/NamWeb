@@ -47,6 +47,8 @@ describe('useGlobalShortcuts', () => {
     const settings: SettingsContextValue = {
       dateFormat: DEFAULT_DATE_FORMAT,
       setDateFormat: vi.fn(),
+      language: 'en',
+      setLanguage: vi.fn(),
       addToBottom: false,
       setAddToBottom,
       addToBottomDefault: false,

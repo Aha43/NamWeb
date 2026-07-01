@@ -8,9 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Choose your language (English / Norsk).** A **Language** picker in **Settings → Preferences** switches the app's language, defaulting to your browser's on first run and persisting per device. Only the surfaces translated so far change today — the rest follows as translation lands (#400); date format stays a separate preference. Part of #518.
+
 ### Changed
 
-- **Internationalization groundwork.** Added the i18n runtime (react-i18next + ICU message format) and converted the first surface into a translation catalog (English master + a Norwegian start). No visible change yet — English is unchanged and the app stays English-only until the language picker lands. Foundation for #400.
+- **Internationalization groundwork.** Added the i18n runtime (react-i18next + ICU message format) and began moving strings into a translation catalog (English master + Norwegian). English is unchanged; surfaces switch to Norwegian as they're translated. Foundation for #400.
 
 - **Denser Column (Kanban) cards.** A card at rest is now just its title + meta — the row of controls (copy / rename / status / drag / delete) no longer reserves empty space below; it floats in on hover/focus instead. More cards fit per column, with no layout jump when you hover. Closes #514.
 

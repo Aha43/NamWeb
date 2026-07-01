@@ -1,9 +1,13 @@
 import { createContext, useContext } from 'react';
 import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
+import type { Locale } from '@/lib/i18n';
 
 export interface SettingsContextValue {
   dateFormat: DateFormat;
   setDateFormat: (format: DateFormat) => void;
+  /** UI language (device-level) — drives the i18n runtime. */
+  language: Locale;
+  setLanguage: (language: Locale) => void;
   /** Effective (here-and-now) new-item position: true = bottom, false = top. Session-scoped — it
    *  starts from the default and the inline add-box toggle flips it; not persisted. */
   addToBottom: boolean;
@@ -25,6 +29,8 @@ export function useSettings(): SettingsContextValue {
     useContext(SettingsContext) ?? {
       dateFormat: DEFAULT_DATE_FORMAT,
       setDateFormat: () => {},
+      language: 'en',
+      setLanguage: () => {},
       addToBottom: false,
       setAddToBottom: () => {},
       addToBottomDefault: false,
@@ -35,3 +41,4 @@ export function useSettings(): SettingsContextValue {
 
 export const DATE_FORMAT_STORAGE_KEY = 'namweb.settings.date-format';
 export const ADD_TO_BOTTOM_STORAGE_KEY = 'namweb.settings.add-to-bottom';
+export const LANGUAGE_STORAGE_KEY = 'namweb.settings.language';
