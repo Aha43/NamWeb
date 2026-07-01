@@ -9,6 +9,9 @@
   "domain.status.backlog": "Etterslep",
   "domain.status.done": "Ferdig",
   "domain.status.next": "Neste",
+  "domain.statusShort.backlog": "E",
+  "domain.statusShort.done": "F",
+  "domain.statusShort.next": "N",
   "domain.tags": "Etiketter",
   "domain.templates": "Maler"
 }

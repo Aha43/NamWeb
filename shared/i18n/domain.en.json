@@ -9,6 +9,9 @@
   "domain.status.backlog": "Backlog",
   "domain.status.done": "Done",
   "domain.status.next": "Next",
+  "domain.statusShort.backlog": "B",
+  "domain.statusShort.done": "D",
+  "domain.statusShort.next": "N",
   "domain.tags": "Tags",
   "domain.templates": "Templates"
 }

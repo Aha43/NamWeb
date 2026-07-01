@@ -9,7 +9,6 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { NodeStatus } from '@/domain/types';
 
-const LETTER: Partial<Record<NodeStatus, string>> = { NEXT: 'N', BACKLOG: 'B', DONE: 'D' };
 const TONE: Partial<Record<NodeStatus, string>> = {
   NEXT: 'text-primary border-primary/40',
   BACKLOG: 'text-muted-foreground border-border',
@@ -32,6 +31,8 @@ export function StatusMenu({
   onSetStatus: (status: NodeStatus) => void;
 }) {
   const { t } = useTranslation();
+  // Locale-aware single-letter badge (en N/B/D, nb N/E/F); unknown statuses fall back to the initial.
+  const short = t(`domain.statusShort.${status.toLowerCase()}`, { defaultValue: status[0] });
   return (
     <DropdownMenu>
       <Tooltip label={t('list.statusTooltip', { status })}>
@@ -42,7 +43,7 @@ export function StatusMenu({
             TONE[status] ?? 'text-muted-foreground border-border',
           )}
         >
-          {LETTER[status] ?? status[0]}
+          {short}
         </DropdownMenuTrigger>
       </Tooltip>
       <DropdownMenuContent align="end">
