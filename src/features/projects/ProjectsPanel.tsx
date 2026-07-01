@@ -1,5 +1,6 @@
 import { Fragment, useRef, useState, type FormEvent } from 'react';
 import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, Trash2, Upload } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -84,6 +85,7 @@ export function ProjectsPanel({
   onToggleShowArchived,
   archivedCount = 0,
 }: ProjectsPanelProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -103,7 +105,7 @@ export function ProjectsPanel({
     setImportError(null);
     const text = await file.text();
     const result = onImportWorkspace(text);
-    if (!result.ok) setImportError(result.error ?? 'Import failed.');
+    if (!result.ok) setImportError(result.error ?? t('projects.importFailed'));
   }
 
   function submit(event: FormEvent) {
@@ -143,7 +145,7 @@ export function ProjectsPanel({
         <div className="flex-1 px-3 py-2">
           <InlineRename
             title={project.title}
-            onCommit={(t) => { onRename(project.id, t); setRenamingId(null); }}
+            onCommit={(newTitle) => { onRename(project.id, newTitle); setRenamingId(null); }}
             onCancel={() => setRenamingId(null)}
           />
         </div>
@@ -152,7 +154,7 @@ export function ProjectsPanel({
           <Tooltip label={descTip}>
           <button
             type="button"
-            aria-label={`Open ${project.title}`}
+            aria-label={t('column.openAria', { title: project.title })}
             onClick={() => onOpen(project.id)}
             className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
           >
@@ -180,10 +182,10 @@ export function ProjectsPanel({
           </Tooltip>
           <CopyButton value={project.title} label={`name "${project.title}"`} className="p-1.5" />
           {onRename && (
-            <Tooltip label={`Rename ${project.title}`}>
+            <Tooltip label={t('actions.renameAria', { title: project.title })}>
               <button
                 type="button"
-                aria-label={`Rename ${project.title}`}
+                aria-label={t('actions.renameAria', { title: project.title })}
                 onClick={() => setRenamingId(project.id)}
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
@@ -192,10 +194,10 @@ export function ProjectsPanel({
             </Tooltip>
           )}
           {onArchive && !isArchived && (
-            <Tooltip label="Archive">
+            <Tooltip label={t('projects.archive')}>
               <button
                 type="button"
-                aria-label={`Archive ${project.title}`}
+                aria-label={t('projects.archiveAria', { title: project.title })}
                 onClick={() => onArchive(project.id)}
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
@@ -204,10 +206,10 @@ export function ProjectsPanel({
             </Tooltip>
           )}
           {onUnarchive && isArchived && (
-            <Tooltip label="Unarchive">
+            <Tooltip label={t('projects.unarchive')}>
               <button
                 type="button"
-                aria-label={`Unarchive ${project.title}`}
+                aria-label={t('projects.unarchiveAria', { title: project.title })}
                 onClick={() => onUnarchive(project.id)}
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
@@ -218,12 +220,12 @@ export function ProjectsPanel({
           {onMoveInto && targets.length > 0 && (
             isDesktop ? (
               <MoveTargetMenu
-                label={`Move ${project.title} into another project`}
+                label={t('projects.moveIntoAria', { title: project.title })}
                 quickTargets={quickTargets}
                 onPick={(id) => onMoveInto(project.id, id)}
                 onBrowse={() =>
                   setMoveRequest({
-                    title: `Move "${project.title}" to…`,
+                    title: t('editor.moveTitle', { title: project.title }),
                     targets,
                     onConfirm: (id) => onMoveInto(project.id, id),
                   })
@@ -233,11 +235,11 @@ export function ProjectsPanel({
               </MoveTargetMenu>
             ) : (
               <DropdownMenu>
-                <Tooltip label="Move into another project">
+                <Tooltip label={t('projects.moveIntoTooltip')}>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      aria-label={`Move ${project.title} into another project`}
+                      aria-label={t('projects.moveIntoAria', { title: project.title })}
                       className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
                       <FolderInput className="h-3.5 w-3.5" />
@@ -245,9 +247,9 @@ export function ProjectsPanel({
                   </DropdownMenuTrigger>
                 </Tooltip>
                 <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
-                  {targets.map((t) => (
-                    <DropdownMenuItem key={t.id} onSelect={() => onMoveInto(project.id, t.id)}>
-                      {t.label}
+                  {targets.map((target) => (
+                    <DropdownMenuItem key={target.id} onSelect={() => onMoveInto(project.id, target.id)}>
+                      {target.label}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -255,10 +257,10 @@ export function ProjectsPanel({
             )
           )}
           {onDelete && (
-            <Tooltip label={`Delete ${project.title}`}>
+            <Tooltip label={t('actions.deleteAria', { title: project.title })}>
               <button
                 type="button"
-                aria-label={`Delete ${project.title}`}
+                aria-label={t('actions.deleteAria', { title: project.title })}
                 onClick={() => onDelete(project.id)}
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
               >
@@ -284,14 +286,14 @@ export function ProjectsPanel({
     <section className="space-y-4">
       <form onSubmit={submit} className="flex gap-2">
         <input
-          aria-label="Add project"
+          aria-label={t('projects.addAria')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="New project…"
+          placeholder={t('picker.newProjectPlaceholder')}
           className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
         />
         <AddPositionToggle />
-        <Button type="submit">Add</Button>
+        <Button type="submit">{t('common.add')}</Button>
       </form>
 
       {(onImportWorkspace ||
@@ -305,23 +307,23 @@ export function ProjectsPanel({
                 type="file"
                 accept=".json,application/json"
                 className="hidden"
-                aria-label="Workspace JSON file"
+                aria-label={t('projects.importFileAria')}
                 onChange={onImportFile}
               />
               <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={() => fileInput.current?.click()}>
                 <Upload className="h-4 w-4" />
-                Import workspace…
+                {t('projects.importWorkspace')}
               </Button>
             </>
           )}
           {archivedCount > 0 && onToggleShowArchived && (
             <Button type="button" variant="ghost" size="sm" onClick={onToggleShowArchived}>
-              {showArchived ? 'Hide archived' : `Show archived (${archivedCount})`}
+              {showArchived ? t('projects.hideArchived') : t('projects.showArchived', { count: archivedCount })}
             </Button>
           )}
           {onAddLearnNam && projects.length > 0 && (
             <Button type="button" variant="ghost" size="sm" onClick={onAddLearnNam}>
-              Add Learn NAM 🥋
+              {t('projects.addLearnNam')}
             </Button>
           )}
         </div>
@@ -334,18 +336,15 @@ export function ProjectsPanel({
 
       {projects.length === 0 ? (
         <div className="space-y-2 py-10 text-center">
-          <p className="text-sm font-medium text-foreground">No projects yet</p>
-          <p className="mx-auto max-w-sm text-sm text-muted-foreground">
-            Group related actions into a project — plan bigger outcomes with sub-projects, a
-            workbench, and progress at a glance.
-          </p>
+          <p className="text-sm font-medium text-foreground">{t('projects.emptyTitle')}</p>
+          <p className="mx-auto max-w-sm text-sm text-muted-foreground">{t('projects.emptyHint')}</p>
           {onAddLearnNam && (
             <p className="text-sm text-muted-foreground">
-              New to NAM?{' '}
+              {t('projects.newToNam')}{' '}
               <button type="button" onClick={onAddLearnNam} className="font-medium text-primary hover:underline">
-                Add the Learn NAM project 🥋
+                {t('projects.addLearnNamLink')}
               </button>{' '}
-              and learn by doing.
+              {t('projects.learnByDoing')}
             </p>
           )}
         </div>

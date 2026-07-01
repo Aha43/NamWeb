@@ -13,6 +13,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Tooltip } from '@/components/ui/tooltip';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -103,6 +104,7 @@ export function ColumnView({
   onSetColumnWidth,
   onResetColumnWidth,
 }: ColumnViewProps) {
+  const { t } = useTranslation();
   // Sub-project columns (everything but the fixed Unsorted column) — the ones that can be reordered.
   const subColumnIds = columns.filter((c) => !c.isUnsorted).map((c) => c.id);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
@@ -145,7 +147,7 @@ export function ColumnView({
 
   // The body of a full (non-collapsed) column: header, action rows, quick-add.
   const columnBody = (col: WorkbenchColumn) => {
-    const label = col.isUnsorted ? 'Unsorted' : col.title;
+    const label = col.isUnsorted ? t('column.unsorted') : col.title;
     const rows =
       col.actions.length > 0 ? (
         <ul className="flex flex-col gap-1.5">
@@ -166,20 +168,20 @@ export function ColumnView({
         <div className="flex items-center justify-between px-1">
           {col.isUnsorted ? (
             <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Unsorted
+              {t('column.unsorted')}
             </span>
           ) : renamingColId === col.id ? (
             <div className="min-w-0 flex-1 pr-1">
               <InlineRename
                 title={col.title}
-                onCommit={(t) => { onRename(col.id, t); setRenamingColId(null); }}
+                onCommit={(newTitle) => { onRename(col.id, newTitle); setRenamingColId(null); }}
                 onCancel={() => setRenamingColId(null)}
               />
             </div>
           ) : (
             <button
               type="button"
-              aria-label={`Open ${col.title}`}
+              aria-label={t('column.openAria', { title: col.title })}
               onClick={() => onOpenColumn(col.id)}
               className="flex min-w-0 items-center gap-1 text-sm font-medium text-foreground hover:underline"
             >
@@ -192,10 +194,10 @@ export function ColumnView({
               <CopyButton value={col.title} label={`name "${col.title}"`} tooltip />
             )}
             {!col.isUnsorted && renamingColId !== col.id && (
-              <Tooltip label={`Rename ${col.title}`}>
+              <Tooltip label={t('actions.renameAria', { title: col.title })}>
                 <button
                   type="button"
-                  aria-label={`Rename ${col.title}`}
+                  aria-label={t('actions.renameAria', { title: col.title })}
                   onClick={() => setRenamingColId(col.id)}
                   className="rounded-sm text-muted-foreground hover:text-foreground"
                 >
@@ -205,10 +207,10 @@ export function ColumnView({
             )}
             {onMoveColumn && !col.isUnsorted && (
               <>
-                <Tooltip label="Move column left">
+                <Tooltip label={t('column.moveLeftTooltip')}>
                   <button
                     type="button"
-                    aria-label={`Move ${col.title} left`}
+                    aria-label={t('column.moveLeftAria', { title: col.title })}
                     disabled={subColumnIds[0] === col.id}
                     onClick={() => onMoveColumn(col.id, 'left')}
                     className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
@@ -216,10 +218,10 @@ export function ColumnView({
                     <ChevronLeft className="h-4 w-4" />
                   </button>
                 </Tooltip>
-                <Tooltip label="Move column right">
+                <Tooltip label={t('column.moveRightTooltip')}>
                   <button
                     type="button"
-                    aria-label={`Move ${col.title} right`}
+                    aria-label={t('column.moveRightAria', { title: col.title })}
                     disabled={subColumnIds[subColumnIds.length - 1] === col.id}
                     onClick={() => onMoveColumn(col.id, 'right')}
                     className="rounded-sm text-muted-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-30"
@@ -231,10 +233,10 @@ export function ColumnView({
             )}
             <span className="text-xs text-muted-foreground">{col.actions.length}</span>
             {onToggleCollapse && (
-              <Tooltip label="Collapse column">
+              <Tooltip label={t('column.collapseTooltip')}>
                 <button
                   type="button"
-                  aria-label={`Collapse ${label}`}
+                  aria-label={t('column.collapseAria', { label })}
                   onClick={() => onToggleCollapse(col.id)}
                   className="rounded-sm text-muted-foreground hover:text-foreground"
                 >
@@ -259,17 +261,17 @@ export function ColumnView({
   };
 
   const renderColumn = (col: WorkbenchColumn) => {
-    const label = col.isUnsorted ? 'Unsorted' : col.title;
+    const label = col.isUnsorted ? t('column.unsorted') : col.title;
     if (collapsed?.has(col.id) && onToggleCollapse) {
       return (
         <div
           key={col.id}
           className="flex w-10 shrink-0 flex-col items-center gap-2 rounded-lg border border-border bg-card/40 p-2"
         >
-          <Tooltip label={`Expand ${label}`} side="right">
+          <Tooltip label={t('column.expandAria', { label })} side="right">
             <button
               type="button"
-              aria-label={`Expand ${label}`}
+              aria-label={t('column.expandAria', { label })}
               onClick={() => onToggleCollapse(col.id)}
               className="rounded-sm text-muted-foreground hover:text-foreground"
             >
@@ -383,6 +385,7 @@ function ColumnResizer({
   onResize: (width: number) => void;
   onReset?: () => void;
 }) {
+  const { t } = useTranslation();
   const onPointerDown = (event: ReactPointerEvent) => {
     event.preventDefault();
     const startX = event.clientX;
@@ -399,7 +402,7 @@ function ColumnResizer({
     <div
       role="separator"
       aria-orientation="vertical"
-      aria-label={`Resize ${label} column`}
+      aria-label={t('column.resizeAria', { label })}
       aria-valuenow={width}
       tabIndex={0}
       onPointerDown={onPointerDown}
@@ -408,13 +411,14 @@ function ColumnResizer({
         if (e.key === 'ArrowLeft') onResize(width - 16);
         else if (e.key === 'ArrowRight') onResize(width + 16);
       }}
-      title="Drag to resize · double-click to reset"
+      title={t('nav.resizeSidebarTitle')}
       className="absolute inset-y-0 right-0 w-1.5 cursor-col-resize rounded-r-lg bg-transparent transition-colors hover:bg-ring focus-visible:bg-ring focus-visible:outline-hidden"
     />
   );
 }
 
 function ColumnAdd({ label, onAdd }: { label: string; onAdd: (title: string) => void }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -426,10 +430,10 @@ function ColumnAdd({ label, onAdd }: { label: string; onAdd: (title: string) => 
   return (
     <form onSubmit={submit}>
       <input
-        aria-label={`Add action to ${label}`}
+        aria-label={t('column.addActionAria', { label })}
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="Add an action…"
+        placeholder={t('column.addActionPlaceholder')}
         className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
       />
     </form>

@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
@@ -204,6 +205,7 @@ export function ProjectWorkbench({
   dueSorted = false,
   onToggleDueSort,
 }: ProjectWorkbenchProps) {
+  const { t } = useTranslation();
   const isColumn = viewMode === 'column';
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
   // Whether there's anything for the "by due" toggle to act on (list rows or any column's cards).
@@ -300,7 +302,7 @@ export function ProjectWorkbench({
         <div className="flex-1 px-3 py-2">
           <InlineRename
             title={sub.title}
-            onCommit={(t) => { onRename(sub.id, t); setRenamingSubId(null); }}
+            onCommit={(newTitle) => { onRename(sub.id, newTitle); setRenamingSubId(null); }}
             onCancel={() => setRenamingSubId(null)}
           />
         </div>
@@ -309,7 +311,7 @@ export function ProjectWorkbench({
           <Tooltip label={subDescTip}>
           <button
             type="button"
-            aria-label={`Open ${sub.title}`}
+            aria-label={t('column.openAria', { title: sub.title })}
             onClick={() => onOpenProject(sub.id)}
             className="flex flex-1 items-center gap-2 px-3 py-2 text-left hover:bg-accent"
           >
@@ -324,10 +326,10 @@ export function ProjectWorkbench({
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
           </Tooltip>
-          <Tooltip label={`Rename ${sub.title}`}>
+          <Tooltip label={t('actions.renameAria', { title: sub.title })}>
             <button
               type="button"
-              aria-label={`Rename ${sub.title}`}
+              aria-label={t('actions.renameAria', { title: sub.title })}
               onClick={() => setRenamingSubId(sub.id)}
               className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
             >
@@ -337,12 +339,12 @@ export function ProjectWorkbench({
           {onMoveInto && subTargets.length > 0 && (
             isDesktop ? (
               <MoveTargetMenu
-                label={`Move ${sub.title} into another project`}
+                label={t('projects.moveIntoAria', { title: sub.title })}
                 quickTargets={subQuick}
                 onPick={(id) => onMoveInto(sub.id, id)}
                 onBrowse={() =>
                   setMoveRequest({
-                    title: `Move "${sub.title}" to…`,
+                    title: t('editor.moveTitle', { title: sub.title }),
                     targets: subTargets,
                     onConfirm: (id) => onMoveInto(sub.id, id),
                   })
@@ -352,11 +354,11 @@ export function ProjectWorkbench({
               </MoveTargetMenu>
             ) : (
               <DropdownMenu>
-                <Tooltip label="Move into another project">
+                <Tooltip label={t('projects.moveIntoTooltip')}>
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      aria-label={`Move ${sub.title} into another project`}
+                      aria-label={t('projects.moveIntoAria', { title: sub.title })}
                       className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
                       <FolderInput className="h-3.5 w-3.5" />
@@ -364,9 +366,9 @@ export function ProjectWorkbench({
                   </DropdownMenuTrigger>
                 </Tooltip>
                 <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
-                  {subTargets.map((t) => (
-                    <DropdownMenuItem key={t.id} onSelect={() => onMoveInto(sub.id, t.id)}>
-                      {t.label}
+                  {subTargets.map((target) => (
+                    <DropdownMenuItem key={target.id} onSelect={() => onMoveInto(sub.id, target.id)}>
+                      {target.label}
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -374,10 +376,10 @@ export function ProjectWorkbench({
             )
           )}
           {onDeleteSubProject && (
-            <Tooltip label={`Delete ${sub.title}`}>
+            <Tooltip label={t('actions.deleteAria', { title: sub.title })}>
               <button
                 type="button"
-                aria-label={`Delete ${sub.title}`}
+                aria-label={t('actions.deleteAria', { title: sub.title })}
                 onClick={() => onDeleteSubProject(sub.id)}
                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive"
               >
@@ -403,9 +405,9 @@ export function ProjectWorkbench({
       {/* Pinned header: breadcrumb + add-panel + view switch stay put while the lists scroll. */}
       <div className="sticky top-0 z-20 space-y-3 bg-background pb-2 pt-1">
       <div className="flex items-start justify-between gap-2">
-        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+        <nav aria-label={t('workbench.breadcrumb')} className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
           <button type="button" onClick={onOpenProjects} className="hover:text-foreground">
-            Projects
+            {t('domain.projects')}
           </button>
           {breadcrumb.map((ancestor) => (
             <span key={ancestor.id} className="flex items-center gap-1">
@@ -420,7 +422,7 @@ export function ProjectWorkbench({
         </nav>
         <div className="flex shrink-0 items-center gap-1">
           {bookmarkSlot}
-          <Tooltip label="Project summary (Markdown) · s">
+          <Tooltip label={t('workbench.summaryTooltip')}>
             <Button
               type="button"
               variant="ghost"
@@ -429,7 +431,7 @@ export function ProjectWorkbench({
               onClick={() => setSummaryOpen(true)}
             >
               <FileText className="h-4 w-4" />
-              Summary
+              {t('workbench.summary')}
             </Button>
           </Tooltip>
         </div>
@@ -467,7 +469,7 @@ export function ProjectWorkbench({
             <div className="flex justify-end">
               <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onFocus}>
                 <Target className="h-4 w-4 focus-glow" />
-                Focus
+                {t('domain.focus')}
               </Button>
             </div>
           )}
@@ -497,7 +499,7 @@ export function ProjectWorkbench({
               <div className="flex items-center gap-1">
                 <div className="flex-1">
                   <SectionHeader
-                    label="Actions"
+                    label={t('workbench.actions')}
                     count={actions.length}
                     collapsed={sectionCollapsed('actions')}
                     onToggle={() => onToggleSection('actions')}
@@ -505,10 +507,10 @@ export function ProjectWorkbench({
                   />
                 </div>
                 {actions.length > 0 && onDeleteAction && (
-                  <Tooltip label={selectMode ? 'Exit select' : 'Select actions'}>
+                  <Tooltip label={selectMode ? t('list.exitSelect') : t('done.selectActions')}>
                     <button
                       type="button"
-                      aria-label={selectMode ? 'Exit select' : 'Select actions'}
+                      aria-label={selectMode ? t('list.exitSelect') : t('done.selectActions')}
                       aria-pressed={selectMode}
                       onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
                       className={cn(
@@ -521,10 +523,10 @@ export function ProjectWorkbench({
                   </Tooltip>
                 )}
                 {actions.length > 0 && onDeleteAction && doneActions.length > 0 && !selectMode && (
-                  <Tooltip label={`Delete ${doneActions.length} done action${doneActions.length === 1 ? '' : 's'}`}>
+                  <Tooltip label={t('workbench.deleteDoneTooltip', { count: doneActions.length })}>
                     <button
                       type="button"
-                      aria-label="Delete done actions"
+                      aria-label={t('workbench.deleteDoneAria')}
                       onClick={() => setDeleteDoneOpen(true)}
                       className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
                     >
@@ -533,10 +535,10 @@ export function ProjectWorkbench({
                   </Tooltip>
                 )}
                 {actions.length > 0 && onFocus && (
-                  <Tooltip label="Focus this project's actions">
+                  <Tooltip label={t('workbench.focusTooltip')}>
                     <button
                       type="button"
-                      aria-label="Focus actions"
+                      aria-label={t('workbench.focusAria')}
                       onClick={onFocus}
                       className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
@@ -547,18 +549,18 @@ export function ProjectWorkbench({
               </div>
               {selectMode && (
                 <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
-                  <span className="mr-1 text-muted-foreground">{selected.size} selected</span>
+                  <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
                   {onGroupSelected && (
                     <PromptButton
-                      aria-label="Make sub-project from selected"
-                      label="Sub-project name"
-                      placeholder="Name the group…"
-                      submitLabel="Create"
+                      aria-label={t('workbench.makeSubAria')}
+                      label={t('workbench.subProjectName')}
+                      placeholder={t('workbench.nameGroup')}
+                      submitLabel={t('common.create')}
                       onSubmit={bulkGroup}
                       disabled={selected.size === 0}
                       className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
                     >
-                      Make sub-project
+                      {t('workbench.makeSubProject')}
                     </PromptButton>
                   )}
                   <DropdownMenu>
@@ -566,31 +568,31 @@ export function ProjectWorkbench({
                       disabled={selected.size === 0}
                       className="rounded-md px-2 py-0.5 font-medium text-foreground outline-hidden hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
                     >
-                      Status ▾
+                      {t('workbench.statusMenu')}
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onSelect={() => bulkSetStatus('NEXT')}>Next</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => bulkSetStatus('BACKLOG')}>Backlog</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => bulkSetStatus('DONE')}>Done</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => bulkSetStatus('NEXT')}>{t('domain.status.next')}</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => bulkSetStatus('BACKLOG')}>{t('domain.status.backlog')}</DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => bulkSetStatus('DONE')}>{t('domain.status.done')}</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                   {onMoveActionInto && moveActionTargets.length > 0 && (
                     isDesktop ? (
                       <MoveTargetMenu
-                        label="Move selected actions to another project"
+                        label={t('workbench.moveSelectedAria')}
                         disabled={selected.size === 0}
                         triggerClassName="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
                         quickTargets={moveActionTargets}
                         onPick={bulkMove}
                         onBrowse={() =>
                           setMoveRequest({
-                            title: `Move ${selected.size} action${selected.size === 1 ? '' : 's'} to…`,
+                            title: t('workbench.moveActionsTitle', { count: selected.size }),
                             targets: moveActionBrowseTargets,
                             onConfirm: bulkMove,
                           })
                         }
                       >
-                        Move to ▾
+                        {t('workbench.moveTo')}
                       </MoveTargetMenu>
                     ) : (
                       <DropdownMenu>
@@ -598,12 +600,12 @@ export function ProjectWorkbench({
                           disabled={selected.size === 0}
                           className="rounded-md px-2 py-0.5 font-medium text-foreground outline-hidden hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
                         >
-                          Move to ▾
+                          {t('workbench.moveTo')}
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
-                          {moveActionTargets.map((t) => (
-                            <DropdownMenuItem key={t.id} onSelect={() => bulkMove(t.id)}>
-                              {t.label}
+                          {moveActionTargets.map((target) => (
+                            <DropdownMenuItem key={target.id} onSelect={() => bulkMove(target.id)}>
+                              {target.label}
                             </DropdownMenuItem>
                           ))}
                         </DropdownMenuContent>
@@ -612,26 +614,26 @@ export function ProjectWorkbench({
                   )}
                   {onAddTagToActions && (
                     <PromptButton
-                      aria-label="Add tag to selected"
-                      label="Tag"
-                      placeholder="Add a tag…"
-                      submitLabel="Add tag"
+                      aria-label={t('workbench.addTagAria')}
+                      label={t('workbench.tag')}
+                      placeholder={t('workbench.addTagPlaceholder')}
+                      submitLabel={t('workbench.addTagSubmit')}
                       suggestions={allTags}
                       onSubmit={bulkAddTag}
                       disabled={selected.size === 0}
                       className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
                     >
-                      Tag
+                      {t('workbench.tag')}
                     </PromptButton>
                   )}
                   <ConfirmButton
-                    aria-label="Delete selected actions"
-                    message={`Delete ${selected.size} selected action${selected.size === 1 ? '' : 's'}? This cannot be undone.`}
+                    aria-label={t('done.deleteSelectedAria')}
+                    message={t('workbench.deleteSelectedConfirm', { count: selected.size })}
                     onConfirm={bulkDelete}
                     disabled={selected.size === 0}
                     className="rounded-md px-2 py-0.5 font-medium text-destructive hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
                   >
-                    Delete
+                    {t('common.delete')}
                   </ConfirmButton>
                   <button
                     type="button"
@@ -639,7 +641,7 @@ export function ProjectWorkbench({
                     disabled={selected.size === actions.length}
                     className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
-                    Select all
+                    {t('common.selectAll')}
                   </button>
                   <button
                     type="button"
@@ -647,12 +649,12 @@ export function ProjectWorkbench({
                     disabled={selected.size === 0}
                     className="rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
-                    Clear
+                    {t('common.clear')}
                   </button>
                 </div>
               )}
               {/* Add-action row lives in the list, always reachable (even when empty or collapsed). */}
-              <QuickAdd label="Add action" placeholder="Add an action…" onAdd={onAddAction} />
+              <QuickAdd label={t('workbench.addAction')} placeholder={t('column.addActionPlaceholder')} onAdd={onAddAction} />
               {!sectionCollapsed('actions') && actions.length > 0 && (
                 <ReorderableActionList
                   rows={actions}
@@ -675,12 +677,12 @@ export function ProjectWorkbench({
                       {onMoveActionInto && moveActionTargets.length > 0 && (
                         isDesktop ? (
                           <MoveTargetMenu
-                            label={`Move ${row.title} to another project`}
+                            label={t('workbench.moveActionAria', { title: row.title })}
                             quickTargets={moveActionTargets}
                             onPick={(id) => onMoveActionInto(row.id, id)}
                             onBrowse={() =>
                               setMoveRequest({
-                                title: `Move "${row.title}" to…`,
+                                title: t('editor.moveTitle', { title: row.title }),
                                 targets: moveActionBrowseTargets,
                                 onConfirm: (id) => onMoveActionInto(row.id, id),
                               })
@@ -690,11 +692,11 @@ export function ProjectWorkbench({
                           </MoveTargetMenu>
                         ) : (
                         <DropdownMenu>
-                          <Tooltip label="Move to another project">
+                          <Tooltip label={t('workbench.moveToTooltip')}>
                             <DropdownMenuTrigger asChild>
                               <button
                                 type="button"
-                                aria-label={`Move ${row.title} to another project`}
+                                aria-label={t('workbench.moveActionAria', { title: row.title })}
                                 className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                               >
                                 <FolderInput className="h-3.5 w-3.5" />
@@ -702,9 +704,9 @@ export function ProjectWorkbench({
                             </DropdownMenuTrigger>
                           </Tooltip>
                           <DropdownMenuContent align="end" className="max-h-72 overflow-y-auto">
-                            {moveActionTargets.map((t) => (
-                              <DropdownMenuItem key={t.id} onSelect={() => onMoveActionInto(row.id, t.id)}>
-                                {t.label}
+                            {moveActionTargets.map((target) => (
+                              <DropdownMenuItem key={target.id} onSelect={() => onMoveActionInto(row.id, target.id)}>
+                                {target.label}
                               </DropdownMenuItem>
                             ))}
                           </DropdownMenuContent>
@@ -724,19 +726,19 @@ export function ProjectWorkbench({
 
           <div className="space-y-1">
               <SectionHeader
-                label="Sub-projects"
+                label={t('workbench.subProjects')}
                 count={subProjects.length}
                 collapsed={sectionCollapsed('subprojects')}
                 onToggle={() => onToggleSection('subprojects')}
                 shortcutKey="z"
               />
               {/* Add-sub-project row + template tools live in the Sub-projects section, always reachable. */}
-              <QuickAdd label="Add sub-project" placeholder="Add a sub-project…" onAdd={onAddSubProject} />
+              <QuickAdd label={t('workbench.addSubProject')} placeholder={t('workbench.addSubProjectPlaceholder')} onAdd={onAddSubProject} />
               {((onApplyTemplate && templateNames && templateNames.length > 0) || onSaveAsTemplate) && (
                 <div className="flex flex-wrap items-center gap-2">
                   {onApplyTemplate && templateNames && templateNames.length > 0 && (
                     <select
-                      aria-label="Add from template"
+                      aria-label={t('workbench.addFromTemplateAria')}
                       defaultValue=""
                       onChange={(e) => {
                         if (e.target.value) {
@@ -747,7 +749,7 @@ export function ProjectWorkbench({
                       className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
                     >
                       <option value="" disabled>
-                        Add from template…
+                        {t('workbench.addFromTemplateOption')}
                       </option>
                       {templateNames.map((name) => (
                         <option key={name} value={name}>
@@ -758,13 +760,13 @@ export function ProjectWorkbench({
                   )}
                   {onSaveAsTemplate && (
                     <PromptButton
-                      label="Template name"
+                      label={t('workbench.templateName')}
                       initialValue={project.title}
-                      submitLabel="Save"
+                      submitLabel={t('common.save')}
                       onSubmit={onSaveAsTemplate}
                       className="ml-auto rounded-md px-2.5 py-1 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
                     >
-                      Save as template…
+                      {t('workbench.saveAsTemplate')}
                     </PromptButton>
                   )}
                 </div>
@@ -775,7 +777,7 @@ export function ProjectWorkbench({
                     <button
                       key={stat.id}
                       type="button"
-                      aria-label={`Open ${stat.title}`}
+                      aria-label={t('column.openAria', { title: stat.title })}
                       onClick={() => onOpenProject(stat.id)}
                       className={cn(
                         'flex flex-col gap-1 rounded-lg border-2 bg-card p-3 text-left hover:bg-accent',
@@ -784,8 +786,8 @@ export function ProjectWorkbench({
                     >
                       <span className="truncate text-sm font-medium text-foreground">{stat.title}</span>
                       <span className="text-xs text-muted-foreground">
-                        {stat.total === 0 ? 'no actions' : `${stat.done}/${stat.total} done`}
-                        {stat.subProjectCount > 0 && ` · ${stat.subProjectCount} sub`}
+                        {stat.total === 0 ? t('workbench.noActions') : t('workbench.doneCount', { done: stat.done, total: stat.total })}
+                        {stat.subProjectCount > 0 && ` · ${t('workbench.subCount', { count: stat.subProjectCount })}`}
                       </span>
                     </button>
                   ))}
@@ -815,7 +817,7 @@ export function ProjectWorkbench({
           {onConvertToAction && actions.length === 0 && subProjects.length === 0 && (
             <div className="py-4 text-center">
               <Button type="button" variant="outline" size="sm" onClick={onConvertToAction}>
-                Convert to action
+                {t('workbench.convertToAction')}
               </Button>
             </div>
           )}
@@ -833,9 +835,9 @@ export function ProjectWorkbench({
       <ConfirmDialog
         open={deleteDoneOpen}
         onOpenChange={setDeleteDoneOpen}
-        title="Delete done actions"
-        message={`Delete ${doneActions.length} done action${doneActions.length === 1 ? '' : 's'} in "${project.title}"? This cannot be undone.`}
-        confirmLabel="Delete"
+        title={t('workbench.deleteDoneTitle')}
+        message={t('workbench.deleteDoneConfirm', { count: doneActions.length, title: project.title })}
+        confirmLabel={t('common.delete')}
         onConfirm={deleteDone}
       />
 
@@ -861,13 +863,14 @@ export function ProjectWorkbench({
 /** A binary toggle for the workbench action order: manual (childIds) ↔ by due date. Sits beside the
  *  view switch so it's reachable from both the list and the column board. */
 function DueSortToggle({ sorted, onToggle }: { sorted: boolean; onToggle: () => void }) {
+  const { t } = useTranslation();
   return (
-    <Tooltip label={sorted ? 'Sorting by due date — click for manual order' : 'Manual order — click to sort by due date'}>
+    <Tooltip label={sorted ? t('workbench.dueSortOnTooltip') : t('workbench.dueSortOffTooltip')}>
       <button
         type="button"
         onClick={onToggle}
         aria-pressed={sorted}
-        aria-label={sorted ? 'Sort: by due date. Click for manual order.' : 'Sort: manual order. Click to sort by due date.'}
+        aria-label={sorted ? t('workbench.dueSortOnAria') : t('workbench.dueSortOffAria')}
         className={cn(
           'inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors',
           sorted
@@ -876,7 +879,7 @@ function DueSortToggle({ sorted, onToggle }: { sorted: boolean; onToggle: () => 
         )}
       >
         <ArrowDownUp className="h-3.5 w-3.5" />
-        {sorted ? 'By due' : 'Manual'}
+        {sorted ? t('workbench.byDue') : t('workbench.manual')}
       </button>
     </Tooltip>
   );
@@ -891,10 +894,11 @@ function ViewSwitch({
   onSet: (mode: ViewMode) => void;
   columnAvailable: boolean;
 }) {
+  const { t } = useTranslation();
   const options: { value: ViewMode; label: string }[] = [
-    { value: 'list', label: 'List' },
-    { value: 'heatmap', label: 'Heat-map' },
-    ...(columnAvailable ? [{ value: 'column' as const, label: 'Column' }] : []),
+    { value: 'list', label: 'workbench.viewList' },
+    { value: 'heatmap', label: 'workbench.viewHeatmap' },
+    ...(columnAvailable ? [{ value: 'column' as const, label: 'workbench.viewColumn' }] : []),
   ];
   return (
     <div className="flex justify-end">
@@ -912,7 +916,7 @@ function ViewSwitch({
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
-            {opt.label}
+            {t(opt.label)}
           </button>
         ))}
       </div>
@@ -936,8 +940,9 @@ function SectionHeader({
   /** The key that toggles this section, shown in the tooltip (e.g. `y` for Actions). */
   shortcutKey?: string;
 }) {
+  const { t } = useTranslation();
   return (
-    <Tooltip label={`${collapsed ? 'Expand' : 'Collapse'} ${label}${shortcutKey ? ` (${shortcutKey})` : ''}`}>
+    <Tooltip label={`${collapsed ? t('workbench.expand') : t('workbench.collapse')} ${label}${shortcutKey ? ` (${shortcutKey})` : ''}`}>
       <button
         type="button"
         aria-expanded={!collapsed}
@@ -963,6 +968,7 @@ function QuickAdd({
   placeholder: string;
   onAdd: (title: string) => void;
 }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -982,7 +988,7 @@ function QuickAdd({
       />
       <AddPositionToggle />
       <Button type="submit" variant="outline" size="sm">
-        Add
+        {t('common.add')}
       </Button>
     </form>
   );
