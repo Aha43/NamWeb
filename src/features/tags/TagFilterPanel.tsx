@@ -1,5 +1,6 @@
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, Pencil, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,7 @@ export function TagFilterPanel({
   onDeleteView,
   bookmarkSlot,
 }: TagFilterPanelProps) {
+  const { t } = useTranslation();
   const selectedSet = new Set(selected);
   const [newTag, setNewTag] = useState('');
   // Manage (create / rename / delete) is collapsed by default so it's out of the way when filtering.
@@ -90,20 +92,20 @@ export function TagFilterPanel({
             className="flex items-center gap-1 px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground hover:text-foreground"
           >
             {manageOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-            Manage tags
+            {t('tags.manage')}
           </button>
           {manageOpen && (
             <>
               {onAddTag && (
                 <form onSubmit={submitAddTag} className="flex gap-2">
                   <input
-                    aria-label="Create tag"
+                    aria-label={t('tags.createAria')}
                     value={newTag}
                     onChange={(e) => setNewTag(e.target.value)}
-                    placeholder="Create a tag…"
+                    placeholder={t('tags.createPlaceholder')}
                     className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
                   />
-                  <Button type="submit">Add</Button>
+                  <Button type="submit">{t('common.add')}</Button>
                 </form>
               )}
               {(onRenameTag || onDeleteTag) && allTags.length > 0 && (
@@ -116,10 +118,10 @@ export function TagFilterPanel({
                       )}
                       {onRenameTag && (
                         <PromptButton
-                          aria-label={`Rename tag ${tag}`}
-                          label="New tag name"
+                          aria-label={t('tags.renameTagAria', { tag })}
+                          label={t('tags.newTagName')}
                           initialValue={tag}
-                          submitLabel="Rename"
+                          submitLabel={t('common.rename')}
                           onSubmit={(name) => onRenameTag(tag, name)}
                           className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                         >
@@ -128,11 +130,11 @@ export function TagFilterPanel({
                       )}
                       {onDeleteTag && (
                         <ConfirmButton
-                          aria-label={`Delete tag ${tag}`}
+                          aria-label={t('tags.deleteTagAria', { tag })}
                           message={
                             (tagCounts?.[tag] ?? 0) > 0
-                              ? `Delete "${tag}" from ${tagCounts![tag]} item${tagCounts![tag] === 1 ? '' : 's'}? This cannot be undone.`
-                              : `Remove "${tag}" from the tag list?`
+                              ? t('tags.deleteTagConfirm', { tag, count: tagCounts![tag] })
+                              : t('tags.removeTagConfirm', { tag })
                           }
                           onConfirm={() => onDeleteTag(tag)}
                           className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
@@ -150,25 +152,25 @@ export function TagFilterPanel({
       )}
       {savedViews.length > 0 && (
         <div className="space-y-1">
-          <p className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Saved views</p>
+          <p className="px-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('tags.savedViews')}</p>
           <ul className="divide-y divide-border rounded-lg border border-border bg-card">
             {savedViews.map((view) => (
               <li key={view.name} className="flex items-center gap-2 px-3 py-2">
                 <button
                   type="button"
-                  aria-label={`Open view ${view.name}`}
+                  aria-label={t('tags.openViewAria', { name: view.name })}
                   onClick={() => onOpenView(view)}
                   className="flex-1 truncate text-left text-sm text-foreground hover:underline"
                 >
                   {view.name}
-                  {view.nextOnly && <span className="text-xs text-muted-foreground"> · next only</span>}
+                  {view.nextOnly && <span className="text-xs text-muted-foreground">{t('tags.nextOnlySuffix')}</span>}
                 </button>
                 {onRenameView && (
                   <PromptButton
-                    aria-label={`Rename view ${view.name}`}
-                    label="New view name"
+                    aria-label={t('tags.renameViewAria', { name: view.name })}
+                    label={t('tags.newViewName')}
                     initialValue={view.name}
-                    submitLabel="Rename"
+                    submitLabel={t('common.rename')}
                     onSubmit={(name) => onRenameView(view.name, name)}
                     className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
@@ -176,10 +178,10 @@ export function TagFilterPanel({
                   </PromptButton>
                 )}
                 {onDeleteView && (
-                  <Tooltip label={`Delete view ${view.name}`}>
+                  <Tooltip label={t('tags.deleteViewAria', { name: view.name })}>
                     <button
                       type="button"
-                      aria-label={`Delete view ${view.name}`}
+                      aria-label={t('tags.deleteViewAria', { name: view.name })}
                       onClick={() => onDeleteView(view.name)}
                       className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
                     >
@@ -194,9 +196,7 @@ export function TagFilterPanel({
       )}
 
       {allTags.length === 0 ? (
-        <EmptyState hint="Tag actions and projects (e.g. @home, #errand) to filter by them here and save the filter as a view.">
-          No tags yet
-        </EmptyState>
+        <EmptyState hint={t('tags.emptyHint')}>{t('tags.emptyTitle')}</EmptyState>
       ) : (
         <>
           <div className="flex flex-wrap gap-1.5">
@@ -223,17 +223,18 @@ export function TagFilterPanel({
 
           <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
             <input type="checkbox" checked={nextOnly} onChange={onToggleNextOnly} />
-            Next only
+            {t('tags.nextOnly')}
           </label>
 
           {selected.length === 0 ? (
             <p className="px-1 text-xs text-muted-foreground">
-              Select a tag to filter — then <span className="font-medium text-foreground">Focus</span> just
-              those, or save the selection as a view.
+              {t('tags.filterHintBefore')}{' '}
+              <span className="font-medium text-foreground">{t('domain.focus')}</span>{' '}
+              {t('tags.filterHintAfter')}
             </p>
           ) : (
             <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
-              <span>{rows.length} {rows.length === 1 ? 'match' : 'matches'}</span>
+              <span>{t('tags.matchCount', { count: rows.length })}</span>
               <div className="flex items-center gap-1.5">
                 {bookmarkSlot}
                 {onFocus && rows.length > 0 && (
@@ -243,18 +244,18 @@ export function TagFilterPanel({
                     className="flex items-center gap-1 rounded-md border border-input px-2.5 py-1 font-medium text-foreground hover:bg-accent"
                   >
                     <Target className="h-3.5 w-3.5 focus-glow" />
-                    Focus
+                    {t('domain.focus')}
                   </button>
                 )}
                 {onSaveView && (
                   <PromptButton
-                    label="View name"
-                    placeholder="Name this view…"
-                    submitLabel="Save"
+                    label={t('tags.viewName')}
+                    placeholder={t('tags.nameView')}
+                    submitLabel={t('common.save')}
                     onSubmit={onSaveView}
                     className="rounded-md border border-input px-2.5 py-1 font-medium text-foreground hover:bg-accent"
                   >
-                    Save as view…
+                    {t('tags.saveAsView')}
                   </PromptButton>
                 )}
               </div>
