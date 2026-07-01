@@ -3,6 +3,8 @@
   "domain.status.backlog": "Backlog",
   "domain.status.done": "Done",
   "domain.status.next": "Next",
+  "settings.language": "Language",
+  "settings.languageHelp": "Choose the app's language. Date format stays a separate preference.",
   "summary.close": "Close",
   "summary.copied": "Copied",
   "summary.copy": "Copy",

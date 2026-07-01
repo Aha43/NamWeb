@@ -1,8 +1,26 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
-import { ADD_TO_BOTTOM_STORAGE_KEY, DATE_FORMAT_STORAGE_KEY, SettingsContext } from './settings-context';
+import { activateLocale, LOCALES, type Locale } from '@/lib/i18n';
+import {
+  ADD_TO_BOTTOM_STORAGE_KEY,
+  DATE_FORMAT_STORAGE_KEY,
+  LANGUAGE_STORAGE_KEY,
+  SettingsContext,
+} from './settings-context';
 
 const DATE_FORMATS: DateFormat[] = ['medium', 'iso', 'dmy', 'mdy'];
+
+/** Stored language, else detect from the browser (`nb`/`no*`/`nn` → nb, else en). */
+function initialLanguage(): Locale {
+  try {
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (stored && stored in LOCALES) return stored as Locale;
+  } catch {
+    // localStorage unavailable — fall through to detection.
+  }
+  const nav = typeof navigator !== 'undefined' ? navigator.language.toLowerCase() : 'en';
+  return nav.startsWith('nb') || nav.startsWith('no') || nav.startsWith('nn') ? 'nb' : 'en';
+}
 
 function initialDateFormat(): DateFormat {
   try {
@@ -24,6 +42,7 @@ function initialAddToBottom(): boolean {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
+  const [language, setLanguage] = useState<Locale>(initialLanguage);
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
   const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
@@ -35,6 +54,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // best-effort persistence
     }
   }, [dateFormat]);
+
+  // Drive the i18n runtime + <html lang> from the language setting, and persist it.
+  useEffect(() => {
+    void activateLocale(language);
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    } catch {
+      // best-effort persistence
+    }
+  }, [language]);
 
   // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
   useEffect(() => {
@@ -53,7 +82,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   return (
     <SettingsContext.Provider
-      value={{ dateFormat, setDateFormat, addToBottom, setAddToBottom, addToBottomDefault, setAddToBottomDefault }}
+      value={{
+        dateFormat,
+        setDateFormat,
+        language,
+        setLanguage,
+        addToBottom,
+        setAddToBottom,
+        addToBottomDefault,
+        setAddToBottomDefault,
+      }}
     >
       {children}
     </SettingsContext.Provider>

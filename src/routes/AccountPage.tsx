@@ -18,6 +18,8 @@ import { buildUserExport, downloadJson } from '@/lib/exportData';
 import { validateNewPassword } from '@/lib/password';
 import { formatDate, type DateFormat } from '@/lib/dates';
 import { useSettings } from '@/components/settings/settings-context';
+import { useTranslation } from 'react-i18next';
+import { LOCALES, type Locale } from '@/lib/i18n';
 
 const SAMPLE_ISO = '2026-06-14';
 const DATE_FORMAT_OPTIONS: { value: DateFormat; label: string }[] = [
@@ -322,9 +324,28 @@ function ChangePassword() {
 }
 
 function PreferencesTab() {
-  const { dateFormat, setDateFormat, addToBottomDefault, setAddToBottomDefault } = useSettings();
+  const { dateFormat, setDateFormat, language, setLanguage, addToBottomDefault, setAddToBottomDefault } =
+    useSettings();
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
+      <div className="space-y-1.5">
+        <Label htmlFor="settings-language">{t('settings.language')}</Label>
+        <select
+          id="settings-language"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value as Locale)}
+          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
+        >
+          {Object.entries(LOCALES).map(([code, name]) => (
+            <option key={code} value={code}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted-foreground">{t('settings.languageHelp')}</p>
+      </div>
+
       <div className="space-y-1.5">
         <Label htmlFor="settings-date-format">Date format</Label>
         <select
