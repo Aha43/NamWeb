@@ -130,7 +130,7 @@ export function ProjectDetailsPanel({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="project-title">{t('editor.fieldTitle')}</Label>
-              <CopyButton value={title} label="title" />
+              <CopyButton value={title} label={t('copy.title')} />
             </div>
             <Input
               id="project-title"
@@ -145,7 +145,7 @@ export function ProjectDetailsPanel({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="project-description">{t('editor.fieldDescription')}</Label>
-              <CopyButton value={description} label="description" />
+              <CopyButton value={description} label={t('copy.description')} />
             </div>
             <Textarea
               id="project-description"

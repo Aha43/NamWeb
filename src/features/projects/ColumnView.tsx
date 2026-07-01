@@ -191,7 +191,7 @@ export function ColumnView({
           )}
           <div className="flex shrink-0 items-center gap-1">
             {!col.isUnsorted && renamingColId !== col.id && (
-              <CopyButton value={col.title} label={`name "${col.title}"`} tooltip />
+              <CopyButton value={col.title} label={t('copy.name', { title: col.title })} tooltip />
             )}
             {!col.isUnsorted && renamingColId !== col.id && (
               <Tooltip label={t('actions.renameAria', { title: col.title })}>

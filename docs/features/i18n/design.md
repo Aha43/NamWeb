@@ -1,8 +1,15 @@
 # Internationalization (I18N) — design
 
-> Status: **Foundation in progress. Day-1 spike done 2026-07-01 (#516). Framework = react-i18next.**
-> From the NAM handover: ship Norwegian alongside English, language chosen in Settings, with a path
-> to **share translations with NamDesktop** from the master language (English).
+> Status: **Shipped (2026-07-01). Framework = react-i18next; en + nb, 465 keys, en/nb parity.**
+> Every user-facing surface is translated — chrome/nav, Inbox, all action lists, Focus, the editor +
+> capture, Projects (workbench/column/pickers/delete), Tags + Search, Account/Settings/Help, and the
+> cross-cutting shared components (Copy/Confirm/Prompt/Bookmarks/theme) + relative date words. English
+> is byte-identical (every pre-existing test passed untouched across all surfaces); `npm run i18n:check`
+> guards en/nb parity.
+>
+> **Known small follow-ups:** (1) sync-notice message *text* (`src/store/*` — rarely seen, needs `t`
+> threaded through the commit/store layer); (2) `formatDate` month abbreviations (`MONTHS` in
+> `src/lib/dates.ts`) for the `medium` format. Neither blocks the bilingual experience.
 
 ## Spike outcome (2026-07-01) — decision: **react-i18next**, not Lingui
 

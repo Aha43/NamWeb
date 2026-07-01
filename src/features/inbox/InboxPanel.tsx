@@ -242,7 +242,7 @@ export function InboxPanel({
                 </span>
               )}
               {(() => {
-                const age = formatAge(item.updatedAt ?? item.createdAt ?? '');
+                const age = formatAge(item.updatedAt ?? item.createdAt ?? '', undefined, t);
                 return age ? (
                   <span
                     className={cn(
@@ -255,7 +255,7 @@ export function InboxPanel({
                 ) : null;
               })()}
               {!selectMode && renamingId !== item.id && (
-                <CopyButton value={item.title} label={`name "${item.title}"`} className="p-1.5" />
+                <CopyButton value={item.title} label={t('copy.name', { title: item.title })} className="p-1.5" />
               )}
               {!selectMode && onRename && renamingId !== item.id && (
                 <button
