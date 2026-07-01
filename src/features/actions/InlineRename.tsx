@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /** A single-line title editor: Enter commits (if changed & non-empty), Esc/blur cancels. */
 export function InlineRename({
@@ -10,6 +11,7 @@ export function InlineRename({
   onCommit: (title: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState(title);
 
   function commit() {
@@ -31,7 +33,7 @@ export function InlineRename({
   return (
     <input
       autoFocus
-      aria-label={`Rename ${title}`}
+      aria-label={t('actions.renameAria', { title })}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onKeyDown={onKeyDown}

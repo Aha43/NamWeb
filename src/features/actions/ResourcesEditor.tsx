@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ export function ResourcesEditor({
   resources: Resource[];
   onChange: (resources: Resource[]) => void;
 }) {
+  const { t } = useTranslation();
   const [type, setType] = useState<ResourceType>('URI');
   const [value, setValue] = useState('');
 
@@ -37,7 +39,7 @@ export function ResourcesEditor({
               <CopyButton value={r.value} label={`resource ${r.value}`} />
               <button
                 type="button"
-                aria-label={`Remove resource ${r.value}`}
+                aria-label={t('editor.removeResourceAria', { value: r.value })}
                 onClick={() => onChange(resources.filter((_, idx) => idx !== i))}
                 className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
               >
@@ -47,24 +49,24 @@ export function ResourcesEditor({
           ))}
         </ul>
       ) : (
-        <p className="text-xs text-muted-foreground">No resources.</p>
+        <p className="text-xs text-muted-foreground">{t('editor.noResources')}</p>
       )}
       <div className="flex gap-2">
         <select
-          aria-label="Resource type"
+          aria-label={t('editor.resourceType')}
           value={type}
           onChange={(e) => setType(e.target.value as ResourceType)}
           className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
         >
-          {RESOURCE_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          {RESOURCE_TYPES.map((rt) => (
+            <option key={rt} value={rt}>
+              {rt}
             </option>
           ))}
         </select>
         <Input
-          aria-label="Resource value"
-          placeholder="https://… or a note"
+          aria-label={t('editor.resourceValue')}
+          placeholder={t('editor.resourcePlaceholder')}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={(e) => {
@@ -75,7 +77,7 @@ export function ResourcesEditor({
           }}
         />
         <Button type="button" variant="outline" size="sm" onClick={add}>
-          Add
+          {t('common.add')}
         </Button>
       </div>
     </div>
