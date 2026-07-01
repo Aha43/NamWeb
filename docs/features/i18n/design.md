@@ -23,9 +23,13 @@ Two facts settled it on **react-i18next** (the doc's own pre-approved fallback):
 
 **Kept from the plan:** dotted ID-style keys with a separate `domain.*` subset; English hand-authored
 in `en/translation.json` (byte-identical to the old literals) with tests pinned to `en`; ICU plurals;
-language as a device setting. **Tooling:** `i18next-parser` (`npm run i18n:extract` / `i18n:check`
-`--fail-on-update` as the CI safety net) instead of `lingui extract`. Catalogs are `.json` (ICU
-messages), shared with NamDesktop via ICU4J rather than gettext.
+language as a device setting. Catalogs are `.json` (ICU messages), shared with NamDesktop via ICU4J
+rather than gettext.
+
+**Tooling:** a small ICU-aware **`npm run i18n:check`** (`scripts/check-i18n.mjs`) is the safety net —
+it verifies every literal `t('key')` used in the app has an `en` entry and that `nb` is in key-parity
+with `en`. (i18next-parser was tried first but it force-expands `count` into i18next `_one`/`_other`
+plural keys, which collides with our single-key ICU plurals — so a purpose-built check is cleaner.)
 
 > Note: sections below that say "Lingui" / ".NET" / ".po" reflect the *pre-spike* recommendation and
 > are superseded by this outcome; they're kept for the reasoning trail.

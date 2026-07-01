@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -56,6 +57,7 @@ export function InboxProcessDialog({
   /** Deck mode: how many items are left (incl. the current one). */
   remaining?: number;
 }) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<'kind' | 'action' | 'project'>('kind');
   // '' = the default location (Free actions for an action, Top level for a project).
   const [targetId, setTargetId] = useState('');
@@ -80,7 +82,7 @@ export function InboxProcessDialog({
     // SETS the destination (the resolve buttons below still commit). Phone keeps the native select.
     if (isDesktop) {
       const current =
-        targetId === '' ? defaultLabel : projectTargets.find((t) => t.id === targetId)?.label ?? defaultLabel;
+        targetId === '' ? defaultLabel : projectTargets.find((target) => target.id === targetId)?.label ?? defaultLabel;
       return (
         <div className="flex flex-col gap-1 text-sm">
           <span className="text-muted-foreground">{fieldLabel}</span>
@@ -98,7 +100,7 @@ export function InboxProcessDialog({
             open={pickerOpen}
             onOpenChange={setPickerOpen}
             title={fieldLabel}
-            confirmLabel="Choose"
+            confirmLabel={t('common.choose')}
             targets={[{ id: '', label: defaultLabel }, ...projectTargets]}
             initialSelectedId={targetId}
             onConfirm={setTargetId}
@@ -137,57 +139,57 @@ export function InboxProcessDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{deck ? 'Process inbox' : 'Process item'}</DialogTitle>
+          <DialogTitle>{deck ? t('inbox.processDeckTitle') : t('inbox.processItemTitle')}</DialogTitle>
           <DialogDescription className="truncate">
             {node.title}
-            {deck && remaining ? ` · ${remaining} left` : ''}
+            {deck && remaining ? ` · ${t('inbox.remainingLeft', { count: remaining })}` : ''}
           </DialogDescription>
         </DialogHeader>
 
         {step === 'kind' ? (
           <div className="flex flex-col gap-2">
             <Button variant="outline" className="justify-start" onClick={() => setStep('action')}>
-              It’s one action
+              {t('inbox.kindAction')}
             </Button>
             <Button variant="outline" className="justify-start" onClick={() => setStep('project')}>
-              It needs planning — make a project
+              {t('inbox.kindProject')}
             </Button>
             {deck && (
               <div className="mt-1 flex gap-2">
                 <Button variant="ghost" size="sm" className="flex-1 text-destructive" onClick={onDelete}>
-                  Delete
+                  {t('common.delete')}
                 </Button>
                 <Button variant="ghost" size="sm" className="flex-1" onClick={onSkip}>
-                  Skip →
+                  {t('inbox.skip')} →
                 </Button>
               </div>
             )}
           </div>
         ) : step === 'action' ? (
           <div className="flex flex-col gap-2">
-            {picker('Free actions', 'File under')}
+            {picker(t('inbox.freeActionsLabel'), t('inbox.fileUnder'))}
             <Button className="justify-start" onClick={() => resolve({ kind: 'action', status: 'NEXT', parentId })}>
-              Do it next
+              {t('inbox.doItNext')}
             </Button>
             <Button
               variant="outline"
               className="justify-start"
               onClick={() => resolve({ kind: 'action', status: 'BACKLOG', parentId })}
             >
-              Park for later (backlog)
+              {t('inbox.parkForLater')}
             </Button>
             <Button variant="ghost" className="justify-start" onClick={back}>
-              ← Back
+              ← {t('common.back')}
             </Button>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {picker('Top level', 'Nest under')}
+            {picker(t('inbox.topLevel'), t('inbox.nestUnder'))}
             <Button className="justify-start" onClick={() => resolve({ kind: 'project', parentId })}>
-              Make project
+              {t('inbox.makeProject')}
             </Button>
             <Button variant="ghost" className="justify-start" onClick={back}>
-              ← Back
+              ← {t('common.back')}
             </Button>
           </div>
         )}

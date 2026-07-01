@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { CheckSquare, Pencil, Target, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
@@ -41,6 +42,7 @@ export function InboxPanel({
   onBulkDelete,
   projectTargets = [],
 }: InboxPanelProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
   // Bulk select: triage several items with one shared decision (#458). Additive — per-item Process
@@ -70,8 +72,8 @@ export function InboxPanel({
     setSelected(new Set());
   };
   const targetLabel = bulkTarget
-    ? (projectTargets.find((t) => t.id === bulkTarget)?.label ?? 'a project')
-    : 'Top level / Free actions';
+    ? (projectTargets.find((pt) => pt.id === bulkTarget)?.label ?? t('inbox.fallbackProject'))
+    : t('inbox.freeActionsTarget');
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -87,14 +89,14 @@ export function InboxPanel({
       <div className="sticky top-0 z-10 space-y-4 bg-background pt-1">
         <form onSubmit={submit} className="flex gap-2">
           <input
-            aria-label="Quick add"
+            aria-label={t('inbox.quickAddAria')}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Add to inbox…"
+            placeholder={t('inbox.addPlaceholder')}
             className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
           />
           <AddPositionToggle />
-          <Button type="submit">Add</Button>
+          <Button type="submit">{t('common.add')}</Button>
         </form>
 
         {items.length > 0 && (
@@ -102,14 +104,14 @@ export function InboxPanel({
             {onProcessAll && (
               <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onProcessAll}>
                 <Target className="h-4 w-4 focus-glow" />
-                Process inbox ({items.length})
+                {t('inbox.processAll', { count: items.length })}
               </Button>
             )}
             {bulkCapable && (
-              <Tooltip label={selectMode ? 'Exit select' : 'Select items'}>
+              <Tooltip label={selectMode ? t('inbox.exitSelect') : t('inbox.selectItems')}>
                 <button
                   type="button"
-                  aria-label={selectMode ? 'Exit select' : 'Select items'}
+                  aria-label={selectMode ? t('inbox.exitSelect') : t('inbox.selectItems')}
                   aria-pressed={selectMode}
                   onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
                   className={cn(
@@ -127,15 +129,15 @@ export function InboxPanel({
 
         {selectMode && (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
-            <span className="mr-1 text-muted-foreground">{selected.size} selected</span>
+            <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
             {/* Destination first: the verbs below file into whatever this is set to. */}
-            <Tooltip label={`Choose where the actions below file into (now: ${targetLabel})`}>
+            <Tooltip label={t('inbox.fileIntoTooltip', { target: targetLabel })}>
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
                 className="max-w-[14rem] truncate rounded-md border border-input px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
               >
-                File into: <span className="font-medium text-foreground">{targetLabel}</span> ▾
+                {t('inbox.fileInto')} <span className="font-medium text-foreground">{targetLabel}</span> ▾
               </button>
             </Tooltip>
             <button
@@ -144,7 +146,7 @@ export function InboxPanel({
               onClick={() => resolveSelected({ kind: 'action', status: 'NEXT', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              → Next
+              → {t('domain.status.next')}
             </button>
             <button
               type="button"
@@ -152,7 +154,7 @@ export function InboxPanel({
               onClick={() => resolveSelected({ kind: 'action', status: 'BACKLOG', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              → Backlog
+              → {t('domain.status.backlog')}
             </button>
             <button
               type="button"
@@ -160,12 +162,12 @@ export function InboxPanel({
               onClick={() => resolveSelected({ kind: 'project', parentId })}
               className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              Make projects
+              {t('inbox.makeProjects')}
             </button>
             {onBulkDelete && (
               <ConfirmButton
-                aria-label="Delete selected items"
-                message={`Delete ${selected.size} selected item${selected.size === 1 ? '' : 's'}?`}
+                aria-label={t('inbox.deleteSelectedAria')}
+                message={t('inbox.deleteSelectedConfirm', { count: selected.size })}
                 onConfirm={() => {
                   onBulkDelete([...selected]);
                   setSelected(new Set());
@@ -173,7 +175,7 @@ export function InboxPanel({
                 disabled={none}
                 className="rounded-md px-2 py-0.5 font-medium text-destructive hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
               >
-                Delete
+                {t('common.delete')}
               </ConfirmButton>
             )}
             <button
@@ -182,7 +184,7 @@ export function InboxPanel({
               disabled={selected.size === items.length}
               className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
             >
-              Select all
+              {t('common.selectAll')}
             </button>
             <button
               type="button"
@@ -190,7 +192,7 @@ export function InboxPanel({
               disabled={none}
               className="rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
             >
-              Clear
+              {t('common.clear')}
             </button>
           </div>
         )}
@@ -200,16 +202,16 @@ export function InboxPanel({
         <ProjectPickerDialog
           open={pickerOpen}
           onOpenChange={setPickerOpen}
-          title="File selected items under…"
-          confirmLabel="Choose"
-          targets={[{ id: '', label: 'Default (Top level / Free actions)' }, ...projectTargets]}
+          title={t('inbox.fileUnderTitle')}
+          confirmLabel={t('common.choose')}
+          targets={[{ id: '', label: t('inbox.defaultTarget') }, ...projectTargets]}
           initialSelectedId={bulkTarget}
           onConfirm={setBulkTarget}
         />
       )}
 
       {items.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">Inbox zero. Nothing to process.</p>
+        <p className="py-8 text-center text-sm text-muted-foreground">{t('inbox.empty')}</p>
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {items.map((item) => (
@@ -217,7 +219,7 @@ export function InboxPanel({
               {selectMode && (
                 <input
                   type="checkbox"
-                  aria-label={`Select ${item.title}`}
+                  aria-label={t('inbox.selectItemAria', { title: item.title })}
                   checked={selected.has(item.id)}
                   onChange={() => toggle(item.id)}
                   className="shrink-0"
@@ -258,7 +260,7 @@ export function InboxPanel({
               {!selectMode && onRename && renamingId !== item.id && (
                 <button
                   type="button"
-                  aria-label={`Rename ${item.title}`}
+                  aria-label={t('inbox.renameAria', { title: item.title })}
                   onClick={() => setRenamingId(item.id)}
                   className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
                 >
@@ -268,17 +270,17 @@ export function InboxPanel({
               {!selectMode && (
                 <button
                   type="button"
-                  aria-label={`Process ${item.title}`}
+                  aria-label={t('inbox.processAria', { title: item.title })}
                   onClick={() => onProcess(item.id)}
                   className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
                 >
-                  Process…
+                  {t('inbox.processButton')}
                 </button>
               )}
               {!selectMode && (
                 <button
                   type="button"
-                  aria-label={`Delete ${item.title}`}
+                  aria-label={t('inbox.deleteAria', { title: item.title })}
                   onClick={() => onDelete(item.id)}
                   className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive', TOUCH_TARGET)}
                 >
