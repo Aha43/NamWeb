@@ -1,4 +1,5 @@
 import { ArrowDownToLine, ArrowUpToLine } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useSettings } from './settings-context';
@@ -8,10 +9,9 @@ import { useSettings } from './settings-context';
  * effective (session) position; it resets to your default (Settings → Preferences) on reload.
  */
 export function AddPositionToggle({ className }: { className?: string }) {
+  const { t } = useTranslation();
   const { addToBottom, setAddToBottom } = useSettings();
-  const label = addToBottom
-    ? 'New items add to the bottom (tap, or press t, for top)'
-    : 'New items add to the top (tap, or press t, for bottom)';
+  const label = addToBottom ? t('settings.addBottomTip') : t('settings.addTopTip');
   return (
     <Tooltip label={label}>
       <button

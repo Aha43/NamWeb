@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ToastContext, type ToastOptions } from './toast-context';
 
@@ -8,6 +9,7 @@ interface ActiveToast extends ToastOptions {
 
 /** Renders a small stack of bottom-centered toasts and provides `toast()` to the tree. */
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t: translate } = useTranslation(); // aliased — `t` is the toast var in the render below
   const [toasts, setToasts] = useState<ActiveToast[]>([]);
   const nextId = useRef(0);
   const timers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
@@ -38,7 +40,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         <div
           className="pointer-events-none fixed inset-x-0 bottom-4 z-[60] flex flex-col items-center gap-2 px-4"
           role="region"
-          aria-label="Notifications"
+          aria-label={translate('toast.notifications')}
         >
           {toasts.map((t) => (
             <div

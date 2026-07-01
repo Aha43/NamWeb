@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
@@ -25,6 +26,7 @@ export function CalendarGrid({
   onSelect: (isoDate: string) => void;
   today?: Date;
 }) {
+  const { t } = useTranslation();
   const seed =
     selected && /^\d{4}-\d{2}-\d{2}$/.test(selected)
       ? { y: Number(selected.slice(0, 4)), m: Number(selected.slice(5, 7)) - 1 }
@@ -43,12 +45,12 @@ export function CalendarGrid({
   return (
     <div className="w-60">
       <div className="mb-2 flex items-center justify-between">
-        <button type="button" aria-label="Previous month" onClick={() => step(-1)}
+        <button type="button" aria-label={t('datePicker.prevMonth')} onClick={() => step(-1)}
           className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <span className="text-sm font-medium">{MONTHS[view.m]} {view.y}</span>
-        <button type="button" aria-label="Next month" onClick={() => step(1)}
+        <button type="button" aria-label={t('datePicker.nextMonth')} onClick={() => step(1)}
           className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground">
           <ChevronRight className="h-4 w-4" />
         </button>

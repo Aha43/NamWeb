@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { CircleUser, HelpCircle, LogOut, Settings, User } from 'lucide-react';
 import {
   DropdownMenu,
@@ -15,6 +16,7 @@ import { DemoContext } from '@/demo/demo-context';
 /** Top-right account menu: the home for account, settings, and sign-out. In the no-account demo it
  *  hides the account surfaces (there's no real account) and turns sign-out into the sign-up CTA. */
 export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const demo = useContext(DemoContext);
   // Who am I — surfaced as the account-icon tooltip (and a header in the menu).
@@ -25,9 +27,9 @@ export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
   }, [demo]);
   return (
     <DropdownMenu>
-      <Tooltip label={demo ? 'Demo' : email ? `Signed in as ${email}` : 'Account'}>
+      <Tooltip label={demo ? t('accountMenu.demo') : email ? t('accountMenu.signedInAs', { email }) : t('nav.account')}>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label="Account menu">
+          <Button variant="ghost" size="icon" aria-label={t('accountMenu.menuAria')}>
             <CircleUser className="h-5 w-5" />
           </Button>
         </DropdownMenuTrigger>
@@ -36,23 +38,23 @@ export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
         {!demo && (
           <DropdownMenuItem onClick={() => navigate('/account')}>
             <User className="mr-2 h-4 w-4" />
-            Account
+            {t('nav.account')}
           </DropdownMenuItem>
         )}
         {!demo && (
           <DropdownMenuItem onClick={() => navigate('/account?tab=preferences')}>
             <Settings className="mr-2 h-4 w-4" />
-            Settings
+            {t('nav.settings')}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={() => navigate('/help')}>
           <HelpCircle className="mr-2 h-4 w-4" />
-          Help
+          {t('nav.help')}
           <kbd className="ml-auto rounded border border-border bg-muted px-1 text-[10px] text-muted-foreground">?</kbd>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={demo ? demo.signUp : onSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
-          {demo ? 'Sign up to keep your work' : 'Sign out'}
+          {demo ? t('accountMenu.signUp') : t('nav.signOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
