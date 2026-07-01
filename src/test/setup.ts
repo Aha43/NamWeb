@@ -1,4 +1,7 @@
 import '@testing-library/jest-dom';
+// Initialize i18next (English active) so components using useTranslation render translated copy in
+// tests, via the global instance — no per-test provider needed. Test-locale = en (#400).
+import '@/lib/i18n';
 
 // Radix pointer-based primitives (dropdown menu) need these in jsdom.
 if (!Element.prototype.hasPointerCapture) Element.prototype.hasPointerCapture = () => false;

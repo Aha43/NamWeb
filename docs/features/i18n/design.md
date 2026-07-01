@@ -1,8 +1,34 @@
 # Internationalization (I18N) — design
 
-> Status: **Planned; design drafted 2026-06-25. Its own dedicated sprint (not started).**
+> Status: **Foundation in progress. Day-1 spike done 2026-07-01 (#516). Framework = react-i18next.**
 > From the NAM handover: ship Norwegian alongside English, language chosen in Settings, with a path
 > to **share translations with NamDesktop** from the master language (English).
+
+## Spike outcome (2026-07-01) — decision: **react-i18next**, not Lingui
+
+The day-1 spike wired **Lingui** (the original recommendation) end-to-end on one screen. It compiled
+in the Vite **build** and `lingui extract` produced clean `.po` catalogs — but its `<Trans>`/`t`
+**babel macros do not transform under Vitest** (Vitest transforms JSX with esbuild, bypassing the
+react-plugin's babel), so every i18n component threw in the unit suite. For a 600-test, test-locale-
+`en` codebase that's disqualifying.
+
+Two facts settled it on **react-i18next** (the doc's own pre-approved fallback):
+1. **Runtime-only — no macro/transform** → identical behaviour in the Vite build and Vitest; i18n
+   init lives in the test setup so components using `useTranslation` need **no per-test provider**
+   (the "near-zero test churn" goal). Proven: the converted screen + an ICU plural test render en+nb
+   with the full suite green.
+2. **NamDesktop is Java, not .NET** (a mistaken premise below — it's Jackson/Java). Java has
+   **ICU4J**, which consumes **ICU MessageFormat natively**, so ICU-in-JSON (react-i18next +
+   `i18next-icu`) is a *better* shared-source fit than `.po` — removing Lingui's main advantage.
+
+**Kept from the plan:** dotted ID-style keys with a separate `domain.*` subset; English hand-authored
+in `en/translation.json` (byte-identical to the old literals) with tests pinned to `en`; ICU plurals;
+language as a device setting. **Tooling:** `i18next-parser` (`npm run i18n:extract` / `i18n:check`
+`--fail-on-update` as the CI safety net) instead of `lingui extract`. Catalogs are `.json` (ICU
+messages), shared with NamDesktop via ICU4J rather than gettext.
+
+> Note: sections below that say "Lingui" / ".NET" / ".po" reflect the *pre-spike* recommendation and
+> are superseded by this outcome; they're kept for the reasoning trail.
 
 ## Why this exists
 

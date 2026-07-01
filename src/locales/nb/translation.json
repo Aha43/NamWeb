@@ -1,0 +1,15 @@
+{
+  "actions.selectedCount": "{count, plural, one {# valgt} other {# valgt}}",
+  "domain.status.backlog": "Etterslep",
+  "domain.status.done": "Ferdig",
+  "domain.status.next": "Neste",
+  "summary.close": "Lukk",
+  "summary.copied": "Kopiert",
+  "summary.copy": "Kopier",
+  "summary.copyTooltip": "⌘/Ctrl+Enter kopierer og lukker",
+  "summary.description": "Markdown-sammendrag av prosjektets handlinger — kopier og lim inn hvor som helst.",
+  "summary.include": "Inkluder:",
+  "summary.includeSub": "Inkluder delprosjekter",
+  "summary.mdAria": "Prosjektsammendrag (Markdown)",
+  "summary.title": "Sammendrag — {title}"
+}

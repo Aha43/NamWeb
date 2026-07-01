@@ -1,0 +1,15 @@
+{
+  "actions.selectedCount": "{count, plural, one {# selected} other {# selected}}",
+  "domain.status.backlog": "Backlog",
+  "domain.status.done": "Done",
+  "domain.status.next": "Next",
+  "summary.close": "Close",
+  "summary.copied": "Copied",
+  "summary.copy": "Copy",
+  "summary.copyTooltip": "⌘/Ctrl+Enter copies & closes",
+  "summary.description": "Markdown summary of this project's actions — copy and paste anywhere.",
+  "summary.include": "Include:",
+  "summary.includeSub": "Include sub-projects",
+  "summary.mdAria": "Project summary (Markdown)",
+  "summary.title": "Summary — {title}"
+}

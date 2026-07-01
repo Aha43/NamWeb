@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useCopyToClipboard } from '@/lib/useCopyToClipboard';
 import {
   Dialog,
@@ -27,6 +28,7 @@ export function ProjectSummaryDialog({
   /** Render the summary Markdown for the chosen options. */
   buildSummary: (options: SummaryOptions) => string;
 }) {
+  const { t } = useTranslation();
   const [next, setNext] = useState(true);
   const [backlog, setBacklog] = useState(true);
   const [done, setDone] = useState(false);
@@ -59,23 +61,23 @@ export function ProjectSummaryDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Summary — {title}</DialogTitle>
-          <DialogDescription>Markdown summary of this project's actions — copy and paste anywhere.</DialogDescription>
+          <DialogTitle>{t('summary.title', { title })}</DialogTitle>
+          <DialogDescription>{t('summary.description')}</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-4 text-sm">
-          <span className="text-muted-foreground">Include:</span>
+          <span className="text-muted-foreground">{t('summary.include')}</span>
           <label className="flex items-center gap-1.5">
             <input type="checkbox" checked={next} onChange={(e) => setNext(e.target.checked)} />
-            Next
+            {t('domain.status.next')}
           </label>
           <label className="flex items-center gap-1.5">
             <input type="checkbox" checked={backlog} onChange={(e) => setBacklog(e.target.checked)} />
-            Backlog
+            {t('domain.status.backlog')}
           </label>
           <label className="flex items-center gap-1.5">
             <input type="checkbox" checked={done} onChange={(e) => setDone(e.target.checked)} />
-            Done
+            {t('domain.status.done')}
           </label>
           <label className="flex items-center gap-1.5 sm:ml-auto">
             <input
@@ -83,13 +85,13 @@ export function ProjectSummaryDialog({
               checked={includeSubProjects}
               onChange={(e) => setIncludeSubProjects(e.target.checked)}
             />
-            Include sub-projects
+            {t('summary.includeSub')}
           </label>
         </div>
 
         <textarea
           readOnly
-          aria-label="Project summary (Markdown)"
+          aria-label={t('summary.mdAria')}
           value={markdown}
           onFocus={(e) => e.currentTarget.select()}
           className="h-72 w-full resize-none rounded-md border border-input bg-muted/30 p-3 font-mono text-xs text-foreground outline-hidden focus:border-ring"
@@ -97,12 +99,12 @@ export function ProjectSummaryDialog({
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-            Close
+            {t('summary.close')}
           </Button>
-          <Tooltip label="⌘/Ctrl+Enter copies & closes">
+          <Tooltip label={t('summary.copyTooltip')}>
             <Button type="button" onClick={() => copy(markdown)} className="gap-1.5">
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Copied' : 'Copy'}
+              {copied ? t('summary.copied') : t('summary.copy')}
             </Button>
           </Tooltip>
         </DialogFooter>
