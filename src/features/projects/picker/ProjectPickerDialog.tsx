@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogBody,
@@ -44,14 +45,15 @@ export function ProjectPickerDialog({
   open,
   onOpenChange,
   title,
-  confirmLabel = 'Move here',
+  confirmLabel,
   targets,
   initialSelectedId,
   onConfirm,
   onCreateProject,
 }: ProjectPickerDialogProps) {
+  const { t } = useTranslation();
   const { document } = useWorkspaceContext();
-  const allowed = useMemo(() => new Set(targets.map((t) => t.id)), [targets]);
+  const allowed = useMemo(() => new Set(targets.map((tg) => tg.id)), [targets]);
   // The chain of opened project ids forming columns 1..n (column 0 is always the roots).
   const [trail, setTrail] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
@@ -98,7 +100,7 @@ export function ProjectPickerDialog({
     }
   };
 
-  const specialLabel = targets.find((t) => t.id === selectedId && !document.nodes[t.id]?.project)?.label;
+  const specialLabel = targets.find((tg) => tg.id === selectedId && !document.nodes[tg.id]?.project)?.label;
   const crumb = !selectedId
     ? null
     : specialLabel ??
@@ -109,18 +111,18 @@ export function ProjectPickerDialog({
       <DialogContent className="flex max-w-2xl flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="border-b border-border px-6 pb-4 pt-6 text-left">
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>Click a project to open its sub-projects; pick a destination.</DialogDescription>
+          <DialogDescription>{t('picker.description')}</DialogDescription>
         </DialogHeader>
         <DialogBody className="p-0">
           <div className="flex h-72 overflow-x-auto">
             {columns.map((items, level) => (
               <ul
                 key={level} // columns are positional by depth
-                aria-label={level === 0 ? 'Projects' : 'Sub-projects'}
+                aria-label={level === 0 ? t('domain.projects') : t('picker.subProjects')}
                 className="h-full w-52 shrink-0 overflow-y-auto border-r border-border py-1 last:border-r-0"
               >
                 {items.length === 0 ? (
-                  <li className="px-3 py-2 text-xs text-muted-foreground">No sub-projects</li>
+                  <li className="px-3 py-2 text-xs text-muted-foreground">{t('picker.noSubProjects')}</li>
                 ) : (
                   items.map((item) => {
                     const isOpen = trail[level] === item.id;
@@ -161,25 +163,27 @@ export function ProjectPickerDialog({
           </div>
         </DialogBody>
         <DialogFooter className="flex-col items-stretch gap-3 border-t border-border px-6 py-4 sm:flex-col">
-          <span className="min-w-0 truncate text-xs text-muted-foreground">{crumb ?? 'Nothing selected'}</span>
+          <span className="min-w-0 truncate text-xs text-muted-foreground">{crumb ?? t('picker.nothingSelected')}</span>
           <div className="flex items-center gap-2">
             {canCreateHere && (
               <PromptButton
-                label="New project name"
-                placeholder="New project…"
-                submitLabel="Create"
+                label={t('picker.newProjectName')}
+                placeholder={t('picker.newProjectPlaceholder')}
+                submitLabel={t('common.create')}
                 onSubmit={createProject}
                 className="rounded-md border border-input px-2.5 py-1 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
               >
-                ＋ New project{createParentLabel ? ` in “${createParentLabel}”` : ' (top level)'}
+                {createParentLabel
+                  ? t('picker.newProjectIn', { label: createParentLabel })
+                  : t('picker.newProjectTop')}
               </PromptButton>
             )}
             <div className="ml-auto flex gap-2">
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                Cancel
+                {t('common.cancel')}
               </Button>
               <Button type="button" disabled={!canConfirm} onClick={confirm}>
-                {confirmLabel}
+                {confirmLabel ?? t('picker.moveHere')}
               </Button>
             </div>
           </div>

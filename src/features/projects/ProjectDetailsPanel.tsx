@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DatePickerPopover } from '@/components/ui/date-picker';
@@ -16,9 +17,9 @@ import { parseFlexibleDate } from '@/lib/dates';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
 
 const STATUSES: { value: NodeStatus; label: string }[] = [
-  { value: 'NEXT', label: 'Next' },
-  { value: 'BACKLOG', label: 'Backlog' },
-  { value: 'DONE', label: 'Done' },
+  { value: 'NEXT', label: 'domain.status.next' },
+  { value: 'BACKLOG', label: 'domain.status.backlog' },
+  { value: 'DONE', label: 'domain.status.done' },
 ];
 
 /**
@@ -48,6 +49,7 @@ export function ProjectDetailsPanel({
   /** Delete the project — opens the advanced-delete dialog (content disposition + undo). */
   onDelete?: () => void;
 }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? '');
   const [tags, setTags] = useState(project.tags.join(', '));
@@ -76,7 +78,7 @@ export function ProjectDetailsPanel({
     onSave({
       title: rawTitle || project.title,
       description: trimmedDescription ? trimmedDescription : null,
-      tags: (override.tags ?? tags).split(',').map((t) => t.trim()).filter(Boolean),
+      tags: (override.tags ?? tags).split(',').map((tag) => tag.trim()).filter(Boolean),
       dueAt: rawDue.trim() === '' ? null : (parsedDue ?? project.dueAt),
       status: override.status ?? status,
       resources: override.resources ?? resources,
@@ -108,14 +110,14 @@ export function ProjectDetailsPanel({
 
   return (
     <div className="rounded-lg border border-border">
-      <Tooltip label={`${collapsed ? 'Expand' : 'Collapse'} Details (x)`}>
+      <Tooltip label={collapsed ? t('details.expandTooltip') : t('details.collapseTooltip')}>
         <button
           type="button"
           aria-expanded={!collapsed}
           onClick={onToggle}
           className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-foreground hover:bg-accent"
         >
-          <span>Details</span>
+          <span>{t('details.details')}</span>
           {collapsed ? (
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
           ) : (
@@ -127,7 +129,7 @@ export function ProjectDetailsPanel({
         <div className="space-y-4 border-t border-border p-3">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="project-title">Title</Label>
+              <Label htmlFor="project-title">{t('editor.fieldTitle')}</Label>
               <CopyButton value={title} label="title" />
             </div>
             <Input
@@ -142,7 +144,7 @@ export function ProjectDetailsPanel({
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="project-description">Description</Label>
+              <Label htmlFor="project-description">{t('editor.fieldDescription')}</Label>
               <CopyButton value={description} label="description" />
             </div>
             <Textarea
@@ -158,7 +160,7 @@ export function ProjectDetailsPanel({
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {/* Tags commit when focus leaves the field — its onChange fires per keystroke. */}
             <div className="space-y-1.5" onBlur={() => commit()}>
-              <Label htmlFor="project-tags">Tags</Label>
+              <Label htmlFor="project-tags">{t('editor.fieldTags')}</Label>
               <TagsInput
                 id="project-tags"
                 value={tags}
@@ -171,12 +173,12 @@ export function ProjectDetailsPanel({
               <InheritedTags tags={inheritedTags} />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="project-due">Due</Label>
+              <Label htmlFor="project-due">{t('editor.fieldDue')}</Label>
               <div className="flex gap-1.5">
                 <Input
                   id="project-due"
                   className="min-w-0 flex-1"
-                  placeholder="26-7-4"
+                  placeholder={t('editor.duePlaceholder')}
                   value={due}
                   aria-invalid={dueError}
                   onChange={(e) => {
@@ -189,18 +191,18 @@ export function ProjectDetailsPanel({
                 <DatePickerPopover
                   value={parseFlexibleDate(due)}
                   onSelect={(isoDate) => { setDue(isoDate); setDueError(false); commit({ due: isoDate }); }}
-                  label="Pick a due date from a calendar"
+                  label={t('editor.pickDueDate')}
                 />
               </div>
               {dueError && (
                 <p role="alert" className="text-xs text-destructive">
-                  Use a date like 26-7-4 or 2026-07-04.
+                  {t('editor.dueError')}
                 </p>
               )}
             </div>
           </div>
           <fieldset className="space-y-1.5">
-            <legend className="text-sm font-medium text-foreground">Status</legend>
+            <legend className="text-sm font-medium text-foreground">{t('editor.statusLegend')}</legend>
             <div className="flex gap-2">
               {STATUSES.map((s) => (
                 <label
@@ -222,13 +224,13 @@ export function ProjectDetailsPanel({
                       commit({ status: s.value });
                     }}
                   />
-                  {s.label}
+                  {t(s.label)}
                 </label>
               ))}
             </div>
           </fieldset>
           <div className="space-y-1.5 border-t border-border pt-3">
-            <span className="text-sm font-medium text-foreground">Resources</span>
+            <span className="text-sm font-medium text-foreground">{t('editor.resources')}</span>
             <ResourcesEditor
               resources={resources}
               onChange={(r) => {
@@ -246,12 +248,12 @@ export function ProjectDetailsPanel({
                   onClick={onDelete}
                   className="mr-auto text-destructive hover:text-destructive"
                 >
-                  Delete project
+                  {t('delete.deleteProject')}
                 </Button>
               )}
               {saved && (
                 <span className="ml-auto text-xs text-muted-foreground" aria-live="polite">
-                  Saved
+                  {t('details.saved')}
                 </span>
               )}
             </div>

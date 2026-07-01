@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ export function DeleteProjectDialog({
   onCancel: () => void;
   onConfirm: (disposition: DeleteDisposition) => void;
 }) {
+  const { t } = useTranslation();
   // Default to keeping content (move up) — never lose work by accident.
   const [keepActions, setKeepActions] = useState(true);
   const [keepSubProjects, setKeepSubProjects] = useState(true);
@@ -52,17 +54,16 @@ export function DeleteProjectDialog({
 
   if (!project) return null;
   const hasContent = actionCount > 0 || subCount > 0;
-  const actionTarget = isTopLevel ? 'Free actions' : 'the parent project';
-  const subTarget = isTopLevel ? 'Top level' : 'the parent project';
-  const plural = (n: number, s: string) => `${n} ${s}${n === 1 ? '' : 's'}`;
+  const actionTarget = isTopLevel ? t('delete.targetFreeActions') : t('delete.targetParent');
+  const subTarget = isTopLevel ? t('delete.targetTopLevel') : t('delete.targetParent');
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete “{project.title}”?</DialogTitle>
+          <DialogTitle>{t('delete.title', { title: project.title })}</DialogTitle>
           <DialogDescription>
-            {hasContent ? 'Choose what happens to its contents. You can undo this.' : 'This can be undone.'}
+            {hasContent ? t('delete.descContent') : t('delete.descEmpty')}
           </DialogDescription>
         </DialogHeader>
 
@@ -70,20 +71,20 @@ export function DeleteProjectDialog({
           <div className="space-y-4 py-1">
             {actionCount > 0 && (
               <fieldset className="space-y-1.5">
-                <legend className="text-sm font-medium text-foreground">Its {plural(actionCount, 'action')}</legend>
+                <legend className="text-sm font-medium text-foreground">{t('delete.itsActions', { count: actionCount })}</legend>
                 <label className="flex items-center gap-2 text-sm text-foreground">
                   <input type="radio" name="delete-actions" checked={keepActions} onChange={() => setKeepActions(true)} />
-                  Move the actions to {actionTarget}
+                  {t('delete.moveActions', { target: actionTarget })}
                 </label>
                 <label className="flex items-center gap-2 text-sm text-foreground">
                   <input type="radio" name="delete-actions" checked={!keepActions} onChange={() => setKeepActions(false)} />
-                  Delete the actions
+                  {t('delete.deleteActions')}
                 </label>
               </fieldset>
             )}
             {subCount > 0 && (
               <fieldset className="space-y-1.5">
-                <legend className="text-sm font-medium text-foreground">Its {plural(subCount, 'sub-project')}</legend>
+                <legend className="text-sm font-medium text-foreground">{t('delete.itsSubProjects', { count: subCount })}</legend>
                 <label className="flex items-center gap-2 text-sm text-foreground">
                   <input
                     type="radio"
@@ -91,7 +92,7 @@ export function DeleteProjectDialog({
                     checked={keepSubProjects}
                     onChange={() => setKeepSubProjects(true)}
                   />
-                  Move the sub-projects to {subTarget}
+                  {t('delete.moveSubs', { target: subTarget })}
                 </label>
                 <label className="flex items-center gap-2 text-sm text-foreground">
                   <input
@@ -100,7 +101,7 @@ export function DeleteProjectDialog({
                     checked={!keepSubProjects}
                     onChange={() => setKeepSubProjects(false)}
                   />
-                  Delete the sub-projects
+                  {t('delete.deleteSubs')}
                 </label>
               </fieldset>
             )}
@@ -109,10 +110,10 @@ export function DeleteProjectDialog({
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={onCancel}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="button" variant="destructive" autoFocus onClick={() => onConfirm({ keepActions, keepSubProjects })}>
-            Delete project
+            {t('delete.deleteProject')}
           </Button>
         </DialogFooter>
       </DialogContent>
