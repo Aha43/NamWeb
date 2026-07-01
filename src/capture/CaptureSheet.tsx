@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/ui/copy-button';
 import { InlineRename } from '@/features/actions/InlineRename';
 import { newId, nowIso } from '@/lib/local';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -95,6 +96,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
               ) : (
                 <>
                   <span className="flex-1 truncate text-foreground">{node.title}</span>
+                  <CopyButton value={node.title} label={t('copy.name', { title: node.title })} tooltip />
                   <button
                     type="button"
                     aria-label={t('actions.editAria', { title: node.title })}
