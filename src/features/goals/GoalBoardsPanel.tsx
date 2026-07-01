@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { heatBorderClass, type MissionStat } from '../projects/missionStats';
@@ -25,13 +26,14 @@ export function GoalBoardsPanel({
   onDelete,
   onOpenProject,
 }: GoalBoardsPanelProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [tags, setTags] = useState('');
 
   function submit(event: FormEvent) {
     event.preventDefault();
     const trimmed = name.trim();
-    const parsed = tags.split(/[,\s]+/).map((t) => t.trim()).filter(Boolean);
+    const parsed = tags.split(/[,\s]+/).map((tag) => tag.trim()).filter(Boolean);
     if (!trimmed || parsed.length === 0) return;
     onCreate(trimmed, parsed);
     setName('');
@@ -42,31 +44,28 @@ export function GoalBoardsPanel({
     <section className="space-y-4">
       <form onSubmit={submit} className="space-y-2 rounded-lg border border-border bg-card p-3">
         <input
-          aria-label="Board name"
+          aria-label={t('goals.boardNameAria')}
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="New goal board…"
+          placeholder={t('goals.newBoardPlaceholder')}
           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
         />
         <div className="flex gap-2">
           <input
-            aria-label="Board tags"
+            aria-label={t('goals.boardTagsAria')}
             value={tags}
             onChange={(e) => setTags(e.target.value)}
-            placeholder="tags (space or comma)"
+            placeholder={t('goals.boardTagsPlaceholder')}
             className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
           />
-          <Button type="submit" size="sm">Create</Button>
+          <Button type="submit" size="sm">{t('common.create')}</Button>
         </div>
       </form>
 
       {boards.length === 0 ? (
         <div className="flex flex-col items-center gap-1.5 px-6 py-10 text-center">
-          <p className="text-sm font-medium text-foreground">No goal boards yet</p>
-          <p className="max-w-sm text-sm text-muted-foreground">
-            Group projects by tag into a board to track progress across them at a glance — your
-            Mission Control. Create one above.
-          </p>
+          <p className="text-sm font-medium text-foreground">{t('goals.emptyTitle')}</p>
+          <p className="max-w-sm text-sm text-muted-foreground">{t('goals.emptyHint')}</p>
         </div>
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border bg-card">
@@ -74,7 +73,7 @@ export function GoalBoardsPanel({
             <li key={board.name} className="flex items-center gap-2 px-3 py-2">
               <button
                 type="button"
-                aria-label={`Open board ${board.name}`}
+                aria-label={t('goals.openBoardAria', { name: board.name })}
                 onClick={() => onSelect(board)}
                 className={cn(
                   'flex-1 truncate text-left text-sm hover:underline',
@@ -86,7 +85,7 @@ export function GoalBoardsPanel({
               </button>
               <button
                 type="button"
-                aria-label={`Delete board ${board.name}`}
+                aria-label={t('goals.deleteBoardAria', { name: board.name })}
                 onClick={() => onDelete(board.name)}
                 className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
               >
@@ -103,14 +102,14 @@ export function GoalBoardsPanel({
             {selected.name}
           </p>
           {stations.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No matching projects.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{t('goals.noMatching')}</p>
           ) : (
             <div className="grid grid-cols-2 gap-2">
               {stations.map((stat) => (
                 <button
                   key={stat.id}
                   type="button"
-                  aria-label={`Open ${stat.title}`}
+                  aria-label={t('column.openAria', { title: stat.title })}
                   onClick={() => onOpenProject(stat.id)}
                   className={cn(
                     'flex flex-col gap-1 rounded-lg border-2 bg-card p-3 text-left hover:bg-accent',
@@ -119,7 +118,7 @@ export function GoalBoardsPanel({
                 >
                   <span className="truncate text-sm font-medium text-foreground">{stat.title}</span>
                   <span className="flex items-center justify-between text-xs text-muted-foreground">
-                    {stat.total === 0 ? 'no actions' : `${stat.done}/${stat.total} done`}
+                    {stat.total === 0 ? t('workbench.noActions') : t('workbench.doneCount', { done: stat.done, total: stat.total })}
                     <ChevronRight className="h-3.5 w-3.5" />
                   </span>
                 </button>

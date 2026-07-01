@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { VersionBadge } from '@/components/VersionBadge';
@@ -20,13 +21,6 @@ type Mode = 'signin' | 'signup' | 'forgot' | 'reset';
 /** Modes where the user is choosing a new password (confirm + sanity-check it). */
 const SETS_PASSWORD = (m: Mode) => m === 'signup' || m === 'reset';
 
-const COPY: Record<Mode, { title: string; sub: string; submit: string }> = {
-  signin: { title: APP_NAME, sub: 'Sign in to your workspace.', submit: 'Sign in' },
-  signup: { title: 'Create your account', sub: `Start using ${APP_NAME} on the web.`, submit: 'Create account' },
-  forgot: { title: 'Reset your password', sub: "We'll email you a reset link.", submit: 'Send reset link' },
-  reset: { title: 'Set a new password', sub: 'Choose a new password for your account.', submit: 'Save password' },
-};
-
 export interface AuthScreenProps {
   /** Start in a specific mode — `reset` when arriving via a password-recovery link. */
   initialMode?: Mode;
@@ -47,6 +41,7 @@ function hasInviteParam(): boolean {
 
 /** Email/password auth: sign in, sign up (+ email verification), forgot/reset password. */
 export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenProps) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>(initialMode ?? (hasInviteParam() ? 'signup' : 'signin'));
   const [email, setEmail] = useState(DEV_EMAIL);
   const [password, setPassword] = useState(DEV_PASSWORD);
@@ -58,6 +53,12 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
   const [info, setInfo] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const COPY: Record<Mode, { title: string; sub: string; submit: string }> = {
+    signin: { title: APP_NAME, sub: t('auth.signinSub'), submit: t('auth.signinSubmit') },
+    signup: { title: t('auth.signupTitle'), sub: t('auth.signupSub', { app: APP_NAME }), submit: t('auth.signupSubmit') },
+    forgot: { title: t('auth.forgotTitle'), sub: t('auth.forgotSub'), submit: t('auth.forgotSubmit') },
+    reset: { title: t('auth.resetTitle'), sub: t('auth.resetSub'), submit: t('auth.resetSubmit') },
+  };
   const copy = COPY[mode];
 
   function go(next: Mode) {
@@ -91,11 +92,11 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
     // Sign-up consent gate (GDPR): age + terms acceptance, and bot check if enabled.
     if (mode === 'signup') {
       if (!accepted) {
-        setError('Please confirm you are 13+ and accept the Terms and Privacy Policy.');
+        setError(t('auth.consentError'));
         return;
       }
       if (turnstileEnabled && !captchaToken) {
-        setError('Please complete the verification.');
+        setError(t('auth.captchaError'));
         return;
       }
     }
@@ -112,14 +113,14 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
       });
       // Neutral on success (don't reveal whether the email already exists).
       if (e) setError(e.message);
-      else setInfo('Check your email to confirm your account. If you already have one, sign in instead.');
+      else setInfo(t('auth.signupInfo'));
     } else if (mode === 'forgot') {
       const { error: e } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin,
       });
       // Always neutral — no account enumeration.
       if (e) setError(e.message);
-      else setInfo('If that email has an account, a password-reset link is on its way.');
+      else setInfo(t('auth.forgotInfo'));
     } else {
       const { error: e } = await supabase.auth.updateUser({ password });
       if (e) setError(e.message);
@@ -140,7 +141,7 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
             onClick={() => go('signin')}
             className="-mb-1 flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground hover:underline"
           >
-            ← Back to sign in
+            ← {t('auth.backToSignin')}
           </button>
         )}
 
@@ -152,7 +153,7 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
 
         {mode !== 'reset' && (
           <label className="block text-sm font-medium text-foreground">
-            Email
+            {t('account.email')}
             <input
               type="email"
               autoComplete="username"
@@ -166,7 +167,7 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
 
         {mode !== 'forgot' && (
           <label className="block text-sm font-medium text-foreground">
-            Password
+            {t('auth.password')}
             <input
               type="password"
               autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
@@ -180,12 +181,12 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
         )}
 
         {SETS_PASSWORD(mode) && (
-          <p className="-mt-2 text-xs text-muted-foreground">At least {MIN_PASSWORD} characters.</p>
+          <p className="-mt-2 text-xs text-muted-foreground">{t('auth.minChars', { count: MIN_PASSWORD })}</p>
         )}
 
         {SETS_PASSWORD(mode) && (
           <label className="block text-sm font-medium text-foreground">
-            Confirm password
+            {t('auth.confirmPassword')}
             <input
               type="password"
               autoComplete="new-password"
@@ -208,15 +209,13 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
                 className="mt-0.5"
               />
               <span>
-                I'm 13 or older and agree to the{' '}
-                <a href="/terms.html" target="_blank" rel="noreferrer" className="text-foreground underline">
-                  Terms
-                </a>{' '}
-                and{' '}
-                <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-foreground underline">
-                  Privacy Policy
-                </a>
-                .
+                <Trans
+                  i18nKey="auth.consent"
+                  components={{
+                    terms: <a href="/terms.html" target="_blank" rel="noreferrer" className="text-foreground underline" />,
+                    privacy: <a href="/privacy.html" target="_blank" rel="noreferrer" className="text-foreground underline" />,
+                  }}
+                />
               </span>
             </label>
             {turnstileEnabled && <Turnstile onToken={setCaptchaToken} />}
@@ -230,7 +229,7 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
               checked={devWorkspace}
               onChange={(e) => toggleDevWorkspace(e.target.checked)}
             />
-            Use dev workspace
+            {t('auth.useDevWorkspace')}
           </label>
         )}
 
@@ -242,7 +241,7 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
         {info && <p className="text-sm text-muted-foreground">{info}</p>}
 
         <Button type="submit" disabled={busy} className="w-full">
-          {busy ? 'Working…' : copy.submit}
+          {busy ? t('auth.working') : copy.submit}
         </Button>
 
         {mode !== 'reset' && (
@@ -250,12 +249,12 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
             {mode === 'signin' && (
               <>
                 <button type="button" onClick={() => go('forgot')} className="hover:text-foreground hover:underline">
-                  Forgot your password?
+                  {t('auth.forgotLink')}
                 </button>
                 <p>
-                  New here?{' '}
+                  {t('auth.newHere')}{' '}
                   <button type="button" onClick={() => go('signup')} className="font-medium text-foreground hover:underline">
-                    Create an account
+                    {t('auth.createAccount')}
                   </button>
                 </p>
               </>
@@ -263,7 +262,7 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
             {(mode === 'signup' || mode === 'forgot') && (
               <p>
                 <button type="button" onClick={() => go('signin')} className="font-medium text-foreground hover:underline">
-                  Back to sign in
+                  {t('auth.backToSignin')}
                 </button>
               </p>
             )}
@@ -276,7 +275,7 @@ export function AuthScreen({ initialMode, onResetDone, onTryDemo }: AuthScreenPr
               onClick={onTryDemo}
               className="text-sm font-medium text-foreground hover:underline"
             >
-              Or try the demo — no account needed
+              {t('auth.tryDemo')}
             </button>
           </div>
         )}
