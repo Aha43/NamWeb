@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -66,6 +66,23 @@ export function ProjectPickerDialog({
     }
   }, [open, initialSelectedId]);
 
+  // ⌘/Ctrl+Enter confirms the current selection from anywhere in the dialog (mirrors the editor's
+  // save shortcut). The ref (assigned to `confirm` below each render) keeps the latest closure
+  // without re-subscribing. NB: `document` is shadowed by the workspace document — listen on `window`.
+  // Hooks stay above the early return so their call order is stable.
+  const confirmRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.isComposing) {
+        e.preventDefault();
+        confirmRef.current();
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
+
   if (!document) return null;
 
   const columns: PickerItem[][] = [rootColumn(document, targets, allowed)];
@@ -85,6 +102,7 @@ export function ProjectPickerDialog({
       onOpenChange(false);
     }
   };
+  confirmRef.current = confirm; // keep the keydown handler's closure current
 
   // "New project here": create under the navigated-into project (a selected real project), or at the
   // top level when nothing/a special root is selected. Only offered where that location is a valid
