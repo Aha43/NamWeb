@@ -18,6 +18,7 @@
     "e2e:mocked": "playwright test --project=mocked-desktop --project=mocked-phone",
     "e2e:ui": "playwright test --ui",
     "i18n:check": "node scripts/check-i18n.mjs",
+    "i18n:export-domain": "node scripts/export-domain-vocab.mjs",
     "mcp": "tsx --env-file=.env mcp/server.ts"
   },
   "dependencies": {

@@ -1,0 +1,14 @@
+{
+  "domain.blocked": "Blokkert",
+  "domain.due": "Forfaller",
+  "domain.focus": "Fokus",
+  "domain.goals": "Mål",
+  "domain.inbox": "Innboks",
+  "domain.projects": "Prosjekter",
+  "domain.search": "Søk",
+  "domain.status.backlog": "Etterslep",
+  "domain.status.done": "Ferdig",
+  "domain.status.next": "Neste",
+  "domain.tags": "Etiketter",
+  "domain.templates": "Maler"
+}

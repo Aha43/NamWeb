@@ -4,6 +4,7 @@
 // in key-parity with `en`. Dynamic keys (`t(variable)`) are skipped. Run: `npm run i18n:check`.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { LOCALES as DOMAIN_LOCALES, artifactPath, serializeDomainVocab } from './domain-vocab.mjs';
 
 const read = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const enKeys = new Set(Object.keys(read('src/locales/en/translation.json')));
@@ -44,7 +45,17 @@ fail('Keys used in code but missing from en catalog', missingInEn);
 fail('Keys in en but missing from nb', nbMissing);
 fail('Keys in nb but not in en', nbExtra);
 
+// The shared domain.* artifacts (shared/i18n/) must not drift from the catalog (Phase C, #400).
+const staleDomain = DOMAIN_LOCALES.filter((locale) => {
+  try {
+    return readFileSync(artifactPath(locale), 'utf8') !== serializeDomainVocab(locale);
+  } catch {
+    return true; // missing → stale
+  }
+});
+fail('Shared domain vocab out of date (run `npm run i18n:export-domain`)', staleDomain.map(artifactPath));
+
 if (ok) {
-  console.log(`i18n check OK — ${enKeys.size} keys, en/nb in parity, all used keys present.`);
+  console.log(`i18n check OK — ${enKeys.size} keys, en/nb in parity, shared domain vocab in sync.`);
 }
 process.exit(ok ? 0 : 1);
