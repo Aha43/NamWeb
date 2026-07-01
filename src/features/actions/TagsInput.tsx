@@ -1,4 +1,5 @@
 import { useRef, useState, type KeyboardEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -20,6 +21,7 @@ export interface TagsInputProps {
  * (`@phone` vs `phone`). New tags can still be typed freely.
  */
 export function TagsInput({ id, value, onChange, suggestions }: TagsInputProps) {
+  const { t } = useTranslation();
   const [focused, setFocused] = useState(false);
   const [highlight, setHighlight] = useState(0);
   const blurTimer = useRef<number | undefined>(undefined);
@@ -70,7 +72,7 @@ export function TagsInput({ id, value, onChange, suggestions }: TagsInputProps) 
     <div className="relative">
       <Input
         id={id}
-        placeholder="comma, separated"
+        placeholder={t('tags.inputPlaceholder')}
         value={value}
         autoComplete="off"
         role="combobox"
@@ -92,7 +94,7 @@ export function TagsInput({ id, value, onChange, suggestions }: TagsInputProps) 
       {open && (
         <ul
           role="listbox"
-          aria-label="Existing tags"
+          aria-label={t('tags.existingTags')}
           className="absolute z-50 mt-1 max-h-48 w-full overflow-auto rounded-md border border-border bg-popover p-1 shadow-md"
         >
           {matches.map((tag, i) => (

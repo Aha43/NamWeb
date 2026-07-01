@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogBody,
@@ -22,11 +23,8 @@ import { useIsDesktop } from '@/shell/useIsDesktop';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
 import { cn } from '@/lib/utils';
 
-// Mac shows ⌘; everyone else Ctrl. Best-effort platform sniff for the shortcut hints.
-const SAVE_HINT =
-  typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform)
-    ? 'Save (⌘ + Enter)'
-    : 'Save (Ctrl + Enter)';
+// Mac shows ⌘; everyone else Ctrl. Best-effort platform sniff for the shortcut hint.
+const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform);
 import { parseFlexibleDate, parseFlexibleTime } from '@/lib/dates';
 import { DatePickerPopover } from '@/components/ui/date-picker';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
@@ -48,9 +46,9 @@ export interface ActionEdits {
 }
 
 const STATUSES: { value: NodeStatus; label: string }[] = [
-  { value: 'NEXT', label: 'Next' },
-  { value: 'BACKLOG', label: 'Backlog' },
-  { value: 'DONE', label: 'Done' },
+  { value: 'NEXT', label: 'domain.status.next' },
+  { value: 'BACKLOG', label: 'domain.status.backlog' },
+  { value: 'DONE', label: 'domain.status.done' },
 ];
 
 /**
@@ -114,6 +112,8 @@ export function ActionDialog({
   /** Count-aware confirm message shown in the inline delete confirm. */
   deleteConfirmMessage?: string;
 }) {
+  const { t } = useTranslation();
+  const saveHint = IS_MAC ? t('editor.saveHintMac') : t('editor.saveHintOther');
   const isProject = node.project;
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
@@ -209,20 +209,20 @@ export function ActionDialog({
       <DialogContent className="flex flex-col gap-0 overflow-hidden p-0">
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader className="border-b border-border px-6 pb-4 pt-6 text-left">
-            <DialogTitle>{isProject ? 'Edit project' : 'Edit action'}</DialogTitle>
-            <DialogDescription>Update the title, notes, tags, due date, and status.</DialogDescription>
+            <DialogTitle>{isProject ? t('editor.editProject') : t('editor.editAction')}</DialogTitle>
+            <DialogDescription>{t('editor.description')}</DialogDescription>
           </DialogHeader>
           <DialogBody className="space-y-4 px-6 py-4">
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="action-title">Title</Label>
+              <Label htmlFor="action-title">{t('editor.fieldTitle')}</Label>
               <CopyButton value={title} label="title" />
             </div>
             <Input id="action-title" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label htmlFor="action-description">Description</Label>
+              <Label htmlFor="action-description">{t('editor.fieldDescription')}</Label>
               <CopyButton value={description} label="description" />
             </div>
             <Textarea
@@ -233,13 +233,13 @@ export function ActionDialog({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="action-tags">Tags</Label>
+              <Label htmlFor="action-tags">{t('editor.fieldTags')}</Label>
               <TagsInput id="action-tags" value={tags} onChange={setTags} suggestions={availableTags} />
               <InheritedTags tags={inheritedTags} />
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Label htmlFor="action-due">Due</Label>
+                <Label htmlFor="action-due">{t('editor.fieldDue')}</Label>
                 {(due || dueEnd || dueTime || dueEndTime) && (
                   <button
                     type="button"
@@ -255,7 +255,7 @@ export function ActionDialog({
                     }}
                     className="text-xs text-muted-foreground hover:text-foreground"
                   >
-                    Clear
+                    {t('common.clear')}
                   </button>
                 )}
               </div>
@@ -264,7 +264,7 @@ export function ActionDialog({
                 <Input
                   id="action-due"
                   className="min-w-0 flex-1"
-                  placeholder="26-7-4"
+                  placeholder={t('editor.duePlaceholder')}
                   value={due}
                   aria-invalid={dueError}
                   onChange={(e) => {
@@ -281,16 +281,16 @@ export function ActionDialog({
                 <DatePickerPopover
                   value={parseFlexibleDate(due)}
                   onSelect={(isoDate) => { setDue(isoDate); setDueError(false); }}
-                  label="Pick a due date from a calendar"
+                  label={t('editor.pickDueDate')}
                 />
               </div>
               {/* Optional time of day on the start — type the hour, optionally the minutes (#493). */}
               <div className="flex items-center gap-1.5">
-                <span className="shrink-0 text-xs text-muted-foreground">at</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{t('editor.at')}</span>
                 <Input
                   id="action-due-time"
-                  aria-label="Due time (optional)"
-                  placeholder="14:30 (optional)"
+                  aria-label={t('editor.dueTimeAria')}
+                  placeholder={t('editor.dueTimePlaceholder')}
                   className="min-w-0 flex-1"
                   value={dueTime}
                   aria-invalid={dueTimeError}
@@ -306,11 +306,11 @@ export function ActionDialog({
                 />
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="shrink-0 text-xs text-muted-foreground">to</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{t('editor.to')}</span>
                 <Input
                   id="action-due-end"
-                  aria-label="Due end (optional)"
-                  placeholder="end (optional)"
+                  aria-label={t('editor.dueEndAria')}
+                  placeholder={t('editor.dueEndPlaceholder')}
                   className="min-w-0 flex-1"
                   value={dueEnd}
                   aria-invalid={dueEndError}
@@ -326,16 +326,16 @@ export function ActionDialog({
                 <DatePickerPopover
                   value={parseFlexibleDate(dueEnd)}
                   onSelect={(isoDate) => { setDueEnd(isoDate); setDueEndError(false); }}
-                  label="Pick an end date from a calendar"
+                  label={t('editor.pickEndDate')}
                 />
               </div>
               {/* Optional time of day on the end (#500). */}
               <div className="flex items-center gap-1.5">
-                <span className="shrink-0 text-xs text-muted-foreground">at</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{t('editor.at')}</span>
                 <Input
                   id="action-due-end-time"
-                  aria-label="Due end time (optional)"
-                  placeholder="end time (optional)"
+                  aria-label={t('editor.dueEndTimeAria')}
+                  placeholder={t('editor.dueEndTimePlaceholder')}
                   className="min-w-0 flex-1"
                   value={dueEndTime}
                   aria-invalid={dueEndTimeError}
@@ -351,23 +351,23 @@ export function ActionDialog({
               </div>
               {dueError && (
                 <p role="alert" className="text-xs text-destructive">
-                  Use a date like 26-7-4 or 2026-07-04.
+                  {t('editor.dueError')}
                 </p>
               )}
               {dueEndError && (
                 <p role="alert" className="text-xs text-destructive">
-                  The end needs a start date and must be on or after it.
+                  {t('editor.dueEndError')}
                 </p>
               )}
               {(dueTimeError || dueEndTimeError) && (
                 <p role="alert" className="text-xs text-destructive">
-                  Use a 24-hour time like 14:30 or 9 — and on the same day the end can’t be before the start.
+                  {t('editor.dueTimeError')}
                 </p>
               )}
             </div>
           </div>
           <fieldset className="space-y-1.5">
-            <legend className="text-sm font-medium text-foreground">Status</legend>
+            <legend className="text-sm font-medium text-foreground">{t('editor.statusLegend')}</legend>
             <div className="flex gap-2">
               {STATUSES.map((s) => (
                 <label
@@ -386,16 +386,16 @@ export function ActionDialog({
                     checked={status === s.value}
                     onChange={() => setStatus(s.value)}
                   />
-                  {s.label}
+                  {t(s.label)}
                 </label>
               ))}
             </div>
           </fieldset>
-          <CollapsibleSection title="Resources" defaultOpen={node.resources.length > 0}>
+          <CollapsibleSection title={t('editor.resources')} defaultOpen={node.resources.length > 0}>
             <ResourcesEditor resources={resources} onChange={setResources} />
           </CollapsibleSection>
           {onAddPrerequisite && onRemovePrerequisite && (
-            <CollapsibleSection title="Blocked by" defaultOpen={(blockers?.length ?? 0) > 0}>
+            <CollapsibleSection title={t('editor.blockedBy')} defaultOpen={(blockers?.length ?? 0) > 0}>
               {blockers && blockers.length > 0 ? (
                 <ul className="flex flex-col gap-1">
                   {blockers.map((blocker) => (
@@ -405,7 +405,7 @@ export function ActionDialog({
                       </span>
                       <button
                         type="button"
-                        aria-label={`Remove prerequisite ${blocker.title}`}
+                        aria-label={t('editor.removePrereqAria', { title: blocker.title })}
                         onClick={() => onRemovePrerequisite(blocker.id)}
                         className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
                       >
@@ -415,11 +415,11 @@ export function ActionDialog({
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-muted-foreground">No prerequisites.</p>
+                <p className="text-xs text-muted-foreground">{t('editor.noPrereqs')}</p>
               )}
               {blockerCandidates && blockerCandidates.length > 0 && (
                 <select
-                  aria-label="Add prerequisite"
+                  aria-label={t('editor.addPrereqAria')}
                   defaultValue=""
                   onChange={(e) => {
                     if (e.target.value) onAddPrerequisite(e.target.value);
@@ -427,7 +427,7 @@ export function ActionDialog({
                   className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
                 >
                   <option value="" disabled>
-                    Add a prerequisite…
+                    {t('editor.addPrereqOption')}
                   </option>
                   {blockerCandidates.map((candidate) => (
                     <option key={candidate.id} value={candidate.id}>
@@ -437,16 +437,16 @@ export function ActionDialog({
                 </select>
               )}
               {wouldUnblock && wouldUnblock.length > 0 && (
-                <p className="text-xs text-muted-foreground">Would unblock: {wouldUnblock.join(', ')}</p>
+                <p className="text-xs text-muted-foreground">{t('editor.wouldUnblock', { list: wouldUnblock.join(', ') })}</p>
               )}
             </CollapsibleSection>
           )}
           {(onMakeProject || (moveTargets && onMove)) && (
-            <CollapsibleSection title="Move / make project">
+            <CollapsibleSection title={t('editor.moveSection')}>
               <div className="flex flex-wrap items-center gap-2">
                 {onMakeProject && (
                   <Button type="button" variant="outline" size="sm" onClick={onMakeProject}>
-                    Make project
+                    {t('inbox.makeProject')}
                   </Button>
                 )}
                 {moveTargets && onMove && (
@@ -455,12 +455,12 @@ export function ActionDialog({
                   isDesktop ? (
                     <>
                       <Button type="button" variant="outline" size="sm" onClick={() => setMovePickerOpen(true)}>
-                        Move to…
+                        {t('editor.moveTo')}
                       </Button>
                       <ProjectPickerDialog
                         open={movePickerOpen}
                         onOpenChange={setMovePickerOpen}
-                        title={`Move "${node.title}" to…`}
+                        title={t('editor.moveTitle', { title: node.title })}
                         targets={moveTargets}
                         onConfirm={onMove}
                         onCreateProject={onCreateProject}
@@ -468,7 +468,7 @@ export function ActionDialog({
                     </>
                   ) : (
                     <select
-                      aria-label="Move to"
+                      aria-label={t('editor.moveToAria')}
                       defaultValue=""
                       onChange={(e) => {
                         if (e.target.value) onMove(e.target.value);
@@ -476,7 +476,7 @@ export function ActionDialog({
                       className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
                     >
                       <option value="" disabled>
-                        Move to…
+                        {t('editor.moveTo')}
                       </option>
                       {moveTargets.map((target) => (
                         <option key={target.id} value={target.id}>
@@ -494,13 +494,13 @@ export function ActionDialog({
             {confirmingDelete ? (
               <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center">
                 <span className="text-sm text-destructive sm:mr-auto">
-                  {deleteConfirmMessage ?? 'Delete this? This cannot be undone.'}
+                  {deleteConfirmMessage ?? t('editor.deleteConfirmDefault')}
                 </span>
                 <Button type="button" variant="ghost" onClick={() => setConfirmingDelete(false)}>
-                  Cancel
+                  {t('common.cancel')}
                 </Button>
                 <Button type="button" variant="destructive" autoFocus onClick={() => onDelete?.()}>
-                  Delete
+                  {t('common.delete')}
                 </Button>
               </div>
             ) : (
@@ -513,16 +513,16 @@ export function ActionDialog({
                     onClick={() => (isProject ? onDelete() : setConfirmingDelete(true))}
                     className="text-destructive hover:text-destructive sm:mr-auto"
                   >
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 )}
-                <Tooltip label="Cancel (Esc)">
+                <Tooltip label={t('editor.cancelHint')}>
                   <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                 </Tooltip>
-                <Tooltip label={SAVE_HINT}>
-                  <Button type="submit">Save</Button>
+                <Tooltip label={saveHint}>
+                  <Button type="submit">{t('common.save')}</Button>
                 </Tooltip>
               </>
             )}

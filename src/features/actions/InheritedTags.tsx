@@ -4,14 +4,17 @@
  * carries them. Shown italic/muted to set them apart from the node's own (editable) tags.
  * Renders nothing when there are no inherited tags.
  */
+import { useTranslation } from 'react-i18next';
+
 export function InheritedTags({ tags }: { tags: string[] }) {
+  const { t } = useTranslation();
   if (tags.length === 0) return null;
   return (
     <div
       className="flex flex-wrap items-center gap-1 pt-0.5 text-xs text-muted-foreground"
-      title="Inherited from a parent project — edit them on that project"
+      title={t('editor.inheritedTitle')}
     >
-      <span className="italic">From project:</span>
+      <span className="italic">{t('editor.inheritedFrom')}</span>
       {tags.map((tag) => (
         <span key={tag} className="rounded bg-muted px-1.5 py-0.5 italic">
           {tag}

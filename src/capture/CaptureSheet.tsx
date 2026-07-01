@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Pencil } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -23,6 +24,7 @@ const RECENT_LIMIT = 4;
  * item and a row drops off if that item is deleted elsewhere.
  */
 export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { t } = useTranslation();
   const { document, dispatch } = useWorkspaceContext();
   const { addToBottom } = useSettings();
   const isDesktop = useIsDesktop();
@@ -56,14 +58,14 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   const form = (
     <form onSubmit={submit} className="mt-4 flex gap-2">
       <input
-        aria-label="Capture to inbox"
+        aria-label={t('capture.inputAria')}
         autoFocus
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder="What's on your mind?"
+        placeholder={t('capture.placeholder')}
         className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
       />
-      <Button type="submit">Add</Button>
+      <Button type="submit">{t('common.add')}</Button>
     </form>
   );
 
@@ -75,7 +77,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   const recentList =
     recentNodes.length > 0 ? (
       <div className="mt-4 space-y-1.5">
-        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">Just added</p>
+        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">{t('capture.justAdded')}</p>
         <ul className="divide-y divide-border overflow-hidden rounded-md border border-border">
           {recentNodes.map((node) => (
             <li key={node.id} className="flex items-center gap-2 px-3 py-1.5 text-sm">
@@ -83,8 +85,8 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
                 <div className="flex-1">
                   <InlineRename
                     title={node.title}
-                    onCommit={(t) => {
-                      rename(node.id, t);
+                    onCommit={(newTitle) => {
+                      rename(node.id, newTitle);
                       setRenamingId(null);
                     }}
                     onCancel={() => setRenamingId(null)}
@@ -95,7 +97,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
                   <span className="flex-1 truncate text-foreground">{node.title}</span>
                   <button
                     type="button"
-                    aria-label={`Edit ${node.title}`}
+                    aria-label={t('actions.editAria', { title: node.title })}
                     onClick={() => setRenamingId(node.id)}
                     className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
                   >
@@ -109,14 +111,14 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
       </div>
     ) : null;
 
-  const description = 'Add to your inbox. Keep typing to add several.';
+  const description = t('capture.description');
 
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Capture</DialogTitle>
+            <DialogTitle>{t('nav.capture')}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
           {form}
@@ -130,7 +132,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="bottom">
         <SheetHeader>
-          <SheetTitle>Capture</SheetTitle>
+          <SheetTitle>{t('nav.capture')}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
         </SheetHeader>
         {form}
