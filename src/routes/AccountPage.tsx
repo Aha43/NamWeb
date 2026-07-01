@@ -23,16 +23,17 @@ import { LOCALES, type Locale } from '@/lib/i18n';
 
 const SAMPLE_ISO = '2026-06-14';
 const DATE_FORMAT_OPTIONS: { value: DateFormat; label: string }[] = [
-  { value: 'medium', label: 'Medium' },
-  { value: 'iso', label: 'ISO' },
-  { value: 'dmy', label: 'Day/Month/Year' },
-  { value: 'mdy', label: 'Month/Day/Year' },
+  { value: 'medium', label: 'account.fmtMedium' },
+  { value: 'iso', label: 'account.fmtIso' },
+  { value: 'dmy', label: 'account.fmtDmy' },
+  { value: 'mdy', label: 'account.fmtMdy' },
 ];
 
 type Tab = 'account' | 'preferences';
 
 /** The Settings/Account home: identity/security on the Account tab, device preferences on Preferences. */
 export function AccountPage() {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const tab: Tab = params.get('tab') === 'preferences' ? 'preferences' : 'account';
   const setTab = (next: Tab) =>
@@ -40,23 +41,23 @@ export function AccountPage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+      <h1 className="text-2xl font-semibold tracking-tight">{t('nav.settings')}</h1>
 
       <div role="tablist" className="mt-4 flex gap-1 border-b border-border">
-        {(['account', 'preferences'] as Tab[]).map((t) => (
+        {(['account', 'preferences'] as Tab[]).map((tabKey) => (
           <button
-            key={t}
+            key={tabKey}
             role="tab"
-            aria-selected={tab === t}
-            onClick={() => setTab(t)}
+            aria-selected={tab === tabKey}
+            onClick={() => setTab(tabKey)}
             className={cn(
               '-mb-px border-b-2 px-3 py-2 text-sm font-medium capitalize transition-colors',
-              tab === t
+              tab === tabKey
                 ? 'border-primary text-foreground'
                 : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
-            {t}
+            {t(tabKey === 'account' ? 'account.tabAccount' : 'account.tabPreferences')}
           </button>
         ))}
       </div>
@@ -67,6 +68,7 @@ export function AccountPage() {
 }
 
 function AccountTab() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
@@ -81,7 +83,7 @@ function AccountTab() {
     try {
       downloadJson(await buildUserExport(supabase));
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : 'Export failed.');
+      setExportError(err instanceof Error ? err.message : t('account.exportFailed'));
     } finally {
       setExporting(false);
     }
@@ -90,17 +92,17 @@ function AccountTab() {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <Label>Email</Label>
+        <Label>{t('account.email')}</Label>
         <p className="text-sm text-foreground">{email ?? '…'}</p>
       </div>
 
       <div className="space-y-1.5">
         <Button variant="secondary" onClick={onExport} disabled={exporting} className="gap-2">
           <Download className="h-4 w-4" />
-          {exporting ? 'Preparing…' : 'Export my data'}
+          {exporting ? t('account.preparing') : t('account.exportData')}
         </Button>
         <p className="text-xs text-muted-foreground">
-          Download a JSON copy of all your workspaces.
+          {t('account.exportHelp')}
         </p>
         {exportError && (
           <p role="alert" className="text-sm text-destructive">
@@ -115,7 +117,7 @@ function AccountTab() {
 
       <Button variant="outline" onClick={() => void supabase.auth.signOut()} className="gap-2">
         <LogOut className="h-4 w-4" />
-        Sign out
+        {t('nav.signOut')}
       </Button>
 
       <DeleteAccount />
@@ -124,6 +126,7 @@ function AccountTab() {
 }
 
 function InviteFriend() {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const link = `${window.location.origin}/?invite=1`;
 
@@ -139,19 +142,20 @@ function InviteFriend() {
 
   return (
     <div className="space-y-1.5">
-      <p className="text-sm font-medium text-foreground">Invite a friend</p>
+      <p className="text-sm font-medium text-foreground">{t('account.inviteTitle')}</p>
       <Button variant="secondary" onClick={copy} className="gap-2">
         {copied ? <Copy className="h-4 w-4" /> : <UserPlus className="h-4 w-4" />}
-        {copied ? 'Link copied!' : 'Copy invite link'}
+        {copied ? t('account.linkCopied') : t('account.copyInvite')}
       </Button>
       <p className="text-xs text-muted-foreground">
-        Share this link to invite someone to Nam — it opens straight to sign-up.
+        {t('account.inviteHelp')}
       </p>
     </div>
   );
 }
 
 function DeleteAccount() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -179,13 +183,13 @@ function DeleteAccount() {
 
   return (
     <div className="space-y-2 rounded-md border border-destructive/40 p-4">
-      <p className="text-sm font-medium text-destructive">Danger zone</p>
+      <p className="text-sm font-medium text-destructive">{t('account.dangerZone')}</p>
       <p className="text-xs text-muted-foreground">
-        Permanently delete your account and all your cloud data. This can't be undone.
+        {t('account.deleteHelp')}
       </p>
       <Button variant="destructive" onClick={() => setOpen(true)} className="gap-2">
         <Trash2 className="h-4 w-4" />
-        Delete account
+        {t('account.deleteAccount')}
       </Button>
 
       <Dialog
@@ -200,22 +204,20 @@ function DeleteAccount() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete your account?</DialogTitle>
+            <DialogTitle>{t('account.deleteTitle')}</DialogTitle>
             <DialogDescription>
-              This permanently removes your account and all your workspaces from the cloud — on the web
-              and any synced device. Local desktop files on your own machine are not affected. This
-              can't be undone.
+              {t('account.deleteDesc')}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
             <Button variant="outline" onClick={exportFirst} className="gap-2">
               <Download className="h-4 w-4" />
-              Export my data first
+              {t('account.exportFirst')}
             </Button>
             <div>
               <Label htmlFor="confirm-delete" className="text-xs text-muted-foreground">
-                Type DELETE to confirm
+                {t('account.typeDelete')}
               </Label>
               <input
                 id="confirm-delete"
@@ -233,14 +235,14 @@ function DeleteAccount() {
 
           <DialogFooter>
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline">{t('common.cancel')}</Button>
             </DialogClose>
             <Button
               variant="destructive"
               disabled={busy || confirmText !== 'DELETE'}
               onClick={onDelete}
             >
-              {busy ? 'Deleting…' : 'Delete account'}
+              {busy ? t('account.deleting') : t('account.deleteAccount')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -250,6 +252,7 @@ function DeleteAccount() {
 }
 
 function ChangePassword() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState(false);
@@ -282,10 +285,10 @@ function ChangePassword() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-2">
-      <p className="text-sm font-medium text-foreground">Change password</p>
+      <p className="text-sm font-medium text-foreground">{t('account.changePassword')}</p>
       <div>
         <Label htmlFor="new-password" className="text-xs text-muted-foreground">
-          New password
+          {t('account.newPassword')}
         </Label>
         <input
           id="new-password"
@@ -298,7 +301,7 @@ function ChangePassword() {
       </div>
       <div>
         <Label htmlFor="confirm-password" className="text-xs text-muted-foreground">
-          Confirm new password
+          {t('account.confirmPassword')}
         </Label>
         <input
           id="confirm-password"
@@ -311,14 +314,14 @@ function ChangePassword() {
       </div>
       <Button type="submit" variant="secondary" disabled={busy} className="gap-2">
         <KeyRound className="h-4 w-4" />
-        {busy ? 'Saving…' : 'Update password'}
+        {busy ? t('account.saving') : t('account.updatePassword')}
       </Button>
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
       )}
-      {done && <p className="text-sm text-muted-foreground">Password updated.</p>}
+      {done && <p className="text-sm text-muted-foreground">{t('account.passwordUpdated')}</p>}
     </form>
   );
 }
@@ -347,7 +350,7 @@ function PreferencesTab() {
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="settings-date-format">Date format</Label>
+        <Label htmlFor="settings-date-format">{t('account.dateFormat')}</Label>
         <select
           id="settings-date-format"
           value={dateFormat}
@@ -356,12 +359,12 @@ function PreferencesTab() {
         >
           {DATE_FORMAT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {opt.label} — {formatDate(SAMPLE_ISO, opt.value)}
+              {t(opt.label)} — {formatDate(SAMPLE_ISO, opt.value)}
             </option>
           ))}
         </select>
         <p className="text-xs text-muted-foreground">
-          How due dates are displayed. Date entry is unaffected.
+          {t('account.dateFormatHelp')}
         </p>
       </div>
 
@@ -373,11 +376,10 @@ function PreferencesTab() {
             onChange={(e) => setAddToBottomDefault(e.target.checked)}
             className="mt-0.5"
           />
-          <span>New items go to the bottom by default</span>
+          <span>{t('account.addBottom')}</span>
         </label>
         <p className="text-xs text-muted-foreground">
-          Your default position for new actions, projects, and inbox captures (off = top). You can flip
-          it just for now with the top/bottom toggle beside each add box; that resets to this default.
+          {t('account.addBottomHelp')}
         </p>
       </div>
     </div>
