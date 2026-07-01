@@ -1,6 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ProjectSummaryDialog } from './ProjectSummaryDialog';
+import { activateLocale } from '@/lib/i18n';
+
+// react-i18next uses the global instance (initialized in the test setup, English active), so no
+// per-test provider is needed. Restore English after any locale-switch test.
+afterEach(async () => {
+  await activateLocale('en');
+});
 
 describe('ProjectSummaryDialog', () => {
   it('builds with Next+Backlog by default, regenerates when toggling Done, and copies', async () => {
@@ -42,5 +49,15 @@ describe('ProjectSummaryDialog', () => {
     fireEvent.keyDown(screen.getByLabelText('Project summary (Markdown)'), { key: 'Enter', ctrlKey: true });
     expect(writeText).toHaveBeenCalledWith('# P (NEXT,BACKLOG) +subs');
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('renders Norwegian (nb) when the locale is switched — the i18n spike proof (#400)', async () => {
+    await activateLocale('nb');
+    render(<ProjectSummaryDialog open onOpenChange={vi.fn()} title="P" buildSummary={() => ''} />);
+    // Domain status names + UI strings + the interpolated title all render in Norwegian.
+    expect(screen.getByLabelText('Neste')).toBeInTheDocument(); // domain.status.next
+    expect(screen.getByLabelText('Etterslep')).toBeInTheDocument(); // domain.status.backlog
+    expect(screen.getByRole('button', { name: 'Lukk' })).toBeInTheDocument(); // summary.close
+    expect(screen.getByText('Sammendrag — P')).toBeInTheDocument(); // interpolated title
   });
 });
