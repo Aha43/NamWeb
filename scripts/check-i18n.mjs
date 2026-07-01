@@ -25,7 +25,8 @@ const RE = /(?<![\w])t\(\s*['"`]([^'"`]+)['"`]/g;
 const used = new Set();
 for (const file of walk('src')) {
   const src = readFileSync(file, 'utf8');
-  for (const m of src.matchAll(RE)) used.add(m[1]);
+  // Skip interpolated/dynamic keys — e.g. t(`domain.status.${s}`) — they're resolved at runtime.
+  for (const m of src.matchAll(RE)) if (!m[1].includes('${')) used.add(m[1]);
 }
 
 const missingInEn = [...used].filter((k) => !enKeys.has(k)).sort();

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { nowIso } from '@/lib/local';
@@ -13,6 +14,7 @@ import { tagFilterParams } from '@/features/tags/tagFilterParams';
 
 /** Immersive full-screen execution surface (outside the shell chrome). */
 export function FocusPage() {
+  const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { document, dispatch } = useWorkspaceContext();
@@ -57,7 +59,13 @@ export function FocusPage() {
             ? 'done'
             : 'next';
   const projectTitle = projectId && document ? document.nodes[projectId]?.title : undefined;
-  const scopedLabel = projectId ? (projectTitle ?? 'project') : isDue ? 'due' : isDone ? 'done' : tags.join(', ');
+  const scopedLabel = projectId
+    ? (projectTitle ?? t('focus.scopeProject'))
+    : isDue
+      ? t('focus.scopeDue')
+      : isDone
+        ? t('focus.scopeDone')
+        : tags.join(', ');
   // A scoped deck (project / tags / due / done) mixes statuses, so no flat Next↔Backlog re-triage flip.
   const flat = !projectId && !isTag && !isDue && !isDone;
 
@@ -74,13 +82,13 @@ export function FocusPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-background text-foreground">
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <Button variant="ghost" size="icon" aria-label="Exit focus" onClick={exit}>
+        <Button variant="ghost" size="icon" aria-label={t('focus.exit')} onClick={exit}>
           <X />
         </Button>
 
         {projectId || isTag || isDue || isDone ? (
           <span className="truncate px-3 text-sm font-medium text-foreground">
-            Focus: {scopedLabel}
+            {t('focus.scopedTitle', { label: scopedLabel })}
           </span>
         ) : (
           <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
@@ -94,7 +102,7 @@ export function FocusPage() {
                   source === s ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground',
                 )}
               >
-                {s}
+                {t(`domain.status.${s}`)}
               </button>
             ))}
           </div>
@@ -111,9 +119,17 @@ export function FocusPage() {
         onDone={(id) =>
           dispatch({ type: 'setStatus', id, status: isDone ? 'NEXT' : 'DONE', now: nowIso() })
         }
-        doneLabel={isDone ? 'To Next' : 'Done'}
+        doneLabel={isDone ? t('focus.toNext') : undefined}
         // In-flow re-triage: flat queues flip Next↔Backlog; Done-focus moves the card to Backlog.
-        flipLabel={flat ? (sourceParam === 'backlog' ? 'Next' : 'Backlog') : isDone ? 'Backlog' : undefined}
+        flipLabel={
+          flat
+            ? sourceParam === 'backlog'
+              ? t('domain.status.next')
+              : t('domain.status.backlog')
+            : isDone
+              ? t('domain.status.backlog')
+              : undefined
+        }
         onFlip={
           flat
             ? (id) =>
