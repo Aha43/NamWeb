@@ -260,7 +260,7 @@
   "inbox.deleteAria": "Slett {title}",
   "inbox.deleteSelectedAria": "Slett valgte elementer",
   "inbox.deleteSelectedConfirm": "{count, plural, one {Slette # valgt element?} other {Slette # valgte elementer?}}",
-  "inbox.doItNext": "Gjør det neste",
+  "inbox.doItNext": "Gjør det snart",
   "inbox.empty": "Innboks tom. Ingenting å behandle.",
   "inbox.exitSelect": "Avslutt valg",
   "inbox.fallbackProject": "et prosjekt",
