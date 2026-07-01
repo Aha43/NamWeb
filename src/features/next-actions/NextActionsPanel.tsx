@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { EmptyState } from '../actions/ActionRow';
@@ -46,6 +47,7 @@ export function NextActionsPanel({
   onReorder,
   dndEnabled,
 }: NextActionsPanelProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState('');
 
   function submitAdd(event: FormEvent) {
@@ -63,14 +65,14 @@ export function NextActionsPanel({
         {onAdd && (
           <form onSubmit={submitAdd} className="mb-4 flex gap-2">
             <input
-              aria-label="Add a next action"
+              aria-label={t('next.addAria')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Add a next action…"
+              placeholder={t('next.addPlaceholder')}
               className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
             />
             <AddPositionToggle />
-            <Button type="submit">Add</Button>
+            <Button type="submit">{t('common.add')}</Button>
           </form>
         )}
         {sortMode && onCycleSort && rows.length > 0 && (
@@ -80,9 +82,7 @@ export function NextActionsPanel({
         )}
       </div>
       {rows.length === 0 ? (
-        <EmptyState hint="The things you've decided to do now. Add one above, or capture a thought and process it to Next.">
-          No next actions yet
-        </EmptyState>
+        <EmptyState hint={t('next.emptyHint')}>{t('next.empty')}</EmptyState>
       ) : (
         <ReorderableActionList
           rows={rows}

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import type { ActionRowData } from '../actions/rows';
@@ -20,12 +21,11 @@ export interface BlockedPanelProps {
 
 /** Blocked actions grouped under each active prerequisite. Presentational. */
 export function BlockedPanel({ groups, onOpenBlocker, onSetStatus, onEdit, onDelete, onRename }: BlockedPanelProps) {
+  const { t } = useTranslation();
   if (groups.length === 0) {
     return (
       <section>
-        <EmptyState hint="When you mark an action as waiting on a prerequisite, it shows here — grouped under what's blocking it.">
-          Nothing blocked
-        </EmptyState>
+        <EmptyState hint={t('blocked.emptyHint')}>{t('blocked.empty')}</EmptyState>
       </section>
     );
   }
@@ -36,11 +36,11 @@ export function BlockedPanel({ groups, onOpenBlocker, onSetStatus, onEdit, onDel
         <div key={group.blocker.id} className="space-y-1">
           <button
             type="button"
-            aria-label={`Open blocker ${group.blocker.title}`}
+            aria-label={t('blocked.openBlockerAria', { title: group.blocker.title })}
             onClick={() => onOpenBlocker(group.blocker.id)}
             className="px-1 text-left text-xs font-semibold text-foreground hover:underline"
           >
-            Blocked by: {group.blocker.title}
+            {t('blocked.blockedBy', { title: group.blocker.title })}
           </button>
           <ActionList>
             {group.rows.map((row) => (

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -15,9 +16,9 @@ const TONE: Partial<Record<NodeStatus, string>> = {
   DONE: 'text-green-600 dark:text-green-400 border-green-600/40',
 };
 const OPTIONS: { status: NodeStatus; label: string }[] = [
-  { status: 'NEXT', label: 'Next' },
-  { status: 'BACKLOG', label: 'Backlog' },
-  { status: 'DONE', label: 'Done' },
+  { status: 'NEXT', label: 'domain.status.next' },
+  { status: 'BACKLOG', label: 'domain.status.backlog' },
+  { status: 'DONE', label: 'domain.status.done' },
 ];
 
 /** A status badge (N/B/D) that opens a menu to switch Next / Backlog / Done. */
@@ -30,11 +31,12 @@ export function StatusMenu({
   title: string;
   onSetStatus: (status: NodeStatus) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <DropdownMenu>
-      <Tooltip label={`Status: ${status} — change`}>
+      <Tooltip label={t('list.statusTooltip', { status })}>
         <DropdownMenuTrigger
-          aria-label={`Status of ${title}: ${status}. Change status.`}
+          aria-label={t('list.statusAria', { title, status })}
           className={cn(
             'inline-flex h-6 w-6 items-center justify-center rounded-md border text-xs font-semibold outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
             TONE[status] ?? 'text-muted-foreground border-border',
@@ -46,7 +48,7 @@ export function StatusMenu({
       <DropdownMenuContent align="end">
         {OPTIONS.map((option) => (
           <DropdownMenuItem key={option.status} onSelect={() => onSetStatus(option.status)}>
-            {option.label}
+            {t(option.label)}
           </DropdownMenuItem>
         ))}
       </DropdownMenuContent>
