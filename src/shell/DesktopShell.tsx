@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { PanelLeftClose, PanelLeftOpen, Plus, Search, Target } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
@@ -24,6 +25,7 @@ import {
 /** Laptop/desktop: a top toolbar (search + tags + theme + account) over a resizable, collapsible
  *  view-list sidebar (grouped) and the workspace. */
 export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
+  const { t } = useTranslation();
   const { openCapture } = useCapture();
   const { width, collapsed, setWidth, toggleCollapsed } = useSidebarLayout();
 
@@ -57,11 +59,11 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
     <div className="flex h-dvh flex-col bg-background text-foreground">
       <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
         <div className="flex min-w-0 items-center gap-2">
-          <Tooltip label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          <Tooltip label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}>
             <Button
               variant="ghost"
               size="icon"
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}
               onClick={toggleCollapsed}
             >
               {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
@@ -89,32 +91,32 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
 
               {/* The two "do" actions, foregrounded (mirrors the phone bottom bar). */}
               <div className="mt-4 flex flex-col gap-2">
-                <Tooltip label="Capture a thought · c">
+                <Tooltip label={t('nav.captureTooltip')}>
                   <Button className="justify-start gap-2" onClick={openCapture}>
                     <Plus />
-                    Capture
+                    {t('nav.capture')}
                   </Button>
                 </Tooltip>
-                <Tooltip label={focus.hint}>
+                <Tooltip label={t(focus.hint!)}>
                   <Button asChild variant="outline" className="justify-start gap-2">
                     <NavLink to="/focus">
                       <Target className="focus-glow" />
-                      Focus
+                      {t('domain.focus')}
                     </NavLink>
                   </Button>
                 </Tooltip>
               </div>
 
-              <nav aria-label="Sidebar" className="mt-5 flex flex-col gap-4">
+              <nav aria-label={t('nav.sidebarLandmark')} className="mt-5 flex flex-col gap-4">
                 {SIDEBAR_GROUPS.map((group, i) => (
                   <div key={group.label ?? i} className="flex flex-col gap-1">
                     {group.label && (
                       <span className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
-                        {group.label}
+                        {t(group.label)}
                       </span>
                     )}
                     {group.items.map(({ to, label, icon: Icon, hint }) => (
-                      <Tooltip key={to} label={hint}>
+                      <Tooltip key={to} label={hint ? t(hint) : ''}>
                         {/* Static (string) className + aria-current for the active state — a render-prop
                             className breaks when the Tooltip's asChild Slot clones the NavLink. */}
                         <NavLink
@@ -125,7 +127,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                           )}
                         >
                           <Icon className="h-4 w-4" />
-                          {label}
+                          {t(label)}
                         </NavLink>
                       </Tooltip>
                     ))}
@@ -138,7 +140,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             <div
               role="separator"
               aria-orientation="vertical"
-              aria-label="Resize sidebar"
+              aria-label={t('nav.resizeSidebar')}
               aria-valuenow={width}
               aria-valuemin={SIDEBAR_MIN_WIDTH}
               aria-valuemax={SIDEBAR_MAX_WIDTH}
@@ -146,7 +148,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               onPointerDown={onResizeStart}
               onKeyDown={onResizeKeyDown}
               onDoubleClick={() => setWidth(SIDEBAR_DEFAULT_WIDTH)}
-              title="Drag to resize · double-click to reset"
+              title={t('nav.resizeSidebarTitle')}
               className="w-1 shrink-0 cursor-col-resize bg-border transition-colors hover:bg-ring focus-visible:bg-ring focus-visible:outline-hidden"
             />
           </>
@@ -170,6 +172,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
 /** Toolbar search box: drives the Search surface via the `?q=` URL param so results show live.
  *  The box persists across routes (it lives outside the routed Outlet), so focus is kept while typing. */
 function ToolbarSearch() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
@@ -182,7 +185,7 @@ function ToolbarSearch() {
       <input
         id={TOOLBAR_SEARCH_ID}
         type="search"
-        aria-label="Search workspace"
+        aria-label={t('nav.searchWorkspace')}
         value={value}
         onChange={(e) => {
           const q = e.target.value;
@@ -191,7 +194,7 @@ function ToolbarSearch() {
             { replace: onSearch },
           );
         }}
-        placeholder="Search…"
+        placeholder={t('nav.searchPlaceholder')}
         className="w-44 rounded-md border border-input bg-background py-1.5 pl-8 pr-7 text-sm outline-hidden focus:border-ring sm:w-64"
       />
       {/* Discoverability: the "/" shortcut focuses this box (see useGlobalShortcuts). */}
