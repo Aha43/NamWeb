@@ -129,6 +129,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
           <ActionRow
             key={row.id}
             row={row}
+            colorByStatus={false} // every row is DONE here — status color adds nothing
             onEdit={onEdit && (() => onEdit(row.id))}
             onDelete={selectMode ? undefined : () => onDelete(row.id)}
             selectable={selectMode}

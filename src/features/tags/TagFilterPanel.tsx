@@ -268,6 +268,7 @@ export function TagFilterPanel({
                 <ActionRow
                   key={row.id}
                   row={row}
+                  colorByStatus={!nextOnly} // next-only = all NEXT; otherwise the list mixes statuses
                   onEdit={onEdit && (() => onEdit(row.id))}
                   onDelete={onDeleteAction && (() => onDeleteAction(row.id))}
                   onRename={onRename && ((title) => onRename(row.id, title))}

@@ -32,4 +32,31 @@ describe('ActionRow', () => {
     // Title stays the edit trigger; the description rides as a hover tooltip (armed via Tooltip).
     expect(screen.getByRole('button', { name: 'Edit Buy tiles' })).toHaveTextContent('Buy tiles');
   });
+
+  it('tints the title by status when colorByStatus is on (#565)', () => {
+    const { rerender } = render(
+      <ul>
+        <ActionRow row={row({ status: 'DONE' })} actions={null} />
+      </ul>,
+    );
+    expect(screen.getByText('Buy tiles').className).toContain('text-green-600');
+
+    rerender(
+      <ul>
+        <ActionRow row={row({ status: 'BACKLOG' })} actions={null} />
+      </ul>,
+    );
+    expect(screen.getByText('Buy tiles').className).toContain('text-muted-foreground');
+  });
+
+  it('leaves the title uncolored when colorByStatus is off (single-status views) (#565)', () => {
+    render(
+      <ul>
+        <ActionRow row={row({ status: 'DONE' })} actions={null} colorByStatus={false} />
+      </ul>,
+    );
+    const title = screen.getByText('Buy tiles');
+    expect(title.className).toContain('text-foreground');
+    expect(title.className).not.toContain('text-green-600');
+  });
 });

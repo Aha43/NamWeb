@@ -16,7 +16,7 @@ test('add a resource via the editor; the row shows a paperclip', async ({ page, 
   const dialog = page.getByRole('dialog');
   await dialog.getByRole('button', { name: 'Resources' }).click(); // expand the collapsed section
   await dialog.getByLabel('Resource value').fill('https://spec.test');
-  await dialog.getByRole('button', { name: 'Add' }).click();
+  await dialog.getByRole('button', { name: 'Add', exact: true }).click(); // not "＋ Add time or a range" (#559)
   await dialog.getByRole('button', { name: 'Save' }).click();
 
   await expect(page.getByLabel('Has resources')).toBeVisible();

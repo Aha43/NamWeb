@@ -20,7 +20,7 @@ test.describe('projects workbench', () => {
     await page.getByLabel('Add action').fill('Buy shingles');
     await page.getByLabel('Add action').press('Enter');
     await expect(page.getByText('Buy shingles')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Status of Buy shingles: BACKLOG/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Status of Buy shingles: Backlog/ })).toBeVisible();
 
     // Add a sub-project and drill into it.
     await page.getByLabel('Add sub-project').fill('Phase 1');

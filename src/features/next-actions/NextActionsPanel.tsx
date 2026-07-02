@@ -86,6 +86,7 @@ export function NextActionsPanel({
       ) : (
         <ReorderableActionList
           rows={rows}
+          colorByStatus={false} // every row is NEXT here — status color adds nothing
           onEdit={onEdit}
           onDelete={onDelete}
           onRename={onRename}

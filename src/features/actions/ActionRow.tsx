@@ -9,6 +9,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
+import { STATUS_TEXT_TONE } from './StatusMenu';
 import { ProjectPathLinks } from './ProjectPathLinks';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { descriptionTooltip, type ActionRowData } from './rows';
@@ -33,6 +34,7 @@ export function ActionRow({
   selected = false,
   onSelectedChange,
   variant = 'row',
+  colorByStatus = true,
 }: {
   row: ActionRowData;
   actions: ReactNode;
@@ -51,6 +53,9 @@ export function ActionRow({
   /** `row` (default) = the horizontal list row. `card` = a compact Kanban card for the Column view:
    *  title on its own line, no project path/age, controls in a hover-revealed footer (#445). */
   variant?: 'row' | 'card';
+  /** Tint the title by status (NEXT/DONE/BACKLOG) so status is scannable in mixed lists. Turn off in
+   *  single-status views (Next/Backlog/Done, next-only Context) where every row shares one status. */
+  colorByStatus?: boolean;
 }) {
   const { t } = useTranslation();
   const { dateFormat } = useSettings();
@@ -70,10 +75,11 @@ export function ActionRow({
   // When a row has notes, hovering its title shows them (truncated). Use a plain truncating title
   // then (its own full-title tooltip would otherwise nest inside this one).
   const descTip = descriptionTooltip(row.description);
+  const titleTone = colorByStatus ? STATUS_TEXT_TONE[row.status] ?? 'text-foreground' : 'text-foreground';
   const titleInner = descTip ? (
-    <span className="block truncate text-sm text-foreground">{row.title}</span>
+    <span className={cn('block truncate text-sm', titleTone)}>{row.title}</span>
   ) : (
-    <TruncatedTitle text={row.title} className="block text-sm text-foreground" />
+    <TruncatedTitle text={row.title} className={cn('block text-sm', titleTone)} />
   );
   const titleEl = onEdit ? (
     // Click the title to open the editor (replaces the old slider/edit icon).
