@@ -22,7 +22,7 @@ export function SyncNotice() {
           : 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200',
       )}
     >
-      <span className="min-w-0">{ws.notice.message}</span>
+      <span className="min-w-0">{ws.notice.raw ?? t(ws.notice.messageKey)}</span>
       <div className="flex shrink-0 items-center gap-3">
         {isError && (
           <button type="button" onClick={ws.retrySync} className="font-medium hover:underline">
