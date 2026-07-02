@@ -61,12 +61,12 @@ export function ActionRow({
    *  e.g. inside a project page, whose header already names it (#569). */
   showPath?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { dateFormat } = useSettings();
-  const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat, t) : null;
+  const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat, t, i18n.language) : null;
   // A date range: append the end date when it's set and not before the start.
   const dueEnd =
-    row.dueAt && row.dueEndAt && row.dueEndAt >= row.dueAt ? formatDate(row.dueEndAt, dateFormat) : null;
+    row.dueAt && row.dueEndAt && row.dueEndAt >= row.dueAt ? formatDate(row.dueEndAt, dateFormat, i18n.language) : null;
   // Optional time of day on the start, shown after the date (#493).
   const dueTime = row.dueAt && row.dueTime ? row.dueTime : null;
   // Optional time of day on the end, shown after the end date (#500).

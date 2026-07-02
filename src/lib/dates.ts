@@ -7,8 +7,6 @@ import type { TFunction } from 'i18next';
 /** Optional translator for the relative-word labels; absent → English (keeps pure-lib tests simple). */
 type Translate = TFunction | ((key: string, opts?: { count?: number }) => string);
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
 /** User-selectable date display format (Settings → Date format). `parseFlexibleDate` and the Due
  *  input echo stay ISO regardless — this governs display only. */
 export type DateFormat = 'medium' | 'iso' | 'dmy' | 'mdy';
@@ -17,10 +15,11 @@ export const DEFAULT_DATE_FORMAT: DateFormat = 'medium';
 
 /**
  * Render an ISO `yyyy-MM-dd` date for display in the chosen format:
- * `medium` → "Jun 14, 2026", `iso` → "2026-06-14", `dmy` → "14/06/2026", `mdy` → "06/14/2026".
+ * `medium` → "Jun 14, 2026" (month name in the given `locale` — e.g. "14. jun. 2026" in nb, #575),
+ * `iso` → "2026-06-14", `dmy` → "14/06/2026", `mdy` → "06/14/2026".
  * Returns the input unchanged if it isn't an ISO date.
  */
-export function formatDate(iso: string, format: DateFormat = DEFAULT_DATE_FORMAT): string {
+export function formatDate(iso: string, format: DateFormat = DEFAULT_DATE_FORMAT, locale = 'en'): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!match) return iso;
   const [, ys, ms, ds] = match;
@@ -33,7 +32,9 @@ export function formatDate(iso: string, format: DateFormat = DEFAULT_DATE_FORMAT
       return `${ms}/${ds}/${ys}`;
     case 'medium':
     default:
-      return `${MONTHS[Number(ms) - 1]} ${Number(ds)}, ${ys}`;
+      return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric' }).format(
+        new Date(Number(ys), Number(ms) - 1, Number(ds)),
+      );
   }
 }
 
@@ -116,6 +117,7 @@ export function formatDueHint(
   now: Date = new Date(),
   format: DateFormat = DEFAULT_DATE_FORMAT,
   t?: Translate,
+  locale = 'en',
 ): DueHint | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueAt);
   if (!match) return null;
@@ -124,10 +126,10 @@ export function formatDueHint(
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const days = Math.round((due.getTime() - today.getTime()) / 86_400_000);
 
-  if (days < 0) return { label: formatDate(dueAt, format), tone: 'overdue' };
+  if (days < 0) return { label: formatDate(dueAt, format, locale), tone: 'overdue' };
   if (days === 0) return { label: t ? t('dates.dueToday') : 'Today', tone: 'today' };
   if (days <= 7) return { label: t ? t('dates.days', { count: days }) : `${days}d`, tone: 'soon' };
-  return { label: formatDate(dueAt, format), tone: 'later' };
+  return { label: formatDate(dueAt, format, locale), tone: 'later' };
 }
 
 export interface AgeHint {

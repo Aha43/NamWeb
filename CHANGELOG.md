@@ -36,6 +36,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **Dates speak Norwegian too.** Medium-formatted dates ("May 4, 2026") and the calendar picker's month header + weekday row were still hardcoded English; they now follow the app language ("4. mai 2026", "mai 2026", "ma ti on …"). The numeric formats (ISO, dd/mm, mm/dd) stay as chosen. Closes #575.
+
 - **⌘/Ctrl+Enter no longer fires through stacked dialogs.** With the project picker open from the action editor (Move to…), one keypress used to confirm the move *and* save/close the editor underneath; and pressed inside the picker's "＋ New project…" prompt it confirmed the picker and threw away the typed name. The topmost surface now owns the shortcut. Closes #574.
 
 - **A stale status-Undo can't overwrite a newer change.** If an action's status changed again while an earlier Undo toast was still showing, clicking that older Undo used to silently revert the newer choice; it now no-ops once the action has moved on. Closes #573.

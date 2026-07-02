@@ -7,14 +7,15 @@ import { cn } from '@/lib/utils';
 // A small, dependency-free month calendar — for *seeing* what weekday a date lands on while planning.
 // Type-in (yy-mm-dd) stays the primary path; this is an additive affordance (#499). Monday-first.
 
-const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-const MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-];
-
 const iso = (y: number, m: number, d: number) =>
   `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+/** Two-letter weekday headers, Monday-first, in the given locale (en "Mo Tu …", nb "ma ti …", #575). */
+function weekdayHeaders(locale: string): string[] {
+  const fmt = new Intl.DateTimeFormat(locale, { weekday: 'short' });
+  // 2024-01-01 is a Monday.
+  return Array.from({ length: 7 }, (_, i) => fmt.format(new Date(2024, 0, 1 + i)).slice(0, 2));
+}
 
 /** The calendar grid itself (no popover) — exported for testing. */
 export function CalendarGrid({
@@ -26,7 +27,7 @@ export function CalendarGrid({
   onSelect: (isoDate: string) => void;
   today?: Date;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const seed =
     selected && /^\d{4}-\d{2}-\d{2}$/.test(selected)
       ? { y: Number(selected.slice(0, 4)), m: Number(selected.slice(5, 7)) - 1 }
@@ -49,15 +50,17 @@ export function CalendarGrid({
           className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground">
           <ChevronLeft className="h-4 w-4" />
         </button>
-        <span className="text-sm font-medium">{MONTHS[view.m]} {view.y}</span>
+        <span className="text-sm font-medium">
+          {new Intl.DateTimeFormat(i18n.language, { month: 'long' }).format(new Date(view.y, view.m, 1))} {view.y}
+        </span>
         <button type="button" aria-label={t('datePicker.nextMonth')} onClick={() => step(1)}
           className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-0.5 text-center text-[11px] text-muted-foreground">
-        {WEEKDAYS.map((w) => (
-          <span key={w} className="py-1">{w}</span>
+        {weekdayHeaders(i18n.language).map((w, i) => (
+          <span key={i} className="py-1">{w}</span>
         ))}
         {Array.from({ length: firstWeekday }, (_, i) => <span key={`b${i}`} />)}
         {Array.from({ length: daysInMonth }, (_, i) => {
