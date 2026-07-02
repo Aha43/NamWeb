@@ -22,8 +22,12 @@ import {
   useSidebarLayout,
 } from './useSidebarLayout';
 
-/** Laptop/desktop: a top toolbar (search + tags + theme + account) over a resizable, collapsible
- *  view-list sidebar (grouped) and the workspace. */
+/** Command-bar nav buttons: quiet by default, accent when it's the current page. */
+const NAV_BUTTON =
+  'gap-1.5 aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground';
+
+/** Laptop/desktop: a top toolbar (search + command bar + theme + account) over a resizable,
+ *  collapsible view-list sidebar (grouped) and the workspace. */
 export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   const { t } = useTranslation();
   const { openCapture } = useCapture();
@@ -73,51 +77,46 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
           {/* The command bar (#590): the foregrounded actions moved up from the sidebar — capture,
               jump to Next / Contexts / Projects (with their bookmark quick-jump chevrons, #588),
               and Focus. Toolbar-resident, so they (and the bookmarks) survive a collapsed sidebar. */}
-          <div className="ml-1 flex min-w-0 items-center gap-1.5">
+          {/* Uniform quiet styling: toolbar position already foregrounds these, so no colored
+              stand-out buttons (the colors earned their keep in the sidebar list, not here).
+              Nav buttons highlight via aria-current; icons keep each one scannable. */}
+          <div className="ml-1 flex min-w-0 items-center gap-0.5">
             <Tooltip label={t('nav.captureTooltip')}>
-              <Button size="sm" className="gap-1.5" onClick={openCapture}>
+              <Button size="sm" variant="ghost" className="gap-1.5" onClick={openCapture}>
                 <Plus />
                 {t('nav.capture')}
               </Button>
             </Tooltip>
             <Tooltip label={t(next.hint!)}>
-              <Button asChild size="sm" className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700">
+              <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                 <NavLink to={next.to}>
                   <ListTodo />
                   {t(next.label)}
                 </NavLink>
               </Button>
             </Tooltip>
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center">
               <Tooltip label={t(tags.hint!)}>
-                <Button asChild size="sm" className="gap-1.5 bg-violet-600 text-white hover:bg-violet-700">
+                <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                   <NavLink to={tags.to}>
                     <Tag />
                     {t(tags.label)}
                   </NavLink>
                 </Button>
               </Tooltip>
-              <SidebarBookmarkMenu
-                kind="tagFilter"
-                className="bg-violet-600 text-white hover:bg-violet-700 hover:text-white"
-              />
+              <SidebarBookmarkMenu kind="tagFilter" />
             </div>
             <Tooltip label={t(focus.hint!)}>
-              <Button asChild size="sm" variant="outline" className="gap-1.5">
+              <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                 <NavLink to="/focus">
                   <Target className="focus-glow" />
                   {t('domain.focus')}
                 </NavLink>
               </Button>
             </Tooltip>
-            <div className="flex items-center gap-0.5">
+            <div className="flex items-center">
               <Tooltip label={t(projects.hint!)}>
-                <Button
-                  asChild
-                  size="sm"
-                  variant="ghost"
-                  className="gap-1.5 aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground"
-                >
+                <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                   <NavLink to={projects.to}>
                     <Folders />
                     {t(projects.label)}
