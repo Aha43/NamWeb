@@ -55,12 +55,12 @@ test.describe('bookmark as starting point (#595)', () => {
   test('browse from a bookmarked hub and open a descendant', async ({ page }) => {
     await page.goto('/inbox');
 
+    // Each bookmark row is split: the label opens the project; "…" browses from it.
     await page.getByRole('button', { name: 'Project bookmarks' }).click();
-    await page.getByRole('menu').getByText('Browse all projects…').click();
+    await page.getByRole('menuitem', { name: 'Browse from NAM dev' }).click();
 
-    // The picker opens in open mode; its bookmark chip jumps the columns to the hub.
+    // The picker opens in open mode, already navigated to the hub — its children are one click away.
     const dialog = page.getByRole('dialog', { name: 'Open project' });
-    await dialog.getByRole('button', { name: 'Jump to NAM dev' }).click();
     await dialog.getByRole('button', { name: 'Web' }).click();
     await dialog.getByRole('button', { name: 'Next sprint' }).click();
     await dialog.getByRole('button', { name: 'Open', exact: true }).click();

@@ -10,7 +10,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
-- **Browse from a bookmark (experiment).** The **Projects ▾** menu gains *Browse all projects…* — the Finder-style column picker in a new **open** mode: every project selectable, **Open** navigates to it. Its bookmark chips jump straight to a bookmarked hub (e.g. "NAM dev") so you can drill to a neighbouring sub-project and open it — bookmarks as starting points, not just endpoints. Closes #595.
+- **Browse from a bookmark (experiment).** Each project-bookmark row in **Projects ▾** is now split: the label opens the project as before, and a trailing **…** opens the Finder-style column picker in a new **open** mode, already navigated to that project — drill to a neighbouring sub-project and **Open** it. Bookmarks as starting points, not just endpoints: one hub bookmark (e.g. "NAM dev") reaches its whole subtree. Closes #595.
 
 - **A toolbar command bar (experiment).** Capture, Next, Contexts, Focus, and Projects move from the sidebar up to the toolbar as labeled buttons (with the bookmark quick-jump chevrons on Contexts/Projects) — so the everyday actions and bookmarks stay reachable even with the sidebar collapsed. The sidebar keeps Inbox, the Views group, and Organize (Goals, Templates). Closes #590.
 

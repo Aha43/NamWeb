@@ -18,8 +18,16 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   DropdownMenuTrigger: ({ children }: { children: ReactNode }) => <>{children}</>,
   DropdownMenuContent: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  DropdownMenuItem: ({ children, onClick }: { children: ReactNode; onClick?: () => void }) => (
-    <button role="menuitem" onClick={onClick}>
+  DropdownMenuItem: ({
+    children,
+    onClick,
+    'aria-label': ariaLabel,
+  }: {
+    children: ReactNode;
+    onClick?: () => void;
+    'aria-label'?: string;
+  }) => (
+    <button role="menuitem" aria-label={ariaLabel} onClick={onClick}>
       {children}
     </button>
   ),
@@ -91,18 +99,18 @@ describe('SidebarBookmarkMenu (#588)', () => {
     expect(navigate).toHaveBeenCalledWith('/tags?tags=home&next=1');
   });
 
-  it('the project menu opens the picker in open mode — confirm navigates (#595)', () => {
+  it('a row\'s "…" opens the picker already at that project — Open navigates (#595)', () => {
     renderMenu('project', [projectBm]);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Browse all projects…' }));
-    // The Finder-style picker, in open mode: pick a project, Open navigates to it.
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Browse from Vacation' }));
+    // The Finder-style picker in open mode, pre-navigated: the bookmark is already the selection,
+    // so Open is immediately available and confirms to it.
     expect(screen.getByText('Open project')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Vacation' }));
     fireEvent.click(screen.getByRole('button', { name: 'Open' }));
     expect(navigate).toHaveBeenCalledWith('/projects/p1');
   });
 
-  it('the context menu has no browse item (#595 is a project affair)', () => {
+  it('the context menu has no "…" browse items (#595 is a project affair)', () => {
     renderMenu('tagFilter', [contextBm]);
-    expect(screen.queryByRole('menuitem', { name: 'Browse all projects…' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /Browse from/ })).not.toBeInTheDocument();
   });
 });

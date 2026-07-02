@@ -81,6 +81,7 @@
   "blocked.emptyHint": "When you mark an action as waiting on a prerequisite, it shows here — grouped under what's blocking it.",
   "blocked.openBlockerAria": "Open blocker {title}",
   "bookmarks.contextMenuAria": "Context bookmarks",
+  "bookmarks.browseFromAria": "Browse from {label}",
   "bookmarks.goToAria": "Go to bookmark: {label}",
   "bookmarks.projectMenuAria": "Project bookmarks",
   "bookmarks.removeAria": "Remove bookmark: {label}",

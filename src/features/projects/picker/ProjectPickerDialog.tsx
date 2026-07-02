@@ -32,6 +32,9 @@ export interface ProjectPickerDialogProps {
   targets: PickerTarget[];
   /** Optionally pre-highlight a destination (e.g. the current parent). */
   initialSelectedId?: string;
+  /** Open with the columns already navigated to this project (ancestors opened, it selected) —
+   *  browsing *from* a starting point, e.g. a bookmarked hub (#595). Overrides initialSelectedId. */
+  initialProjectId?: string;
   onConfirm: (targetId: string) => void;
   /**
    * When provided, enables "New project here": create a sub-project under the current location
@@ -52,6 +55,7 @@ export function ProjectPickerDialog({
   confirmLabel,
   targets,
   initialSelectedId,
+  initialProjectId,
   onConfirm,
   onCreateProject,
 }: ProjectPickerDialogProps) {
@@ -63,13 +67,20 @@ export function ProjectPickerDialog({
   const [trail, setTrail] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
 
-  // Reset navigation each time the picker opens, so it doesn't reopen mid-tree from a prior use.
+  // Reset navigation each time the picker opens, so it doesn't reopen mid-tree from a prior use —
+  // or, with `initialProjectId`, open already navigated to that project (mirrors `jumpTo` below).
   useEffect(() => {
-    if (open) {
-      setTrail([]);
-      setSelectedId(initialSelectedId ?? null);
+    if (!open) return;
+    if (initialProjectId && document?.nodes[initialProjectId]) {
+      const ancestorIds = buildPath(document, initialProjectId).map((n) => n.id);
+      const hasChildren = childColumn(document, initialProjectId, allowed).length > 0;
+      setTrail(hasChildren ? [...ancestorIds, initialProjectId] : ancestorIds);
+      setSelectedId(initialProjectId);
+      return;
     }
-  }, [open, initialSelectedId]);
+    setTrail([]);
+    setSelectedId(initialSelectedId ?? null);
+  }, [open, initialSelectedId, initialProjectId, document, allowed]);
 
   // ⌘/Ctrl+Enter confirms the current selection from anywhere in the dialog (mirrors the editor's
   // save shortcut). The ref (assigned to `confirm` below each render) keeps the latest closure
