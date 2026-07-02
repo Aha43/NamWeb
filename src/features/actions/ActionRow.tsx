@@ -35,6 +35,7 @@ export function ActionRow({
   onSelectedChange,
   variant = 'row',
   colorByStatus = true,
+  showPath = true,
 }: {
   row: ActionRowData;
   actions: ReactNode;
@@ -56,6 +57,9 @@ export function ActionRow({
   /** Tint the title by status (NEXT/DONE/BACKLOG) so status is scannable in mixed lists. Turn off in
    *  single-status views (Next/Backlog/Done, next-only Context) where every row shares one status. */
   colorByStatus?: boolean;
+  /** Show the ancestor-project path above the title. Turn off where the path is redundant —
+   *  e.g. inside a project page, whose header already names it (#569). */
+  showPath?: boolean;
 }) {
   const { t } = useTranslation();
   const { dateFormat } = useSettings();
@@ -223,7 +227,7 @@ export function ActionRow({
     >
       {checkbox}
       <div className="min-w-0 flex-1">
-        <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />
+        {showPath && <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />}
         {titleNode}
         {metaNode}
       </div>

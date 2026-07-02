@@ -43,6 +43,15 @@ describe('ProjectWorkbench', () => {
     expect(screen.getByRole('button', { name: 'Open Plumbing' })).toBeInTheDocument();
   });
 
+  it('hides the ancestor path on action rows — the header already names it (#569)', () => {
+    setup({
+      actions: [{ ...actionRow('a', 'Get quotes'), path: [{ id: 'home', title: 'Home' }] }],
+    });
+    expect(screen.getByText('Get quotes')).toBeInTheDocument();
+    // 'Home' appears only in the workbench breadcrumb, not as a path link on the row.
+    expect(screen.queryByRole('link', { name: 'Home' })).not.toBeInTheDocument();
+  });
+
   it('toggles each section with its own key — x/y/z (#436)', () => {
     const onToggleDetails = vi.fn();
     const onToggleSection = vi.fn();

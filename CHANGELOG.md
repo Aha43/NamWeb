@@ -20,6 +20,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **No more redundant path on rows inside a project.** Action rows in the project page no longer repeat the ancestor-project path — the page header already shows it — freeing a line per row. Cross-project views (Next, Contexts, Due, Blocked, …) keep the path. Closes #569.
+
 - **Action titles are tinted by status.** In mixed lists (Due, Blocked, Contexts, project workbench + columns), a title takes its status colour — Next, Done (green), Backlog (muted) — so status is scannable at a glance. No strikethrough. Single-status views (Next, Backlog, Done, next-only Contexts) stay uncoloured. Closes #565.
 
 - **Faster access to Next + Contexts.** Next and the tag-filter view (now called **Contexts**) are prominent colored buttons in the sidebar, right under Capture — so "show my Next actions tagged _work_, then Focus" is a click away. Only the view is renamed; tags themselves are unchanged. Closes #557.
