@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Choose how bookmarks look.** A new **Settings → Preferences → Bookmark appearance** option toggles bookmarks between compact **icons** (name on hover) and **icons with labels**, across the toolbar and the project picker. The phone More sheet always shows labels. Closes #560.
+
 - **Jump to a bookmarked project in the picker.** The project selector now shows your project bookmarks as chips — click one to land straight on that (even deeply-nested) project, then drill further or confirm. The column strip also auto-scrolls to keep the active column in view as you go deeper. Closes #553.
 
 - **Create a project while filing inbox items.** The inbox bulk "File under" picker now offers "＋ New project" (matching the other move pickers) — spin up a project and file the selected captures into it in one go. Closes #554.
