@@ -49,6 +49,8 @@ describe('useGlobalShortcuts', () => {
       setDateFormat: vi.fn(),
       language: 'en',
       setLanguage: vi.fn(),
+      bookmarkStyle: 'icons',
+      setBookmarkStyle: vi.fn(),
       addToBottom: false,
       setAddToBottom,
       addToBottomDefault: false,

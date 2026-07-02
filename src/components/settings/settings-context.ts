@@ -2,12 +2,20 @@ import { createContext, useContext } from 'react';
 import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
 import type { Locale } from '@/lib/i18n';
 
+/** How bookmarks render where hover works (toolbar + project picker): compact icon (name in a
+ *  tooltip) or icon + visible label. The phone More sheet always shows labels (no hover on touch). */
+export type BookmarkStyle = 'icons' | 'labels';
+export const DEFAULT_BOOKMARK_STYLE: BookmarkStyle = 'icons';
+
 export interface SettingsContextValue {
   dateFormat: DateFormat;
   setDateFormat: (format: DateFormat) => void;
   /** UI language (device-level) — drives the i18n runtime. */
   language: Locale;
   setLanguage: (language: Locale) => void;
+  /** Bookmark appearance (device-level): compact icons+tooltip vs icons+labels. */
+  bookmarkStyle: BookmarkStyle;
+  setBookmarkStyle: (style: BookmarkStyle) => void;
   /** Effective (here-and-now) new-item position: true = bottom, false = top. Session-scoped — it
    *  starts from the default and the inline add-box toggle flips it; not persisted. */
   addToBottom: boolean;
@@ -31,6 +39,8 @@ export function useSettings(): SettingsContextValue {
       setDateFormat: () => {},
       language: 'en',
       setLanguage: () => {},
+      bookmarkStyle: DEFAULT_BOOKMARK_STYLE,
+      setBookmarkStyle: () => {},
       addToBottom: false,
       setAddToBottom: () => {},
       addToBottomDefault: false,
@@ -42,3 +52,4 @@ export function useSettings(): SettingsContextValue {
 export const DATE_FORMAT_STORAGE_KEY = 'namweb.settings.date-format';
 export const ADD_TO_BOTTOM_STORAGE_KEY = 'namweb.settings.add-to-bottom';
 export const LANGUAGE_STORAGE_KEY = 'namweb.settings.language';
+export const BOOKMARK_STYLE_STORAGE_KEY = 'namweb.settings.bookmark-style';

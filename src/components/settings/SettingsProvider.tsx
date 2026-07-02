@@ -3,9 +3,12 @@ import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
 import { activateLocale, LOCALES, type Locale } from '@/lib/i18n';
 import {
   ADD_TO_BOTTOM_STORAGE_KEY,
+  BOOKMARK_STYLE_STORAGE_KEY,
   DATE_FORMAT_STORAGE_KEY,
+  DEFAULT_BOOKMARK_STYLE,
   LANGUAGE_STORAGE_KEY,
   SettingsContext,
+  type BookmarkStyle,
 } from './settings-context';
 
 const DATE_FORMATS: DateFormat[] = ['medium', 'iso', 'dmy', 'mdy'];
@@ -40,9 +43,20 @@ function initialAddToBottom(): boolean {
   }
 }
 
+function initialBookmarkStyle(): BookmarkStyle {
+  try {
+    const stored = localStorage.getItem(BOOKMARK_STYLE_STORAGE_KEY);
+    if (stored === 'icons' || stored === 'labels') return stored;
+  } catch {
+    // localStorage unavailable — fall back to the default.
+  }
+  return DEFAULT_BOOKMARK_STYLE;
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
   const [language, setLanguage] = useState<Locale>(initialLanguage);
+  const [bookmarkStyle, setBookmarkStyle] = useState<BookmarkStyle>(initialBookmarkStyle);
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
   const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
@@ -64,6 +78,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // best-effort persistence
     }
   }, [language]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(BOOKMARK_STYLE_STORAGE_KEY, bookmarkStyle);
+    } catch {
+      // best-effort persistence
+    }
+  }, [bookmarkStyle]);
 
   // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
   useEffect(() => {
@@ -87,6 +109,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setDateFormat,
         language,
         setLanguage,
+        bookmarkStyle,
+        setBookmarkStyle,
         addToBottom,
         setAddToBottom,
         addToBottomDefault,
