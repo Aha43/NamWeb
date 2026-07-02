@@ -36,6 +36,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **⌘/Ctrl+Enter no longer fires through stacked dialogs.** With the project picker open from the action editor (Move to…), one keypress used to confirm the move *and* save/close the editor underneath; and pressed inside the picker's "＋ New project…" prompt it confirmed the picker and threw away the typed name. The topmost surface now owns the shortcut. Closes #574.
+
 - **A stale status-Undo can't overwrite a newer change.** If an action's status changed again while an earlier Undo toast was still showing, clicking that older Undo used to silently revert the newer choice; it now no-ops once the action has moved on. Closes #573.
 
 - **Long names no longer break the capture dialog.** A very long name used to widen the dialog's content past its edge, pushing the **Add** button and the "Just added" rows' Copy/Edit buttons out of reach. Long text now truncates instead, and the underlying fix (the dialog's layout column is capped at the dialog width) guards every dialog against unwrappable content. Closes #568.

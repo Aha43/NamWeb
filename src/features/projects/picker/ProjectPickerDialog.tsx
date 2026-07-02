@@ -15,6 +15,7 @@ import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useSettings } from '@/components/settings/settings-context';
+import { isTypingTarget } from '@/shell/useGlobalShortcuts';
 import { buildPath, projectPath } from '@/domain/lenses';
 import { bookmarksOf, isBookmarkStale } from '@/features/bookmarks/bookmarks';
 import { cn } from '@/lib/utils';
@@ -79,6 +80,9 @@ export function ProjectPickerDialog({
     if (!open) return;
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.isComposing) {
+        // Not while typing — e.g. the "New project…" prompt's name field. Confirming the picker
+        // from there would close the dialog and discard the typed name (#574).
+        if (isTypingTarget(e.target)) return;
         e.preventDefault();
         confirmRef.current();
       }

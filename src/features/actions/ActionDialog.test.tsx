@@ -1,6 +1,8 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import type { NamNode } from '@/domain/types';
+import type { NamNode, WorkspaceDocument } from '@/domain/types';
+import { WorkspaceContext } from '@/store/workspace-context';
+import type { UseWorkspace } from '@/store/useWorkspace';
 import { ActionDialog } from './ActionDialog';
 
 function node(partial: Partial<NamNode> = {}): NamNode {
@@ -93,6 +95,44 @@ describe('ActionDialog', () => {
     fireEvent.keyDown(document, { key: 'Enter' });
     fireEvent.keyDown(document, { key: 'Enter', metaKey: true, isComposing: true });
     expect(onSave).not.toHaveBeenCalled();
+  });
+
+  it('suspends the save shortcut while the Move-to picker is on top (#574)', () => {
+    // Desktop (the picker button variant), and a workspace document for the picker to render.
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) =>
+      ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} })
+    ) as unknown as typeof window.matchMedia;
+    try {
+      const doc: WorkspaceDocument = {
+        formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects', nextActionsNodeId: 'actions',
+        nodes: {
+          root: node({ id: 'root', childIds: ['p1'] }),
+          p1: node({ id: 'p1', title: 'Home', project: true }),
+        },
+        registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
+      };
+      const onSave = vi.fn();
+      render(
+        <WorkspaceContext.Provider value={{ document: doc, dispatch: vi.fn() } as unknown as UseWorkspace}>
+          <ActionDialog
+            node={node({ title: 'Keep' })}
+            open
+            onOpenChange={vi.fn()}
+            onSave={onSave}
+            moveTargets={[{ id: 'p1', label: 'Home' }]}
+            onMove={vi.fn()}
+          />
+        </WorkspaceContext.Provider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Move / make project' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Move to…' }));
+      // The picker is on top: ⌘Enter must not save/close the editor underneath.
+      fireEvent.keyDown(document, { key: 'Enter', metaKey: true });
+      expect(onSave).not.toHaveBeenCalled();
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it('stops listening once closed', () => {

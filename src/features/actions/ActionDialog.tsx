@@ -195,10 +195,12 @@ export function ActionDialog({
   // suggestion popover, the Move-to picker, a date popover — whose DOM lives outside the form and so
   // never bubbles keydown to it (the #435 intermittent miss). A ref keeps the latest save closure
   // without re-subscribing on every keystroke; IME composition is left to compose.
+  // Suspended while the nested Move-to picker is open — the topmost modal owns the shortcut,
+  // otherwise one ⌘Enter confirms the move AND saves/closes this editor (#574).
   const saveRef = useRef(doSave);
   saveRef.current = doSave;
   useEffect(() => {
-    if (!open) return;
+    if (!open || movePickerOpen) return;
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.isComposing) {
         e.preventDefault();
@@ -207,7 +209,7 @@ export function ActionDialog({
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open]);
+  }, [open, movePickerOpen]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
