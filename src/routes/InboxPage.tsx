@@ -46,6 +46,22 @@ export function InboxPage() {
     navigate(`/projects/${seed.id}`);
   };
 
+  // Create a project (under `parentId`, or top level) and return its id — powers the pickers' "New
+  // project here". Shared by the bulk "File under" picker and the per-item Process dialog.
+  const createProject = (parentId: string | null, title: string): string => {
+    if (!document) return '';
+    const id = newId();
+    dispatch({
+      type: 'addSubProject',
+      parentId: parentId ?? document.projectsNodeId,
+      id,
+      title,
+      atTop: !addToBottom,
+      now: nowIso(),
+    });
+    return id;
+  };
+
   const inDeck = queue !== null;
   const deckId = queue ? queue[pos] : undefined;
   const current = deckId
@@ -142,6 +158,7 @@ export function InboxPage() {
         onBulkResolve={bulkResolve}
         onBulkDelete={(ids) => deleteNodes(ids)}
         projectTargets={bulkProjectTargets}
+        onCreateProject={createProject}
       />
       {current && (
         <InboxProcessDialog
@@ -156,19 +173,7 @@ export function InboxPage() {
           }}
           onResolve={resolve}
           projectTargets={projectTargets}
-          onCreateProject={(parentId, title) => {
-            if (!document) return '';
-            const id = newId();
-            dispatch({
-              type: 'addSubProject',
-              parentId: parentId ?? document.projectsNodeId,
-              id,
-              title,
-              atTop: !addToBottom,
-              now: nowIso(),
-            });
-            return id;
-          }}
+          onCreateProject={createProject}
           {...(inDeck
             ? {
                 remaining: queue.length - pos,
