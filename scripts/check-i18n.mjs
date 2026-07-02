@@ -22,12 +22,19 @@ function walk(dir) {
 }
 
 // Matches `t('key'...)` and `i18n.t('key'...)`, not `format(`/`it(`/etc. (no word char before `t`).
-const RE = /(?<![\w])t\(\s*['"`]([^'"`]+)['"`]/g;
+// Plus the two shapes bare-`t` misses (#581): `<Trans i18nKey="key">` and translator aliases
+// (`const translate = useTranslation().t` in ToastProvider) — a key referenced only through one of
+// those used to be invisible here, so a missing catalog entry sailed through CI.
+const RES = [
+  /(?<![\w])t\(\s*['"`]([^'"`]+)['"`]/g,
+  /i18nKey=\{?\s*['"`]([^'"`]+)['"`]/g,
+  /\btranslate\(\s*['"`]([^'"`]+)['"`]/g,
+];
 const used = new Set();
 for (const file of walk('src')) {
   const src = readFileSync(file, 'utf8');
   // Skip interpolated/dynamic keys — e.g. t(`domain.status.${s}`) — they're resolved at runtime.
-  for (const m of src.matchAll(RE)) if (!m[1].includes('${')) used.add(m[1]);
+  for (const re of RES) for (const m of src.matchAll(re)) if (!m[1].includes('${')) used.add(m[1]);
 }
 
 const missingInEn = [...used].filter((k) => !enKeys.has(k)).sort();
