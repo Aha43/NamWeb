@@ -13,7 +13,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { useWorkspaceContext } from '@/store/workspace-context';
-import { projectPath } from '@/domain/lenses';
+import { buildPath, projectPath } from '@/domain/lenses';
+import { bookmarksOf, isBookmarkStale } from '@/features/bookmarks/bookmarks';
 import { cn } from '@/lib/utils';
 import { childColumn, rootColumn, type PickerItem, type PickerTarget } from './pickerModel';
 
@@ -83,6 +84,14 @@ export function ProjectPickerDialog({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
+  // Keep the active (right-most) column in view as you drill deeper — or jump via a bookmark, which
+  // can add several columns at once. Column count == trail length + 1, so key on trail length.
+  const columnsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = columnsRef.current;
+    if (el) el.scrollTo({ left: el.scrollWidth, behavior: 'smooth' });
+  }, [trail.length]);
+
   if (!document) return null;
 
   const columns: PickerItem[][] = [rootColumn(document, targets, allowed)];
@@ -93,6 +102,20 @@ export function ProjectPickerDialog({
     // Opening a project with sub-projects reveals the next column; anything else ends the trail here.
     if (!item.isSpecial && item.hasChildren) setTrail([...trail.slice(0, level), item.id]);
     else setTrail(trail.slice(0, level));
+  };
+
+  // Bookmarked projects offered as quick-jump chips (skip tag-filter bookmarks + gone projects).
+  const projectBookmarks = bookmarksOf(document).filter(
+    (b) => b.kind === 'project' && b.projectId && !isBookmarkStale(document, b),
+  );
+  // Navigate the columns straight to a project: open its ancestor chain (+ its own column when it has
+  // sub-projects, mirroring a click on a parent), and select it. The auto-scroll effect brings the
+  // active column into view.
+  const jumpTo = (projectId: string) => {
+    const ancestorIds = buildPath(document, projectId).map((n) => n.id);
+    const hasChildren = childColumn(document, projectId, allowed).length > 0;
+    setTrail(hasChildren ? [...ancestorIds, projectId] : ancestorIds);
+    setSelectedId(projectId);
   };
 
   const canConfirm = selectedId !== null && allowed.has(selectedId);
@@ -132,7 +155,26 @@ export function ProjectPickerDialog({
           <DialogDescription>{t('picker.description')}</DialogDescription>
         </DialogHeader>
         <DialogBody className="p-0">
-          <div className="flex h-72 overflow-x-auto">
+          {projectBookmarks.length > 0 && (
+            <div
+              aria-label={t('nav.bookmarks')}
+              className="flex items-center gap-1.5 overflow-x-auto border-b border-border px-3 py-2"
+            >
+              {projectBookmarks.map((b) => (
+                <button
+                  key={b.id}
+                  type="button"
+                  aria-label={t('picker.jumpToBookmark', { label: b.label })}
+                  onClick={() => jumpTo(b.projectId!)}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-input px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent"
+                >
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: b.color }} />
+                  <span className="max-w-[10rem] truncate">{b.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          <div ref={columnsRef} className="flex h-72 overflow-x-auto">
             {columns.map((items, level) => (
               <ul
                 key={level} // columns are positional by depth
