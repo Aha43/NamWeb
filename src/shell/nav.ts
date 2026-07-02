@@ -25,11 +25,11 @@ export interface NavItem {
 
 // Labels are i18n keys; the surface names live under `domain.*` (shareable vocab), hints under `nav.*`.
 const inbox: NavItem = { to: '/inbox', label: 'domain.inbox', icon: Inbox, hint: 'nav.inboxHint' };
-const next: NavItem = { to: '/next', label: 'domain.status.next', icon: ListTodo, hint: 'nav.nextHint' };
+export const next: NavItem = { to: '/next', label: 'domain.status.next', icon: ListTodo, hint: 'nav.nextHint' };
 const backlog: NavItem = { to: '/backlog', label: 'domain.status.backlog', icon: Layers, hint: 'nav.backlogHint' };
 const due: NavItem = { to: '/due', label: 'domain.due', icon: CalendarClock, hint: 'nav.dueHint' };
 const blocked: NavItem = { to: '/blocked', label: 'domain.blocked', icon: Lock, hint: 'nav.blockedHint' };
-const tags: NavItem = { to: '/tags', label: 'domain.tags', icon: Tag, hint: 'nav.tagsHint' };
+export const tags: NavItem = { to: '/tags', label: 'domain.tags', icon: Tag, hint: 'nav.tagsHint' };
 const search: NavItem = { to: '/search', label: 'domain.search', icon: Search, hint: 'nav.searchHint' };
 const projects: NavItem = { to: '/projects', label: 'domain.projects', icon: Folders, hint: 'nav.projectsHint' };
 const goals: NavItem = { to: '/goals', label: 'domain.goals', icon: LayoutDashboard, hint: 'nav.goalsHint' };
@@ -53,11 +53,12 @@ export interface NavGroup {
  *  **Focus** are promoted to buttons above the list (the two "do" actions, mirroring the phone), and
  *  **Search** lives in the toolbar. **Tags** sits here under "Find" — with bookmarking owning
  *  quick-jump, Tags' filtering role is what matters, so it belongs with the surfaces. */
+// Next + Contexts (tags) are promoted to buttons above this list (see DesktopShell), so they're not
+// repeated here. Inbox stays in the list; the Find group is gone (its only item was Contexts).
 export const SIDEBAR_GROUPS: NavGroup[] = [
-  { items: [inbox, next] },
+  { items: [inbox] },
   { label: 'nav.groupViews', items: [backlog, due, blocked, done] },
   { label: 'nav.groupOrganize', items: [projects, goals, templates] },
-  { label: 'nav.groupFind', items: [tags] },
 ];
 
 /** Phone "More" sheet: the surfaces that aren't on the bottom bar (Inbox / Next / Focus + Capture),
