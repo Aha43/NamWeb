@@ -86,6 +86,8 @@ describe('useSetStatus — Undo toast (#567)', () => {
         id: 'a',
         status: 'NEXT',
         statusChangedAt: '2026-01-01T00:00:00.000Z',
+        // Guard: a stale Undo (node re-statused after this toast) no-ops in the applier (#573).
+        expectedStatus: 'DONE',
       }),
     );
     expect(screen.queryByText('Marked "a" as Done')).not.toBeInTheDocument(); // dismissed after undo

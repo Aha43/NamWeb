@@ -37,12 +37,15 @@ export function useSetStatus(): (id: string, status: NodeStatus) => void {
         status: t(`domain.status.${status.toLowerCase()}`, { defaultValue: status }),
       }),
       actionLabel: t('common.undo'),
+      // expectedStatus: a stale Undo (the node was re-statused again after this toast) must
+      // no-op instead of overwriting the newer choice (#573).
       onAction: () =>
         dispatch({
           type: 'setStatus',
           id: capture.id,
           status: capture.status,
           statusChangedAt: capture.statusChangedAt,
+          expectedStatus: status,
           now: nowIso(),
         }),
     });
@@ -84,6 +87,7 @@ export function useSetStatuses(): (ids: string[], status: NodeStatus) => void {
             id: capture.id,
             status: capture.status,
             statusChangedAt: capture.statusChangedAt,
+            expectedStatus: status, // stale Undo must not overwrite a newer change (#573)
             now: nowIso(),
           });
         }
