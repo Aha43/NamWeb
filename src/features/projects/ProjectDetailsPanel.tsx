@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { STATUS_OPTIONS } from '../actions/status';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DatePickerPopover } from '@/components/ui/date-picker';
@@ -15,12 +16,6 @@ import type { ActionEdits } from '../actions/ActionDialog';
 import { cn } from '@/lib/utils';
 import { parseFlexibleDate } from '@/lib/dates';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
-
-const STATUSES: { value: NodeStatus; label: string }[] = [
-  { value: 'NEXT', label: 'domain.status.next' },
-  { value: 'BACKLOG', label: 'domain.status.backlog' },
-  { value: 'DONE', label: 'domain.status.done' },
-];
 
 /**
  * Edit the current project's title, notes, tags, due date, status, and resources inline on its
@@ -204,7 +199,7 @@ export function ProjectDetailsPanel({
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium text-foreground">{t('editor.statusLegend')}</legend>
             <div className="flex gap-2">
-              {STATUSES.map((s) => (
+              {STATUS_OPTIONS.map((s) => (
                 <label
                   key={s.value}
                   className={cn(

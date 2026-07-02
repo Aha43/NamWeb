@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { subtreeIds } from '@/domain/lenses';
 import { captureDeletion, type DeletionCapture, type Intent } from '@/domain/mutations';
 import { useToast } from '@/components/ui/toast/toast-context';
@@ -22,6 +23,7 @@ function deleteIntent(doc: WorkspaceDocument, id: string): Intent {
 export function useDeleteNode(): (id: string) => void {
   const { document, dispatch } = useWorkspaceContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
   return (id: string) => {
     if (!document || !document.nodes[id]) return;
     const capture = captureDeletion(document, id);
@@ -29,8 +31,8 @@ export function useDeleteNode(): (id: string) => void {
     dispatch(deleteIntent(document, id));
     if (capture) {
       toast({
-        message: `Deleted "${short(title)}"`,
-        actionLabel: 'Undo',
+        message: t('toast.deleted', { title: short(title) }),
+        actionLabel: t('common.undo'),
         onAction: () => dispatch({ type: 'restoreNodes', capture }),
       });
     }
@@ -44,6 +46,7 @@ export function useDeleteNode(): (id: string) => void {
 export function useDeleteNodes(): (ids: string[]) => void {
   const { document, dispatch } = useWorkspaceContext();
   const { toast } = useToast();
+  const { t } = useTranslation();
   return (ids: string[]) => {
     if (!document) return;
     const captures: DeletionCapture[] = [];
@@ -57,9 +60,9 @@ export function useDeleteNodes(): (ids: string[]) => void {
     toast({
       message:
         captures.length === 1
-          ? `Deleted "${short(captures[0].nodes[0].title)}"`
-          : `Deleted ${captures.length} items`,
-      actionLabel: 'Undo',
+          ? t('toast.deleted', { title: short(captures[0].nodes[0].title) })
+          : t('toast.deletedMany', { count: captures.length }),
+      actionLabel: t('common.undo'),
       onAction: () => {
         for (const capture of captures) dispatch({ type: 'restoreNodes', capture });
       },

@@ -14,6 +14,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **The delete toast speaks Norwegian.** "Deleted …" / "Undo" on the delete toast were the last hardcoded English toast strings; they now follow the app language ("Slettet «…» — Angre"). Internally the status-undo hooks and the status name/color mappings were also deduplicated into one shared module. Closes #582.
+
 - **The sync banner speaks Norwegian too.** The reconcile/save-failure notices ("Updated from another device…", "Couldn't save your last change…") were hardcoded English next to translated Retry/Dismiss buttons; the whole banner now follows the app language. Closes #580.
 
 - **No more English flash for Norwegian users.** The app used to always start in English and switch to your language a moment after load; it now detects the stored/browser language before the first paint, so Norwegian users see Norwegian from the very first frame (and screen readers get the right `<html lang>` immediately). Closes #579.
