@@ -127,13 +127,12 @@ export function ProjectDetailsPanel({
       </Tooltip>
       {!collapsed && (
         <div className="space-y-4 border-t border-border p-3">
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="project-title">{t('editor.fieldTitle')}</Label>
-              <CopyButton value={title} label={t('copy.title')} />
-            </div>
+          {/* Title on one line — label + field + copy (far right) — to save vertical space (#558). */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="project-title" className="shrink-0">{t('editor.fieldTitle')}</Label>
             <Input
               id="project-title"
+              className="min-w-0 flex-1"
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
@@ -141,6 +140,7 @@ export function ProjectDetailsPanel({
               }}
               onBlur={commitTitle}
             />
+            <CopyButton value={title} label={t('copy.title')} />
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
