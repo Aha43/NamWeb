@@ -155,7 +155,7 @@
   "domain.statusShort.backlog": "B",
   "domain.statusShort.done": "D",
   "domain.statusShort.next": "N",
-  "domain.tags": "Tags",
+  "domain.tags": "Contexts",
   "domain.templates": "Templates",
   "done.backlogAria": "Move {title} to backlog",
   "done.deleteSelectedAria": "Delete selected actions",

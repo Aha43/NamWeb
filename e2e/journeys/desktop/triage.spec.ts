@@ -27,7 +27,7 @@ test.describe('backlog', () => {
     await expect(page.getByText('Renew passport')).toHaveCount(0); // left the backlog
 
     // In-app nav (no reload) so the optimistic promotion is observed deterministically.
-    await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Next' }).click();
+    await page.getByRole('link', { name: 'Next' }).click(); // Next is now a promoted sidebar button (#557)
     await expect(page.getByText('Renew passport')).toBeVisible();
   });
 });

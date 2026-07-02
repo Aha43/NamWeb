@@ -155,7 +155,7 @@
   "domain.statusShort.backlog": "E",
   "domain.statusShort.done": "F",
   "domain.statusShort.next": "N",
-  "domain.tags": "Etiketter",
+  "domain.tags": "Kontekster",
   "domain.templates": "Maler",
   "done.backlogAria": "Flytt {title} til etterslep",
   "done.deleteSelectedAria": "Slett valgte handlinger",
