@@ -27,6 +27,30 @@ describe('ActionDialog', () => {
     expect(screen.getByLabelText('Due')).toHaveValue('2026-07-01');
   });
 
+  it('hides the time/range extras behind a toggle by default (#559)', () => {
+    render(<ActionDialog node={node({ dueAt: '2026-08-12' })} open onOpenChange={vi.fn()} onSave={vi.fn()} />);
+    expect(screen.queryByLabelText('Due end (optional)')).toBeNull();
+    expect(screen.queryByLabelText('Due time (optional)')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ }));
+    expect(screen.getByLabelText('Due end (optional)')).toBeInTheDocument();
+    expect(screen.getByLabelText('Due time (optional)')).toBeInTheDocument();
+  });
+
+  it('auto-expands the extras when the action already has time/range data (#559)', () => {
+    render(
+      <ActionDialog
+        node={node({ dueAt: '2026-08-12', dueEndAt: '2026-08-16', dueTime: '09:00' })}
+        open
+        onOpenChange={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+    // Shown directly (seeded), with no toggle to reveal them.
+    expect(screen.queryByRole('button', { name: /Add time or a range/ })).toBeNull();
+    expect(screen.getByLabelText('Due end (optional)')).toHaveValue('2026-08-16');
+    expect(screen.getByLabelText('Due time (optional)')).toHaveValue('09:00');
+  });
+
   it('shows inherited (rub-off) tags read-only, separate from the editable own tags', () => {
     render(
       <ActionDialog
@@ -111,6 +135,7 @@ describe('ActionDialog', () => {
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Window' } });
     fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ })); // reveal the collapsed extras (#559)
     fireEvent.change(screen.getByLabelText('Due time (optional)'), { target: { value: '9' } });
     fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '2026-08-12' } });
     fireEvent.change(screen.getByLabelText('Due end time (optional)'), { target: { value: '17:30' } });
@@ -125,6 +150,7 @@ describe('ActionDialog', () => {
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Window' } });
     fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ })); // reveal the collapsed extras (#559)
     fireEvent.change(screen.getByLabelText('Due time (optional)'), { target: { value: '14:00' } });
     fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '2026-08-12' } });
     fireEvent.change(screen.getByLabelText('Due end time (optional)'), { target: { value: '09:00' } });
@@ -138,6 +164,7 @@ describe('ActionDialog', () => {
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Window' } });
     fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ })); // reveal the collapsed extras (#559)
     fireEvent.change(screen.getByLabelText('Due time (optional)'), { target: { value: '09:00' } });
     fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '2026-08-12' } });
     fireEvent.change(screen.getByLabelText('Due end time (optional)'), { target: { value: '17:30' } });
@@ -151,6 +178,7 @@ describe('ActionDialog', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'No end' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ })); // reveal collapsed extras (#559)
     fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
     fireEvent.change(screen.getByLabelText('Due end time (optional)'), { target: { value: '17:30' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -161,6 +189,7 @@ describe('ActionDialog', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Doctor' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ })); // reveal collapsed extras (#559)
     fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
     fireEvent.change(screen.getByLabelText('Due time (optional)'), { target: { value: '14:30' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -171,6 +200,7 @@ describe('ActionDialog', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'No date' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ })); // reveal collapsed extras (#559)
     fireEvent.change(screen.getByLabelText('Due time (optional)'), { target: { value: '14:30' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ dueAt: null, dueTime: null }));
@@ -180,6 +210,7 @@ describe('ActionDialog', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Trip' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ })); // reveal collapsed extras (#559)
     fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-12' } });
     fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '26-8-16' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
@@ -207,6 +238,7 @@ describe('ActionDialog', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Trip' } });
+    fireEvent.click(screen.getByRole('button', { name: /Add time or a range/ })); // reveal collapsed extras (#559)
     fireEvent.change(screen.getByLabelText('Due'), { target: { value: '2026-08-16' } });
     fireEvent.change(screen.getByLabelText('Due end (optional)'), { target: { value: '2026-08-12' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
