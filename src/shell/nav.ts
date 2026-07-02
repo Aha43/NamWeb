@@ -49,13 +49,14 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** Desktop sidebar, grouped so the eye gets short sections instead of one long list. The
- *  foregrounded actions — Capture, Next, Contexts (tags), Focus, and Projects — live in the
- *  toolbar command bar (#590, see DesktopShell), so they're not repeated here. */
+/** Desktop sidebar. The foregrounded actions — Capture, Next, Contexts (tags), Focus, and
+ *  Projects — live in the toolbar command bar (#590, see DesktopShell), so they're not repeated
+ *  here. The list is short enough to scan whole now, so groups keep their spacing but drop the
+ *  "Views"/"Organize" headings (things are what they are); the phone More sheet keeps its own. */
 export const SIDEBAR_GROUPS: NavGroup[] = [
   { items: [inbox] },
-  { label: 'nav.groupViews', items: [backlog, due, blocked, done] },
-  { label: 'nav.groupOrganize', items: [goals, templates] },
+  { items: [backlog, due, blocked, done] },
+  { items: [goals, templates] },
 ];
 
 /** Phone "More" sheet: the surfaces that aren't on the bottom bar (Inbox / Next / Focus + Capture),
