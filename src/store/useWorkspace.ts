@@ -21,7 +21,11 @@ import type { WorkspaceDocument } from '../domain/types';
  */
 export interface SyncNotice {
   kind: 'info' | 'error';
-  message: string;
+  /** Translation key for the notice text — translated at render (SyncNotice), so the banner
+   *  follows the app language (#580). */
+  messageKey: string;
+  /** Optional raw (server-provided) detail that overrides the key — untranslatable by nature. */
+  raw?: string;
 }
 
 export interface UseWorkspace {
@@ -46,8 +50,8 @@ export interface UseWorkspace {
 }
 
 const NOTICE_TIMEOUT_MS = 4000;
-const INFO_FROM_DEVICE = 'A newer change from another device was applied here.';
-const ERROR_SAVE = 'Couldn’t save your last change. Check your connection, then retry.';
+const INFO_FROM_DEVICE = 'sync.reconciledFromDevice';
+const ERROR_SAVE = 'sync.saveFailed';
 
 export function useWorkspace(): UseWorkspace {
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
@@ -111,7 +115,7 @@ export function useWorkspace(): UseWorkspace {
     } else if (result.kind === 'conflict') {
       await load();
     } else {
-      setNotice({ kind: 'error', message: result.message ?? 'Could not create workspace.' });
+      setNotice({ kind: 'error', messageKey: 'sync.createFailed', raw: result.message ?? undefined });
     }
     setCreating(false);
   }, [load]);
@@ -131,7 +135,7 @@ export function useWorkspace(): UseWorkspace {
     const snap = { document: result.document, version: result.version };
     committedRef.current = snap;
     setSnapshot(snap);
-    setNotice({ kind: 'info', message: 'Updated from another device.' });
+    setNotice({ kind: 'info', messageKey: 'sync.updatedFromDevice' });
   }, []);
 
   // Subscribe to the workspace change feed once we know the signed-in user.
@@ -183,12 +187,12 @@ export function useWorkspace(): UseWorkspace {
           // here — for an error it's the confirmed base, and assigning it would silently drop the
           // edit and let a later re-push of the unchanged document masquerade as recovery (#484).
           failedRef.current = true;
-          setNotice({ kind: 'error', message: ERROR_SAVE });
+          setNotice({ kind: 'error', messageKey: ERROR_SAVE });
           return;
         }
         committedRef.current = result.snapshot;
         setSnapshot(result.snapshot);
-        if (result.outcome === 'reloaded') setNotice({ kind: 'info', message: INFO_FROM_DEVICE });
+        if (result.outcome === 'reloaded') setNotice({ kind: 'info', messageKey: INFO_FROM_DEVICE });
       })
       .finally(() => {
         inFlightRef.current -= 1;
@@ -218,11 +222,11 @@ export function useWorkspace(): UseWorkspace {
           setSnapshot(snap);
           failedRef.current = false; // recovered — resume normal per-intent commits
         } else if (result.kind === 'conflict') {
-          setNotice({ kind: 'info', message: INFO_FROM_DEVICE });
+          setNotice({ kind: 'info', messageKey: INFO_FROM_DEVICE });
           failedRef.current = false; // load() adopts the remote state, resolving the failure
           await load();
         } else {
-          setNotice({ kind: 'error', message: ERROR_SAVE }); // still failed — stay paused
+          setNotice({ kind: 'error', messageKey: ERROR_SAVE }); // still failed — stay paused
         }
       })
       .finally(() => {

@@ -39,8 +39,8 @@ describe('SyncNotice', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('info notice: status role, Dismiss only (no Retry)', () => {
-    const value = ws({ kind: 'info', message: 'Updated from another device.' });
+  it('info notice: status role, translated message, Dismiss only (no Retry)', () => {
+    const value = ws({ kind: 'info', messageKey: 'sync.updatedFromDevice' });
     renderNotice(value);
     expect(screen.getByRole('status')).toHaveTextContent('Updated from another device');
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
@@ -49,10 +49,16 @@ describe('SyncNotice', () => {
   });
 
   it('error notice: alert role, Retry calls retrySync', () => {
-    const value = ws({ kind: 'error', message: 'Couldn’t save your last change.' });
+    const value = ws({ kind: 'error', messageKey: 'sync.saveFailed' });
     renderNotice(value);
     expect(screen.getByRole('alert')).toHaveTextContent('Couldn’t save');
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(value.retrySync).toHaveBeenCalledOnce();
+  });
+
+  it('a raw server detail overrides the key (#580)', () => {
+    const value = ws({ kind: 'error', messageKey: 'sync.createFailed', raw: 'quota exceeded' });
+    renderNotice(value);
+    expect(screen.getByRole('alert')).toHaveTextContent('quota exceeded');
   });
 });

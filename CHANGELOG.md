@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **The sync banner speaks Norwegian too.** The reconcile/save-failure notices ("Updated from another device…", "Couldn't save your last change…") were hardcoded English next to translated Retry/Dismiss buttons; the whole banner now follows the app language. Closes #580.
+
 - **No more English flash for Norwegian users.** The app used to always start in English and switch to your language a moment after load; it now detects the stored/browser language before the first paint, so Norwegian users see Norwegian from the very first frame (and screen readers get the right `<html lang>` immediately). Closes #579.
 
 ## [0.6.0] - 2026-07-02

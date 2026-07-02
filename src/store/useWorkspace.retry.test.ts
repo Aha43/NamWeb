@@ -63,7 +63,7 @@ describe('useWorkspace — failed write recovery (#484)', () => {
 
     // The edit stays visible (not reverted to 'base'), with a sticky error notice.
     await waitFor(() => expect(content(view)).toBe('baseX'));
-    expect(view.result.current.notice).toEqual({ kind: 'error', message: expect.any(String) });
+    expect(view.result.current.notice).toEqual({ kind: 'error', messageKey: expect.any(String) });
     expect(view.result.current.notice?.kind).toBe('error');
 
     // Retry pushes the EDITED document, guarded on the last confirmed version (1).

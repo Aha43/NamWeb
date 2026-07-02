@@ -211,7 +211,7 @@ describe('routing', () => {
 
   it('shows a dismissible sync notice across routes', () => {
     const clearNotice = vi.fn();
-    renderAt('/next', { notice: { kind: 'info', message: 'Updated from another device.' }, clearNotice });
+    renderAt('/next', { notice: { kind: 'info', messageKey: 'sync.updatedFromDevice' }, clearNotice });
     expect(screen.getByRole('status')).toHaveTextContent('Updated from another device');
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     expect(clearNotice).toHaveBeenCalledOnce();
