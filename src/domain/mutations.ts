@@ -20,6 +20,9 @@ export type Intent =
       /** Override for the resulting `statusChangedAt` (defaults to `now`). Lets an Undo restore
        *  the original change-time instead of stamping the undo itself as a status change. */
       statusChangedAt?: string | null;
+      /** Apply only while the node still has this status. Lets a stale Undo (the node has since
+       *  been re-statused by a newer change) no-op instead of overwriting the newer choice. */
+      expectedStatus?: NodeStatus;
     }
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; dueEndAt?: string | null; dueTime?: string | null; dueEndTime?: string | null; now: string }
@@ -320,6 +323,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'setStatus': {
       const node = next.nodes[intent.id];
       if (!node) return next;
+      if (intent.expectedStatus !== undefined && node.status !== intent.expectedStatus) return next;
       node.status = intent.status;
       node.updatedAt = intent.now;
       node.statusChangedAt = intent.statusChangedAt === undefined ? intent.now : intent.statusChangedAt;

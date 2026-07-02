@@ -36,6 +36,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **A stale status-Undo can't overwrite a newer change.** If an action's status changed again while an earlier Undo toast was still showing, clicking that older Undo used to silently revert the newer choice; it now no-ops once the action has moved on. Closes #573.
+
 - **Long names no longer break the capture dialog.** A very long name used to widen the dialog's content past its edge, pushing the **Add** button and the "Just added" rows' Copy/Edit buttons out of reach. Long text now truncates instead, and the underlying fix (the dialog's layout column is capped at the dialog width) guards every dialog against unwrappable content. Closes #568.
 
 - **Status tooltip now fully translated.** The status badge's tooltip and screen-reader label showed the raw English status (NEXT/DONE/BACKLOG) even in Norwegian; they now use the translated name. Closes #565.

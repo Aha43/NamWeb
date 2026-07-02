@@ -152,6 +152,17 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ status: 'DONE', updatedAt: NOW, statusChangedAt: NOW });
   });
 
+  it('setStatus with expectedStatus no-ops when the node has since changed (#573)', () => {
+    const doc = workspace([node('a', { status: 'BACKLOG' })]); // newer change already applied
+    doc.nodes['actions'].childIds.push('a');
+    // A stale Undo expecting DONE (its toast's change) must not clobber the newer BACKLOG.
+    const stale = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'NEXT', now: NOW, expectedStatus: 'DONE' });
+    expect(stale.nodes['a'].status).toBe('BACKLOG');
+    // With the expectation still holding, it applies normally.
+    const fresh = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'NEXT', now: NOW, expectedStatus: 'BACKLOG' });
+    expect(fresh.nodes['a'].status).toBe('NEXT');
+  });
+
   it('setStatus honours a statusChangedAt override (the Undo restore, #567)', () => {
     const doc = workspace([node('a', { status: 'NEXT' })]);
     doc.nodes['actions'].childIds.push('a');
