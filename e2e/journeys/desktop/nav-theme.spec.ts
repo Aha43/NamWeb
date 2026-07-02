@@ -4,17 +4,18 @@ import { test, expect } from '../../mockedTest';
 // preference round-trips a reload. Cheap to run, catches shell/routing/theme regressions
 // across the whole app. Network-mocked (no backend).
 test.describe('navigation + theme', () => {
-  test('the sidebar navigates across surfaces', async ({ page }) => {
+  test('the sidebar and toolbar command bar navigate across surfaces', async ({ page }) => {
     await page.goto('/inbox');
     const sidebar = page.getByRole('navigation', { name: 'Sidebar' });
 
-    await sidebar.getByRole('link', { name: 'Projects' }).click();
+    // Projects is a toolbar command-bar button now (#590).
+    await page.getByRole('link', { name: 'Projects' }).click();
     await expect(page).toHaveURL(/\/projects$/);
 
     await sidebar.getByRole('link', { name: 'Backlog' }).click();
     await expect(page).toHaveURL(/\/backlog$/);
 
-    // Contexts is a promoted sidebar button (#557).
+    // Contexts is a toolbar command-bar button (#557 promoted it, #590 moved it up).
     await page.getByRole('link', { name: 'Contexts' }).click();
     await expect(page).toHaveURL(/\/tags$/);
 

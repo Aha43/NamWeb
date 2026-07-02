@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **A toolbar command bar (experiment).** Capture, Next, Contexts, Focus, and Projects move from the sidebar up to the toolbar as labeled buttons (with the bookmark quick-jump chevrons on Contexts/Projects) — so the everyday actions and bookmarks stay reachable even with the sidebar collapsed. The sidebar keeps Inbox, the Views group, and Organize (Goals, Templates). Closes #590.
+
 - **Bookmarks moved into the sidebar (experiment).** Project bookmarks now live behind a small chevron on the **Projects** entry, context bookmarks behind one on the **Contexts** button — click the label to navigate as before, the chevron for the quick-jump list. The toolbar bookmark strip is gone (phone More sheet and the project picker's chips unchanged). Closes #588.
 
 - **Tighter i18n safety net.** The `i18n:check` CI guard now also sees keys referenced via `<Trans i18nKey>` and aliased translators, so a missing catalog entry on those can't slip through. No user-facing change. Closes #581.

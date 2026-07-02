@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { ListTodo, PanelLeftClose, PanelLeftOpen, Plus, Search, Tag, Target } from 'lucide-react';
+import { Folders, ListTodo, PanelLeftClose, PanelLeftOpen, Plus, Search, Tag, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -70,6 +70,63 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             </Button>
           </Tooltip>
           <ToolbarSearch />
+          {/* The command bar (#590): the foregrounded actions moved up from the sidebar — capture,
+              jump to Next / Contexts / Projects (with their bookmark quick-jump chevrons, #588),
+              and Focus. Toolbar-resident, so they (and the bookmarks) survive a collapsed sidebar. */}
+          <div className="ml-1 flex min-w-0 items-center gap-1.5">
+            <Tooltip label={t('nav.captureTooltip')}>
+              <Button size="sm" className="gap-1.5" onClick={openCapture}>
+                <Plus />
+                {t('nav.capture')}
+              </Button>
+            </Tooltip>
+            <Tooltip label={t(next.hint!)}>
+              <Button asChild size="sm" className="gap-1.5 bg-blue-600 text-white hover:bg-blue-700">
+                <NavLink to={next.to}>
+                  <ListTodo />
+                  {t(next.label)}
+                </NavLink>
+              </Button>
+            </Tooltip>
+            <div className="flex items-center gap-0.5">
+              <Tooltip label={t(tags.hint!)}>
+                <Button asChild size="sm" className="gap-1.5 bg-violet-600 text-white hover:bg-violet-700">
+                  <NavLink to={tags.to}>
+                    <Tag />
+                    {t(tags.label)}
+                  </NavLink>
+                </Button>
+              </Tooltip>
+              <SidebarBookmarkMenu
+                kind="tagFilter"
+                className="bg-violet-600 text-white hover:bg-violet-700 hover:text-white"
+              />
+            </div>
+            <Tooltip label={t(focus.hint!)}>
+              <Button asChild size="sm" variant="outline" className="gap-1.5">
+                <NavLink to="/focus">
+                  <Target className="focus-glow" />
+                  {t('domain.focus')}
+                </NavLink>
+              </Button>
+            </Tooltip>
+            <div className="flex items-center gap-0.5">
+              <Tooltip label={t(projects.hint!)}>
+                <Button
+                  asChild
+                  size="sm"
+                  variant="ghost"
+                  className="gap-1.5 aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground"
+                >
+                  <NavLink to={projects.to}>
+                    <Folders />
+                    {t(projects.label)}
+                  </NavLink>
+                </Button>
+              </Tooltip>
+              <SidebarBookmarkMenu kind="project" />
+            </div>
+          </div>
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
@@ -88,49 +145,8 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 </Tooltip>
               </div>
 
-              {/* Foregrounded actions (mirrors the phone bottom bar): capture, jump to Next / Contexts
-                  (the two most-used surfaces), and Focus. Distinct colors so each is quick to find. */}
-              <div className="mt-4 flex flex-col gap-2">
-                <Tooltip label={t('nav.captureTooltip')}>
-                  <Button className="justify-start gap-2" onClick={openCapture}>
-                    <Plus />
-                    {t('nav.capture')}
-                  </Button>
-                </Tooltip>
-                <Tooltip label={t(next.hint!)}>
-                  <Button asChild className="justify-start gap-2 bg-blue-600 text-white hover:bg-blue-700">
-                    <NavLink to={next.to}>
-                      <ListTodo />
-                      {t(next.label)}
-                    </NavLink>
-                  </Button>
-                </Tooltip>
-                {/* Split-button (#588): the label navigates; the chevron (only when context
-                    bookmarks exist) opens their quick-jump list. */}
-                <div className="flex items-center gap-1">
-                  <Tooltip label={t(tags.hint!)}>
-                    <Button asChild className="min-w-0 flex-1 justify-start gap-2 bg-violet-600 text-white hover:bg-violet-700">
-                      <NavLink to={tags.to}>
-                        <Tag />
-                        {t(tags.label)}
-                      </NavLink>
-                    </Button>
-                  </Tooltip>
-                  <SidebarBookmarkMenu
-                    kind="tagFilter"
-                    className="h-10 bg-violet-600 text-white hover:bg-violet-700 hover:text-white"
-                  />
-                </div>
-                <Tooltip label={t(focus.hint!)}>
-                  <Button asChild variant="outline" className="justify-start gap-2">
-                    <NavLink to="/focus">
-                      <Target className="focus-glow" />
-                      {t('domain.focus')}
-                    </NavLink>
-                  </Button>
-                </Tooltip>
-              </div>
-
+              {/* The foregrounded actions (Capture / Next / Contexts / Focus / Projects) live in the
+                  toolbar command bar now (#590); the sidebar is just the remaining view list. */}
               <nav aria-label={t('nav.sidebarLandmark')} className="mt-5 flex flex-col gap-4">
                 {SIDEBAR_GROUPS.map((group, i) => (
                   <div key={group.label ?? i} className="flex flex-col gap-1">
@@ -139,34 +155,22 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                         {t(group.label)}
                       </span>
                     )}
-                    {group.items.map(({ to, label, icon: Icon, hint }) => {
-                      const link = (
-                        <Tooltip key={to} label={hint ? t(hint) : ''}>
-                          {/* Static (string) className + aria-current for the active state — a render-prop
-                              className breaks when the Tooltip's asChild Slot clones the NavLink. */}
-                          <NavLink
-                            to={to}
-                            className={cn(
-                              'flex min-w-0 flex-1 items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
-                              'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
-                            )}
-                          >
-                            <Icon className="h-4 w-4" />
-                            {t(label)}
-                          </NavLink>
-                        </Tooltip>
-                      );
-                      // Projects gets a split-button (#588): a trailing chevron (only when project
-                      // bookmarks exist) opens their quick-jump list. The chevron is a *sibling* of
-                      // the NavLink — one click must never both navigate and open the menu.
-                      if (to !== projects.to) return link;
-                      return (
-                        <div key={to} className="flex items-center gap-1">
-                          {link}
-                          <SidebarBookmarkMenu kind="project" />
-                        </div>
-                      );
-                    })}
+                    {group.items.map(({ to, label, icon: Icon, hint }) => (
+                      <Tooltip key={to} label={hint ? t(hint) : ''}>
+                        {/* Static (string) className + aria-current for the active state — a render-prop
+                            className breaks when the Tooltip's asChild Slot clones the NavLink. */}
+                        <NavLink
+                          to={to}
+                          className={cn(
+                            'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                            'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {t(label)}
+                        </NavLink>
+                      </Tooltip>
+                    ))}
                   </div>
                 ))}
               </nav>
