@@ -9,7 +9,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
-import { STATUS_TEXT_TONE } from './StatusMenu';
+import { STATUS_TEXT_TONE } from './status';
 import { ProjectPathLinks } from './ProjectPathLinks';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { descriptionTooltip, type ActionRowData } from './rows';

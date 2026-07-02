@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { STATUS_OPTIONS } from './status';
 import {
   Dialog,
   DialogBody,
@@ -44,12 +45,6 @@ export interface ActionEdits {
   status: NodeStatus;
   resources: Resource[];
 }
-
-const STATUSES: { value: NodeStatus; label: string }[] = [
-  { value: 'NEXT', label: 'domain.status.next' },
-  { value: 'BACKLOG', label: 'domain.status.backlog' },
-  { value: 'DONE', label: 'domain.status.done' },
-];
 
 /**
  * Edit an action's title, description, tags, due date, and status. Presentational:
@@ -390,7 +385,7 @@ export function ActionDialog({
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium text-foreground">{t('editor.statusLegend')}</legend>
             <div className="flex gap-2">
-              {STATUSES.map((s) => (
+              {STATUS_OPTIONS.map((s) => (
                 <label
                   key={s.value}
                   className={cn(

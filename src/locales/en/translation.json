@@ -481,6 +481,8 @@
   "theme.switchDark": "Switch to dark",
   "theme.switchLight": "Switch to light",
   "theme.toggle": "Toggle theme",
+  "toast.deleted": "Deleted \"{title}\"",
+  "toast.deletedMany": "Deleted {count, plural, one {# item} other {# items}}",
   "toast.notifications": "Notifications",
   "toast.statusSet": "Marked \"{title}\" as {status}",
   "toast.statusSetMany": "{count, plural, one {Marked # action as {status}} other {Marked # actions as {status}}}",

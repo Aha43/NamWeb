@@ -481,6 +481,8 @@
   "theme.switchDark": "Bytt til mørkt",
   "theme.switchLight": "Bytt til lyst",
   "theme.toggle": "Veksle tema",
+  "toast.deleted": "Slettet «{title}»",
+  "toast.deletedMany": "{count, plural, one {Slettet # element} other {Slettet # elementer}}",
   "toast.notifications": "Varsler",
   "toast.statusSet": "Merket «{title}» som {status}",
   "toast.statusSetMany": "{count, plural, one {Merket # handling som {status}} other {Merket # handlinger som {status}}}",
