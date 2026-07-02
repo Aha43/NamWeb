@@ -59,6 +59,12 @@ describe('formatDate', () => {
     expect(formatDate('2026-06-14')).toBe('Jun 14, 2026');
     expect(formatDate('not a date', 'iso')).toBe('not a date');
   });
+
+  it('medium localizes the month name via the given locale (#575)', () => {
+    expect(formatDate('2026-06-14', 'medium', 'nb')).toBe('14. juni 2026');
+    // Numeric formats are locale-independent by design (an explicit user preference).
+    expect(formatDate('2026-06-14', 'dmy', 'nb')).toBe('14/06/2026');
+  });
 });
 
 describe('formatDueHint', () => {

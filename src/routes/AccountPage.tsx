@@ -337,7 +337,7 @@ function PreferencesTab() {
     addToBottomDefault,
     setAddToBottomDefault,
   } = useSettings();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <div className="space-y-6">
       <div className="space-y-1.5">
@@ -367,7 +367,7 @@ function PreferencesTab() {
         >
           {DATE_FORMAT_OPTIONS.map((opt) => (
             <option key={opt.value} value={opt.value}>
-              {t(opt.label)} — {formatDate(SAMPLE_ISO, opt.value)}
+              {t(opt.label)} — {formatDate(SAMPLE_ISO, opt.value, i18n.language)}
             </option>
           ))}
         </select>
