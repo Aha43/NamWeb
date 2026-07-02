@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-02
+
+The app speaks Norwegian — the full i18n epic (runtime, every surface, a shared domain vocabulary
+with NamDesktop, localized dates) — plus a batch of UX polish (status-change Undo toast, bookmark
+and picker upgrades, sidebar Next/Contexts) and three fixes from the pre-release code reviews.
+
 ### Added
 
 - **Undo a status change.** Changing an action's status (the status badge menu anywhere, Focus's Done/flip keys, Done's Restore/Backlog, and the bulk status operations) now shows the same short-lived **Undo** toast as delete — one click puts the previous status (and its original change-time) back. Handy when a row vanishes from the view you're in. Closes #567.
@@ -1149,7 +1155,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Aha43/NamWeb/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Aha43/NamWeb/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Aha43/NamWeb/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/Aha43/NamWeb/compare/v0.3.0...v0.3.1

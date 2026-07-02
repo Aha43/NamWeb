@@ -147,6 +147,20 @@ A feature issue is complete when:
   the journey you touched; if your change broke another journey, update it before delivering
 - no obvious domain invariant is weakened
 
+### Releases
+
+**Follow `docs/RELEASING.md` exactly when cutting a release** — don't improvise from memory:
+
+- **Merging is not releasing.** Every merge deploys via Cloudflare; a *version* is a deliberate
+  milestone. Cut a **minor** at the end of a sprint/batch (the default), a **patch** only for an
+  off-cycle fix worth announcing.
+- **A code review of the diff since `.codex-review` is a mandatory gate before any cut** — address
+  the findings, then update `.codex-review` to the reviewed `main` HEAD.
+- Then: release PR (`npm version X.Y.Z --no-git-tag-version` + CHANGELOG roll with summary line and
+  link definitions) → squash-merge → annotated `vX.Y.Z` tag pushed → `release.yml` publishes the
+  GitHub Release from the CHANGELOG section → report the **"footprint since last release"**
+  paragraph in chat (themes, converging vs polishing).
+
 ## Process notes
 
 - **Design happens in the planning chat.** Major features get a `docs/features/<name>/design.md`
