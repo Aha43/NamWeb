@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Create a project while filing inbox items.** The inbox bulk "File under" picker now offers "＋ New project" (matching the other move pickers) — spin up a project and file the selected captures into it in one go. Closes #554.
+
 - **The app now speaks Norwegian (Norsk).** Pick your language in **Settings → Preferences** (defaults to your browser's, persists per device) and the whole app follows — inbox, every action list, Focus, the editor, projects, tags, search, settings, and help. English is unchanged. Closes #400 (Phase B); date format stays a separate preference.
 
 ### Changed
