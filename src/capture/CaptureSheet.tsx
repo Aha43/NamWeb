@@ -64,9 +64,9 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder={t('capture.placeholder')}
-        className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
+        className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
       />
-      <Button type="submit">{t('common.add')}</Button>
+      <Button type="submit" className="shrink-0">{t('common.add')}</Button>
     </form>
   );
 
@@ -83,7 +83,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           {recentNodes.map((node) => (
             <li key={node.id} className="flex items-center gap-2 px-3 py-1.5 text-sm">
               {renamingId === node.id ? (
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <InlineRename
                     title={node.title}
                     onCommit={(newTitle) => {
@@ -95,7 +95,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
                 </div>
               ) : (
                 <>
-                  <span className="flex-1 truncate text-foreground">{node.title}</span>
+                  <span className="min-w-0 flex-1 truncate text-foreground">{node.title}</span>
                   <CopyButton value={node.title} label={t('copy.name', { title: node.title })} tooltip />
                   <button
                     type="button"

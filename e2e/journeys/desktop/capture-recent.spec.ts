@@ -38,3 +38,31 @@ test('recent captures stay listed in the dialog and are editable', async ({ page
   await page.getByRole('button', { name: 'Capture', exact: true }).click();
   await expect(page.getByRole('dialog').getByText('Just added')).toHaveCount(0);
 });
+
+// #568 — a very long name must never push the Add button or a recent row's buttons out of the
+// dialog; the text shrinks/truncates instead, so every control stays reachable.
+test('a long name truncates instead of pushing buttons out of the dialog', async ({ page }) => {
+  await page.goto('/inbox');
+  await page.getByRole('button', { name: 'Capture', exact: true }).click();
+
+  const dialog = page.getByRole('dialog');
+  const field = dialog.getByLabel('Capture to inbox');
+  const longTitle =
+    'Pick up the extra long fence posts from the hardware store before the weekend rush starts and keep all the receipts';
+  await field.fill(longTitle);
+  await field.press('Enter');
+
+  const dialogBox = (await dialog.boundingBox())!;
+  const dialogRight = dialogBox.x + dialogBox.width;
+
+  const addBox = (await dialog.getByRole('button', { name: 'Add' }).boundingBox())!;
+  expect(addBox.x + addBox.width).toBeLessThanOrEqual(dialogRight);
+
+  const editButton = dialog.getByRole('button', { name: `Edit ${longTitle}` });
+  const editBox = (await editButton.boundingBox())!;
+  expect(editBox.x + editBox.width).toBeLessThanOrEqual(dialogRight);
+
+  // And it is actually clickable — the inline rename opens.
+  await editButton.click();
+  await expect(dialog.getByRole('textbox', { name: `Rename ${longTitle}` })).toBeVisible();
+});
