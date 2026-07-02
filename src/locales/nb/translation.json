@@ -385,6 +385,7 @@
   "notFound.nothing": "Ingenting her.",
   "picker.browseAll": "Bla gjennom alle prosjekter…",
   "picker.description": "Klikk et prosjekt for å åpne delprosjektene; velg et mål.",
+  "picker.jumpToBookmark": "Hopp til {label}",
   "picker.moveHere": "Flytt hit",
   "picker.moveToName": "Flytt til {name}",
   "picker.moveToParent": "Flytt til {name} (overordnet)",

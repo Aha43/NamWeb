@@ -385,6 +385,7 @@
   "notFound.nothing": "Nothing here.",
   "picker.browseAll": "Browse all projects…",
   "picker.description": "Click a project to open its sub-projects; pick a destination.",
+  "picker.jumpToBookmark": "Jump to {label}",
   "picker.moveHere": "Move here",
   "picker.moveToName": "Move to {name}",
   "picker.moveToParent": "Move to {name} (parent)",
