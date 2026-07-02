@@ -28,6 +28,9 @@ export interface InboxPanelProps {
   onBulkDelete?: (ids: string[]) => void;
   /** Projects the bulk "File under" picker can target (breadcrumb-labeled). */
   projectTargets?: ProjectTarget[];
+  /** Create a project under `parentId` (null = top level) and return its id — powers the bulk
+   *  "File under" picker's "New project here". */
+  onCreateProject?: (parentId: string | null, title: string) => string;
 }
 
 /** Inbox: quick-add capture plus the list of unprocessed items. Pure/presentational. */
@@ -41,6 +44,7 @@ export function InboxPanel({
   onBulkResolve,
   onBulkDelete,
   projectTargets = [],
+  onCreateProject,
 }: InboxPanelProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
@@ -207,6 +211,7 @@ export function InboxPanel({
           targets={[{ id: '', label: t('inbox.defaultTarget') }, ...projectTargets]}
           initialSelectedId={bulkTarget}
           onConfirm={setBulkTarget}
+          onCreateProject={onCreateProject}
         />
       )}
 
