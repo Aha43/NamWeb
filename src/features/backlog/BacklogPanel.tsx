@@ -86,6 +86,7 @@ export function BacklogPanel({
       ) : (
         <ReorderableActionList
           rows={rows}
+          colorByStatus={false} // every row is BACKLOG here — status color adds nothing
           onEdit={onEdit}
           onDelete={onDelete}
           onRename={onRename}

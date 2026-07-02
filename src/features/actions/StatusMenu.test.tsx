@@ -9,6 +9,12 @@ describe('StatusMenu', () => {
     expect(trigger).toHaveTextContent('N');
   });
 
+  it('names the status in the aria/tooltip with the translated label, not the raw enum (#565)', () => {
+    render(<StatusMenu status="DONE" title="Buy milk" onSetStatus={vi.fn()} />);
+    // Case-sensitive: "Done" (the label) matches; "DONE" (the enum) would not.
+    expect(screen.getByRole('button', { name: /Status of Buy milk: Done\. Change status\./ })).toBeInTheDocument();
+  });
+
   it('sets the chosen status from the menu', () => {
     const onSetStatus = vi.fn();
     render(<StatusMenu status="NEXT" title="Buy milk" onSetStatus={onSetStatus} />);

@@ -20,6 +20,8 @@ export interface ReorderableActionListProps {
   /** When provided, rows show a selection checkbox (multi-select). */
   selectedIds?: Set<string>;
   onToggleSelect?: (id: string) => void;
+  /** Tint titles by status (passed to ActionRow). Off for single-status lists. Default on. */
+  colorByStatus?: boolean;
 }
 
 /** An {@link ActionList} of {@link ActionRow}s that can be drag-reordered on desktop, with the
@@ -34,6 +36,7 @@ export function ReorderableActionList({
   dndEnabled,
   selectedIds,
   onToggleSelect,
+  colorByStatus = true,
 }: ReorderableActionListProps) {
   // Mirror SortableList's gate: no drag (and no SortableRow) unless there are 2+ items to reorder.
   const dnd = Boolean(dndEnabled && onReorder && rows.length > 1);
@@ -45,6 +48,7 @@ export function ReorderableActionList({
         {(drag) => (
           <ActionRow
             row={data}
+            colorByStatus={colorByStatus}
             dragRef={drag.setNodeRef}
             dragStyle={drag.style}
             onEdit={onEdit && (() => onEdit(data.id))}
@@ -66,6 +70,7 @@ export function ReorderableActionList({
       <Fragment key={data.id}>
         <ActionRow
           row={data}
+          colorByStatus={colorByStatus}
           onEdit={onEdit && (() => onEdit(data.id))}
           onDelete={onDelete && (() => onDelete(data.id))}
           onRename={onRename && ((title) => onRename(data.id, title))}
