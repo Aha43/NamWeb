@@ -41,6 +41,38 @@ test.describe('with bookmarks', () => {
   });
 });
 
+test.describe('bookmark as starting point (#595)', () => {
+  // A hub bookmark: "NAM dev" › "Web" › "Next sprint" — the destinations are descendants of the
+  // bookmark, so you browse from it instead of bookmarking every endpoint.
+  const seed = new DocBuilder()
+    .project('dev', 'NAM dev')
+    .project('web', 'Web', { under: 'dev' })
+    .project('sprint', 'Next sprint', { under: 'web' })
+    .build();
+  seed.bookmarks = [{ id: 'bm1', label: 'NAM dev', kind: 'project' as const, projectId: 'dev', color: '#3b82f6' }];
+  test.use({ seedDoc: seed });
+
+  test('browse from a bookmarked hub and open a descendant', async ({ page }) => {
+    await page.goto('/inbox');
+
+    await page.getByRole('button', { name: 'Project bookmarks' }).click();
+    await page.getByRole('menu').getByText('Browse all projects…').click();
+
+    // The picker opens in open mode; its bookmark chip jumps the columns to the hub.
+    const dialog = page.getByRole('dialog', { name: 'Open project' });
+    await dialog.getByRole('button', { name: 'Jump to NAM dev' }).click();
+    await dialog.getByRole('button', { name: 'Web' }).click();
+    await dialog.getByRole('button', { name: 'Next sprint' }).click();
+    await dialog.getByRole('button', { name: 'Open', exact: true }).click();
+
+    await expect(page).toHaveURL(/\/projects\/sprint$/);
+    // Once the picker has fully closed, the only "Next sprint" left is the workbench title.
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByText('Next sprint')).toBeVisible();
+
+  });
+});
+
 test.describe('without bookmarks', () => {
   test.use({ seedDoc: new DocBuilder().project('vac', 'Vacation').build() });
 

@@ -395,6 +395,8 @@
   "picker.moveToParent": "Move to {name} (parent)",
   "picker.moveToSibling": "Move to {name} (sibling)",
   "picker.moveToSub": "Move to {name} (sub-project)",
+  "picker.open": "Open",
+  "picker.openTitle": "Open project",
   "picker.newProjectIn": "＋ New project in “{label}”",
   "picker.newProjectName": "New project name",
   "picker.newProjectPlaceholder": "New project…",

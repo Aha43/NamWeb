@@ -255,6 +255,15 @@ export function projectQuickMoveTargets(doc: WorkspaceDocument, id: string): Qui
   return [...topLevel, ...siblings];
 }
 
+/** Every openable (non-archived) project as a picker target — the whole tree is selectable in the
+ *  picker's "open" mode (#595), unlike move mode's constrained destination sets. */
+export function allOpenableProjects(doc: WorkspaceDocument): ProjectMoveTarget[] {
+  const archived = archivedProjectIds(doc);
+  return Object.values(doc.nodes)
+    .filter((n) => n.project && !archived.has(n.id))
+    .map((n) => ({ id: n.id, label: n.title }));
+}
+
 /**
  * Projects that `id` can be moved into (made a sub-project of): a **"Top level"** entry first when
  * `id` is currently nested, then its **current project siblings** (same parent), then every other

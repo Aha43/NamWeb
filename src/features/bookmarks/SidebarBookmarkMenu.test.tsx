@@ -23,6 +23,7 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
       {children}
     </button>
   ),
+  DropdownMenuSeparator: () => <hr />,
 }));
 
 import { SidebarBookmarkMenu } from './SidebarBookmarkMenu';
@@ -39,7 +40,10 @@ function doc(bookmarks: Bookmark[]): WorkspaceDocument {
   return {
     formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects', nextActionsNodeId: 'actions',
     nodes: {
-      root: node('root', { childIds: ['p1'] }),
+      root: node('root', { childIds: ['inbox', 'projects', 'actions'] }),
+      inbox: node('inbox'),
+      projects: node('projects', { childIds: ['p1'] }),
+      actions: node('actions'),
       p1: node('p1', { title: 'Vacation', project: true }),
     },
     registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
@@ -85,5 +89,20 @@ describe('SidebarBookmarkMenu (#588)', () => {
     renderMenu('tagFilter', [projectBm, contextBm]);
     fireEvent.click(screen.getByRole('menuitem', { name: '#home' }));
     expect(navigate).toHaveBeenCalledWith('/tags?tags=home&next=1');
+  });
+
+  it('the project menu opens the picker in open mode — confirm navigates (#595)', () => {
+    renderMenu('project', [projectBm]);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Browse all projects…' }));
+    // The Finder-style picker, in open mode: pick a project, Open navigates to it.
+    expect(screen.getByText('Open project')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Vacation' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    expect(navigate).toHaveBeenCalledWith('/projects/p1');
+  });
+
+  it('the context menu has no browse item (#595 is a project affair)', () => {
+    renderMenu('tagFilter', [contextBm]);
+    expect(screen.queryByRole('menuitem', { name: 'Browse all projects…' })).not.toBeInTheDocument();
   });
 });
