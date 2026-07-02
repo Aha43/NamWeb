@@ -51,5 +51,7 @@ export function useSettings(): SettingsContextValue {
 
 export const DATE_FORMAT_STORAGE_KEY = 'namweb.settings.date-format';
 export const ADD_TO_BOTTOM_STORAGE_KEY = 'namweb.settings.add-to-bottom';
-export const LANGUAGE_STORAGE_KEY = 'namweb.settings.language';
+// The language key lives in @/lib/i18n (init reads it before any provider mounts, #579);
+// re-exported here so settings code keeps one import site for storage keys.
+export { LANGUAGE_STORAGE_KEY } from '@/lib/i18n';
 export const BOOKMARK_STYLE_STORAGE_KEY = 'namweb.settings.bookmark-style';
