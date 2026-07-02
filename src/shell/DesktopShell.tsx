@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { PanelLeftClose, PanelLeftOpen, Plus, Search, Target } from 'lucide-react';
+import { ListTodo, PanelLeftClose, PanelLeftOpen, Plus, Search, Tag, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -11,7 +11,7 @@ import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
-import { SIDEBAR_GROUPS, focus } from './nav';
+import { SIDEBAR_GROUPS, focus, next, tags } from './nav';
 import { TOOLBAR_SEARCH_ID } from './useGlobalShortcuts';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -89,12 +89,29 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 </Tooltip>
               </div>
 
-              {/* The two "do" actions, foregrounded (mirrors the phone bottom bar). */}
+              {/* Foregrounded actions (mirrors the phone bottom bar): capture, jump to Next / Contexts
+                  (the two most-used surfaces), and Focus. Distinct colors so each is quick to find. */}
               <div className="mt-4 flex flex-col gap-2">
                 <Tooltip label={t('nav.captureTooltip')}>
                   <Button className="justify-start gap-2" onClick={openCapture}>
                     <Plus />
                     {t('nav.capture')}
+                  </Button>
+                </Tooltip>
+                <Tooltip label={t(next.hint!)}>
+                  <Button asChild className="justify-start gap-2 bg-blue-600 text-white hover:bg-blue-700">
+                    <NavLink to={next.to}>
+                      <ListTodo />
+                      {t(next.label)}
+                    </NavLink>
+                  </Button>
+                </Tooltip>
+                <Tooltip label={t(tags.hint!)}>
+                  <Button asChild className="justify-start gap-2 bg-violet-600 text-white hover:bg-violet-700">
+                    <NavLink to={tags.to}>
+                      <Tag />
+                      {t(tags.label)}
+                    </NavLink>
                   </Button>
                 </Tooltip>
                 <Tooltip label={t(focus.hint!)}>

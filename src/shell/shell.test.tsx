@@ -112,10 +112,12 @@ describe('adaptive shell', () => {
     expect(screen.getByRole('button', { name: 'Toggle theme' })).toBeInTheDocument();
     // Sign out now lives inside the account menu (top-right user icon).
     expect(screen.getByRole('button', { name: 'Account menu' })).toBeInTheDocument();
-    // Search stays in the toolbar (not the sidebar); Tags now lives in the sidebar's "Find" group.
+    // Search stays in the toolbar (not the sidebar). Contexts (formerly Tags) is promoted to a button
+    // above the list (#557), so it's no longer inside the Sidebar nav — but still links to /tags.
     const sidebar = screen.getByRole('navigation', { name: 'Sidebar' });
     expect(within(sidebar).queryByRole('link', { name: 'Search' })).not.toBeInTheDocument();
-    expect(within(sidebar).getByRole('link', { name: 'Tags' })).toHaveAttribute('href', '/tags');
+    expect(within(sidebar).queryByRole('link', { name: 'Contexts' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Contexts' })).toHaveAttribute('href', '/tags');
   });
 
   it('desktop: a draggable divider separates the view list from the workspace', () => {

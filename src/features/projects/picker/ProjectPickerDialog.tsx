@@ -12,7 +12,9 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { useSettings } from '@/components/settings/settings-context';
 import { buildPath, projectPath } from '@/domain/lenses';
 import { bookmarksOf, isBookmarkStale } from '@/features/bookmarks/bookmarks';
 import { cn } from '@/lib/utils';
@@ -54,6 +56,7 @@ export function ProjectPickerDialog({
 }: ProjectPickerDialogProps) {
   const { t } = useTranslation();
   const { document } = useWorkspaceContext();
+  const { bookmarkStyle } = useSettings();
   const allowed = useMemo(() => new Set(targets.map((tg) => tg.id)), [targets]);
   // The chain of opened project ids forming columns 1..n (column 0 is always the roots).
   const [trail, setTrail] = useState<string[]>([]);
@@ -161,16 +164,21 @@ export function ProjectPickerDialog({
               className="flex items-center gap-1.5 overflow-x-auto border-b border-border px-3 py-2"
             >
               {projectBookmarks.map((b) => (
-                <button
-                  key={b.id}
-                  type="button"
-                  aria-label={t('picker.jumpToBookmark', { label: b.label })}
-                  onClick={() => jumpTo(b.projectId!)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full border border-input px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent"
-                >
-                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: b.color }} />
-                  <span className="max-w-[10rem] truncate">{b.label}</span>
-                </button>
+                // In "icons" mode the label lives in a tooltip (compact); in "labels" mode it's inline.
+                <Tooltip key={b.id} label={bookmarkStyle === 'labels' ? '' : b.label}>
+                  <button
+                    type="button"
+                    aria-label={t('picker.jumpToBookmark', { label: b.label })}
+                    onClick={() => jumpTo(b.projectId!)}
+                    className={cn(
+                      'flex shrink-0 items-center gap-1.5 rounded-full border border-input text-xs font-medium text-foreground hover:bg-accent',
+                      bookmarkStyle === 'labels' ? 'px-2.5 py-1' : 'p-1.5',
+                    )}
+                  >
+                    <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: b.color }} />
+                    {bookmarkStyle === 'labels' && <span className="max-w-[10rem] truncate">{b.label}</span>}
+                  </button>
+                </Tooltip>
               ))}
             </div>
           )}

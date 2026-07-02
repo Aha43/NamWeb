@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { useSettings } from '@/components/settings/settings-context';
 import { bookmarksOf, bookmarkTarget, isBookmarkStale } from './bookmarks';
 
 /**
@@ -24,6 +25,7 @@ export function BookmarkBar({
 }) {
   const { t } = useTranslation();
   const { document, dispatch } = useWorkspaceContext();
+  const { bookmarkStyle } = useSettings();
   const navigate = useNavigate();
   if (!document) return null;
 
@@ -86,11 +88,15 @@ export function BookmarkBar({
                 disabled={stale}
                 onClick={() => go(bookmarkTarget(bookmark))}
                 className={cn(
-                  'rounded-md p-2 hover:bg-accent disabled:cursor-default disabled:opacity-40',
+                  'flex items-center gap-1.5 rounded-md hover:bg-accent disabled:cursor-default disabled:opacity-40',
+                  bookmarkStyle === 'labels' ? 'px-2 py-1.5' : 'p-2',
                   stale && 'text-muted-foreground',
                 )}
               >
-                <BookmarkIcon className="h-4 w-4" style={stale ? undefined : { color: bookmark.color }} />
+                <BookmarkIcon className="h-4 w-4 shrink-0" style={stale ? undefined : { color: bookmark.color }} />
+                {bookmarkStyle === 'labels' && (
+                  <span className="max-w-[9rem] truncate text-sm font-medium text-foreground">{bookmark.label}</span>
+                )}
               </button>
             </Tooltip>
             <button

@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Choose how bookmarks look.** A new **Settings → Preferences → Bookmark appearance** option toggles bookmarks between compact **icons** (name on hover) and **icons with labels**, across the toolbar and the project picker. The phone More sheet always shows labels. Closes #560.
+
 - **Jump to a bookmarked project in the picker.** The project selector now shows your project bookmarks as chips — click one to land straight on that (even deeply-nested) project, then drill further or confirm. The column strip also auto-scrolls to keep the active column in view as you go deeper. Closes #553.
 
 - **Create a project while filing inbox items.** The inbox bulk "File under" picker now offers "＋ New project" (matching the other move pickers) — spin up a project and file the selected captures into it in one go. Closes #554.
@@ -17,6 +19,8 @@ minor = features (breaking changes allowed), patch = fixes.
 - **The app now speaks Norwegian (Norsk).** Pick your language in **Settings → Preferences** (defaults to your browser's, persists per device) and the whole app follows — inbox, every action list, Focus, the editor, projects, tags, search, settings, and help. English is unchanged. Closes #400 (Phase B); date format stays a separate preference.
 
 ### Changed
+
+- **Faster access to Next + Contexts.** Next and the tag-filter view (now called **Contexts**) are prominent colored buttons in the sidebar, right under Capture — so "show my Next actions tagged _work_, then Focus" is a click away. Only the view is renamed; tags themselves are unchanged. Closes #557.
 
 - **Tidier due date in the action editor.** The optional time-of-day and date-range fields now hide behind a small "＋ Add time or a range" toggle — so the common case is just a due date. They auto-expand when the action already has a time or range set. Closes #559.
 
