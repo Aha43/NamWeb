@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Tighter i18n safety net.** The `i18n:check` CI guard now also sees keys referenced via `<Trans i18nKey>` and aliased translators, so a missing catalog entry on those can't slip through. No user-facing change. Closes #581.
+
 ### Fixed
 
 - **The sync banner speaks Norwegian too.** The reconcile/save-failure notices ("Updated from another device…", "Couldn't save your last change…") were hardcoded English next to translated Retry/Dismiss buttons; the whole banner now follows the app language. Closes #580.
