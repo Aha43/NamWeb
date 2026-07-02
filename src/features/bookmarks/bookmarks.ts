@@ -54,3 +54,8 @@ export function isBookmarkStale(doc: WorkspaceDocument, bookmark: Bookmark): boo
   const node = bookmark.projectId ? doc.nodes[bookmark.projectId] : undefined;
   return !node || !node.project;
 }
+
+/** Bookmarks of one kind, minus stale ones — what the sidebar quick-jump menus list (#588). */
+export function liveBookmarksOfKind(doc: WorkspaceDocument, kind: Bookmark['kind']): Bookmark[] {
+  return bookmarksOf(doc).filter((b) => b.kind === kind && !isBookmarkStale(doc, b));
+}

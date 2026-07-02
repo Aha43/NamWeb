@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AccountMenu } from './AccountMenu';
-import { BookmarkBar } from '@/features/bookmarks/BookmarkBar';
+import { SidebarBookmarkMenu } from '@/features/bookmarks/SidebarBookmarkMenu';
 import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
-import { SIDEBAR_GROUPS, focus, next, tags } from './nav';
+import { SIDEBAR_GROUPS, focus, next, projects, tags } from './nav';
 import { TOOLBAR_SEARCH_ID } from './useGlobalShortcuts';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -70,7 +70,6 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             </Button>
           </Tooltip>
           <ToolbarSearch />
-          <BookmarkBar />
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
@@ -106,14 +105,22 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                     </NavLink>
                   </Button>
                 </Tooltip>
-                <Tooltip label={t(tags.hint!)}>
-                  <Button asChild className="justify-start gap-2 bg-violet-600 text-white hover:bg-violet-700">
-                    <NavLink to={tags.to}>
-                      <Tag />
-                      {t(tags.label)}
-                    </NavLink>
-                  </Button>
-                </Tooltip>
+                {/* Split-button (#588): the label navigates; the chevron (only when context
+                    bookmarks exist) opens their quick-jump list. */}
+                <div className="flex items-center gap-1">
+                  <Tooltip label={t(tags.hint!)}>
+                    <Button asChild className="min-w-0 flex-1 justify-start gap-2 bg-violet-600 text-white hover:bg-violet-700">
+                      <NavLink to={tags.to}>
+                        <Tag />
+                        {t(tags.label)}
+                      </NavLink>
+                    </Button>
+                  </Tooltip>
+                  <SidebarBookmarkMenu
+                    kind="tagFilter"
+                    className="h-10 bg-violet-600 text-white hover:bg-violet-700 hover:text-white"
+                  />
+                </div>
                 <Tooltip label={t(focus.hint!)}>
                   <Button asChild variant="outline" className="justify-start gap-2">
                     <NavLink to="/focus">
@@ -132,22 +139,34 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                         {t(group.label)}
                       </span>
                     )}
-                    {group.items.map(({ to, label, icon: Icon, hint }) => (
-                      <Tooltip key={to} label={hint ? t(hint) : ''}>
-                        {/* Static (string) className + aria-current for the active state — a render-prop
-                            className breaks when the Tooltip's asChild Slot clones the NavLink. */}
-                        <NavLink
-                          to={to}
-                          className={cn(
-                            'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
-                            'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
-                          )}
-                        >
-                          <Icon className="h-4 w-4" />
-                          {t(label)}
-                        </NavLink>
-                      </Tooltip>
-                    ))}
+                    {group.items.map(({ to, label, icon: Icon, hint }) => {
+                      const link = (
+                        <Tooltip key={to} label={hint ? t(hint) : ''}>
+                          {/* Static (string) className + aria-current for the active state — a render-prop
+                              className breaks when the Tooltip's asChild Slot clones the NavLink. */}
+                          <NavLink
+                            to={to}
+                            className={cn(
+                              'flex min-w-0 flex-1 items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                              'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
+                            )}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {t(label)}
+                          </NavLink>
+                        </Tooltip>
+                      );
+                      // Projects gets a split-button (#588): a trailing chevron (only when project
+                      // bookmarks exist) opens their quick-jump list. The chevron is a *sibling* of
+                      // the NavLink — one click must never both navigate and open the menu.
+                      if (to !== projects.to) return link;
+                      return (
+                        <div key={to} className="flex items-center gap-1">
+                          {link}
+                          <SidebarBookmarkMenu kind="project" />
+                        </div>
+                      );
+                    })}
                   </div>
                 ))}
               </nav>
