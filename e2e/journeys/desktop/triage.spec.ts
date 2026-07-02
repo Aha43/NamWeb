@@ -24,11 +24,13 @@ test.describe('backlog', () => {
 
     await page.getByRole('button', { name: /Status of Renew passport/ }).click();
     await page.getByRole('menuitem', { name: 'Next' }).click();
-    await expect(page.getByText('Renew passport')).toHaveCount(0); // left the backlog
+    // Left the backlog — check the row's Edit button, since the status-change Undo toast (#567)
+    // also carries the title text.
+    await expect(page.getByRole('button', { name: 'Edit Renew passport' })).toHaveCount(0);
 
     // In-app nav (no reload) so the optimistic promotion is observed deterministically.
     await page.getByRole('link', { name: 'Next' }).click(); // Next is now a promoted sidebar button (#557)
-    await expect(page.getByText('Renew passport')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Edit Renew passport' })).toBeVisible();
   });
 });
 

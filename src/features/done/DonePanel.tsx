@@ -15,12 +15,16 @@ export interface DonePanelProps {
   onDelete: (id: string) => void;
   /** Bulk delete with a single Undo toast; falls back to per-id `onDelete` when absent. */
   onDeleteMany?: (ids: string[]) => void;
+  /** Bulk restore-to-Next with a single Undo toast; falls back to per-id `onRestore` when absent. */
+  onRestoreMany?: (ids: string[]) => void;
+  /** Bulk move-to-Backlog with a single Undo toast; falls back to per-id `onBacklog` when absent. */
+  onBacklogMany?: (ids: string[]) => void;
   onEdit?: (id: string) => void;
 }
 
 /** Done: completed actions with restore / backlog / delete — plus a select mode for bulk ops
  *  (you often spot several that were not actually done). Presentational. */
-export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, onEdit }: DonePanelProps) {
+export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, onRestoreMany, onBacklogMany, onEdit }: DonePanelProps) {
   const { t } = useTranslation();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -36,9 +40,11 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
     setSelectMode(false);
     setSelected(new Set());
   };
-  // Apply an action to each selected row, then clear the selection (stay in select mode).
-  const bulk = (fn: (id: string) => void) => {
-    for (const id of selected) fn(id);
+  // Apply an action to the selected rows, then clear the selection (stay in select mode).
+  // Prefer the bulk variant (one grouped Undo toast) over per-id calls.
+  const bulk = (fn: (id: string) => void, many?: (ids: string[]) => void) => {
+    if (many) many([...selected]);
+    else for (const id of selected) fn(id);
     setSelected(new Set());
   };
   const bulkDelete = () => {
@@ -82,7 +88,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
           <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
           <button
             type="button"
-            onClick={() => bulk(onRestore)}
+            onClick={() => bulk(onRestore, onRestoreMany)}
             disabled={none}
             className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
           >
@@ -90,7 +96,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
           </button>
           <button
             type="button"
-            onClick={() => bulk(onBacklog)}
+            onClick={() => bulk(onBacklog, onBacklogMany)}
             disabled={none}
             className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
           >

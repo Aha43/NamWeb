@@ -8,6 +8,7 @@ import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
 import { tagFilterParams, parseTagFilter } from '@/features/tags/tagFilterParams';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
+import { useSetStatus } from '@/features/actions/useSetStatus';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 export function TagsPage() {
@@ -15,6 +16,7 @@ export function TagsPage() {
   const { openEditor } = useActionEditor();
   const navigate = useNavigate();
   const deleteNode = useDeleteNode();
+  const setStatus = useSetStatus();
   // The filter lives in the URL so it survives the round-trip into Focus and back.
   const [params, setParams] = useSearchParams();
   const { selected, nextOnly } = useMemo(() => parseTagFilter(params), [params]);
@@ -60,7 +62,7 @@ export function TagsPage() {
         setFilter(selected.filter((t) => t !== tag), nextOnly);
       }}
       onToggleNextOnly={() => setFilter(selected, !nextOnly)}
-      onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
+      onSetStatus={setStatus}
       onEdit={openEditor}
       onDeleteAction={deleteNode}
       onRename={(id, title) => {

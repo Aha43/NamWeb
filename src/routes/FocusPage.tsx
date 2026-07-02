@@ -8,6 +8,7 @@ import { nowIso } from '@/lib/local';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
+import { useSetStatus } from '@/features/actions/useSetStatus';
 import { FocusDeck } from '@/features/focus/FocusDeck';
 import { focusCards, type FocusSource } from '@/features/focus/focusCards';
 import { tagFilterParams } from '@/features/tags/tagFilterParams';
@@ -20,6 +21,7 @@ export function FocusPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
+  const setStatus = useSetStatus();
 
   // Scoped focus precedence: a project (?project=<id>), then a tag filter (?tags=home&next=1, from the
   // Tags view), else the global Next/Backlog toggle.
@@ -116,9 +118,7 @@ export function FocusPage() {
         cards={cards}
         // Done-focus is re-triage: the primary action restores the card to Next (it wasn't done after
         // all); otherwise the deck marks the card Done.
-        onDone={(id) =>
-          dispatch({ type: 'setStatus', id, status: isDone ? 'NEXT' : 'DONE', now: nowIso() })
-        }
+        onDone={(id) => setStatus(id, isDone ? 'NEXT' : 'DONE')}
         doneLabel={isDone ? t('focus.toNext') : undefined}
         // In-flow re-triage: flat queues flip Next↔Backlog; Done-focus moves the card to Backlog.
         flipLabel={
@@ -132,15 +132,9 @@ export function FocusPage() {
         }
         onFlip={
           flat
-            ? (id) =>
-                dispatch({
-                  type: 'setStatus',
-                  id,
-                  status: sourceParam === 'backlog' ? 'NEXT' : 'BACKLOG',
-                  now: nowIso(),
-                })
+            ? (id) => setStatus(id, sourceParam === 'backlog' ? 'NEXT' : 'BACKLOG')
             : isDone
-              ? (id) => dispatch({ type: 'setStatus', id, status: 'BACKLOG', now: nowIso() })
+              ? (id) => setStatus(id, 'BACKLOG')
               : undefined
         }
         onExit={exit}

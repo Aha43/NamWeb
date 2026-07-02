@@ -62,6 +62,8 @@ export interface ProjectWorkbenchProps {
   onAddSubProject: (title: string) => void;
   onAddActionToColumn?: (columnId: string, title: string) => void;
   onSetStatus: (id: string, status: NodeStatus) => void;
+  /** Bulk status change with a single grouped Undo toast; falls back to per-id `onSetStatus`. */
+  onSetStatusMany?: (ids: string[], status: NodeStatus) => void;
   /** Open an action's editor (the dialog). Actions only. */
   onEdit: (id: string) => void;
   /** Collapsed state of the current project's "Details" (edit) panel + toggle (persisted by the page). */
@@ -163,6 +165,7 @@ export function ProjectWorkbench({
   onAddSubProject,
   onAddActionToColumn = () => {},
   onSetStatus,
+  onSetStatusMany,
   onEdit,
   detailsCollapsed = true,
   onToggleDetails = () => {},
@@ -252,7 +255,8 @@ export function ProjectWorkbench({
     setSelected(new Set());
   };
   const bulkSetStatus = (status: NodeStatus) => {
-    for (const id of selected) onSetStatus(id, status);
+    if (onSetStatusMany) onSetStatusMany([...selected], status);
+    else for (const id of selected) onSetStatus(id, status);
     setSelected(new Set());
   };
   const bulkGroup = (title: string) => {
