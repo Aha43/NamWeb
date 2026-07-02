@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Jump to a bookmarked project in the picker.** The project selector now shows your project bookmarks as chips — click one to land straight on that (even deeply-nested) project, then drill further or confirm. The column strip also auto-scrolls to keep the active column in view as you go deeper. Closes #553.
+
 - **The app now speaks Norwegian (Norsk).** Pick your language in **Settings → Preferences** (defaults to your browser's, persists per device) and the whole app follows — inbox, every action list, Focus, the editor, projects, tags, search, settings, and help. English is unchanged. Closes #400 (Phase B); date format stays a separate preference.
 
 ### Changed
