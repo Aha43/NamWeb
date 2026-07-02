@@ -130,6 +130,11 @@ export function ActionDialog({
   const [resources, setResources] = useState<Resource[]>(node.resources);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [movePickerOpen, setMovePickerOpen] = useState(false);
+  // The scheduling extras (start time-of-day, end date, end time) collapse by default to keep the
+  // common case — just a due date — tidy; open when the action already carries any of that data (#559).
+  const [showDueExtras, setShowDueExtras] = useState(
+    Boolean(node.dueTime || node.dueEndAt || node.dueEndTime),
+  );
   const isDesktop = useIsDesktop();
 
   function doSave() {
@@ -284,6 +289,18 @@ export function ActionDialog({
                   label={t('editor.pickDueDate')}
                 />
               </div>
+              {/* Time-of-day + a date range are optional precision — tucked away until asked for (#559). */}
+              {!showDueExtras && (
+                <button
+                  type="button"
+                  onClick={() => setShowDueExtras(true)}
+                  className="self-start text-xs text-muted-foreground hover:text-foreground"
+                >
+                  {t('editor.addDueExtras')}
+                </button>
+              )}
+              {showDueExtras && (
+                <>
               {/* Optional time of day on the start — type the hour, optionally the minutes (#493). */}
               <div className="flex items-center gap-1.5">
                 <span className="shrink-0 text-xs text-muted-foreground">{t('editor.at')}</span>
@@ -349,6 +366,8 @@ export function ActionDialog({
                   }}
                 />
               </div>
+                </>
+              )}
               {dueError && (
                 <p role="alert" className="text-xs text-destructive">
                   {t('editor.dueError')}

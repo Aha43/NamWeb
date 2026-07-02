@@ -172,6 +172,7 @@
   "due.overdue": "Forfalt",
   "due.thisWeek": "Denne uken",
   "due.today": "I dag",
+  "editor.addDueExtras": "＋ Legg til tid eller intervall",
   "editor.addPrereqAria": "Legg til forutsetning",
   "editor.addPrereqOption": "Legg til en forutsetning…",
   "editor.at": "kl.",

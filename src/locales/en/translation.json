@@ -172,6 +172,7 @@
   "due.overdue": "Overdue",
   "due.thisWeek": "This week",
   "due.today": "Today",
+  "editor.addDueExtras": "＋ Add time or a range",
   "editor.addPrereqAria": "Add prerequisite",
   "editor.addPrereqOption": "Add a prerequisite…",
   "editor.at": "at",

@@ -22,6 +22,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **Faster access to Next + Contexts.** Next and the tag-filter view (now called **Contexts**) are prominent colored buttons in the sidebar, right under Capture — so "show my Next actions tagged _work_, then Focus" is a click away. Only the view is renamed; tags themselves are unchanged. Closes #557.
 
+- **Tidier due date in the action editor.** The optional time-of-day and date-range fields now hide behind a small "＋ Add time or a range" toggle — so the common case is just a due date. They auto-expand when the action already has a time or range set. Closes #559.
+
 - **Internationalization groundwork.** Added the i18n runtime (react-i18next + ICU message format) and began moving strings into a translation catalog (English master + Norwegian). English is unchanged; surfaces switch to Norwegian as they're translated. Foundation for #400.
 
 - **Denser Column (Kanban) cards.** A card at rest is now just its title + meta — the row of controls (copy / rename / status / drag / delete) no longer reserves empty space below; it floats in on hover/focus instead. More cards fit per column, with no layout jump when you hover. Closes #514.
