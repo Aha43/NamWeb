@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **No more English flash for Norwegian users.** The app used to always start in English and switch to your language a moment after load; it now detects the stored/browser language before the first paint, so Norwegian users see Norwegian from the very first frame (and screen readers get the right `<html lang>` immediately). Closes #579.
+
 ## [0.6.0] - 2026-07-02
 
 The app speaks Norwegian — the full i18n epic (runtime, every surface, a shared domain vocabulary

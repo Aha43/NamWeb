@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
-import { activateLocale, LOCALES, type Locale } from '@/lib/i18n';
+import { activateLocale, detectInitialLocale, type Locale } from '@/lib/i18n';
 import {
   ADD_TO_BOTTOM_STORAGE_KEY,
   BOOKMARK_STYLE_STORAGE_KEY,
@@ -12,18 +12,6 @@ import {
 } from './settings-context';
 
 const DATE_FORMATS: DateFormat[] = ['medium', 'iso', 'dmy', 'mdy'];
-
-/** Stored language, else detect from the browser (`nb`/`no*`/`nn` → nb, else en). */
-function initialLanguage(): Locale {
-  try {
-    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
-    if (stored && stored in LOCALES) return stored as Locale;
-  } catch {
-    // localStorage unavailable — fall through to detection.
-  }
-  const nav = typeof navigator !== 'undefined' ? navigator.language.toLowerCase() : 'en';
-  return nav.startsWith('nb') || nav.startsWith('no') || nav.startsWith('nn') ? 'nb' : 'en';
-}
 
 function initialDateFormat(): DateFormat {
   try {
@@ -55,7 +43,9 @@ function initialBookmarkStyle(): BookmarkStyle {
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
-  const [language, setLanguage] = useState<Locale>(initialLanguage);
+  // The i18n runtime already initialized with this detected locale (first paint is translated,
+  // #579); this state just mirrors it for the Settings UI and drives later changes.
+  const [language, setLanguage] = useState<Locale>(detectInitialLocale);
   const [bookmarkStyle, setBookmarkStyle] = useState<BookmarkStyle>(initialBookmarkStyle);
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
