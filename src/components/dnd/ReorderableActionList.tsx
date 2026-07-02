@@ -22,6 +22,9 @@ export interface ReorderableActionListProps {
   onToggleSelect?: (id: string) => void;
   /** Tint titles by status (passed to ActionRow). Off for single-status lists. Default on. */
   colorByStatus?: boolean;
+  /** Show each row's ancestor-project path (passed to ActionRow). Off inside a project page,
+   *  where the path is redundant. Default on. */
+  showPath?: boolean;
 }
 
 /** An {@link ActionList} of {@link ActionRow}s that can be drag-reordered on desktop, with the
@@ -37,6 +40,7 @@ export function ReorderableActionList({
   selectedIds,
   onToggleSelect,
   colorByStatus = true,
+  showPath = true,
 }: ReorderableActionListProps) {
   // Mirror SortableList's gate: no drag (and no SortableRow) unless there are 2+ items to reorder.
   const dnd = Boolean(dndEnabled && onReorder && rows.length > 1);
@@ -49,6 +53,7 @@ export function ReorderableActionList({
           <ActionRow
             row={data}
             colorByStatus={colorByStatus}
+            showPath={showPath}
             dragRef={drag.setNodeRef}
             dragStyle={drag.style}
             onEdit={onEdit && (() => onEdit(data.id))}
@@ -71,6 +76,7 @@ export function ReorderableActionList({
         <ActionRow
           row={data}
           colorByStatus={colorByStatus}
+          showPath={showPath}
           onEdit={onEdit && (() => onEdit(data.id))}
           onDelete={onDelete && (() => onDelete(data.id))}
           onRename={onRename && ((title) => onRename(data.id, title))}

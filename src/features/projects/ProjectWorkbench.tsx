@@ -658,6 +658,7 @@ export function ProjectWorkbench({
               {!sectionCollapsed('actions') && actions.length > 0 && (
                 <ReorderableActionList
                   rows={actions}
+                  showPath={false}
                   onEdit={onEdit}
                   onDelete={onDeleteAction}
                   onRename={onRename}
