@@ -95,7 +95,7 @@ test.describe('inbox processing', () => {
     await dialog.getByRole('button', { name: /do it next/i }).click();
 
     // The action landed inside the project, not in Free actions.
-    await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
+    await page.getByRole('link', { name: 'Projects' }).click(); // toolbar command bar (#590)
     await page.getByRole('button', { name: 'Open Kitchen Reno' }).click();
     await expandWorkbench(page);
     await expect(page.getByText('Buy tiles')).toBeVisible();
@@ -142,7 +142,7 @@ test.describe('reshape', () => {
     await page.getByRole('dialog').getByRole('button', { name: 'Make project', exact: true }).click();
 
     // Navigate in-app (no full reload) so the optimistic change is observed deterministically.
-    await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
+    await page.getByRole('link', { name: 'Projects' }).click(); // toolbar command bar (#590)
     await expect(page.getByRole('button', { name: 'Open Plan trip' })).toBeVisible();
   });
 
@@ -156,7 +156,7 @@ test.describe('reshape', () => {
     await picker.getByRole('button', { name: 'Home' }).click();
     await picker.getByRole('button', { name: 'Move here' }).click();
 
-    await page.getByRole('navigation', { name: 'Sidebar' }).getByRole('link', { name: 'Projects' }).click();
+    await page.getByRole('link', { name: 'Projects' }).click(); // toolbar command bar (#590)
     await page.getByRole('button', { name: 'Open Home' }).click();
     await expandWorkbench(page);
     await expect(page.getByText('Fix sink')).toBeVisible();

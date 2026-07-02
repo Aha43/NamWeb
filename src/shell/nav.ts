@@ -49,16 +49,14 @@ export interface NavGroup {
   items: NavItem[];
 }
 
-/** Desktop sidebar, grouped so the eye gets short sections instead of one long list. **Capture** and
- *  **Focus** are promoted to buttons above the list (the two "do" actions, mirroring the phone), and
- *  **Search** lives in the toolbar. **Tags** sits here under "Find" — with bookmarking owning
- *  quick-jump, Tags' filtering role is what matters, so it belongs with the surfaces. */
-// Next + Contexts (tags) are promoted to buttons above this list (see DesktopShell), so they're not
-// repeated here. Inbox stays in the list; the Find group is gone (its only item was Contexts).
+/** Desktop sidebar. The foregrounded actions — Capture, Next, Contexts (tags), Focus, and
+ *  Projects — live in the toolbar command bar (#590, see DesktopShell), so they're not repeated
+ *  here. The list is short enough to scan whole now, so groups keep their spacing but drop the
+ *  "Views"/"Organize" headings (things are what they are); the phone More sheet keeps its own. */
 export const SIDEBAR_GROUPS: NavGroup[] = [
   { items: [inbox] },
-  { label: 'nav.groupViews', items: [backlog, due, blocked, done] },
-  { label: 'nav.groupOrganize', items: [projects, goals, templates] },
+  { items: [backlog, due, blocked, done] },
+  { items: [goals, templates] },
 ];
 
 /** Phone "More" sheet: the surfaces that aren't on the bottom bar (Inbox / Next / Focus + Capture),

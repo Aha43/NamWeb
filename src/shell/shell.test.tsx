@@ -101,9 +101,9 @@ describe('adaptive shell', () => {
     expect(screen.getByRole('button', { name: 'Capture' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Focus' })).toHaveAttribute('href', '/focus');
     expect(within(sidebar).queryByRole('link', { name: 'Focus' })).not.toBeInTheDocument();
-    // Section headings group the list.
-    expect(within(sidebar).getByText('Views')).toBeInTheDocument();
-    expect(within(sidebar).getByText('Organize')).toBeInTheDocument();
+    // The slimmed list dropped its section headings (#590) — spacing alone groups it.
+    expect(within(sidebar).queryByText('Views')).not.toBeInTheDocument();
+    expect(within(sidebar).queryByText('Organize')).not.toBeInTheDocument();
   });
 
   it('desktop: top toolbar carries search, theme toggle and the account menu (not the sidebar)', () => {
