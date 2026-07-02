@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Undo a status change.** Changing an action's status (the status badge menu anywhere, Focus's Done/flip keys, Done's Restore/Backlog, and the bulk status operations) now shows the same short-lived **Undo** toast as delete — one click puts the previous status (and its original change-time) back. Handy when a row vanishes from the view you're in. Closes #567.
+
 - **Choose how bookmarks look.** A new **Settings → Preferences → Bookmark appearance** option toggles bookmarks between compact **icons** (name on hover) and **icons with labels**, across the toolbar and the project picker. The phone More sheet always shows labels. Closes #560.
 
 - **Jump to a bookmarked project in the picker.** The project selector now shows your project bookmarks as chips — click one to land straight on that (even deeply-nested) project, then drill further or confirm. The column strip also auto-scrolls to keep the active column in view as you go deeper. Closes #553.

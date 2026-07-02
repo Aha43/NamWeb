@@ -4,12 +4,14 @@ import { toActionRow } from '@/features/actions/rows';
 import { BlockedPanel, type BlockedRowGroup } from '@/features/blocked/BlockedPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
+import { useSetStatus } from '@/features/actions/useSetStatus';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 export function BlockedPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
+  const setStatus = useSetStatus();
 
   const groups: BlockedRowGroup[] = document
     ? blockedGroups(document).map((g) => ({
@@ -22,7 +24,7 @@ export function BlockedPage() {
     <BlockedPanel
       groups={groups}
       onOpenBlocker={openEditor}
-      onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
+      onSetStatus={setStatus}
       onEdit={openEditor}
       onDelete={deleteNode}
       onRename={(id, title) => {

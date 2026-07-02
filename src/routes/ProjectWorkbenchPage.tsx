@@ -24,6 +24,7 @@ import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useSettings } from '@/components/settings/settings-context';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
+import { useSetStatus, useSetStatuses } from '@/features/actions/useSetStatus';
 import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
@@ -38,6 +39,8 @@ export function ProjectWorkbenchPage() {
   const { addToBottom } = useSettings();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
+  const setStatus = useSetStatus();
+  const setStatuses = useSetStatuses();
   const { requestDeleteProject } = useDeleteProject();
   const navigate = useNavigate();
   const [mode, setMode] = useViewMode(id);
@@ -217,7 +220,8 @@ export function ProjectWorkbenchPage() {
         dispatch({ type: 'addSubProject', parentId: id, id: newId(), title, atTop: !addToBottom, now: nowIso() });
         ensureSectionExpanded('subprojects');
       }}
-      onSetStatus={(actionId, status) => dispatch({ type: 'setStatus', id: actionId, status, now: nowIso() })}
+      onSetStatus={setStatus}
+      onSetStatusMany={setStatuses}
       onEdit={openEditor}
       detailsCollapsed={detailsCollapsed}
       onToggleDetails={toggleDetails}

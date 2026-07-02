@@ -152,6 +152,16 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ status: 'DONE', updatedAt: NOW, statusChangedAt: NOW });
   });
 
+  it('setStatus honours a statusChangedAt override (the Undo restore, #567)', () => {
+    const doc = workspace([node('a', { status: 'NEXT' })]);
+    doc.nodes['actions'].childIds.push('a');
+    const orig = '2026-01-01T00:00:00.000Z';
+    const next = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'DONE', now: NOW, statusChangedAt: orig });
+    expect(next.nodes['a']).toMatchObject({ status: 'DONE', updatedAt: NOW, statusChangedAt: orig });
+    const cleared = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'DONE', now: NOW, statusChangedAt: null });
+    expect(cleared.nodes['a'].statusChangedAt).toBeNull();
+  });
+
   it('deleteLeaf removes the node and detaches it from its parent', () => {
     const doc = workspace([node('a')]);
     doc.nodes['actions'].childIds.push('a');

@@ -7,6 +7,7 @@ import { NextActionsPanel } from '@/features/next-actions/NextActionsPanel';
 import { FocusButton } from '@/features/focus/FocusButton';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
+import { useSetStatus } from '@/features/actions/useSetStatus';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useSettings } from '@/components/settings/settings-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -18,6 +19,7 @@ export function NextActionsPage() {
   const { addToBottom } = useSettings();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
+  const setStatus = useSetStatus();
   const [sortMode, cycleSort] = useSortMode(VIEW);
   const isDesktop = useIsDesktop();
 
@@ -70,7 +72,7 @@ export function NextActionsPage() {
       onMove={move}
       onReorder={(ids) => dispatch({ type: 'reorderView', view: VIEW, order: ids })}
       dndEnabled={isDesktop}
-      onSetStatus={(id, status) => dispatch({ type: 'setStatus', id, status, now: nowIso() })}
+      onSetStatus={setStatus}
       onEdit={openEditor}
       onRename={(id, title) => {
         const node = document?.nodes[id];

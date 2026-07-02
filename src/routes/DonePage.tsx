@@ -1,17 +1,19 @@
 import { doneItems } from '@/domain/lenses';
-import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { DonePanel } from '@/features/done/DonePanel';
 import { FocusButton } from '@/features/focus/FocusButton';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode, useDeleteNodes } from '@/features/actions/useDeleteNode';
+import { useSetStatus, useSetStatuses } from '@/features/actions/useSetStatus';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 export function DonePage() {
-  const { document, dispatch } = useWorkspaceContext();
+  const { document } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
   const deleteNodes = useDeleteNodes();
+  const setStatus = useSetStatus();
+  const setStatuses = useSetStatuses();
   const rows = document ? doneItems(document).map((n) => toActionRow(document, n)) : [];
   return (
     <div className="space-y-3">
@@ -22,8 +24,10 @@ export function DonePage() {
       )}
       <DonePanel
         rows={rows}
-        onRestore={(id) => dispatch({ type: 'setStatus', id, status: 'NEXT', now: nowIso() })}
-        onBacklog={(id) => dispatch({ type: 'setStatus', id, status: 'BACKLOG', now: nowIso() })}
+        onRestore={(id) => setStatus(id, 'NEXT')}
+        onBacklog={(id) => setStatus(id, 'BACKLOG')}
+        onRestoreMany={(ids) => setStatuses(ids, 'NEXT')}
+        onBacklogMany={(ids) => setStatuses(ids, 'BACKLOG')}
         onDelete={deleteNode}
         onDeleteMany={deleteNodes}
         onEdit={openEditor}

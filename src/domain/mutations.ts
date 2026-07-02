@@ -12,7 +12,15 @@ export type Intent =
   | { type: 'convertInboxToNext'; id: string; now: string }
   | { type: 'convertInboxToAction'; id: string; status: NodeStatus; parentId?: string; now: string }
   | { type: 'convertInboxToProject'; id: string; parentId?: string; now: string }
-  | { type: 'setStatus'; id: string; status: NodeStatus; now: string }
+  | {
+      type: 'setStatus';
+      id: string;
+      status: NodeStatus;
+      now: string;
+      /** Override for the resulting `statusChangedAt` (defaults to `now`). Lets an Undo restore
+       *  the original change-time instead of stamping the undo itself as a status change. */
+      statusChangedAt?: string | null;
+    }
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; dueEndAt?: string | null; dueTime?: string | null; dueEndTime?: string | null; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
@@ -314,7 +322,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!node) return next;
       node.status = intent.status;
       node.updatedAt = intent.now;
-      node.statusChangedAt = intent.now;
+      node.statusChangedAt = intent.statusChangedAt === undefined ? intent.now : intent.statusChangedAt;
       return next;
     }
     case 'updateNode': {

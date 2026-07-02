@@ -33,10 +33,11 @@ test.describe('sync conflict', () => {
     await page.getByRole('button', { name: /Status of Email Bob/ }).click();
     await page.getByRole('menuitem', { name: 'Done' }).click();
 
-    const notice = page.getByRole('status');
-    await expect(notice).toContainText('newer change from another device');
+    // Scope to the reconcile notice — the status-change Undo toast (#567) is also role="status".
+    const notice = page.getByRole('status').filter({ hasText: 'newer change from another device' });
+    await expect(notice).toBeVisible();
     await notice.getByRole('button', { name: 'Dismiss' }).click();
-    await expect(page.getByRole('status')).toHaveCount(0);
+    await expect(notice).toHaveCount(0);
   });
 });
 
