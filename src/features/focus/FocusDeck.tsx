@@ -8,6 +8,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { InlineRename } from '../actions/InlineRename';
 import { useHasKeyboard } from '@/shell/useHasKeyboard';
+import { isModalOpen } from '@/shell/useGlobalShortcuts';
 import type { FocusCard } from './focusCards';
 
 /** Id on the current card's delete trigger, so the `Delete` key can open its confirm popover. */
@@ -52,17 +53,34 @@ export function FocusDeck({
   const { t } = useTranslation();
   const doneText = doneLabel ?? t('domain.status.done');
   const doneAria = doneLabel ?? t('focus.markDone');
-  const [index, setIndex] = useState(0);
+  // The deck position pins the current card by id, not raw index: the card list is live, and a
+  // background removal (a sync pull, a done/undo on another surface) shifts indices — an
+  // index-only position would swap the card under the pointer right before a click or keypress
+  // (#614). The stored index is the fallback for when the pinned card itself leaves the deck
+  // (Done/flip/delete): the next card slides into its slot, as before.
+  const [position, setPosition] = useState<{ id: string | null; index: number }>({ id: null, index: 0 });
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const reduceMotion = useReducedMotion();
   const hasKeyboard = useHasKeyboard();
 
   const len = cards.length;
-  const safeIndex = len === 0 ? 0 : ((index % len) + len) % len;
+  const pinnedIndex = position.id === null ? -1 : cards.findIndex((c) => c.id === position.id);
+  const rawIndex = pinnedIndex >= 0 ? pinnedIndex : position.index;
+  const safeIndex = len === 0 ? 0 : ((rawIndex % len) + len) % len;
   const current = cards[safeIndex];
+  // Pin whatever card is showing (adjust-during-render): establishes the pin on first render,
+  // tracks the pinned card's live slot, and re-attaches to the slid-in card after a fallback.
+  if (current && (position.id !== current.id || position.index !== safeIndex)) {
+    setPosition({ id: current.id, index: safeIndex });
+  }
 
-  const next = () => setIndex((i) => i + 1);
-  const prev = () => setIndex((i) => i - 1);
+  const moveBy = (delta: number) => {
+    if (len === 0) return;
+    const target = (((safeIndex + delta) % len) + len) % len;
+    setPosition({ id: cards[target].id, index: target });
+  };
+  const next = () => moveBy(1);
+  const prev = () => moveBy(-1);
   const done = () => {
     if (current) onDone(current.id);
   };
@@ -75,6 +93,10 @@ export function FocusDeck({
       // Don't hijack keys while typing in the inline rename field (Space/arrows are text there).
       const t = e.target as HTMLElement | null;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      // A modal (the action editor, confirm dialogs…) owns the keys — with dialog focus on a
+      // button, `e` would swap the open editor to another card and Space would mark the deck's
+      // card done *behind* the dialog (#614). Same guard as the global shortcuts (#486).
+      if (isModalOpen()) return;
       // Leave Ctrl/Cmd/Alt combos to the browser/OS (and the editor's Cmd+Enter).
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === 'ArrowRight') next();
@@ -84,18 +106,27 @@ export function FocusDeck({
         done();
       } else if (e.key === 'Escape') onExit();
       // Per-card actions, only when wired (no-op otherwise — e.g. project-scoped focus has no flip).
-      else if ((e.key === 'e' || e.key === 'E') && onEditCard && current) onEditCard(current.id);
-      else if ((e.key === 'r' || e.key === 'R') && onRenameCard && current) setRenamingId(current.id);
-      else if ((e.key === 'f' || e.key === 'F') && onFlip && current) flip();
+      // preventDefault: these open an autofocused input (editor title, inline rename) — without it
+      // the keystroke's own text insertion lands in that field (#614).
+      else if ((e.key === 'e' || e.key === 'E') && onEditCard && current) {
+        e.preventDefault();
+        onEditCard(current.id);
+      } else if ((e.key === 'r' || e.key === 'R') && onRenameCard && current) {
+        e.preventDefault();
+        setRenamingId(current.id);
+      } else if ((e.key === 'f' || e.key === 'F') && onFlip && current) flip();
       else if (e.key === 'Delete' && onDeleteCard) {
         // Reuse the card's confirm popover (autofocused confirm, Enter/Esc) rather than deleting outright.
         document.getElementById(DELETE_TRIGGER_ID)?.click();
       }
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // Re-bind so the handlers close over the current card/index.
-  }, [cards, index]); // eslint-disable-line react-hooks/exhaustive-deps
+    // CAPTURE phase, so the isModalOpen() check runs before Radix dismisses its layer — in the
+    // bubble phase an Escape aimed at the dialog would find it already closed and exit Focus too
+    // (the #608 Escape-layering gotcha).
+    window.addEventListener('keydown', onKey, { capture: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
+    // Re-bind so the handlers close over the current card/position.
+  }, [cards, position]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keyboard hint, reflecting which per-card actions are wired in this deck.
   const keyboardHint = [

@@ -29,7 +29,7 @@ import { descriptionTooltip, type ActionRowData } from '../actions/rows';
 import { heatBorderClass, type MissionStat } from './missionStats';
 import type { ViewMode } from './useViewMode';
 import { useIsDesktop } from '@/shell/useIsDesktop';
-import { isTypingTarget } from '@/shell/useGlobalShortcuts';
+import { isModalOpen, isTypingTarget } from '@/shell/useGlobalShortcuts';
 import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
 import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
@@ -226,6 +226,9 @@ export function ProjectWorkbench({
     function onKeyDown(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey || e.altKey || e.isComposing) return;
       if (isTypingTarget(e.target)) return;
+      // A modal (the action editor, Summary…) owns the keys — `s`/`x`/`y`/`z` must not toggle
+      // the workbench behind it (#614, same guard as the global shortcuts, #486).
+      if (isModalOpen()) return;
       if (e.key === 'x') onToggleDetails();
       else if (e.key === 'y') onToggleSection('actions');
       else if (e.key === 'z') onToggleSection('subprojects');
