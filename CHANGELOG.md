@@ -28,6 +28,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **Context bookmarks follow tag renames.** Renaming or deleting a tag now rewrites the tag-filter bookmarks that use it (labels included); a bookmark whose last tag is deleted is removed — previously it kept pointing at the old, empty filter. Closes #603.
+
 - **The delete toast speaks Norwegian.** "Deleted …" / "Undo" on the delete toast were the last hardcoded English toast strings; they now follow the app language ("Slettet «…» — Angre"). Internally the status-undo hooks and the status name/color mappings were also deduplicated into one shared module. Closes #582.
 
 - **The sync banner speaks Norwegian too.** The reconcile/save-failure notices ("Updated from another device…", "Couldn't save your last change…") were hardcoded English next to translated Retry/Dismiss buttons; the whole banner now follows the app language. Closes #580.

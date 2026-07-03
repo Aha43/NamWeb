@@ -549,6 +549,19 @@ describe('renameTag', () => {
     const doc = workspace([node('a', { tags: ['home'] })]);
     expect(applyIntent(doc, { type: 'renameTag', from: 'home', to: 'home' })).toEqual(doc);
   });
+
+  it('rewrites tag-filter bookmarks too, deduping and regenerating the label (#603)', () => {
+    const doc = workspace([node('a', { tags: ['home'] })]);
+    doc.bookmarks = [
+      { id: 'b1', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: true, color: '#111' },
+      { id: 'b2', label: '#home #work', kind: 'tagFilter', tags: ['home', 'work'], color: '#222' },
+      { id: 'b3', label: 'Vacation', kind: 'project', projectId: 'p', color: '#333' },
+    ];
+    const next = applyIntent(doc, { type: 'renameTag', from: 'home', to: 'work' });
+    expect(next.bookmarks![0]).toMatchObject({ tags: ['work'], label: '#work', nextOnly: true });
+    expect(next.bookmarks![1]).toMatchObject({ tags: ['work'], label: '#work' }); // collided → deduped
+    expect(next.bookmarks![2]).toEqual(doc.bookmarks![2]); // project bookmarks untouched
+  });
 });
 
 describe('deleteTag', () => {
@@ -558,6 +571,19 @@ describe('deleteTag', () => {
     expect(next.registeredTags).toEqual(['work']);
     expect(next.nodes.a.tags).toEqual(['work']);
     expect(next.nodes.b.tags).toEqual([]);
+  });
+
+  it('updates tag-filter bookmarks; one left empty is dropped (#603)', () => {
+    const doc = workspace([node('a', { tags: ['home'] })]);
+    doc.bookmarks = [
+      { id: 'b1', label: '#home', kind: 'tagFilter', tags: ['home'], color: '#111' },
+      { id: 'b2', label: '#home #work', kind: 'tagFilter', tags: ['home', 'work'], color: '#222' },
+      { id: 'b3', label: 'Vacation', kind: 'project', projectId: 'p', color: '#333' },
+    ];
+    const next = applyIntent(doc, { type: 'deleteTag', tag: 'home' });
+    expect(next.bookmarks).toHaveLength(2); // the now-empty #home bookmark is gone
+    expect(next.bookmarks![0]).toMatchObject({ id: 'b2', tags: ['work'], label: '#work' });
+    expect(next.bookmarks![1]).toEqual(doc.bookmarks![2]);
   });
 
   it('is a document-level intent', () => {
