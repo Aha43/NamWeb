@@ -7,6 +7,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AccountMenu } from './AccountMenu';
 import { SidebarBookmarkMenu } from '@/features/bookmarks/SidebarBookmarkMenu';
+import { ProjectExplorerButton } from '@/features/projects/picker/ProjectExplorerButton';
 import { useCapture } from '@/capture/capture-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
@@ -124,6 +125,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 </Button>
               </Tooltip>
               <SidebarBookmarkMenu kind="project" />
+              <ProjectExplorerButton />
             </div>
           </div>
         </div>
