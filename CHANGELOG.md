@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-03
+
+The shell redesign: everyday actions move to a toolbar command bar, bookmarks become starting
+points (with a Finder-style project explorer), Dense mode strips the labels once you know your
+way, and Settings opens in a live side panel — hardened by a double pre-release review
+(Codex + workflow) that fixed seven findings before the cut.
+
 ### Added
 
 - **Dense mode.** A new **Settings → Preferences** toggle hides the labels next to the command-bar buttons and turns the sidebar into a narrow icon rail — for when you know your way around (tooltips still name everything). Off by default, per device. Closes #598.
@@ -1189,7 +1196,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Aha43/NamWeb/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Aha43/NamWeb/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Aha43/NamWeb/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Aha43/NamWeb/compare/v0.3.1...v0.4.0
