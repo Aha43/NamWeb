@@ -433,7 +433,7 @@
   "settings.addBottomTip": "Nye elementer legges nederst (trykk, eller tast t, for øverst)",
   "settings.addTopTip": "Nye elementer legges øverst (trykk, eller tast t, for nederst)",
   "settings.bookmarkStyle": "Bokmerkeutseende",
-  "settings.bookmarkStyleHelp": "Hvordan bokmerker vises i verktøylinjen og prosjektvelgeren. På telefon vises alltid etiketter.",
+  "settings.bookmarkStyleHelp": "Hvordan bokmerke-hurtigknappene vises i prosjektvelgeren. På telefon viser Mer-arket alltid etiketter.",
   "settings.bookmarkStyleIcons": "Ikoner (navn ved peking)",
   "settings.bookmarkStyleLabels": "Ikoner med etiketter",
   "settings.denseMode": "Kompakt modus — ikoner uten etiketter",

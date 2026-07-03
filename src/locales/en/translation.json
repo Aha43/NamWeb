@@ -433,7 +433,7 @@
   "settings.addBottomTip": "New items add to the bottom (tap, or press t, for top)",
   "settings.addTopTip": "New items add to the top (tap, or press t, for bottom)",
   "settings.bookmarkStyle": "Bookmark appearance",
-  "settings.bookmarkStyleHelp": "How bookmarks look in the toolbar and the project picker. On phone they always show labels.",
+  "settings.bookmarkStyleHelp": "How the bookmark quick-jump chips look in the project picker. On phone the More sheet always shows labels.",
   "settings.bookmarkStyleIcons": "Icons (name on hover)",
   "settings.bookmarkStyleLabels": "Icons with labels",
   "settings.denseMode": "Dense mode — icons without labels",
