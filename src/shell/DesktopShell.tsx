@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Folders, ListTodo, PanelLeftClose, PanelLeftOpen, Plus, Search, Tag, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { AccountMenu } from './AccountMenu';
+import { SettingsPanel } from './SettingsPanel';
+import type { SettingsTab } from '@/routes/AccountPage';
 import { SidebarBookmarkMenu } from '@/features/bookmarks/SidebarBookmarkMenu';
 import { ProjectExplorerButton } from '@/features/projects/picker/ProjectExplorerButton';
 import { useCapture } from '@/capture/capture-context';
@@ -35,6 +37,9 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   const { openCapture } = useCapture();
   const { dense } = useSettings();
   const { width, collapsed, setWidth, toggleCollapsed } = useSidebarLayout();
+  // The right settings panel (#599): which tab it opened on, or null = closed. Session state —
+  // it reopens fresh from the AccountMenu, never on reload.
+  const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
 
   // Drag the divider: track the pointer on the document until release, then clean up.
   const onResizeStart = useCallback(
@@ -133,7 +138,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
-          <AccountMenu onSignOut={onSignOut} />
+          <AccountMenu onSignOut={onSignOut} onOpenSettings={setSettingsTab} />
         </div>
       </header>
 
@@ -219,6 +224,9 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             </div>
           </main>
         </div>
+
+        {/* The right settings panel (#599): settings beside the live workspace. */}
+        {settingsTab && <SettingsPanel initialTab={settingsTab} onClose={() => setSettingsTab(null)} />}
       </div>
     </div>
   );

@@ -47,6 +47,21 @@ describe('AccountMenu', () => {
     expect(navigate).toHaveBeenCalledWith('/account?tab=preferences');
   });
 
+  it('opens the settings panel instead of navigating when wired (#599)', () => {
+    const onOpenSettings = vi.fn();
+    render(
+      <MemoryRouter>
+        <AccountMenu onSignOut={vi.fn()} onOpenSettings={onOpenSettings} />
+      </MemoryRouter>,
+    );
+    navigate.mockClear();
+    fireEvent.click(screen.getByRole('menuitem', { name: /^account$/i }));
+    expect(onOpenSettings).toHaveBeenCalledWith('account');
+    fireEvent.click(screen.getByRole('menuitem', { name: /settings/i }));
+    expect(onOpenSettings).toHaveBeenCalledWith('preferences');
+    expect(navigate).not.toHaveBeenCalled();
+  });
+
   it('signs out', () => {
     const onSignOut = setup();
     fireEvent.click(screen.getByRole('menuitem', { name: /sign out/i }));

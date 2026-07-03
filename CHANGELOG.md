@@ -14,6 +14,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **Settings open beside your work, not over it.** On desktop, the account menu's Account/Settings now open a **right side panel** — the workspace stays live next to it, so you see a preference (language, date format, …) take effect as you flip it. Close with ✕ or Escape; drag its left edge to resize (remembered). Phones and direct `/account` links keep the full page. Closes #599.
+
 - **The project explorer shows its name.** The toolbar's project-explorer button carries its label ("Project explorer" / "Prosjektutforsker") like its command-bar neighbours, instead of being icon-only. Closes #597.
 
 - **Browse from a bookmark (experiment).** Each project-bookmark row in **Projects ▾** is now split: the label opens the project as before, and a trailing **…** opens the Finder-style column picker in a new **open** mode, already navigated to that project — drill to a neighbouring sub-project and **Open** it. Bookmarks as starting points, not just endpoints: one hub bookmark (e.g. "NAM dev") reaches its whole subtree. A **project explorer** button beside Projects opens the same picker from the top — no bookmarks required. Closes #595.
