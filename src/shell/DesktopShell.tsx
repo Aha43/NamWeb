@@ -88,18 +88,21 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
           {/* Uniform quiet styling: toolbar position already foregrounds these, so no colored
               stand-out buttons (the colors earned their keep in the sidebar list, not here).
               Nav buttons highlight via aria-current; icons keep each one scannable. */}
+          {/* Labels hide automatically below lg (#604) — near the 768px shell breakpoint the seven
+              labelled controls don't fit; icons + tooltips + aria-labels carry them (same fallback
+              dense mode uses at every width). */}
           <div className="ml-1 flex min-w-0 items-center gap-0.5">
             <Tooltip label={t('nav.captureTooltip')}>
               <Button size="sm" variant="ghost" className="gap-1.5" aria-label={t('nav.capture')} onClick={openCapture}>
                 <Plus />
-                {!dense && t('nav.capture')}
+                {!dense && <span className="hidden lg:inline">{t('nav.capture')}</span>}
               </Button>
             </Tooltip>
             <Tooltip label={t(next.hint!)}>
               <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                 <NavLink to={next.to} aria-label={t(next.label)}>
                   <ListTodo />
-                  {!dense && t(next.label)}
+                  {!dense && <span className="hidden lg:inline">{t(next.label)}</span>}
                 </NavLink>
               </Button>
             </Tooltip>
@@ -108,7 +111,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                   <NavLink to={tags.to} aria-label={t(tags.label)}>
                     <Tag />
-                    {!dense && t(tags.label)}
+                    {!dense && <span className="hidden lg:inline">{t(tags.label)}</span>}
                   </NavLink>
                 </Button>
               </Tooltip>
@@ -118,7 +121,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                 <NavLink to="/focus" aria-label={t('domain.focus')}>
                   <Target className="focus-glow" />
-                  {!dense && t('domain.focus')}
+                  {!dense && <span className="hidden lg:inline">{t('domain.focus')}</span>}
                 </NavLink>
               </Button>
             </Tooltip>
@@ -127,7 +130,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                   <NavLink to={projects.to} aria-label={t(projects.label)}>
                     <Folders />
-                    {!dense && t(projects.label)}
+                    {!dense && <span className="hidden lg:inline">{t(projects.label)}</span>}
                   </NavLink>
                 </Button>
               </Tooltip>
