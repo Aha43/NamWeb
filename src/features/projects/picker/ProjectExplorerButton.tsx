@@ -5,6 +5,7 @@ import { FolderTree } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { useSettings } from '@/components/settings/settings-context';
 import { allOpenableProjects } from '@/domain/lenses';
 import { ProjectPickerDialog } from './ProjectPickerDialog';
 
@@ -17,14 +18,21 @@ export function ProjectExplorerButton() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { document } = useWorkspaceContext();
+  const { dense } = useSettings();
   const [open, setOpen] = useState(false);
   if (!document) return null;
   return (
     <>
-      <Tooltip label={t('nav.projectExplorerHint')}>
-        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
+      <Tooltip label={dense ? t('nav.projectExplorer') : t('nav.projectExplorerHint')}>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1.5"
+          aria-label={t('nav.projectExplorer')}
+          onClick={() => setOpen(true)}
+        >
           <FolderTree className="h-4 w-4" />
-          {t('nav.projectExplorer')}
+          {!dense && t('nav.projectExplorer')}
         </Button>
       </Tooltip>
       <ProjectPickerDialog

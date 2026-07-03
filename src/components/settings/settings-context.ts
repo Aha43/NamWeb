@@ -16,6 +16,9 @@ export interface SettingsContextValue {
   /** Bookmark appearance (device-level): compact icons+tooltip vs icons+labels. */
   bookmarkStyle: BookmarkStyle;
   setBookmarkStyle: (style: BookmarkStyle) => void;
+  /** Dense mode (device-level): hide the labels next to command-bar and sidebar icons (#598). */
+  dense: boolean;
+  setDense: (dense: boolean) => void;
   /** Effective (here-and-now) new-item position: true = bottom, false = top. Session-scoped — it
    *  starts from the default and the inline add-box toggle flips it; not persisted. */
   addToBottom: boolean;
@@ -41,6 +44,8 @@ export function useSettings(): SettingsContextValue {
       setLanguage: () => {},
       bookmarkStyle: DEFAULT_BOOKMARK_STYLE,
       setBookmarkStyle: () => {},
+      dense: false,
+      setDense: () => {},
       addToBottom: false,
       setAddToBottom: () => {},
       addToBottomDefault: false,
@@ -55,3 +60,4 @@ export const ADD_TO_BOTTOM_STORAGE_KEY = 'namweb.settings.add-to-bottom';
 // re-exported here so settings code keeps one import site for storage keys.
 export { LANGUAGE_STORAGE_KEY } from '@/lib/i18n';
 export const BOOKMARK_STYLE_STORAGE_KEY = 'namweb.settings.bookmark-style';
+export const DENSE_STORAGE_KEY = 'namweb.settings.dense';

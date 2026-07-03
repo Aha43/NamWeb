@@ -9,6 +9,7 @@ import { AccountMenu } from './AccountMenu';
 import { SidebarBookmarkMenu } from '@/features/bookmarks/SidebarBookmarkMenu';
 import { ProjectExplorerButton } from '@/features/projects/picker/ProjectExplorerButton';
 import { useCapture } from '@/capture/capture-context';
+import { useSettings } from '@/components/settings/settings-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
@@ -32,6 +33,7 @@ const NAV_BUTTON =
 export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   const { t } = useTranslation();
   const { openCapture } = useCapture();
+  const { dense } = useSettings();
   const { width, collapsed, setWidth, toggleCollapsed } = useSidebarLayout();
 
   // Drag the divider: track the pointer on the document until release, then clean up.
@@ -83,25 +85,25 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               Nav buttons highlight via aria-current; icons keep each one scannable. */}
           <div className="ml-1 flex min-w-0 items-center gap-0.5">
             <Tooltip label={t('nav.captureTooltip')}>
-              <Button size="sm" variant="ghost" className="gap-1.5" onClick={openCapture}>
+              <Button size="sm" variant="ghost" className="gap-1.5" aria-label={t('nav.capture')} onClick={openCapture}>
                 <Plus />
-                {t('nav.capture')}
+                {!dense && t('nav.capture')}
               </Button>
             </Tooltip>
             <Tooltip label={t(next.hint!)}>
               <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
-                <NavLink to={next.to}>
+                <NavLink to={next.to} aria-label={t(next.label)}>
                   <ListTodo />
-                  {t(next.label)}
+                  {!dense && t(next.label)}
                 </NavLink>
               </Button>
             </Tooltip>
             <div className="flex items-center">
               <Tooltip label={t(tags.hint!)}>
                 <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
-                  <NavLink to={tags.to}>
+                  <NavLink to={tags.to} aria-label={t(tags.label)}>
                     <Tag />
-                    {t(tags.label)}
+                    {!dense && t(tags.label)}
                   </NavLink>
                 </Button>
               </Tooltip>
@@ -109,18 +111,18 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
             </div>
             <Tooltip label={t(focus.hint!)}>
               <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
-                <NavLink to="/focus">
+                <NavLink to="/focus" aria-label={t('domain.focus')}>
                   <Target className="focus-glow" />
-                  {t('domain.focus')}
+                  {!dense && t('domain.focus')}
                 </NavLink>
               </Button>
             </Tooltip>
             <div className="flex items-center">
               <Tooltip label={t(projects.hint!)}>
                 <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
-                  <NavLink to={projects.to}>
+                  <NavLink to={projects.to} aria-label={t(projects.label)}>
                     <Folders />
-                    {t(projects.label)}
+                    {!dense && t(projects.label)}
                   </NavLink>
                 </Button>
               </Tooltip>
@@ -138,12 +140,19 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
       <div className="flex min-h-0 flex-1">
         {!collapsed && (
           <>
-            <aside style={{ width }} className="flex shrink-0 flex-col overflow-y-auto p-4">
-              <div className="flex items-center gap-2 px-2">
-                <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
+            <aside
+              style={dense ? undefined : { width }}
+              className={cn('flex shrink-0 flex-col overflow-y-auto', dense ? 'w-14 items-center p-2' : 'p-4')}
+            >
+              <div className={cn('flex items-center gap-2', dense ? 'px-0' : 'px-2')}>
                 <Tooltip label={brandTooltip()}>
-                  <h1 className="truncate text-lg font-semibold tracking-tight">{APP_SHORT_NAME}</h1>
+                  <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
                 </Tooltip>
+                {!dense && (
+                  <Tooltip label={brandTooltip()}>
+                    <h1 className="truncate text-lg font-semibold tracking-tight">{APP_SHORT_NAME}</h1>
+                  </Tooltip>
+                )}
               </div>
 
               {/* The foregrounded actions (Capture / Next / Contexts / Focus / Projects) live in the
@@ -157,18 +166,21 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                       </span>
                     )}
                     {group.items.map(({ to, label, icon: Icon, hint }) => (
-                      <Tooltip key={to} label={hint ? t(hint) : ''}>
+                      /* Dense: the tooltip must NAME the surface (the label is gone); rich hints
+                         wait for labelled mode. */
+                      <Tooltip key={to} label={dense ? t(label) : hint ? t(hint) : ''}>
                         {/* Static (string) className + aria-current for the active state — a render-prop
                             className breaks when the Tooltip's asChild Slot clones the NavLink. */}
                         <NavLink
                           to={to}
+                          aria-label={t(label)}
                           className={cn(
                             'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
                             'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
                           )}
                         >
                           <Icon className="h-4 w-4" />
-                          {t(label)}
+                          {!dense && t(label)}
                         </NavLink>
                       </Tooltip>
                     ))}
@@ -177,7 +189,8 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               </nav>
             </aside>
 
-            {/* Draggable divider between the view list and the workspace. */}
+            {/* Draggable divider between the view list and the workspace (moot for the dense rail). */}
+            {!dense && (
             <div
               role="separator"
               aria-orientation="vertical"
@@ -192,6 +205,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               title={t('nav.resizeSidebarTitle')}
               className="w-1 shrink-0 cursor-col-resize bg-border transition-colors hover:bg-ring focus-visible:bg-ring focus-visible:outline-hidden"
             />
+            )}
           </>
         )}
 
