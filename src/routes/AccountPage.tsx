@@ -334,6 +334,8 @@ function PreferencesTab() {
     setLanguage,
     bookmarkStyle,
     setBookmarkStyle,
+    dense,
+    setDense,
     addToBottomDefault,
     setAddToBottomDefault,
   } = useSettings();
@@ -388,6 +390,19 @@ function PreferencesTab() {
           <option value="labels">{t('settings.bookmarkStyleLabels')}</option>
         </select>
         <p className="text-xs text-muted-foreground">{t('settings.bookmarkStyleHelp')}</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="flex items-start gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={dense}
+            onChange={(e) => setDense(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>{t('settings.denseMode')}</span>
+        </label>
+        <p className="text-xs text-muted-foreground">{t('settings.denseModeHelp')}</p>
       </div>
 
       <div className="space-y-1.5">

@@ -58,6 +58,8 @@ function settings(bookmarkStyle: BookmarkStyle): SettingsContextValue {
     setLanguage: vi.fn(),
     bookmarkStyle,
     setBookmarkStyle: vi.fn(),
+    dense: false,
+    setDense: vi.fn(),
     addToBottom: false,
     setAddToBottom: vi.fn(),
     addToBottomDefault: false,

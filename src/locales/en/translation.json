@@ -436,6 +436,8 @@
   "settings.bookmarkStyleHelp": "How bookmarks look in the toolbar and the project picker. On phone they always show labels.",
   "settings.bookmarkStyleIcons": "Icons (name on hover)",
   "settings.bookmarkStyleLabels": "Icons with labels",
+  "settings.denseMode": "Dense mode — icons without labels",
+  "settings.denseModeHelp": "Hide the labels next to the toolbar and sidebar icons once you know your way around — tooltips still name everything.",
   "settings.language": "Language",
   "settings.languageHelp": "Choose the app's language. Date format stays a separate preference.",
   "sort.fifo": "Oldest",

@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Dense mode.** A new **Settings → Preferences** toggle hides the labels next to the command-bar buttons and turns the sidebar into a narrow icon rail — for when you know your way around (tooltips still name everything). Off by default, per device. Closes #598.
+
 ### Changed
 
 - **The project explorer shows its name.** The toolbar's project-explorer button carries its label ("Project explorer" / "Prosjektutforsker") like its command-bar neighbours, instead of being icon-only. Closes #597.

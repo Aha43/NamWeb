@@ -51,6 +51,8 @@ describe('useGlobalShortcuts', () => {
       setLanguage: vi.fn(),
       bookmarkStyle: 'icons',
       setBookmarkStyle: vi.fn(),
+    dense: false,
+    setDense: vi.fn(),
       addToBottom: false,
       setAddToBottom,
       addToBottomDefault: false,

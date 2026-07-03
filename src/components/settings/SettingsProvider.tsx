@@ -6,6 +6,7 @@ import {
   BOOKMARK_STYLE_STORAGE_KEY,
   DATE_FORMAT_STORAGE_KEY,
   DEFAULT_BOOKMARK_STYLE,
+  DENSE_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   SettingsContext,
   type BookmarkStyle,
@@ -31,6 +32,14 @@ function initialAddToBottom(): boolean {
   }
 }
 
+function initialDense(): boolean {
+  try {
+    return localStorage.getItem(DENSE_STORAGE_KEY) === '1';
+  } catch {
+    return false; // default: labels shown
+  }
+}
+
 function initialBookmarkStyle(): BookmarkStyle {
   try {
     const stored = localStorage.getItem(BOOKMARK_STYLE_STORAGE_KEY);
@@ -47,6 +56,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // #579); this state just mirrors it for the Settings UI and drives later changes.
   const [language, setLanguage] = useState<Locale>(detectInitialLocale);
   const [bookmarkStyle, setBookmarkStyle] = useState<BookmarkStyle>(initialBookmarkStyle);
+  const [dense, setDense] = useState<boolean>(initialDense);
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
   const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
@@ -68,6 +78,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // best-effort persistence
     }
   }, [language]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DENSE_STORAGE_KEY, dense ? '1' : '0');
+    } catch {
+      // best-effort persistence
+    }
+  }, [dense]);
 
   useEffect(() => {
     try {
@@ -101,6 +119,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setLanguage,
         bookmarkStyle,
         setBookmarkStyle,
+        dense,
+        setDense,
         addToBottom,
         setAddToBottom,
         addToBottomDefault,
