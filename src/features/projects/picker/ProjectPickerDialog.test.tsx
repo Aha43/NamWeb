@@ -42,6 +42,31 @@ function renderPicker(over: Partial<React.ComponentProps<typeof ProjectPickerDia
   return { onConfirm };
 }
 
+describe('ProjectPickerDialog — mid-open stability (#607)', () => {
+  it('keeps the selection when the workspace document re-renders while open', () => {
+    const onConfirm = vi.fn();
+    const picker = (workspaceDoc: WorkspaceDocument) => (
+      <WorkspaceContext.Provider value={{ document: workspaceDoc, dispatch: vi.fn() } as unknown as UseWorkspace}>
+        <ProjectPickerDialog
+          open
+          onOpenChange={vi.fn()}
+          title="Move"
+          // Recomputed inline like real callers — a new array identity every render.
+          targets={[{ id: 'p1', label: 'Home' }]}
+          onConfirm={onConfirm}
+        />
+      </WorkspaceContext.Provider>
+    );
+    const { rerender } = render(picker(doc));
+    fireEvent.click(screen.getByRole('button', { name: 'Home' }));
+    // A background save / realtime pull lands: new document identity, same content.
+    rerender(picker(structuredClone(doc)));
+    // The selection survived — confirming still targets it (pre-fix: reset to nothing selected).
+    fireEvent.keyDown(window, { key: 'Enter', metaKey: true });
+    expect(onConfirm).toHaveBeenCalledWith('p1');
+  });
+});
+
 describe('ProjectPickerDialog — ⌘/Ctrl+Enter', () => {
   it('confirms the selection from anywhere in the dialog (#544)', () => {
     const { onConfirm } = renderPicker();

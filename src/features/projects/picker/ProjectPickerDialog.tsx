@@ -67,10 +67,19 @@ export function ProjectPickerDialog({
   const [trail, setTrail] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(initialSelectedId ?? null);
 
-  // Reset navigation each time the picker opens, so it doesn't reopen mid-tree from a prior use —
-  // or, with `initialProjectId`, open already navigated to that project (mirrors `jumpTo` below).
+  // Initialize navigation on the closed→open transition ONLY (ref-guarded): fresh columns, or —
+  // with `initialProjectId` — already navigated to that project (mirrors `jumpTo` below). The
+  // guard matters (#607): `document`/`allowed` change identity whenever the workspace re-renders
+  // (a background save landing, a realtime pull, callers recomputing `targets` inline), and
+  // re-running this mid-open would wipe the user's drilled-in trail and selection.
+  const initializedRef = useRef(false);
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      initializedRef.current = false;
+      return;
+    }
+    if (initializedRef.current) return;
+    initializedRef.current = true;
     if (initialProjectId && document?.nodes[initialProjectId]) {
       const ancestorIds = buildPath(document, initialProjectId).map((n) => n.id);
       const hasChildren = childColumn(document, initialProjectId, allowed).length > 0;
