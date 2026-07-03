@@ -21,15 +21,10 @@ export function ProjectExplorerButton() {
   if (!document) return null;
   return (
     <>
-      <Tooltip label={t('nav.projectExplorer')}>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t('nav.projectExplorer')}
-          className="h-9 w-7 shrink-0"
-          onClick={() => setOpen(true)}
-        >
+      <Tooltip label={t('nav.projectExplorerHint')}>
+        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => setOpen(true)}>
           <FolderTree className="h-4 w-4" />
+          {t('nav.projectExplorer')}
         </Button>
       </Tooltip>
       <ProjectPickerDialog
