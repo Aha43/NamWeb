@@ -28,6 +28,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **Settings panel polish.** Picking the other account-menu item while the panel is open now switches tabs in place; Escape aimed at an open dropdown no longer closes the panel with it; a mid-drag close can't leak the resize and save stray widths; and the Bookmark appearance help text no longer promises toolbar behavior the toolbar no longer has. Closes #608.
+
 - **The project picker no longer forgets where you were.** While the picker was open, a background save or an update from another device could reset your column navigation and selection mid-browse — in move mode that could even confirm the wrong destination. Navigation now initializes only when the picker opens. Closes #607.
 
 - **The toolbar fits small desktop windows.** Below ~1024px the command-bar buttons drop their labels automatically (icons, tooltips, and screen-reader names remain), so nothing clips or overlaps near the 768px desktop breakpoint. Closes #604.

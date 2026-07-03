@@ -27,16 +27,28 @@ test('settings opens beside the live view, applies live, and closes via Esc and 
   await page.locator('#settings-language').selectOption('en');
   await expect(page.getByRole('link', { name: 'Backlog' })).toBeVisible();
 
+  // Picking the other menu item while the panel is open switches tabs in place (#608).
+  await page.getByRole('button', { name: 'Account menu' }).click();
+  await page.getByRole('menuitem', { name: 'Account', exact: true }).click();
+  await expect(panel.getByRole('tab', { name: 'Account' })).toHaveAttribute('aria-selected', 'true');
+
+  // Escape aimed at an open dropdown dismisses just the dropdown — the panel stays (#608).
+  await page.getByRole('button', { name: 'Account menu' }).click();
+  await expect(page.getByRole('menu')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(panel).toBeVisible();
+
   // Escape closes (park focus on empty main-area padding first — Esc inside a form control is
   // left to the control's own semantics).
   await page.getByRole('main').click({ position: { x: 5, y: 5 } });
   await page.keyboard.press('Escape');
   await expect(panel).toHaveCount(0);
 
-  // Reopen on the Account tab via the menu; the ✕ closes too.
+  // Reopen via the menu; the ✕ closes too.
   await page.getByRole('button', { name: 'Account menu' }).click();
-  await page.getByRole('menuitem', { name: 'Account', exact: true }).click();
-  await expect(panel.getByRole('tab', { name: 'Account' })).toHaveAttribute('aria-selected', 'true');
+  await page.getByRole('menuitem', { name: 'Settings' }).click();
+  await expect(panel).toBeVisible();
   await panel.getByRole('button', { name: 'Close settings' }).click();
   await expect(panel).toHaveCount(0);
 });

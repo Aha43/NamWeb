@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,10 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: SettingsTab
   const [tab, setTab] = useState<SettingsTab>(initialTab);
   const [width, setWidthState] = useState<number>(readWidth);
 
+  // Picking the other AccountMenu item while the panel is already open switches tabs (#608) —
+  // the panel stays mounted, so mount-time state alone would ignore the click.
+  useEffect(() => setTab(initialTab), [initialTab]);
+
   const setWidth = useCallback((px: number) => {
     const clamped = clampWidth(px);
     setWidthState(clamped);
@@ -46,33 +50,44 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: SettingsTab
     }
   }, []);
 
-  // Escape closes — but not while typing in a field (native semantics) and not when a dialog is
-  // stacked above (its own Escape handling owns the key, checked via data-state, not
-  // defaultPrevented: some library layer preventDefaults Escape even with nothing open).
+  // Escape closes — but not while typing in a field (native semantics) and not when any Radix
+  // layer (dialog, dropdown menu, popover) is open: that layer owns the key. Listen in the
+  // CAPTURE phase so the check runs before Radix dismisses the layer — by the bubble phase the
+  // menu is already gone and the panel would close along with it (#608). Checked via data-state,
+  // not defaultPrevented: some library layer preventDefaults Escape even with nothing open.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key !== 'Escape') return;
       if (isTypingTarget(e.target)) return;
       if (isModalOpen()) return;
+      if (document.querySelector('[data-state="open"]:is([role="menu"],[role="listbox"],[data-radix-popper-content-wrapper])')) return;
       onClose();
     }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener('keydown', onKeyDown, { capture: true });
+    return () => document.removeEventListener('keydown', onKeyDown, { capture: true });
   }, [onClose]);
 
   // Drag the divider: the panel grows as the pointer moves left (its left edge is being dragged).
+  // The teardown lives in a ref so a mid-drag unmount (Escape closes the panel while the button is
+  // still down) can't leak the document listeners and keep persisting widths (#608).
+  const dragCleanupRef = useRef<(() => void) | null>(null);
+  useEffect(() => () => dragCleanupRef.current?.(), []);
   const onResizeStart = useCallback(
     (event: React.PointerEvent) => {
       event.preventDefault();
       const startX = event.clientX;
       const startWidth = width;
       const onMove = (e: PointerEvent) => setWidth(startWidth + (startX - e.clientX));
-      const onUp = () => {
+      const cleanup = () => {
         document.removeEventListener('pointermove', onMove);
-        document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointerup', cleanup);
+        document.removeEventListener('pointercancel', cleanup);
+        dragCleanupRef.current = null;
       };
+      dragCleanupRef.current = cleanup;
       document.addEventListener('pointermove', onMove);
-      document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointerup', cleanup);
+      document.addEventListener('pointercancel', cleanup);
     },
     [width, setWidth],
   );
