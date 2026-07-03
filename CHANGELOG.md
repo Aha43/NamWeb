@@ -28,6 +28,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **The project picker no longer forgets where you were.** While the picker was open, a background save or an update from another device could reset your column navigation and selection mid-browse — in move mode that could even confirm the wrong destination. Navigation now initializes only when the picker opens. Closes #607.
+
 - **The toolbar fits small desktop windows.** Below ~1024px the command-bar buttons drop their labels automatically (icons, tooltips, and screen-reader names remain), so nothing clips or overlaps near the 768px desktop breakpoint. Closes #604.
 
 - **Context bookmarks follow tag renames.** Renaming or deleting a tag now rewrites the tag-filter bookmarks that use it (labels included); a bookmark whose last tag is deleted is removed — previously it kept pointing at the old, empty filter. Closes #603.
