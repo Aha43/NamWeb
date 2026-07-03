@@ -372,6 +372,7 @@
   "nav.nextHint": "Your next actions",
   "nav.primaryLandmark": "Primary",
   "nav.projectExplorer": "Project explorer",
+  "nav.projectExplorerHint": "Browse the project tree and open one",
   "nav.projectsHint": "Your project hierarchy",
   "nav.resizeSidebar": "Resize sidebar",
   "nav.resizeSidebarTitle": "Drag to resize · double-click to reset",
