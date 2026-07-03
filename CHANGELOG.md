@@ -28,6 +28,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **The toolbar fits small desktop windows.** Below ~1024px the command-bar buttons drop their labels automatically (icons, tooltips, and screen-reader names remain), so nothing clips or overlaps near the 768px desktop breakpoint. Closes #604.
+
 - **Context bookmarks follow tag renames.** Renaming or deleting a tag now rewrites the tag-filter bookmarks that use it (labels included); a bookmark whose last tag is deleted is removed — previously it kept pointing at the old, empty filter. Closes #603.
 
 - **The delete toast speaks Norwegian.** "Deleted …" / "Undo" on the delete toast were the last hardcoded English toast strings; they now follow the app language ("Slettet «…» — Angre"). Internally the status-undo hooks and the status name/color mappings were also deduplicated into one shared module. Closes #582.

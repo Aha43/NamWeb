@@ -32,7 +32,7 @@ export function ProjectExplorerButton() {
           onClick={() => setOpen(true)}
         >
           <FolderTree className="h-4 w-4" />
-          {!dense && t('nav.projectExplorer')}
+          {!dense && <span className="hidden lg:inline">{t('nav.projectExplorer')}</span>}
         </Button>
       </Tooltip>
       <ProjectPickerDialog
