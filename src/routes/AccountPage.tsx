@@ -29,27 +29,27 @@ const DATE_FORMAT_OPTIONS: { value: DateFormat; label: string }[] = [
   { value: 'mdy', label: 'account.fmtMdy' },
 ];
 
-type Tab = 'account' | 'preferences';
+export type SettingsTab = 'account' | 'preferences';
 
-/** The Settings/Account home: identity/security on the Account tab, device preferences on Preferences. */
-export function AccountPage() {
+/** The tab strip + active tab body — shared by the full Account page and the right settings
+ *  panel (#599), so the two surfaces can't drift. */
+export function AccountSettingsTabs({
+  tab,
+  onTabChange,
+}: {
+  tab: SettingsTab;
+  onTabChange: (tab: SettingsTab) => void;
+}) {
   const { t } = useTranslation();
-  const [params, setParams] = useSearchParams();
-  const tab: Tab = params.get('tab') === 'preferences' ? 'preferences' : 'account';
-  const setTab = (next: Tab) =>
-    setParams(next === 'account' ? {} : { tab: next }, { replace: true });
-
   return (
-    <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-semibold tracking-tight">{t('nav.settings')}</h1>
-
+    <>
       <div role="tablist" className="mt-4 flex gap-1 border-b border-border">
-        {(['account', 'preferences'] as Tab[]).map((tabKey) => (
+        {(['account', 'preferences'] as SettingsTab[]).map((tabKey) => (
           <button
             key={tabKey}
             role="tab"
             aria-selected={tab === tabKey}
-            onClick={() => setTab(tabKey)}
+            onClick={() => onTabChange(tabKey)}
             className={cn(
               '-mb-px border-b-2 px-3 py-2 text-sm font-medium capitalize transition-colors',
               tab === tabKey
@@ -63,6 +63,24 @@ export function AccountPage() {
       </div>
 
       <div className="mt-6">{tab === 'account' ? <AccountTab /> : <PreferencesTab />}</div>
+    </>
+  );
+}
+
+/** The Settings/Account home: identity/security on the Account tab, device preferences on
+ *  Preferences. The full-page surface (phone + direct `/account` links); on desktop the
+ *  AccountMenu opens the same tabs in the right settings panel instead (#599). */
+export function AccountPage() {
+  const { t } = useTranslation();
+  const [params, setParams] = useSearchParams();
+  const tab: SettingsTab = params.get('tab') === 'preferences' ? 'preferences' : 'account';
+  const setTab = (next: SettingsTab) =>
+    setParams(next === 'account' ? {} : { tab: next }, { replace: true });
+
+  return (
+    <div className="mx-auto max-w-2xl">
+      <h1 className="text-2xl font-semibold tracking-tight">{t('nav.settings')}</h1>
+      <AccountSettingsTabs tab={tab} onTabChange={setTab} />
     </div>
   );
 }

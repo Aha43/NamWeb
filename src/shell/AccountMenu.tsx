@@ -15,7 +15,15 @@ import { DemoContext } from '@/demo/demo-context';
 
 /** Top-right account menu: the home for account, settings, and sign-out. In the no-account demo it
  *  hides the account surfaces (there's no real account) and turns sign-out into the sign-up CTA. */
-export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
+export function AccountMenu({
+  onSignOut,
+  onOpenSettings,
+}: {
+  onSignOut: () => void;
+  /** Desktop: open Account/Preferences in the right settings panel (#599) instead of navigating
+   *  to the full page. Absent → navigate (the full page remains for phone + direct links). */
+  onOpenSettings?: (tab: 'account' | 'preferences') => void;
+}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const demo = useContext(DemoContext);
@@ -36,13 +44,15 @@ export function AccountMenu({ onSignOut }: { onSignOut: () => void }) {
       </Tooltip>
       <DropdownMenuContent align="end">
         {!demo && (
-          <DropdownMenuItem onClick={() => navigate('/account')}>
+          <DropdownMenuItem onClick={() => (onOpenSettings ? onOpenSettings('account') : navigate('/account'))}>
             <User className="mr-2 h-4 w-4" />
             {t('nav.account')}
           </DropdownMenuItem>
         )}
         {!demo && (
-          <DropdownMenuItem onClick={() => navigate('/account?tab=preferences')}>
+          <DropdownMenuItem
+            onClick={() => (onOpenSettings ? onOpenSettings('preferences') : navigate('/account?tab=preferences'))}
+          >
             <Settings className="mr-2 h-4 w-4" />
             {t('nav.settings')}
           </DropdownMenuItem>

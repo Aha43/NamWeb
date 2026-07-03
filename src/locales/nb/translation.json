@@ -452,6 +452,8 @@
   "summary.includeSub": "Inkluder delprosjekter",
   "summary.mdAria": "Prosjektsammendrag (Markdown)",
   "summary.title": "Sammendrag — {title}",
+  "settingsPanel.close": "Lukk innstillinger",
+  "settingsPanel.resize": "Endre størrelse på innstillingspanelet",
   "sync.createFailed": "Kunne ikke opprette arbeidsområdet.",
   "sync.dismiss": "Lukk",
   "sync.reconciledFromDevice": "En nyere endring fra en annen enhet ble tatt i bruk her.",

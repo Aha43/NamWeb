@@ -452,6 +452,8 @@
   "summary.includeSub": "Include sub-projects",
   "summary.mdAria": "Project summary (Markdown)",
   "summary.title": "Summary — {title}",
+  "settingsPanel.close": "Close settings",
+  "settingsPanel.resize": "Resize settings panel",
   "sync.createFailed": "Could not create workspace.",
   "sync.dismiss": "Dismiss",
   "sync.reconciledFromDevice": "A newer change from another device was applied here.",
