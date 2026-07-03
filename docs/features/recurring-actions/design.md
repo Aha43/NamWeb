@@ -1,9 +1,35 @@
 # Recurring ("bouncing") actions — design
 
-> Status: **Brewing (2026-07-03).** Captured from a planning conversation; not scheduled for a
-> sprint yet. The Trello migration motivated it: Trello cards that get "bumped forward" by hand
-> every time they're done. Contract note: like the date range (#438), the new document field is a
-> **shared NamDesktop contract change** — needs the same handover before implementation.
+> Status: **Contract locked (2026-07-03) — desktop leads.** Originally brewing from a planning
+> conversation; the NamDesktop handover then ran in reverse: desktop implemented first
+> (`Aha43/NamDesktop#427`, mirroring epic #613), which locked the contract below. Web now
+> implements against it. The Trello migration motivated it: Trello cards that get "bumped
+> forward" by hand every time they're done.
+
+## Contract (locked 2026-07-03, per Aha43/NamDesktop#427)
+
+The document fields are exactly the sketch below, plus these decisions — both apps must match:
+
+- **Field shape.** Optional `recurrence` (`kind`/`days`/`unit`/`every`/`day`/`weekend`) and
+  `lastCompletedAt` (ISO date) on the node. **Absent = not recurring** — writers keep the fields
+  off the wire for non-recurring nodes (not `null`).
+- **Return-to status: keep the current status** (open question 2 resolved). Completing a
+  recurring action never changes `status` — a NEXT card stays NEXT, a BACKLOG-dwelling yearly
+  duty stays BACKLOG. No extra field; the "remember pre-Done status" case falls out for free.
+- **Bounce semantics.** On complete: `lastCompletedAt = today`, `dueAt = next(rule)`.
+  `afterDone`: next = completion date + `days`. `calendar` (unit `month`, v1): next = first slot
+  strictly after the **current due date** (anchor stability — never the completion date); clamp
+  `day` to the month's last day first, then apply the `weekend` rule (`before` → Friday,
+  `after` → Monday); if the adjusted slot isn't strictly after the due date, take the next
+  period's slot.
+- **Forward tolerance.** A reader that can't compute a rule (unknown `kind`/`unit`) must keep
+  the field intact and complete as a plain DONE — never drop or rewrite a foreign rule. Editors
+  must not silently wipe a rule they can't represent.
+- **v1 scope.** `unit: "month"` only; recurring projects, weekly unit, and holiday landing rules
+  are out (open questions 1 and 5 deferred).
+- Desktop reference implementation: `RecurrenceRule` + `Recurrence` in NamDesktop
+  (`src/namdesktop/model/`), covered by `RecurrenceRuleTest` (anchor stability, clamping,
+  weekend rules, forward tolerance).
 
 ## The idea: one card that bounces, not recurring copies
 
@@ -68,13 +94,13 @@ monthly), independent of when you completed the previous one. Two sub-rules the 
 1. **The paycheck *list*.** It's really a recurring **project** (a checklist that resets: all child
    actions back to NEXT + project bounces). Phase 2? Or is phase 1's answer "a recurring action
    whose sub-steps live in its notes" good enough to start?
-2. **Return-to status:** always NEXT, or remember the pre-Done status? (BACKLOG-dwelling recurring
-   duties exist — e.g. "review insurance" yearly.)
+2. ~~**Return-to status:** always NEXT, or remember the pre-Done status?~~ **Resolved: keep the
+   current status** (see Contract) — handles BACKLOG-dwelling duties with no extra field.
 3. **Does Done-for-a-moment show anywhere?** (Focus deck: completing a recurring card should feel
    like completing — animation out — even though it never lands in the Done view.)
-4. **NamDesktop handover** (blocking, like #438): field shape sign-off; at minimum desktop must
-   round-trip the unknown `recurrence`/`lastCompletedAt` fields losslessly; ideally it mirrors the
-   bounce behavior. Web leads, desktop follows — file the mirror issue there at implementation time.
+4. ~~**NamDesktop handover** (blocking, like #438)~~ **Resolved — inverted: desktop led.**
+   Desktop round-trips the fields losslessly (desktop #416 test) *and* implements the full bounce
+   (`Aha43/NamDesktop#427`). Web mirrors against the locked Contract above.
 5. **Landing rules beyond weekends?** (Holidays are a rabbit hole — explicitly out of scope for v1.)
 6. **Import:** the Trello migration (docs/features/trello-migration) could mark known bouncing
    cards as recurring on the way in.
