@@ -13,6 +13,11 @@ minor = features (breaking changes allowed), patch = fixes.
 - **Delete from the capture dialog's list.** Each "Just added" row now has a delete button — a mis-capture goes away on the spot, with the usual Undo toast as the safety net (and clicking Undo keeps the dialog open mid-streak). Closes #617.
 - **The capture list keeps the whole streak.** Every item captured this session stays listed in the capture dialog — no size cap. Long streaks scroll inside the list while the capture field stays put; the phone bottom sheet is bounded so it can't outgrow the screen. (Replaces #617's short-lived "capture list size" preference, which never shipped in a release.) Closes #622.
 - **Process straight from the capture dialog.** When a streak lands in one domain you often already know how to triage it — select just-captured rows and use the same toolbar as inbox bulk triage: **File into ‹project› ▾** (with "New project here"), **→ Next**, **→ Backlog**, **Make projects**, and **Delete** (one grouped Undo). Processed rows stay listed with a ✓-marker showing where they went; the inbox remains the home for captures that aren't clear in the moment. Closes #623.
+- **The capture dialog is resizable.** Drag the bottom-right corner handle (or use arrow keys on it) to size it for a long processing session — the size is remembered per device. Closes #626.
+
+### Changed
+
+- **No more Add button in the capture dialog.** Enter (or the phone keyboard's Go) is the way to capture — the button was dead weight that taught the slow path. Closes #626.
 
 ### Fixed
 

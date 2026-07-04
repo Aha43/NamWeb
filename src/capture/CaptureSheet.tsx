@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Check, CheckSquare, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -25,6 +24,36 @@ import type { NamNode } from '@/domain/types';
 function keepOpenForToast(event: { detail: { originalEvent: Event }; preventDefault: () => void }) {
   const target = event.detail.originalEvent.target;
   if (target instanceof Element && target.closest('[role="status"]')) event.preventDefault();
+}
+
+// Remembered dialog size (#626) — the desktop dialog opens at its default size until the user
+// drags the corner handle; from then on it opens at the dragged size (per device, best-effort).
+const CAPTURE_SIZE_KEY = 'namweb.capture.size';
+interface CaptureSize {
+  width: number;
+  height: number;
+}
+const MIN_SIZE: CaptureSize = { width: 360, height: 280 };
+
+/** Clamp to the current viewport (with a small margin), so a size dragged on a big screen can't
+ *  open a dialog larger than a smaller screen. */
+function clampSize(size: CaptureSize): CaptureSize {
+  return {
+    width: Math.round(Math.min(Math.max(size.width, MIN_SIZE.width), window.innerWidth - 32)),
+    height: Math.round(Math.min(Math.max(size.height, MIN_SIZE.height), window.innerHeight - 32)),
+  };
+}
+
+function readSize(): CaptureSize | null {
+  try {
+    const stored = localStorage.getItem(CAPTURE_SIZE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as CaptureSize;
+    if (Number.isFinite(parsed.width) && Number.isFinite(parsed.height)) return clampSize(parsed);
+  } catch {
+    // localStorage unavailable / stale garbage — open at the default size.
+  }
+  return null;
 }
 
 /**
@@ -60,6 +89,49 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   const [pickerOpen, setPickerOpen] = useState(false);
   // Where each processed id went (session-only marker text, e.g. "Next · Home › Garage").
   const [processed, setProcessed] = useState<Map<string, string>>(new Map());
+  // Remembered dialog size (#626); null = the default (max-w-lg, content height).
+  const [size, setSizeState] = useState<CaptureSize | null>(readSize);
+  const setSize = useCallback((next: CaptureSize) => {
+    const clamped = clampSize(next);
+    setSizeState(clamped);
+    try {
+      localStorage.setItem(CAPTURE_SIZE_KEY, JSON.stringify(clamped));
+    } catch {
+      // best-effort persistence
+    }
+  }, []);
+
+  // Drag the bottom-right corner via pointer capture: while captured, every move routes to the
+  // handle wherever the pointer is, and release/unmount ends the drag with nothing to clean up.
+  // The dialog is centered (translate -50%), so the size that keeps the corner under the pointer
+  // is twice the pointer's distance from the viewport center.
+  const onResizeStart = useCallback((event: React.PointerEvent) => {
+    event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+  const onResizeMove = useCallback(
+    (event: React.PointerEvent) => {
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) return;
+      setSize({
+        width: 2 * (event.clientX - window.innerWidth / 2),
+        height: 2 * (event.clientY - window.innerHeight / 2),
+      });
+    },
+    [setSize],
+  );
+
+  const onResizeKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      const current = size ?? { width: 512, height: 400 }; // ~max-w-lg as the keyboard baseline
+      if (event.key === 'ArrowRight') setSize({ ...current, width: current.width + 16 });
+      else if (event.key === 'ArrowLeft') setSize({ ...current, width: current.width - 16 });
+      else if (event.key === 'ArrowDown') setSize({ ...current, height: current.height + 16 });
+      else if (event.key === 'ArrowUp') setSize({ ...current, height: current.height - 16 });
+      else return;
+      event.preventDefault();
+    },
+    [size, setSize],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -164,6 +236,8 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     setSelected(new Set());
   }
 
+  // No Add button (#626): Enter (or the phone keyboard's Go) submits — a visible button is dead
+  // weight and teaches the slow path. A single-input form implicitly submits on Enter.
   const form = (
     <form onSubmit={submit} className="mt-4 flex gap-2">
       <input
@@ -174,7 +248,6 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
         placeholder={t('capture.placeholder')}
         className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
       />
-      <Button type="submit" className="shrink-0">{t('common.add')}</Button>
     </form>
   );
 
@@ -357,8 +430,15 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         {/* flex-col + overflow-hidden: the content itself never scrolls (the default DialogContent
-            behavior would scroll the capture field away on a long streak) — only the list does. */}
-        <DialogContent className="flex flex-col overflow-hidden" onInteractOutside={keepOpenForToast}>
+            behavior would scroll the capture field away on a long streak) — only the list does.
+            transition-none: the base duration-200 would otherwise ease width/height 200ms behind
+            the corner drag (transition-property defaults to `all`); open/close stay animated —
+            those are CSS animations, not transitions. */}
+        <DialogContent
+          className="flex flex-col overflow-hidden transition-none"
+          style={size ? { width: size.width, maxWidth: size.width, height: size.height } : undefined}
+          onInteractOutside={keepOpenForToast}
+        >
           <DialogHeader>
             <DialogTitle>{t('nav.capture')}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
@@ -366,6 +446,20 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           {form}
           {recentList}
           {picker}
+          {/* Corner resize handle (#626): drag (or arrow keys) to size the dialog; remembered. */}
+          <div
+            role="separator"
+            aria-label={t('capture.resize')}
+            tabIndex={0}
+            onPointerDown={onResizeStart}
+            onPointerMove={onResizeMove}
+            onKeyDown={onResizeKeyDown}
+            className="absolute bottom-0.5 right-0.5 h-4 w-4 cursor-nwse-resize text-muted-foreground/60 hover:text-foreground focus-visible:text-foreground focus-visible:outline-hidden"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden className="h-4 w-4">
+              <path d="M14 8 L8 14 M14 12 L12 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+            </svg>
+          </div>
         </DialogContent>
       </Dialog>
     );
