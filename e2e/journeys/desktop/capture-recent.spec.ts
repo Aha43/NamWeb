@@ -105,8 +105,43 @@ test('a long capture streak keeps every item, scrolling only the list', async ({
   await expect(field).toBeInViewport(); // scrolling the list didn't move the field
 });
 
-// #568 — a very long name must never push the Add button or a recent row's buttons out of the
-// dialog; the text shrinks/truncates instead, so every control stays reachable.
+// #626 — the dialog opens at its default size, but the bottom-right corner handle resizes it
+// (width + height), and the size is remembered for the next open.
+test('drag the corner handle to resize; the size is remembered', async ({ page }) => {
+  await page.goto('/inbox');
+  await page.getByRole('button', { name: 'Capture', exact: true }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'Capture' });
+  // Let the open (zoom-in) animation settle before measuring.
+  const settled = () =>
+    dialog.evaluate((el) => el.getAnimations().every((a) => a.playState === 'finished'));
+  await expect.poll(settled).toBe(true);
+  const before = (await dialog.boundingBox())!;
+
+  // Drag the corner handle outward.
+  const handle = dialog.getByRole('separator', { name: 'Resize capture dialog' });
+  const grip = (await handle.boundingBox())!;
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(grip.x + 120, grip.y + 100, { steps: 5 });
+  await page.mouse.up();
+
+  const after = (await dialog.boundingBox())!;
+  expect(after.width).toBeGreaterThan(before.width + 50);
+  expect(after.height).toBeGreaterThan(before.height + 50);
+
+  // Close and reopen — the dragged size is remembered.
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole('button', { name: 'Capture', exact: true }).click();
+  await expect.poll(settled).toBe(true);
+  const reopened = (await dialog.boundingBox())!;
+  expect(Math.abs(reopened.width - after.width)).toBeLessThanOrEqual(2);
+  expect(Math.abs(reopened.height - after.height)).toBeLessThanOrEqual(2);
+});
+
+// #568 — a very long name must never push a recent row's buttons out of the dialog; the text
+// shrinks/truncates instead, so every control stays reachable. (No Add button to check — #626.)
 test('a long name truncates instead of pushing buttons out of the dialog', async ({ page }) => {
   await page.goto('/inbox');
   await page.getByRole('button', { name: 'Capture', exact: true }).click();
@@ -120,9 +155,6 @@ test('a long name truncates instead of pushing buttons out of the dialog', async
 
   const dialogBox = (await dialog.boundingBox())!;
   const dialogRight = dialogBox.x + dialogBox.width;
-
-  const addBox = (await dialog.getByRole('button', { name: 'Add' }).boundingBox())!;
-  expect(addBox.x + addBox.width).toBeLessThanOrEqual(dialogRight);
 
   const editButton = dialog.getByRole('button', { name: `Edit ${longTitle}` });
   const editBox = (await editButton.boundingBox())!;

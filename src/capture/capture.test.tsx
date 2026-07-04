@@ -51,11 +51,13 @@ describe('CaptureSheet', () => {
     );
     const input = screen.getByLabelText('Capture to inbox');
     fireEvent.change(input, { target: { value: '  Buy milk  ' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    // No Add button (#626) — Enter's implicit form submission is the only submit path.
+    fireEvent.submit(input);
     expect(ws.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'addInboxItem', title: 'Buy milk' }),
     );
     expect(input).toHaveValue('');
+    expect(screen.queryByRole('button', { name: 'Add' })).not.toBeInTheDocument();
   });
 
   it('renders as a centered modal on desktop and still captures', () => {
@@ -83,12 +85,53 @@ describe('CaptureSheet', () => {
       const dialog = screen.getByRole('dialog');
       const input = within(dialog).getByLabelText('Capture to inbox');
       fireEvent.change(input, { target: { value: 'Desk note' } });
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Add' }));
+      fireEvent.submit(input);
       expect(ws.dispatch).toHaveBeenCalledWith(
         expect.objectContaining({ type: 'addInboxItem', title: 'Desk note' }),
       );
     } finally {
       window.matchMedia = original;
+    }
+  });
+
+  it('resizes via the corner handle (keyboard) and remembers the size (#626)', () => {
+    const original = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: true, media: query, onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+    try {
+      localStorage.removeItem('namweb.capture.size');
+      const ws = workspace();
+      const { unmount } = render(
+        <ThemeProvider>
+          <WorkspaceContext.Provider value={ws}>
+            <CaptureSheet open onOpenChange={() => {}} />
+          </WorkspaceContext.Provider>
+        </ThemeProvider>,
+      );
+      const dialog = screen.getByRole('dialog');
+      expect(dialog).not.toHaveStyle({ height: '400px' }); // default size until resized
+      const handle = within(dialog).getByRole('separator', { name: 'Resize capture dialog' });
+      fireEvent.keyDown(handle, { key: 'ArrowDown' }); // 400 (baseline) + 16
+      fireEvent.keyDown(handle, { key: 'ArrowRight' }); // 512 (baseline) + 16
+      expect(dialog).toHaveStyle({ width: '528px', height: '416px' });
+      expect(JSON.parse(localStorage.getItem('namweb.capture.size')!)).toEqual({ width: 528, height: 416 });
+
+      // Remembered: a fresh mount opens at the dragged size.
+      unmount();
+      render(
+        <ThemeProvider>
+          <WorkspaceContext.Provider value={workspace()}>
+            <CaptureSheet open onOpenChange={() => {}} />
+          </WorkspaceContext.Provider>
+        </ThemeProvider>,
+      );
+      expect(screen.getByRole('dialog')).toHaveStyle({ width: '528px', height: '416px' });
+    } finally {
+      window.matchMedia = original;
+      localStorage.removeItem('namweb.capture.size');
     }
   });
 });
@@ -112,8 +155,9 @@ function LiveHarness() {
 }
 
 function capture(title: string) {
-  fireEvent.change(screen.getByLabelText('Capture to inbox'), { target: { value: title } });
-  fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+  const input = screen.getByLabelText('Capture to inbox');
+  fireEvent.change(input, { target: { value: title } });
+  fireEvent.submit(input); // Enter's implicit submission — there is no Add button (#626)
 }
 
 describe('CaptureSheet — the "Just added" list (#617)', () => {

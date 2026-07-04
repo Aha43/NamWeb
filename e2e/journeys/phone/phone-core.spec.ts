@@ -14,7 +14,7 @@ test.describe('phone shell core loop', () => {
     await page.getByRole('button', { name: 'Capture' }).click();
     const sheet = page.getByRole('dialog');
     await sheet.getByLabel('Capture to inbox').fill('Buy milk');
-    await sheet.getByRole('button', { name: 'Add' }).click();
+    await sheet.getByLabel('Capture to inbox').press('Enter'); // no Add button — Enter/Go submits (#626)
 
     // The sheet stays open for rapid capture; dismiss it, then confirm it reached the inbox.
     await page.keyboard.press('Escape');
