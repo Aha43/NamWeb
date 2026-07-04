@@ -1,19 +1,24 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { InlineRename } from '@/features/actions/InlineRename';
+import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { newId, nowIso } from '@/lib/local';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useSettings } from '@/components/settings/settings-context';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import type { NamNode } from '@/domain/types';
 
-/** How many recently-captured items to keep visible in the dialog. */
-const RECENT_LIMIT = 4;
+/** Clicking the delete-Undo toast is an "interact outside" for the modal capture surface — don't
+ *  let it close the dialog/sheet mid-streak (#617). Toast rows render as role="status". */
+function keepOpenForToast(event: { detail: { originalEvent: Event }; preventDefault: () => void }) {
+  const target = event.detail.originalEvent.target;
+  if (target instanceof Element && target.closest('[role="status"]')) event.preventDefault();
+}
 
 /**
  * Always-available quick capture. Stays open so you can add several in a row. On desktop it's a
@@ -27,7 +32,8 @@ const RECENT_LIMIT = 4;
 export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation();
   const { document, dispatch } = useWorkspaceContext();
-  const { addToBottom } = useSettings();
+  const { addToBottom, captureRecentLimit } = useSettings();
+  const deleteNode = useDeleteNode();
   const isDesktop = useIsDesktop();
   const [title, setTitle] = useState('');
   // Ids captured during this open; newest first. Cleared when the dialog closes (non-persisted).
@@ -47,7 +53,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     if (!trimmed) return;
     const id = newId();
     dispatch({ type: 'addInboxItem', id, title: trimmed, atTop: !addToBottom, now: nowIso() });
-    setRecentIds((prev) => [id, ...prev].slice(0, RECENT_LIMIT));
+    setRecentIds((prev) => [id, ...prev].slice(0, captureRecentLimit));
     setTitle('');
   }
 
@@ -71,9 +77,11 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   );
 
   // Live lookup so edits/deletions elsewhere reflect immediately; drop ids whose node is gone.
+  // Re-sliced here too, so lowering the limit preference applies to an already-open list.
   const recentNodes = recentIds
     .map((id) => document?.nodes[id])
-    .filter((n): n is NamNode => Boolean(n));
+    .filter((n): n is NamNode => Boolean(n))
+    .slice(0, captureRecentLimit);
 
   const recentList =
     recentNodes.length > 0 ? (
@@ -105,6 +113,15 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
+                  {/* No confirm — these are seconds-old leaf captures and the toast offers Undo. */}
+                  <button
+                    type="button"
+                    aria-label={t('actions.deleteAria', { title: node.title })}
+                    onClick={() => deleteNode(node.id)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </>
               )}
             </li>
@@ -118,7 +135,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent>
+        <DialogContent onInteractOutside={keepOpenForToast}>
           <DialogHeader>
             <DialogTitle>{t('nav.capture')}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
@@ -132,7 +149,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom">
+      <SheetContent side="bottom" onInteractOutside={keepOpenForToast}>
         <SheetHeader>
           <SheetTitle>{t('nav.capture')}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>

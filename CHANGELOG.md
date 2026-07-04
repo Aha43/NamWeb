@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Delete from the capture dialog's list.** Each "Just added" row now has a delete button — a mis-capture goes away on the spot, with the usual Undo toast as the safety net (and clicking Undo keeps the dialog open mid-streak). Closes #617.
+- **Capture list size is a preference.** How many just-captured items stay listed in the capture dialog is now set under **Settings → Preferences** (1–10, default 4) instead of being hardcoded. Closes #617.
+
 ## [0.7.0] - 2026-07-03
 
 The shell redesign: everyday actions move to a toolbar command bar, bookmarks become starting
