@@ -436,8 +436,6 @@
   "settings.bookmarkStyleHelp": "Hvordan bokmerke-hurtigknappene vises i prosjektvelgeren. På telefon viser Mer-arket alltid etiketter.",
   "settings.bookmarkStyleIcons": "Ikoner (navn ved peking)",
   "settings.bookmarkStyleLabels": "Ikoner med etiketter",
-  "settings.captureRecentLimit": "Lengde på fangstliste",
-  "settings.captureRecentLimitHelp": "Hvor mange nylig fangede elementer som blir stående i fangstdialogen (1–10).",
   "settings.denseMode": "Kompakt modus — ikoner uten etiketter",
   "settings.denseModeHelp": "Skjul etikettene ved verktøylinje- og sidefeltikonene når du er blitt kjent — verktøytipsene viser fortsatt navnene.",
   "settings.language": "Språk",

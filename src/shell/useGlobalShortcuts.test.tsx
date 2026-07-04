@@ -53,8 +53,6 @@ describe('useGlobalShortcuts', () => {
       setBookmarkStyle: vi.fn(),
     dense: false,
     setDense: vi.fn(),
-      captureRecentLimit: 4,
-      setCaptureRecentLimit: vi.fn(),
       addToBottom: false,
       setAddToBottom,
       addToBottomDefault: false,

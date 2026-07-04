@@ -73,25 +73,36 @@ test('delete a just-captured item from the list, undo from the toast', async ({ 
   ).toBe(true);
 });
 
-// #617 — the number of items that stay listed is a preference (default 4).
-test('the capture-list size preference applies', async ({ page }) => {
-  await page.goto('/account?tab=preferences');
-  await page.getByLabel('Capture list size').fill('2');
-
+// #622 — no size cap: every item captured this session stays listed; a long streak scrolls in the
+// list region only, so the capture field never scrolls away mid-streak.
+test('a long capture streak keeps every item, scrolling only the list', async ({ page }) => {
+  await page.goto('/inbox');
   await page.getByRole('button', { name: 'Capture', exact: true }).click();
+
   const dialog = page.getByRole('dialog');
   const field = dialog.getByLabel('Capture to inbox');
-  for (const title of ['one', 'two', 'three']) {
-    await field.fill(title);
+  const count = 15;
+  for (let i = 1; i <= count; i++) {
+    await field.fill(`thought ${i}`);
     await field.press('Enter');
   }
 
-  // Only the newest two linger.
+  // Every capture is listed (newest first), none dropped.
   const list = dialog.getByRole('list');
-  await expect(list.getByRole('listitem')).toHaveCount(2);
-  await expect(list.getByText('three')).toBeVisible();
-  await expect(list.getByText('two')).toBeVisible();
-  await expect(list.getByText('one')).toHaveCount(0);
+  await expect(list.getByRole('listitem')).toHaveCount(count);
+  await expect(list.getByText('thought 15')).toBeVisible();
+
+  // The list itself scrolls; the capture field is still on screen and usable.
+  expect(await list.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true);
+  await expect(field).toBeInViewport();
+  await field.fill('one more');
+  await field.press('Enter');
+  await expect(list.getByRole('listitem')).toHaveCount(count + 1);
+
+  // The oldest capture is reachable by scrolling within the list.
+  await list.getByText('thought 1', { exact: true }).scrollIntoViewIfNeeded();
+  await expect(list.getByText('thought 1', { exact: true })).toBeVisible();
+  await expect(field).toBeInViewport(); // scrolling the list didn't move the field
 });
 
 // #568 — a very long name must never push the Add button or a recent row's buttons out of the

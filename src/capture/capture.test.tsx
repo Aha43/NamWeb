@@ -7,7 +7,6 @@ import type { UseWorkspace } from '@/store/useWorkspace';
 import { WorkspaceContext } from '@/store/workspace-context';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { ToastProvider } from '@/components/ui/toast/ToastProvider';
-import { SettingsContext, useSettings } from '@/components/settings/settings-context';
 import { applyIntent, type Intent } from '@/domain/mutations';
 import { WithAuthUser } from '@/test/authUser';
 import { AppRoutes } from '@/routes/AppRoutes';
@@ -95,26 +94,19 @@ describe('CaptureSheet', () => {
 });
 
 /** A live workspace: dispatch applies the real reducer, so the "Just added" list renders. */
-function LiveHarness({ recentLimit }: { recentLimit?: number }) {
+function LiveHarness() {
   const [document, setDocument] = useState<WorkspaceDocument>(() => workspace().document as WorkspaceDocument);
   const value = {
     document,
     dispatch: (intent: Intent) => setDocument((doc) => applyIntent(doc, intent)),
   } as unknown as UseWorkspace;
-  const settings = useSettings(); // provider-less defaults
-  const body = (
-    <WorkspaceContext.Provider value={value}>
-      <ToastProvider>
-        <CaptureSheet open onOpenChange={() => {}} />
-      </ToastProvider>
-    </WorkspaceContext.Provider>
-  );
-  if (recentLimit === undefined) return <ThemeProvider>{body}</ThemeProvider>;
   return (
     <ThemeProvider>
-      <SettingsContext.Provider value={{ ...settings, captureRecentLimit: recentLimit }}>
-        {body}
-      </SettingsContext.Provider>
+      <WorkspaceContext.Provider value={value}>
+        <ToastProvider>
+          <CaptureSheet open onOpenChange={() => {}} />
+        </ToastProvider>
+      </WorkspaceContext.Provider>
     </ThemeProvider>
   );
 }
@@ -141,23 +133,14 @@ describe('CaptureSheet — the "Just added" list (#617)', () => {
     expect(screen.getByText('Buy milk')).toBeInTheDocument(); // restored — id was still in recentIds
   });
 
-  it('honors the captureRecentLimit preference', () => {
-    render(<LiveHarness recentLimit={2} />);
-    capture('one');
-    capture('two');
-    capture('three');
-    const list = screen.getByRole('list');
-    expect(within(list).getAllByRole('listitem')).toHaveLength(2);
-    // Newest first: "three" and "two" stay, "one" dropped off.
-    expect(within(list).getByText('three')).toBeInTheDocument();
-    expect(within(list).getByText('two')).toBeInTheDocument();
-    expect(within(list).queryByText('one')).not.toBeInTheDocument();
-  });
-
-  it('keeps the default limit of four', () => {
+  it('keeps every capture of the session listed, newest first (#622 — no size cap)', () => {
     render(<LiveHarness />);
-    ['a', 'b', 'c', 'd', 'e'].forEach(capture);
-    expect(within(screen.getByRole('list')).getAllByRole('listitem')).toHaveLength(4);
+    const titles = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
+    titles.forEach(capture);
+    const rows = within(screen.getByRole('list')).getAllByRole('listitem');
+    expect(rows).toHaveLength(titles.length);
+    expect(rows[0]).toHaveTextContent('g'); // newest first
+    expect(rows[rows.length - 1]).toHaveTextContent('a');
   });
 });
 
