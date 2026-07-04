@@ -102,6 +102,10 @@ export function FocusDeck({
       if (e.key === 'ArrowRight') next();
       else if (e.key === 'ArrowLeft') prev();
       else if (e.key === ' ') {
+        // Space keeps its native meaning on a focused control (Rename/Delete/Copy, nav buttons…):
+        // intercepting there would mark the card Done instead of activating the button (#628).
+        // (instanceof: the target can be window/document when nothing focused.)
+        if (t instanceof Element && t.closest('button, a, [role="button"], input, select, [contenteditable="true"]')) return;
         e.preventDefault();
         done();
       } else if (e.key === 'Escape') onExit();

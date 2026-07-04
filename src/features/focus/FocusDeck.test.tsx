@@ -168,6 +168,20 @@ describe('FocusDeck', () => {
     }
   });
 
+  it('Space on a focused control activates the control, not Done (#628)', () => {
+    const onDone = vi.fn();
+    render(
+      <FocusDeck cards={three} onDone={onDone} onExit={vi.fn()} onRenameCard={vi.fn()} onDeleteCard={vi.fn()} />,
+    );
+    // Keydown targeted at the per-card Rename button (as after tabbing to it).
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Rename Do A' }), { key: ' ' });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Next' }), { key: ' ' });
+    expect(onDone).not.toHaveBeenCalled();
+    // From a non-interactive target, Space still marks done.
+    fireEvent.keyDown(window, { key: ' ' });
+    expect(onDone).toHaveBeenCalledWith('a');
+  });
+
   it('keeps showing the same card when a background change removes another card (#614)', () => {
     const { rerender } = render(<FocusDeck cards={three} onDone={vi.fn()} onExit={vi.fn()} />);
     fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → Do B

@@ -120,6 +120,22 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     [setSize],
   );
 
+  // The remembered size is clamped on read and drag — but the browser can narrow while we're
+  // mounted, leaving the inline width/height past the new viewport (content and the resize
+  // handle off-screen, #628). Re-clamp on window resize; the display shrinks, the stored value
+  // is only rewritten by the next drag (a temporarily narrow window doesn't lose the preference).
+  useEffect(() => {
+    function onWindowResize() {
+      setSizeState((cur) => {
+        if (!cur) return cur;
+        const clamped = clampSize(cur);
+        return clamped.width === cur.width && clamped.height === cur.height ? cur : clamped;
+      });
+    }
+    window.addEventListener('resize', onWindowResize);
+    return () => window.removeEventListener('resize', onWindowResize);
+  }, []);
+
   const onResizeKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       const current = size ?? { width: 512, height: 400 }; // ~max-w-lg as the keyboard baseline
@@ -216,21 +232,35 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   // (they move the item out of the inbox and set status; no per-item undo, matching inbox #458).
   function resolveSelected(resolution: ProcessResolution) {
     const now = nowIso();
-    const suffix = bulkTarget ? ` · ${targetLabel}` : '';
+    // Only live, still-unprocessed captures get resolved and marked — an id deleted on another
+    // surface since it was ticked must not gain a false ✓ (Undo would restore it to the Inbox
+    // wearing a marker for a move that never happened, #628).
+    const ids = [...selected].filter((id) => document?.nodes[id] && !processed.has(id));
+    // Revalidate the destination at dispatch time: the picked project may have been deleted,
+    // archived, or converted since. Fall back to the default location — and reset the chip so
+    // the toolbar doesn't keep promising the stale destination.
+    const validTarget =
+      resolution.parentId && projectTargets.some((pt) => pt.id === resolution.parentId)
+        ? resolution.parentId
+        : undefined;
+    if (resolution.parentId && !validTarget) setBulkTarget('');
+    const suffix = validTarget
+      ? ` · ${projectTargets.find((pt) => pt.id === validTarget)!.label}`
+      : '';
     const marker =
       resolution.kind === 'project'
         ? `${t('capture.processedProject')}${suffix}`
         : `${t(resolution.status === 'NEXT' ? 'domain.status.next' : 'domain.status.backlog')}${suffix}`;
     setProcessed((prev) => {
       const next = new Map(prev);
-      for (const id of selected) next.set(id, marker);
+      for (const id of ids) next.set(id, marker);
       return next;
     });
-    for (const id of selected) {
+    for (const id of ids) {
       if (resolution.kind === 'project') {
-        dispatch({ type: 'convertInboxToProject', id, parentId: resolution.parentId, now });
+        dispatch({ type: 'convertInboxToProject', id, parentId: validTarget, now });
       } else {
-        dispatch({ type: 'convertInboxToAction', id, status: resolution.status, parentId: resolution.parentId, now });
+        dispatch({ type: 'convertInboxToAction', id, status: resolution.status, parentId: validTarget, now });
       }
     }
     setSelected(new Set());

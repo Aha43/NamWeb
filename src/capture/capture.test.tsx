@@ -128,7 +128,20 @@ describe('CaptureSheet', () => {
           </WorkspaceContext.Provider>
         </ThemeProvider>,
       );
-      expect(screen.getByRole('dialog')).toHaveStyle({ width: '528px', height: '416px' });
+      const dialog2 = screen.getByRole('dialog');
+      expect(dialog2).toHaveStyle({ width: '528px', height: '416px' });
+
+      // The remembered size re-clamps when the viewport narrows while mounted (#628).
+      const { innerWidth, innerHeight } = window;
+      try {
+        Object.defineProperty(window, 'innerWidth', { value: 400, configurable: true });
+        Object.defineProperty(window, 'innerHeight', { value: 300, configurable: true });
+        fireEvent(window, new Event('resize'));
+        expect(dialog2).toHaveStyle({ width: '368px', height: '268px' }); // viewport − 32 (fits-on-screen beats MIN)
+      } finally {
+        Object.defineProperty(window, 'innerWidth', { value: innerWidth, configurable: true });
+        Object.defineProperty(window, 'innerHeight', { value: innerHeight, configurable: true });
+      }
     } finally {
       window.matchMedia = original;
       localStorage.removeItem('namweb.capture.size');
