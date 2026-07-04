@@ -144,6 +144,93 @@ describe('CaptureSheet — the "Just added" list (#617)', () => {
   });
 });
 
+describe('CaptureSheet — processing station (#623)', () => {
+  let lastDoc: WorkspaceDocument | null = null;
+  function LiveHarnessWithSpy({ onDoc }: { onDoc: (d: WorkspaceDocument) => void }) {
+    const [document, setDocument] = useState<WorkspaceDocument>(() => workspace().document as WorkspaceDocument);
+    onDoc(document);
+    const value = {
+      document,
+      dispatch: (intent: Intent) => setDocument((doc) => applyIntent(doc, intent)),
+    } as unknown as UseWorkspace;
+    return (
+      <ThemeProvider>
+        <WorkspaceContext.Provider value={value}>
+          <ToastProvider>
+            <CaptureSheet open onOpenChange={() => {}} />
+          </ToastProvider>
+        </WorkspaceContext.Provider>
+      </ThemeProvider>
+    );
+  }
+  const renderSpied = () => render(<LiveHarnessWithSpy onDoc={(d) => (lastDoc = d)} />);
+  const nodeByTitle = (title: string) => Object.values(lastDoc!.nodes).find((n) => n.title === title)!;
+
+  function enterSelect() {
+    fireEvent.click(screen.getByRole('button', { name: 'Select items' }));
+  }
+  const check = (title: string) => fireEvent.click(screen.getByRole('checkbox', { name: `Select ${title}` }));
+
+  it('selected captures go → Next (default: Free actions) and stay listed with a ✓ marker', () => {
+    renderSpied();
+    ['idea one', 'idea two', 'idea three'].forEach(capture);
+    enterSelect();
+    check('idea one');
+    check('idea two');
+    fireEvent.click(screen.getByRole('button', { name: '→ Next' }));
+
+    // The intents moved them out of the inbox with the status set.
+    expect(nodeByTitle('idea one').status).toBe('NEXT');
+    expect(nodeByTitle('idea two').status).toBe('NEXT');
+    expect(lastDoc!.nodes['actions'].childIds).toContain(nodeByTitle('idea one').id);
+    expect(lastDoc!.nodes['inbox'].childIds).toContain(nodeByTitle('idea three').id); // untouched
+
+    // Processed rows stay, marked; their checkboxes are gone; the third is still selectable.
+    const list = screen.getByRole('list');
+    expect(within(list).getAllByRole('listitem')).toHaveLength(3);
+    expect(within(list).getAllByText('Next')).toHaveLength(2);
+    expect(screen.queryByRole('checkbox', { name: 'Select idea one' })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Select idea three' })).toBeInTheDocument();
+  });
+
+  it('Make projects converts the selection and marks the rows', () => {
+    renderSpied();
+    capture('new epic');
+    enterSelect();
+    check('new epic');
+    fireEvent.click(screen.getByRole('button', { name: 'Make projects' }));
+    expect(nodeByTitle('new epic').project).toBe(true);
+    expect(lastDoc!.nodes['projects'].childIds).toContain(nodeByTitle('new epic').id);
+    expect(within(screen.getByRole('list')).getByText('Project')).toBeInTheDocument();
+  });
+
+  it('Select all selects only unprocessed rows', () => {
+    renderSpied();
+    ['p1', 'p2', 'p3'].forEach(capture);
+    enterSelect();
+    check('p1');
+    fireEvent.click(screen.getByRole('button', { name: '→ Backlog' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select all' }));
+    expect(screen.getByText('2 selected')).toBeInTheDocument();
+  });
+
+  it('bulk delete confirms, removes the rows, and one grouped Undo restores them', () => {
+    renderSpied();
+    ['d1', 'd2'].forEach(capture);
+    enterSelect();
+    check('d1');
+    check('d2');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete selected items' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // the confirm (exact name)
+    expect(within(screen.queryByRole('list') ?? window.document.body).queryByText('d1')).not.toBeInTheDocument();
+    expect(screen.getByText('Deleted 2 items')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Undo', hidden: true }));
+    const list = screen.getByRole('list');
+    expect(within(list).getByText('d1')).toBeInTheDocument();
+    expect(within(list).getByText('d2')).toBeInTheDocument();
+  });
+});
+
 describe('capture from the shell', () => {
   it('opens the capture sheet from the phone Capture button', () => {
     render(

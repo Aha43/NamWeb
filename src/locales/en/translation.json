@@ -91,6 +91,7 @@
   "capture.inputAria": "Capture to inbox",
   "capture.justAdded": "Just added",
   "capture.placeholder": "What's on your mind?",
+  "capture.processedProject": "Project",
   "column.addActionAria": "Add action to {label}",
   "column.addActionPlaceholder": "Add an action…",
   "column.collapseAria": "Collapse {label}",
