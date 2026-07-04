@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The settings panel's header stays put.** Scrolling the panel's content no longer scrolls away the "Settings" header (with its ✕ close button) and the Account/Preferences tab strip — only the tab body scrolls. Closes #615.
+
 ## [0.7.0] - 2026-07-03
 
 The shell redesign: everyday actions move to a toolbar command bar, bookmarks become starting
