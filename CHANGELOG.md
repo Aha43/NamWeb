@@ -11,7 +11,7 @@ minor = features (breaking changes allowed), patch = fixes.
 ### Added
 
 - **Delete from the capture dialog's list.** Each "Just added" row now has a delete button — a mis-capture goes away on the spot, with the usual Undo toast as the safety net (and clicking Undo keeps the dialog open mid-streak). Closes #617.
-- **Capture list size is a preference.** How many just-captured items stay listed in the capture dialog is now set under **Settings → Preferences** (1–10, default 4) instead of being hardcoded. Closes #617.
+- **The capture list keeps the whole streak.** Every item captured this session stays listed in the capture dialog — no size cap. Long streaks scroll inside the list while the capture field stays put; the phone bottom sheet is bounded so it can't outgrow the screen. (Replaces #617's short-lived "capture list size" preference, which never shipped in a release.) Closes #622.
 
 ### Fixed
 

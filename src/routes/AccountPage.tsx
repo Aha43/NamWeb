@@ -17,12 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { buildUserExport, downloadJson } from '@/lib/exportData';
 import { validateNewPassword } from '@/lib/password';
 import { formatDate, type DateFormat } from '@/lib/dates';
-import {
-  CAPTURE_RECENT_LIMIT_MAX,
-  CAPTURE_RECENT_LIMIT_MIN,
-  useSettings,
-  type BookmarkStyle,
-} from '@/components/settings/settings-context';
+import { useSettings, type BookmarkStyle } from '@/components/settings/settings-context';
 import { useTranslation } from 'react-i18next';
 import { LOCALES, type Locale } from '@/lib/i18n';
 
@@ -363,8 +358,6 @@ function PreferencesTab() {
     setBookmarkStyle,
     dense,
     setDense,
-    captureRecentLimit,
-    setCaptureRecentLimit,
     addToBottomDefault,
     setAddToBottomDefault,
   } = useSettings();
@@ -449,19 +442,6 @@ function PreferencesTab() {
         </p>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="settings-capture-recent-limit">{t('settings.captureRecentLimit')}</Label>
-        <input
-          id="settings-capture-recent-limit"
-          type="number"
-          min={CAPTURE_RECENT_LIMIT_MIN}
-          max={CAPTURE_RECENT_LIMIT_MAX}
-          value={captureRecentLimit}
-          onChange={(e) => setCaptureRecentLimit(Number(e.target.value))}
-          className="w-24 rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
-        />
-        <p className="text-xs text-muted-foreground">{t('settings.captureRecentLimitHelp')}</p>
-      </div>
     </div>
   );
 }

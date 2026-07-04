@@ -24,15 +24,16 @@ function keepOpenForToast(event: { detail: { originalEvent: Event }; preventDefa
  * Always-available quick capture. Stays open so you can add several in a row. On desktop it's a
  * centered modal dialog; on phones a bottom sheet (better thumb reach).
  *
- * Below the field, the last few items captured *this session* stay visible (so a fast streak doesn't
- * "just disappear") and are editable inline to fix a typo. The list is session-only — it resets when
+ * Below the field, every item captured *this session* stays visible (so a fast streak doesn't
+ * "just disappear") and is editable inline to fix a typo. Long streaks scroll in the list region
+ * only — the capture field never scrolls away (#622). The list is session-only — it resets when
  * the dialog closes — but titles render live from the document, so an edit renames the real inbox
  * item and a row drops off if that item is deleted elsewhere.
  */
 export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation();
   const { document, dispatch } = useWorkspaceContext();
-  const { addToBottom, captureRecentLimit } = useSettings();
+  const { addToBottom } = useSettings();
   const deleteNode = useDeleteNode();
   const isDesktop = useIsDesktop();
   const [title, setTitle] = useState('');
@@ -53,7 +54,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     if (!trimmed) return;
     const id = newId();
     dispatch({ type: 'addInboxItem', id, title: trimmed, atTop: !addToBottom, now: nowIso() });
-    setRecentIds((prev) => [id, ...prev].slice(0, captureRecentLimit));
+    setRecentIds((prev) => [id, ...prev]);
     setTitle('');
   }
 
@@ -77,17 +78,17 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   );
 
   // Live lookup so edits/deletions elsewhere reflect immediately; drop ids whose node is gone.
-  // Re-sliced here too, so lowering the limit preference applies to an already-open list.
   const recentNodes = recentIds
     .map((id) => document?.nodes[id])
-    .filter((n): n is NamNode => Boolean(n))
-    .slice(0, captureRecentLimit);
+    .filter((n): n is NamNode => Boolean(n));
 
+  // The list is the only scroll region (min-h-0 + overflow-y-auto): however long the streak, the
+  // header and capture field stay put (#622).
   const recentList =
     recentNodes.length > 0 ? (
-      <div className="mt-4 space-y-1.5">
+      <div className="mt-4 flex min-h-0 flex-col gap-1.5">
         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">{t('capture.justAdded')}</p>
-        <ul className="divide-y divide-border overflow-hidden rounded-md border border-border">
+        <ul className="min-h-0 divide-y divide-border overflow-y-auto rounded-md border border-border">
           {recentNodes.map((node) => (
             <li key={node.id} className="flex items-center gap-2 px-3 py-1.5 text-sm">
               {renamingId === node.id ? (
@@ -135,7 +136,9 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   if (isDesktop) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent onInteractOutside={keepOpenForToast}>
+        {/* flex-col + overflow-hidden: the content itself never scrolls (the default DialogContent
+            behavior would scroll the capture field away on a long streak) — only the list does. */}
+        <DialogContent className="flex flex-col overflow-hidden" onInteractOutside={keepOpenForToast}>
           <DialogHeader>
             <DialogTitle>{t('nav.capture')}</DialogTitle>
             <DialogDescription>{description}</DialogDescription>
@@ -149,7 +152,9 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" onInteractOutside={keepOpenForToast}>
+      {/* The bottom sheet is content-height with no cap of its own — bound it so a long streak
+          scrolls in the list instead of growing past the top of the viewport. */}
+      <SheetContent side="bottom" className="flex max-h-[85dvh] flex-col overflow-hidden" onInteractOutside={keepOpenForToast}>
         <SheetHeader>
           <SheetTitle>{t('nav.capture')}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
