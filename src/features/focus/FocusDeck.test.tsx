@@ -144,6 +144,46 @@ describe('FocusDeck', () => {
     expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
   });
 
+  it('ignores keys while a modal dialog is open — e.g. the action editor (#614)', () => {
+    const onDone = vi.fn();
+    const onExit = vi.fn();
+    const onEditCard = vi.fn();
+    render(<FocusDeck cards={three} onDone={onDone} onExit={onExit} onEditCard={onEditCard} />);
+    // A Radix dialog portal, as isModalOpen() sees it.
+    const dialog = document.createElement('div');
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('data-state', 'open');
+    document.body.appendChild(dialog);
+    try {
+      fireEvent.keyDown(window, { key: 'e' });
+      fireEvent.keyDown(window, { key: ' ' });
+      fireEvent.keyDown(window, { key: 'ArrowRight' });
+      fireEvent.keyDown(window, { key: 'Escape' });
+      expect(onEditCard).not.toHaveBeenCalled();
+      expect(onDone).not.toHaveBeenCalled();
+      expect(onExit).not.toHaveBeenCalled();
+      expect(screen.getByRole('heading', { name: 'Do A' })).toBeInTheDocument();
+    } finally {
+      dialog.remove();
+    }
+  });
+
+  it('keeps showing the same card when a background change removes another card (#614)', () => {
+    const { rerender } = render(<FocusDeck cards={three} onDone={vi.fn()} onExit={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → Do B
+    // A sync pull removes card A behind the deck; the shown card must not swap.
+    rerender(<FocusDeck cards={[card('b', 'Do B'), card('c', 'Do C')]} onDone={vi.fn()} onExit={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: 'Do B' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Progress')).toHaveTextContent('1 / 2');
+  });
+
+  it('slides the next card into the slot when the current card itself is removed', () => {
+    const { rerender } = render(<FocusDeck cards={three} onDone={vi.fn()} onExit={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Next' })); // → Do B (slot 1)
+    rerender(<FocusDeck cards={[card('a', 'Do A'), card('c', 'Do C')]} onDone={vi.fn()} onExit={vi.fn()} />);
+    expect(screen.getByRole('heading', { name: 'Do C' })).toBeInTheDocument();
+  });
+
   it('shows an empty-queue state that guides what to do next', () => {
     const { onExit } = setup([]);
     expect(screen.getByText('All clear 🎉')).toBeInTheDocument();

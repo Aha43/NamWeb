@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -22,6 +22,13 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
   const { document, dispatch } = useWorkspaceContext();
   const [editingId, setEditingId] = useState<string | null>(null);
   const node = editingId && document ? document.nodes[editingId] ?? null : null;
+
+  // If the edited node vanishes under the open dialog (deleted on another surface, sync pull),
+  // the dialog unmounts without onOpenChange(false) — drop the id too, or a later restore of the
+  // same id (undo, conflict replay) would silently pop the dialog back open (#614).
+  useEffect(() => {
+    if (editingId && document && !document.nodes[editingId]) setEditingId(null);
+  }, [editingId, document]);
 
   // Reparent targets: every project (any depth) outside the node's own subtree, plus Free actions.
   const moveTargets = useMemo<MoveTarget[]>(() => {
