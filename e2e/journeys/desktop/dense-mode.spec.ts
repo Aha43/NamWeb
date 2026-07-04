@@ -25,6 +25,11 @@ test('dense mode strips labels live, keeps names accessible, and persists', asyn
   await page.reload();
   await expect(page.getByRole('button', { name: 'Capture', exact: true })).not.toContainText('Capture');
 
+  // The NAM wordmark is gone in dense mode, so the logo is the only carrier of the
+  // brand/version tooltip — hovering it must show "Next Action Master · v… · …" (#616).
+  await page.getByRole('img', { name: 'Next Action Master' }).hover();
+  await expect(page.getByRole('tooltip').filter({ hasText: /Next Action Master · v\d/ }).first()).toBeVisible();
+
   // And back off again.
   await page.getByLabel(/Dense mode/).uncheck();
   await expect(page.getByRole('link', { name: 'Backlog' })).toContainText('Backlog');

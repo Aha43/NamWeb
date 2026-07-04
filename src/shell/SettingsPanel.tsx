@@ -118,7 +118,7 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: SettingsTab
       <aside
         aria-label={t('nav.settings')}
         style={{ width }}
-        className="flex shrink-0 flex-col overflow-y-auto px-4 py-4"
+        className="flex shrink-0 flex-col overflow-hidden px-4 py-4"
       >
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold tracking-tight">{t('nav.settings')}</h2>
@@ -126,7 +126,9 @@ export function SettingsPanel({ initialTab, onClose }: { initialTab: SettingsTab
             <X className="h-4 w-4" />
           </Button>
         </div>
-        <AccountSettingsTabs tab={tab} onTabChange={setTab} />
+        {/* Only the tab body scrolls (#615): the Settings header (with the ✕) and the tab strip
+            stay put however long the tab content gets. */}
+        <AccountSettingsTabs tab={tab} onTabChange={setTab} bodyClassName="min-h-0 flex-1 overflow-y-auto" />
       </aside>
     </>
   );

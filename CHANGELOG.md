@@ -13,6 +13,12 @@ minor = features (breaking changes allowed), patch = fixes.
 - **Delete from the capture dialog's list.** Each "Just added" row now has a delete button — a mis-capture goes away on the spot, with the usual Undo toast as the safety net (and clicking Undo keeps the dialog open mid-streak). Closes #617.
 - **Capture list size is a preference.** How many just-captured items stay listed in the capture dialog is now set under **Settings → Preferences** (1–10, default 4) instead of being hardcoded. Closes #617.
 
+### Fixed
+
+- **Focus-mode keys no longer fire behind the action editor.** With the editor open from Focus and keyboard focus on a button, `e` could swap the open dialog to a different card, arrows rotated the deck, Space marked the deck's card done behind the dialog, and Escape exited Focus along with it — the "opened one action, saw another" mystery. The deck's shortcuts now go quiet while any modal is open (the workbench's `x`/`y`/`z`/`s` got the same guard), the deck pins its current card by id so background changes can't swap it mid-click, the `e`/`r` keystroke no longer leaks into the freshly-focused title/rename field, and a deleted-then-restored action can no longer silently reopen its old editor. Closes #614.
+- **The settings panel's header stays put.** Scrolling the panel's content no longer scrolls away the "Settings" header (with its ✕ close button) and the Account/Preferences tab strip — only the tab body scrolls. Closes #615.
+- **The version tooltip works on the NAM logo.** Hovering the logo mark now shows the "Next Action Master · v… · build" tooltip — it was silently dead because the logo swallowed the tooltip's trigger props, which made the version unreachable in Dense mode (where the wordmark is hidden). The phone header's logo carries the same tooltip now too. Closes #616.
+
 ## [0.7.0] - 2026-07-03
 
 The shell redesign: everyday actions move to a toolbar command bar, bookmarks become starting

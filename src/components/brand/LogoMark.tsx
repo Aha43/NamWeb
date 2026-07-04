@@ -4,9 +4,13 @@
 // white check are fixed brand colours. Size and colour come from `className`
 // (e.g. `h-12 w-12 text-card-foreground`).
 
+import { type ComponentPropsWithRef } from 'react';
 import { APP_NAME } from '@/lib/app';
 
-export function LogoMark({ className }: { className?: string }) {
+// Rest props (incl. ref) must reach the <svg>: the shells wrap the mark in a Radix
+// `Tooltip` whose `Trigger asChild` works by cloning its handlers onto this element —
+// swallowing them left the brand/version tooltip dead on the logo (#616).
+export function LogoMark({ className, ...props }: ComponentPropsWithRef<'svg'>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -15,6 +19,7 @@ export function LogoMark({ className }: { className?: string }) {
       role="img"
       aria-label={APP_NAME}
       className={className}
+      {...props}
     >
       <title>{APP_NAME}</title>
       <g stroke="currentColor" strokeWidth={11} strokeLinecap="round" opacity={0.42}>

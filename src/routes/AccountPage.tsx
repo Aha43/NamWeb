@@ -41,9 +41,13 @@ export type SettingsTab = 'account' | 'preferences';
 export function AccountSettingsTabs({
   tab,
   onTabChange,
+  bodyClassName,
 }: {
   tab: SettingsTab;
   onTabChange: (tab: SettingsTab) => void;
+  /** Extra classes for the tab-body wrapper — the settings panel makes it the scroll container
+   *  so the header and tab strip stay put while the content scrolls (#615). */
+  bodyClassName?: string;
 }) {
   const { t } = useTranslation();
   return (
@@ -67,7 +71,7 @@ export function AccountSettingsTabs({
         ))}
       </div>
 
-      <div className="mt-6">{tab === 'account' ? <AccountTab /> : <PreferencesTab />}</div>
+      <div className={cn('mt-6', bodyClassName)}>{tab === 'account' ? <AccountTab /> : <PreferencesTab />}</div>
     </>
   );
 }
