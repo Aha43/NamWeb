@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The version tooltip works on the NAM logo.** Hovering the logo mark now shows the "Next Action Master · v… · build" tooltip — it was silently dead because the logo swallowed the tooltip's trigger props, which made the version unreachable in Dense mode (where the wordmark is hidden). The phone header's logo carries the same tooltip now too. Closes #616.
+
 ## [0.7.0] - 2026-07-03
 
 The shell redesign: everyday actions move to a toolbar command bar, bookmarks become starting
