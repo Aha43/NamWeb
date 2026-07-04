@@ -7,6 +7,18 @@ import type { Locale } from '@/lib/i18n';
 export type BookmarkStyle = 'icons' | 'labels';
 export const DEFAULT_BOOKMARK_STYLE: BookmarkStyle = 'icons';
 
+/** How many just-captured items stay listed in the capture dialog (#617). */
+export const DEFAULT_CAPTURE_RECENT_LIMIT = 4;
+export const CAPTURE_RECENT_LIMIT_MIN = 1;
+export const CAPTURE_RECENT_LIMIT_MAX = 10;
+
+/** Parse + clamp a stored/typed capture-list size; anything unusable falls back to the default. */
+export function clampCaptureRecentLimit(value: unknown): number {
+  const n = Math.round(Number(value));
+  if (!Number.isFinite(n)) return DEFAULT_CAPTURE_RECENT_LIMIT;
+  return Math.min(CAPTURE_RECENT_LIMIT_MAX, Math.max(CAPTURE_RECENT_LIMIT_MIN, n));
+}
+
 export interface SettingsContextValue {
   dateFormat: DateFormat;
   setDateFormat: (format: DateFormat) => void;
@@ -19,6 +31,9 @@ export interface SettingsContextValue {
   /** Dense mode (device-level): hide the labels next to command-bar and sidebar icons (#598). */
   dense: boolean;
   setDense: (dense: boolean) => void;
+  /** How many just-captured items stay listed in the capture dialog (device-level, #617). */
+  captureRecentLimit: number;
+  setCaptureRecentLimit: (limit: number) => void;
   /** Effective (here-and-now) new-item position: true = bottom, false = top. Session-scoped — it
    *  starts from the default and the inline add-box toggle flips it; not persisted. */
   addToBottom: boolean;
@@ -46,6 +61,8 @@ export function useSettings(): SettingsContextValue {
       setBookmarkStyle: () => {},
       dense: false,
       setDense: () => {},
+      captureRecentLimit: DEFAULT_CAPTURE_RECENT_LIMIT,
+      setCaptureRecentLimit: () => {},
       addToBottom: false,
       setAddToBottom: () => {},
       addToBottomDefault: false,
@@ -61,3 +78,4 @@ export const ADD_TO_BOTTOM_STORAGE_KEY = 'namweb.settings.add-to-bottom';
 export { LANGUAGE_STORAGE_KEY } from '@/lib/i18n';
 export const BOOKMARK_STYLE_STORAGE_KEY = 'namweb.settings.bookmark-style';
 export const DENSE_STORAGE_KEY = 'namweb.settings.dense';
+export const CAPTURE_RECENT_LIMIT_STORAGE_KEY = 'namweb.settings.capture-recent-limit';

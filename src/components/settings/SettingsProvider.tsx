@@ -4,11 +4,14 @@ import { activateLocale, detectInitialLocale, type Locale } from '@/lib/i18n';
 import {
   ADD_TO_BOTTOM_STORAGE_KEY,
   BOOKMARK_STYLE_STORAGE_KEY,
+  CAPTURE_RECENT_LIMIT_STORAGE_KEY,
   DATE_FORMAT_STORAGE_KEY,
   DEFAULT_BOOKMARK_STYLE,
+  DEFAULT_CAPTURE_RECENT_LIMIT,
   DENSE_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   SettingsContext,
+  clampCaptureRecentLimit,
   type BookmarkStyle,
 } from './settings-context';
 
@@ -40,6 +43,16 @@ function initialDense(): boolean {
   }
 }
 
+function initialCaptureRecentLimit(): number {
+  try {
+    const stored = localStorage.getItem(CAPTURE_RECENT_LIMIT_STORAGE_KEY);
+    if (stored !== null) return clampCaptureRecentLimit(stored);
+  } catch {
+    // localStorage unavailable — fall back to the default.
+  }
+  return DEFAULT_CAPTURE_RECENT_LIMIT;
+}
+
 function initialBookmarkStyle(): BookmarkStyle {
   try {
     const stored = localStorage.getItem(BOOKMARK_STYLE_STORAGE_KEY);
@@ -57,6 +70,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Locale>(detectInitialLocale);
   const [bookmarkStyle, setBookmarkStyle] = useState<BookmarkStyle>(initialBookmarkStyle);
   const [dense, setDense] = useState<boolean>(initialDense);
+  const [captureRecentLimit, setLimitState] = useState<number>(initialCaptureRecentLimit);
+  const setCaptureRecentLimit = (limit: number) => setLimitState(clampCaptureRecentLimit(limit));
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
   const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
@@ -95,6 +110,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [bookmarkStyle]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(CAPTURE_RECENT_LIMIT_STORAGE_KEY, String(captureRecentLimit));
+    } catch {
+      // best-effort persistence
+    }
+  }, [captureRecentLimit]);
+
   // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
   useEffect(() => {
     try {
@@ -121,6 +144,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setBookmarkStyle,
         dense,
         setDense,
+        captureRecentLimit,
+        setCaptureRecentLimit,
         addToBottom,
         setAddToBottom,
         addToBottomDefault,
