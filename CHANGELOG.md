@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-04
+
+The capture dialog grows up: it keeps the whole capture streak (no cap, list-only scrolling),
+becomes a full processing station (select rows, file them under a project with a status — the
+inbox roundtrip is now optional), gets a remembered resize handle, and sheds its Add button.
+Alongside: the long-standing "opened one action, saw another" Focus-mode mystery solved at the
+root, plus a pre-release Codex review that hardened three edge cases before the cut.
+
 ### Added
 
 - **Delete from the capture dialog's list.** Each "Just added" row now has a delete button — a mis-capture goes away on the spot, with the usual Undo toast as the safety net (and clicking Undo keeps the dialog open mid-streak). Closes #617.
@@ -1214,7 +1222,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/Aha43/NamWeb/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/Aha43/NamWeb/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Aha43/NamWeb/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Aha43/NamWeb/compare/v0.4.0...v0.5.0
