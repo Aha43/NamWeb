@@ -162,7 +162,7 @@ function MoreBookmarks({ onNavigate }: { onNavigate: () => void }) {
       <span className="px-2 text-[11px] font-medium uppercase tracking-wide text-muted-foreground/70">
         {t('nav.bookmarks')}
       </span>
-      <BookmarkBar variant="list" onNavigate={onNavigate} />
+      <BookmarkBar onNavigate={onNavigate} />
     </div>
   );
 }

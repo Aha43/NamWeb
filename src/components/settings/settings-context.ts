@@ -2,20 +2,12 @@ import { createContext, useContext } from 'react';
 import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
 import type { Locale } from '@/lib/i18n';
 
-/** How bookmarks render where hover works (toolbar + project picker): compact icon (name in a
- *  tooltip) or icon + visible label. The phone More sheet always shows labels (no hover on touch). */
-export type BookmarkStyle = 'icons' | 'labels';
-export const DEFAULT_BOOKMARK_STYLE: BookmarkStyle = 'icons';
-
 export interface SettingsContextValue {
   dateFormat: DateFormat;
   setDateFormat: (format: DateFormat) => void;
   /** UI language (device-level) — drives the i18n runtime. */
   language: Locale;
   setLanguage: (language: Locale) => void;
-  /** Bookmark appearance (device-level): compact icons+tooltip vs icons+labels. */
-  bookmarkStyle: BookmarkStyle;
-  setBookmarkStyle: (style: BookmarkStyle) => void;
   /** Dense mode (device-level): hide the labels next to command-bar and sidebar icons (#598). */
   dense: boolean;
   setDense: (dense: boolean) => void;
@@ -42,8 +34,6 @@ export function useSettings(): SettingsContextValue {
       setDateFormat: () => {},
       language: 'en',
       setLanguage: () => {},
-      bookmarkStyle: DEFAULT_BOOKMARK_STYLE,
-      setBookmarkStyle: () => {},
       dense: false,
       setDense: () => {},
       addToBottom: false,
@@ -59,7 +49,8 @@ export const ADD_TO_BOTTOM_STORAGE_KEY = 'namweb.settings.add-to-bottom';
 // The language key lives in @/lib/i18n (init reads it before any provider mounts, #579);
 // re-exported here so settings code keeps one import site for storage keys.
 export { LANGUAGE_STORAGE_KEY } from '@/lib/i18n';
-export const BOOKMARK_STYLE_STORAGE_KEY = 'namweb.settings.bookmark-style';
+// 'namweb.settings.bookmark-style' existed for the toolbar strip (#560 → removed by #593);
+// stale localStorage entries are harmless orphans.
 export const DENSE_STORAGE_KEY = 'namweb.settings.dense';
 // 'namweb.settings.capture-recent-limit' existed briefly (#617 → removed by #622, never in a
 // release); stale localStorage entries are harmless orphans.

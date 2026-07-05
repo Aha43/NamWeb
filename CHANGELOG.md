@@ -15,6 +15,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **One less setting: "Bookmark appearance" is gone.** After the shell redesign it only styled the project picker's bookmark chips — those now always show their labels (reading beats hovering when you're browsing). The long-unused desktop toolbar bookmark strip was pruned from the code along the way. Closes #593.
 - **Capture processing is now a wizard.** Instead of the inbox-style verb toolbar, select rows and hit **Process…**: the project selector appears right inside the dialog (the Finder-style columns; a native dropdown on phone), **Next** moves to the status choice (Next / Backlog / Make projects), and **Done** commits. Back/Cancel navigate without committing. Selection, Select all/Clear, and Delete-with-undo are unchanged. Closes #635.
 
 ## [0.8.0] - 2026-07-04
