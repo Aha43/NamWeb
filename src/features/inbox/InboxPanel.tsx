@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { formatAge } from '@/lib/dates';
 import { InlineRename } from '../actions/InlineRename';
-import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
+import { ProcessWizard } from './ProcessWizard';
 import type { ProcessResolution, ProjectTarget } from './InboxProcessDialog';
 import type { NamNode } from '../../domain/types';
 
@@ -53,8 +53,8 @@ export function InboxPanel({
   // and the Process-all deck are untouched.
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkTarget, setBulkTarget] = useState(''); // '' = default (Free actions / Top level)
-  const [pickerOpen, setPickerOpen] = useState(false);
+  const [bulkTarget, setBulkTarget] = useState(''); // '' = default, remembered across wizard runs
+  const [wizardOpen, setWizardOpen] = useState(false);
   const bulkCapable = Boolean(onBulkResolve);
 
   const toggle = (id: string) =>
@@ -68,16 +68,13 @@ export function InboxPanel({
     setSelectMode(false);
     setSelected(new Set());
     setBulkTarget('');
+    setWizardOpen(false);
   };
   const none = selected.size === 0;
-  const parentId = bulkTarget || undefined;
   const resolveSelected = (resolution: ProcessResolution) => {
     onBulkResolve?.([...selected], resolution);
     setSelected(new Set());
   };
-  const targetLabel = bulkTarget
-    ? (projectTargets.find((pt) => pt.id === bulkTarget)?.label ?? t('inbox.fallbackProject'))
-    : t('inbox.freeActionsTarget');
 
   function submit(event: FormEvent) {
     event.preventDefault();
@@ -134,39 +131,14 @@ export function InboxPanel({
         {selectMode && (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
             <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
-            {/* Destination first: the verbs below file into whatever this is set to. */}
-            <Tooltip label={t('inbox.fileIntoTooltip', { target: targetLabel })}>
-              <button
-                type="button"
-                onClick={() => setPickerOpen(true)}
-                className="max-w-[14rem] truncate rounded-md border border-input px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                {t('inbox.fileInto')} <span className="font-medium text-foreground">{targetLabel}</span> ▾
-              </button>
-            </Tooltip>
+            {/* One way to process: the shared wizard (#641) — destination, then status, then Done. */}
             <button
               type="button"
               disabled={none}
-              onClick={() => resolveSelected({ kind: 'action', status: 'NEXT', parentId })}
-              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+              onClick={() => setWizardOpen(true)}
+              className="rounded-md border border-input px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              → {t('domain.status.next')}
-            </button>
-            <button
-              type="button"
-              disabled={none}
-              onClick={() => resolveSelected({ kind: 'action', status: 'BACKLOG', parentId })}
-              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
-            >
-              → {t('domain.status.backlog')}
-            </button>
-            <button
-              type="button"
-              disabled={none}
-              onClick={() => resolveSelected({ kind: 'project', parentId })}
-              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
-            >
-              {t('inbox.makeProjects')}
+              {t('capture.process')}
             </button>
             {onBulkDelete && (
               <ConfirmButton
@@ -202,16 +174,19 @@ export function InboxPanel({
         )}
       </div>
 
-      {pickerOpen && (
-        <ProjectPickerDialog
-          open={pickerOpen}
-          onOpenChange={setPickerOpen}
-          title={t('inbox.fileUnderTitle')}
-          confirmLabel={t('common.choose')}
-          targets={[{ id: '', label: t('inbox.defaultTarget') }, ...projectTargets]}
-          initialSelectedId={bulkTarget}
-          onConfirm={setBulkTarget}
+      {wizardOpen && (
+        <ProcessWizard
+          count={selected.size}
+          projectTargets={projectTargets}
+          initialTargetId={bulkTarget}
           onCreateProject={onCreateProject}
+          onResolve={(resolution) => {
+            // Remember the destination for the next run (the wizard's own state is per-mount).
+            setBulkTarget(resolution.parentId ?? '');
+            resolveSelected(resolution);
+            setWizardOpen(false);
+          }}
+          onCancel={() => setWizardOpen(false)}
         />
       )}
 
