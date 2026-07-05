@@ -92,3 +92,35 @@ test.describe('without bookmarks', () => {
     await expect(page).toHaveURL(/\/projects\/vac$/);
   });
 });
+
+test.describe('reorder bookmarks (#636)', () => {
+  const seed = new DocBuilder().project('vac', 'Vacation').project('cab', 'Cabin').build();
+  seed.bookmarks = [
+    { id: 'bm1', label: 'Vacation', kind: 'project' as const, projectId: 'vac', color: '#3b82f6' },
+    { id: 'bm3', label: '#home', kind: 'tagFilter' as const, tags: ['home'], nextOnly: true, color: '#10b981' },
+    { id: 'bm2', label: 'Cabin', kind: 'project' as const, projectId: 'cab', color: '#ef4444' },
+  ];
+  test.use({ seedDoc: seed });
+
+  test('move up swaps within the kind, persists, and leaves other kinds in place', async ({ page, doc }) => {
+    await page.goto('/inbox');
+    await page.getByRole('button', { name: 'Project bookmarks' }).click();
+    const menu = page.getByRole('menu');
+
+    // Ends disabled within the kind-filtered menu; the menu stays open while fiddling.
+    await expect(menu.getByRole('button', { name: 'Move Vacation up' })).toBeDisabled();
+    await expect(menu.getByRole('button', { name: 'Move Cabin down' })).toBeDisabled();
+    await menu.getByRole('button', { name: 'Move Cabin up' }).click();
+    await expect(menu).toBeVisible();
+    await expect(menu.getByRole('button', { name: 'Move Cabin up' })).toBeDisabled(); // now first
+
+    // The stored order swapped the two project slots; the context bookmark kept its slot.
+    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual(['bm2', 'bm3', 'bm1']);
+
+    // The new order survives closing and reopening the menu.
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Project bookmarks' }).click();
+    const rows = page.getByRole('menu').getByRole('menuitem');
+    await expect(rows.first()).toHaveText(/Cabin/);
+  });
+});

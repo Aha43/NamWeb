@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Bookmarks can be reordered.** Move up/down chevrons on the rows of the Projects/Contexts bookmark menus (the menu stays open while you fiddle) and on the phone More-sheet list. Each menu reorders within its own kind; the other kind's positions are untouched. The order is stored in the workspace, so it follows you across devices. Closes #636.
+
 ## [0.8.0] - 2026-07-04
 
 The capture dialog grows up: it keeps the whole capture streak (no cap, list-only scrolling),

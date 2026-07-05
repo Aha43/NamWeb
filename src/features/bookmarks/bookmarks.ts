@@ -29,6 +29,29 @@ export function bookmarksOf(doc: WorkspaceDocument): Bookmark[] {
   return doc.bookmarks ?? [];
 }
 
+/**
+ * The full stored order after moving `id` one step among `visible` — the bookmarks a surface
+ * actually displays, which is a *subsequence* of the stored list (a kind-filtered menu, or the
+ * phone's mixed list). The two ids swap their slots in the stored order, so bookmarks the surface
+ * doesn't show keep their positions. Null when the move falls off the visible list's end (the
+ * caller disables that chevron). For the `reorderBookmarks` intent (#636).
+ */
+export function movedBookmarkOrder(
+  doc: WorkspaceDocument,
+  visible: Bookmark[],
+  id: string,
+  direction: 'up' | 'down',
+): string[] | null {
+  const k = visible.findIndex((b) => b.id === id);
+  const j = direction === 'up' ? k - 1 : k + 1;
+  if (k < 0 || j < 0 || j >= visible.length) return null;
+  const order = bookmarksOf(doc).map((b) => b.id);
+  const ki = order.indexOf(visible[k].id);
+  const ji = order.indexOf(visible[j].id);
+  [order[ki], order[ji]] = [order[ji], order[ki]];
+  return order;
+}
+
 /** Does this draft already exist (same kind + same target)? Returns the matching bookmark, if any. */
 export function findBookmark(bookmarks: Bookmark[], draft: BookmarkDraft): Bookmark | undefined {
   return bookmarks.find((b) => {

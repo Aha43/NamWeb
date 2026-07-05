@@ -93,6 +93,27 @@ describe('SidebarBookmarkMenu (#588)', () => {
     expect(navigate).toHaveBeenCalledWith('/projects/p1');
   });
 
+  it("move up/down reorders within the kind, leaving other kinds' slots untouched (#636)", () => {
+    const secondProjectBm: Bookmark = { id: 'b4', label: 'Cabin', kind: 'project', projectId: 'p1', color: '#3b82f6' };
+    const dispatch = vi.fn();
+    // Stored mixed order: [context b3, project b1, project b4] — the menu shows only b1, b4.
+    render(
+      <MemoryRouter>
+        <WorkspaceContext.Provider
+          value={{ document: doc([contextBm, projectBm, secondProjectBm]), dispatch } as unknown as UseWorkspace}
+        >
+          <SidebarBookmarkMenu kind="project" />
+        </WorkspaceContext.Provider>
+      </MemoryRouter>,
+    );
+    // Ends are disabled within the visible (kind-filtered) list.
+    expect(screen.getByRole('button', { name: 'Move Vacation up' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move Cabin down' })).toBeDisabled();
+    // Moving Cabin up swaps the two project slots; the context bookmark keeps its slot.
+    fireEvent.click(screen.getByRole('button', { name: 'Move Cabin up' }));
+    expect(dispatch).toHaveBeenCalledWith({ type: 'reorderBookmarks', order: ['b3', 'b4', 'b1'] });
+  });
+
   it('a context bookmark navigates with tags + nextOnly encoded', () => {
     renderMenu('tagFilter', [projectBm, contextBm]);
     fireEvent.click(screen.getByRole('menuitem', { name: '#home' }));
