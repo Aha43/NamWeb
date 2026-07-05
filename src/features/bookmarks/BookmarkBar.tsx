@@ -5,7 +5,8 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useSettings } from '@/components/settings/settings-context';
-import { bookmarksOf, bookmarkTarget, isBookmarkStale } from './bookmarks';
+import { ReorderControls } from '@/features/actions/ReorderControls';
+import { bookmarksOf, bookmarkTarget, isBookmarkStale, movedBookmarkOrder } from './bookmarks';
 
 /**
  * Saved bookmarks — each jumps to its target (a project or a tag filter). Two layouts:
@@ -39,13 +40,24 @@ export function BookmarkBar({
   // Reveal the remove control on hover, keyboard focus, OR any touch device (no hover to rely on).
   const removeVisibility = 'hidden group-hover:block group-focus-within:block [@media(hover:none)]:block';
 
+  // Reorder within the mixed list this surface shows (#636).
+  const move = (id: string, direction: 'up' | 'down') => {
+    const order = movedBookmarkOrder(document, bookmarks, id, direction);
+    if (order) dispatch({ type: 'reorderBookmarks', order });
+  };
+
   if (variant === 'list') {
     return (
       <div className="flex flex-col gap-1" aria-label={t('nav.bookmarks')} role="list">
-        {bookmarks.map((bookmark) => {
+        {bookmarks.map((bookmark, index) => {
           const stale = isBookmarkStale(document, bookmark);
           return (
             <div key={bookmark.id} role="listitem" className="flex items-center gap-1">
+              <ReorderControls
+                title={bookmark.label}
+                onUp={index > 0 ? () => move(bookmark.id, 'up') : undefined}
+                onDown={index < bookmarks.length - 1 ? () => move(bookmark.id, 'down') : undefined}
+              />
               <button
                 type="button"
                 aria-label={t('bookmarks.goToAria', { label: bookmark.label })}

@@ -13,7 +13,8 @@ import { cn } from '@/lib/utils';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { allOpenableProjects } from '@/domain/lenses';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
-import { bookmarkTarget, liveBookmarksOfKind } from './bookmarks';
+import { ReorderControls } from '@/features/actions/ReorderControls';
+import { bookmarkTarget, liveBookmarksOfKind, movedBookmarkOrder } from './bookmarks';
 import type { Bookmark } from '@/domain/types';
 
 /**
@@ -31,12 +32,17 @@ import type { Bookmark } from '@/domain/types';
 export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind']; className?: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { document } = useWorkspaceContext();
+  const { document, dispatch } = useWorkspaceContext();
   // The project id the "…" picker starts from; null = picker closed.
   const [browseFrom, setBrowseFrom] = useState<string | null>(null);
   const bookmarks = document ? liveBookmarksOfKind(document, kind) : [];
   if (!document || bookmarks.length === 0) return null;
   const aria = kind === 'project' ? t('bookmarks.projectMenuAria') : t('bookmarks.contextMenuAria');
+  // Reorder within this menu's visible (kind-filtered) list; unshown kinds keep their slots (#636).
+  const move = (id: string, direction: 'up' | 'down') => {
+    const order = movedBookmarkOrder(document, bookmarks, id, direction);
+    if (order) dispatch({ type: 'reorderBookmarks', order });
+  };
   return (
     <>
       <DropdownMenu>
@@ -46,8 +52,14 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
-          {bookmarks.map((bookmark) => (
+          {bookmarks.map((bookmark, index) => (
             <div key={bookmark.id} className="flex items-center">
+              {/* Plain buttons (not menu items): reordering keeps the menu open to keep fiddling. */}
+              <ReorderControls
+                title={bookmark.label}
+                onUp={index > 0 ? () => move(bookmark.id, 'up') : undefined}
+                onDown={index < bookmarks.length - 1 ? () => move(bookmark.id, 'down') : undefined}
+              />
               <DropdownMenuItem
                 className="min-w-0 flex-1"
                 onClick={() => navigate(bookmarkTarget(bookmark))}

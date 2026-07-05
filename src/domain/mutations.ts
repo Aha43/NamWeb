@@ -45,6 +45,7 @@ export type Intent =
   | { type: 'deleteMissionControl'; name: string }
   | { type: 'addBookmark'; bookmark: Bookmark }
   | { type: 'removeBookmark'; id: string }
+  | { type: 'reorderBookmarks'; order: string[] }
   | { type: 'reorderView'; view: string; order: string[] }
   | { type: 'reorderChildren'; parentId: string; order: string[] }
   | { type: 'saveAsTemplate'; name: string; nodeId: string }
@@ -254,6 +255,7 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'deleteTag' ||
     intent.type === 'addBookmark' ||
     intent.type === 'removeBookmark' ||
+    intent.type === 'reorderBookmarks' ||
     intent.type === 'restoreNodes'
   ) {
     return true; // operate on a document-level list, not a node
@@ -510,6 +512,19 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'removeBookmark': {
       next.bookmarks = (next.bookmarks ?? []).filter((b) => b.id !== intent.id);
+      return next;
+    }
+    case 'reorderBookmarks': {
+      // Persist a user-chosen bookmark order (#636): known ids in the given order, then anything
+      // the order doesn't mention (added on another device since) in their existing relative
+      // order — same tolerance as reorderView. Pure and replay-safe.
+      const existing = next.bookmarks ?? [];
+      const mentioned = new Set(intent.order);
+      const byId = new Map(existing.map((b) => [b.id, b]));
+      next.bookmarks = [
+        ...intent.order.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : [])),
+        ...existing.filter((b) => !mentioned.has(b.id)),
+      ];
       return next;
     }
     case 'reorderView': {

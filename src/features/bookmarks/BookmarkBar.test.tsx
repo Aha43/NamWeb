@@ -117,6 +117,17 @@ describe('BookmarkBar', () => {
     expect(screen.getByText('#home')).toBeInTheDocument();
   });
 
+  it('list variant reorders with move up/down, committing the full order (#636)', () => {
+    const tagBm: Bookmark = { id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' };
+    const workspace = ws([projectBm, tagBm]);
+    renderWithWs(<BookmarkBar variant="list" />, workspace);
+    // The first row can't move up, the last can't move down.
+    expect(screen.getByRole('button', { name: 'Move Vacation up' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move #home down' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Move #home up' }));
+    expect(workspace.dispatch).toHaveBeenCalledWith({ type: 'reorderBookmarks', order: ['b2', 'b1'] });
+  });
+
   it('list variant shows visible labels and navigates + fires onNavigate (phone)', () => {
     const onNavigate = vi.fn();
     const workspace = ws([{ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' }]);
