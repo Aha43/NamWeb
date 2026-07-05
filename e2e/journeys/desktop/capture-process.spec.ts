@@ -1,14 +1,14 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
 
-// #623 — the capture dialog as a processing station: a streak often lands in one domain and you
-// already know how to triage it — select rows, pick where + status, done. Same intents and toolbar
-// verbs as inbox bulk triage (#458); processed rows stay listed with a ✓-marker. Network-mocked.
+// #623/#635 — the capture dialog as a processing station, wizard-style: select just-captured rows,
+// hit Process…, pick a destination in the embedded Miller columns, Next → choose a status, Done.
+// Same intents as inbox bulk triage; processed rows stay listed with a ✓-marker. Network-mocked.
 test.use({
   seedDoc: new DocBuilder().project('home', 'Home').build(),
 });
 
-test('select just-captured items, file them under a project as Next', async ({ page, doc }) => {
+test('wizard: select captures, file them under a project as Next', async ({ page, doc }) => {
   await page.goto('/inbox');
   await page.getByRole('button', { name: 'Capture', exact: true }).click();
 
@@ -19,23 +19,27 @@ test('select just-captured items, file them under a project as Next', async ({ p
     await field.press('Enter');
   }
 
-  // Select the two Home-domain captures.
+  // Select the two Home-domain captures and start the wizard.
   await dialog.getByRole('button', { name: 'Select items' }).click();
   await dialog.getByRole('checkbox', { name: 'Select fix gutter' }).check();
   await dialog.getByRole('checkbox', { name: 'Select paint fence' }).check();
   await expect(dialog.getByText('2 selected')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Process…' }).click();
 
-  // Pick the destination in the nested column picker, then send them → Next.
-  await dialog.getByRole('button', { name: /File into/ }).click();
-  const picker = page.getByRole('dialog', { name: 'File selected items under…' });
-  await picker.getByRole('button', { name: 'Home', exact: true }).click();
-  await picker.getByRole('button', { name: 'Choose' }).click();
-  await expect(picker).not.toBeVisible();
-  await expect(dialog).toBeVisible(); // the capture dialog survived the nested picker
-  await dialog.getByRole('button', { name: '→ Next' }).click();
+  // Destination step: the Miller columns are embedded in the dialog — no nested popup.
+  await expect(dialog.getByText('File selected items under…')).toBeVisible();
+  await expect(page.getByRole('dialog', { name: 'File selected items under…' })).toHaveCount(0);
+  await dialog.getByRole('button', { name: 'Home', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Next', exact: true }).click();
 
-  // The document moved both under Home with status NEXT; the third capture is untouched inbox.
-  // (Poll for BOTH — the two conversions can land in separate sync pushes.)
+  // Status step: choose, then Done commits.
+  await expect(dialog.getByText('What should they become?')).toBeVisible();
+  await expect(dialog.getByText('2 selected → Home')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Done' })).toBeDisabled();
+  await dialog.getByRole('button', { name: 'Next', exact: true }).click(); // the status option
+  await dialog.getByRole('button', { name: 'Done' }).click();
+
+  // Both moved under Home as NEXT; the third capture is untouched inbox.
   await expect.poll(() => {
     const nodes = doc.current().nodes;
     const converted = ['fix gutter', 'paint fence'].map((t) =>
@@ -47,24 +51,15 @@ test('select just-captured items, file them under a project as Next', async ({ p
   const stray = Object.values(nodes).find((n) => n.title === 'unrelated thought')!;
   expect(nodes[doc.current().inboxNodeId].childIds).toContain(stray.id);
 
-  // Processed rows stay listed with the ✓ destination marker; the third stays selectable.
+  // The wizard folded away: list is back, processed rows marked, the third still selectable.
   const list = dialog.getByRole('list');
   await expect(list.getByRole('listitem')).toHaveCount(3);
   await expect(list.getByText('Next · Home').first()).toBeVisible();
   await expect(dialog.getByRole('checkbox', { name: 'Select fix gutter' })).toHaveCount(0);
   await expect(dialog.getByRole('checkbox', { name: 'Select unrelated thought' })).toBeVisible();
-
-  // The leftover goes to Backlog — the destination chip persists (still Home), like inbox triage.
-  await dialog.getByRole('checkbox', { name: 'Select unrelated thought' }).check();
-  await dialog.getByRole('button', { name: '→ Backlog' }).click();
-  await expect.poll(() => {
-    const n = Object.values(doc.current().nodes).find((x) => x.title === 'unrelated thought');
-    return n?.status;
-  }).toBe('BACKLOG');
-  await expect(list.getByText('Backlog · Home')).toBeVisible();
 });
 
-test('Make projects and bulk delete with grouped undo, from the capture list', async ({ page, doc }) => {
+test('wizard: Back and Cancel navigate without committing; Make projects and bulk delete still work', async ({ page, doc }) => {
   await page.goto('/inbox');
   await page.getByRole('button', { name: 'Capture', exact: true }).click();
 
@@ -76,16 +71,27 @@ test('Make projects and bulk delete with grouped undo, from the capture list', a
   }
   await dialog.getByRole('button', { name: 'Select items' }).click();
 
-  // One becomes a project…
+  // Wizard navigation: in, forward, Back, Cancel — nothing committed, selection intact.
   await dialog.getByRole('checkbox', { name: 'Select big initiative' }).check();
+  await dialog.getByRole('button', { name: 'Process…' }).click();
+  await dialog.getByRole('button', { name: 'Next', exact: true }).click(); // default destination preselected
+  await dialog.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(dialog.getByText('File selected items under…')).toBeVisible();
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog.getByText('1 selected')).toBeVisible();
+
+  // Make it a project via the wizard (default destination = top level).
+  await dialog.getByRole('button', { name: 'Process…' }).click();
+  await dialog.getByRole('button', { name: 'Next', exact: true }).click();
   await dialog.getByRole('button', { name: 'Make projects' }).click();
+  await dialog.getByRole('button', { name: 'Done' }).click();
   await expect.poll(() => {
     const n = Object.values(doc.current().nodes).find((x) => x.title === 'big initiative');
     return n?.project;
   }).toBe(true);
   await expect(dialog.getByText('Project', { exact: true })).toBeVisible();
 
-  // …the noise gets bulk-deleted (confirm), then one grouped Undo brings it back.
+  // Bulk delete (still on the select bar) with one grouped Undo; toast click keeps the dialog open.
   await dialog.getByRole('button', { name: 'Select all' }).click();
   await expect(dialog.getByText('2 selected')).toBeVisible(); // the processed row is not selectable
   await dialog.getByRole('button', { name: 'Delete selected items' }).click();
@@ -93,7 +99,7 @@ test('Make projects and bulk delete with grouped undo, from the capture list', a
   await page.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(dialog.getByRole('list').getByText('noise 1')).toHaveCount(0);
   await page.locator('[role="status"] button', { hasText: 'Undo' }).click();
-  await expect(dialog).toBeVisible(); // toast click doesn't close the capture dialog
+  await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('list').getByText('noise 1')).toBeVisible();
   await expect(dialog.getByRole('list').getByText('noise 2')).toBeVisible();
 });
