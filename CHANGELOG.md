@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-05
+
+One processing model, bookmarks grown up. The wizard born in the capture dialog becomes *the* way
+to process everywhere — the inbox's old verb toolbar (which the capture dialog once copied)
+retires, and the Finder-style destination columns embed wherever you triage. Bookmarks graduate
+from a static strip to a real system: reorder them, see and remove dead ones right in the menus,
+one menu look everywhere — with a settings-and-dead-code cleanup riding along. A Codex pre-release
+review hardened two edge cases before the cut.
+
 ### Added
 
 - **See and remove bookmarks right in the menus.** The Projects/Contexts bookmark menus now show stale bookmarks greyed (project gone) instead of hiding them, and every row — live or stale — has a remove ✕ that works without closing the menu. Desktop no longer needs the phone list (or the bookmarked page itself) to clean up. Closes #594.
@@ -1238,7 +1247,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/Aha43/NamWeb/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Aha43/NamWeb/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/Aha43/NamWeb/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Aha43/NamWeb/compare/v0.5.0...v0.6.0
