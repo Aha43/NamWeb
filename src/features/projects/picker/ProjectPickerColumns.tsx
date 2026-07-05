@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { Bookmark as BookmarkIcon, ChevronDown, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { isTypingTarget } from '@/shell/useGlobalShortcuts';
@@ -150,22 +157,34 @@ export function ProjectPickerColumns({
   return (
     <div className="flex min-h-0 flex-col">
       {projectBookmarks.length > 0 && (
-        <div
-          aria-label={t('nav.bookmarks')}
-          className="flex items-center gap-1.5 overflow-x-auto border-b border-border px-3 py-2"
-        >
-          {projectBookmarks.map((b) => (
-            <button
-              key={b.id}
-              type="button"
-              aria-label={t('picker.jumpToBookmark', { label: b.label })}
-              onClick={() => jumpTo(b.projectId!)}
-              className="flex shrink-0 items-center gap-1.5 rounded-full border border-input px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent"
-            >
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: b.color }} />
-              <span className="max-w-[10rem] truncate">{b.label}</span>
-            </button>
-          ))}
+        // Bookmarks as a menu (#642), matching the command-bar menus — jump-only here (you're
+        // mid-navigation; managing lives in the command-bar menus, stale ones filtered out).
+        <div className="border-b border-border px-2 py-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button type="button" variant="ghost" size="sm" className="gap-1 text-muted-foreground">
+                <BookmarkIcon className="h-3.5 w-3.5" />
+                {t('nav.bookmarks')}
+                <ChevronDown className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              {projectBookmarks.map((b) => (
+                <DropdownMenuItem
+                  key={b.id}
+                  aria-label={t('picker.jumpToBookmark', { label: b.label })}
+                  onClick={() => jumpTo(b.projectId!)}
+                >
+                  <span
+                    aria-hidden
+                    className="mr-2 h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: b.color }}
+                  />
+                  <span className="max-w-[14rem] truncate">{b.label}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
       <div ref={columnsRef} className={cn('flex h-72 overflow-x-auto', columnsClassName)}>

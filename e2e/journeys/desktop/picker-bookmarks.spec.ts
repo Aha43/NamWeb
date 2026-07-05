@@ -1,8 +1,8 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
 
-// #553 — the project picker shows project-bookmark chips; clicking one jumps the columns straight to
-// that (deep) project so you can drill further or confirm. Network-mocked.
+// #553/#642 — the project picker offers bookmarks in a menu; picking one jumps the columns straight
+// to that (deep) project so you can drill further or confirm. Network-mocked.
 const seed = new DocBuilder()
   .project('home', 'Home Reno')
   .project('bath', 'Bathroom', { under: 'home' })
@@ -25,8 +25,10 @@ test('a bookmark chip jumps the picker straight to a deep project', async ({ pag
   const picker = page.getByRole('dialog', { name: /Move "Buy tiles" to/ });
   await expect(picker).toBeVisible();
 
-  // One click on the bookmark chip navigates to Plumbing (3 levels deep) — no column-by-column drill.
-  await picker.getByRole('button', { name: 'Jump to Plumbing' }).click();
+  // Bookmarks live behind a menu now (#642): open it, one click jumps to Plumbing (3 levels
+  // deep) — no column-by-column drill.
+  await picker.getByRole('button', { name: 'Bookmarks' }).click();
+  await page.getByRole('menuitem', { name: 'Jump to Plumbing' }).click();
 
   // The jump selected Plumbing (a valid target), so "Move here" is enabled — confirming lands the move.
   const moveHere = picker.getByRole('button', { name: 'Move here' });

@@ -16,6 +16,7 @@ minor = features (breaking changes allowed), patch = fixes.
 ### Changed
 
 - **Inbox bulk triage uses the processing wizard too.** The select bar's "File into ▾" chip, verb buttons, and popup picker are replaced by the same **Process…** wizard as the capture dialog (now one shared component): destination — with the Finder-style columns embedded right on the page and "New project here" — then status, then **Done**. One processing model everywhere. Closes #641.
+- **The project picker's bookmarks are a menu now.** The chip strip above the columns is replaced by a compact **Bookmarks ▾** menu with the same rows as the command-bar bookmark menus (color dot + label) — pick one and the columns jump straight to that project. Jump-only here; managing bookmarks stays in the command-bar menus. Closes #642.
 - **One less setting: "Bookmark appearance" is gone.** After the shell redesign it only styled the project picker's bookmark chips — those now always show their labels (reading beats hovering when you're browsing). The long-unused desktop toolbar bookmark strip was pruned from the code along the way. Closes #593.
 - **Capture processing is now a wizard.** Instead of the inbox-style verb toolbar, select rows and hit **Process…**: the project selector appears right inside the dialog (the Finder-style columns; a native dropdown on phone), **Next** moves to the status choice (Next / Backlog / Make projects), and **Done** commits. Back/Cancel navigate without committing. Selection, Select all/Clear, and Delete-with-undo are unchanged. Closes #635.
 
