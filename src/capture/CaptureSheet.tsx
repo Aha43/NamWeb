@@ -6,10 +6,9 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
-import { Button } from '@/components/ui/button';
 import { InlineRename } from '@/features/actions/InlineRename';
 import { useDeleteNode, useDeleteNodes } from '@/features/actions/useDeleteNode';
-import { ProjectPickerColumns } from '@/features/projects/picker/ProjectPickerColumns';
+import { ProcessWizard } from '@/features/inbox/ProcessWizard';
 import type { ProcessResolution, ProjectTarget } from '@/features/inbox/InboxProcessDialog';
 import { archivedProjectIds, projectPath } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
@@ -88,11 +87,8 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkTarget, setBulkTarget] = useState(''); // '' = default (Free actions / Top level)
-  // The processing wizard (#635): Process… → destination step → status step → Done.
-  const [wizardStep, setWizardStep] = useState<'destination' | 'status' | null>(null);
-  const [wizardChoice, setWizardChoice] = useState<'NEXT' | 'BACKLOG' | 'PROJECT' | null>(null);
-  // The embedded columns' current confirmable destination (desktop; phone's select always is).
-  const [wizardConfirmable, setWizardConfirmable] = useState<string | null>(null);
+  // The processing wizard (#635, shared ProcessWizard since #641); mounted fresh per run.
+  const [wizardOpen, setWizardOpen] = useState(false);
   // Where each processed id went (session-only marker text, e.g. "Next · Home › Garage").
   const [processed, setProcessed] = useState<Map<string, string>>(new Map());
   // Remembered dialog size (#626); null = the default (max-w-lg, content height).
@@ -162,9 +158,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
       setSelectMode(false);
       setSelected(new Set());
       setBulkTarget('');
-      setWizardStep(null);
-      setWizardChoice(null);
-      setWizardConfirmable(null);
+      setWizardOpen(false);
       setProcessed(new Map());
     }
   }, [open]);
@@ -225,21 +219,13 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
       else next.add(id);
       return next;
     });
-  const exitWizard = () => {
-    setWizardStep(null);
-    setWizardChoice(null);
-    setWizardConfirmable(null);
-  };
   const exitSelect = () => {
     setSelectMode(false);
     setSelected(new Set());
     setBulkTarget('');
-    exitWizard();
+    setWizardOpen(false);
   };
   const none = selected.size === 0;
-  const targetLabel = bulkTarget
-    ? (projectTargets.find((pt) => pt.id === bulkTarget)?.label ?? t('inbox.fallbackProject'))
-    : t('inbox.freeActionsTarget');
 
   // Apply one shared resolution to the selected captures — the same intents as inbox bulk triage
   // (they move the item out of the inbox and set status; no per-item undo, matching inbox #458).
@@ -278,19 +264,6 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     }
     setSelected(new Set());
   }
-
-  // The wizard's Done: commit the chosen kind/status at the chosen destination, then fold the
-  // wizard away (back to the list, markers visible).
-  const finishWizard = () => {
-    if (wizardChoice === null) return;
-    const parentId = bulkTarget || undefined;
-    resolveSelected(
-      wizardChoice === 'PROJECT'
-        ? { kind: 'project', parentId }
-        : { kind: 'action', status: wizardChoice, parentId },
-    );
-    exitWizard();
-  };
 
   // No Add button (#626): Enter (or the phone keyboard's Go) submits — a visible button is dead
   // weight and teaches the slow path. A single-input form implicitly submits on Enter.
@@ -331,14 +304,14 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           </Tooltip>
         </div>
 
-        {selectMode && wizardStep === null && (
+        {selectMode && !wizardOpen && (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
             <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
             {/* One way to process: the wizard (#635) — destination step, then status, then Done. */}
             <button
               type="button"
               disabled={none}
-              onClick={() => setWizardStep('destination')}
+              onClick={() => setWizardOpen(true)}
               className="rounded-md border border-input px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
               {t('capture.process')}
@@ -374,104 +347,26 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           </div>
         )}
 
-        {wizardStep === 'destination' && (
-          <div className="flex min-h-0 flex-col rounded-md border border-border">
-            <p className="border-b border-border px-3 py-2 text-sm font-medium">{t('inbox.fileUnderTitle')}</p>
-            {isDesktop ? (
-              // Mounted fresh per wizard entry, so its navigation initializes then (the #607 class).
-              <ProjectPickerColumns
-                targets={[{ id: '', label: t('inbox.defaultTarget') }, ...projectTargets]}
-                initialSelectedId={bulkTarget}
-                onSelectionChange={setWizardConfirmable}
-                onPick={(id) => {
-                  setBulkTarget(id);
-                  setWizardStep('status');
-                }}
-                onCreateProject={createProject}
-                columnsClassName="h-56"
-              />
-            ) : (
-              <label className="flex flex-col gap-1 px-3 py-2 text-sm">
-                <span className="text-muted-foreground">{t('inbox.fileUnder')}</span>
-                <select
-                  aria-label={t('inbox.fileUnder')}
-                  value={bulkTarget}
-                  onChange={(e) => setBulkTarget(e.target.value)}
-                  className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
-                >
-                  <option value="">{t('inbox.defaultTarget')}</option>
-                  {projectTargets.map((target) => (
-                    <option key={target.id} value={target.id}>
-                      {target.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <div className="flex justify-end gap-2 border-t border-border px-3 py-2">
-              <Button type="button" variant="ghost" size="sm" onClick={exitWizard}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                disabled={isDesktop && wizardConfirmable === null}
-                onClick={() => {
-                  if (isDesktop && wizardConfirmable !== null) setBulkTarget(wizardConfirmable);
-                  setWizardStep('status');
-                }}
-              >
-                {t('common.next')}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {wizardStep === 'status' && (
-          <div className="flex min-h-0 flex-col gap-2 rounded-md border border-border p-3">
-            <p className="text-sm font-medium">{t('capture.statusStepTitle')}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {t('actions.selectedCount', { count: selected.size })} → {targetLabel}
-            </p>
-            <div className="flex flex-col gap-1.5" role="group" aria-label={t('capture.statusStepTitle')}>
-              {(
-                [
-                  ['NEXT', t('domain.status.next')],
-                  ['BACKLOG', t('domain.status.backlog')],
-                  ['PROJECT', t('inbox.makeProjects')],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={wizardChoice === value}
-                  onClick={() => setWizardChoice(value)}
-                  className={cn(
-                    'rounded-md border px-3 py-1.5 text-left text-sm transition-colors',
-                    wizardChoice === value
-                      ? 'border-primary bg-accent font-medium text-foreground'
-                      : 'border-input text-muted-foreground hover:bg-accent hover:text-foreground',
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="mt-1 flex justify-end gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={() => setWizardStep('destination')}>
-                {t('common.back')}
-              </Button>
-              <Button type="button" size="sm" disabled={wizardChoice === null} onClick={finishWizard}>
-                {t('common.done')}
-              </Button>
-            </div>
-          </div>
+        {wizardOpen && (
+          <ProcessWizard
+            count={selected.size}
+            projectTargets={projectTargets}
+            initialTargetId={bulkTarget}
+            onCreateProject={createProject}
+            onResolve={(resolution) => {
+              // Remember the destination for the next run (the wizard's own state is per-mount).
+              setBulkTarget(resolution.parentId ?? '');
+              resolveSelected(resolution);
+              setWizardOpen(false);
+            }}
+            onCancel={() => setWizardOpen(false)}
+          />
         )}
 
         <ul
           className={cn(
             'min-h-0 divide-y divide-border overflow-y-auto rounded-md border border-border',
-            wizardStep !== null && 'hidden', // the wizard step takes the list's place
+            wizardOpen && 'hidden', // the wizard takes the list's place
           )}
         >
           {recentNodes.map((node) => {
