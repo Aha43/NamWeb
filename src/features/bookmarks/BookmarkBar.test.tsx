@@ -2,7 +2,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { WorkspaceContext } from '@/store/workspace-context';
-import { SettingsContext, type SettingsContextValue, type BookmarkStyle } from '@/components/settings/settings-context';
 import type { UseWorkspace } from '@/store/useWorkspace';
 import { createDefaultWorkspace } from '@/domain/createWorkspace';
 import type { Bookmark, WorkspaceDocument } from '@/domain/types';
@@ -50,23 +49,6 @@ function Path() {
   return <>{useLocation().pathname + useLocation().search}</>;
 }
 
-function settings(bookmarkStyle: BookmarkStyle): SettingsContextValue {
-  return {
-    dateFormat: 'medium',
-    setDateFormat: vi.fn(),
-    language: 'en',
-    setLanguage: vi.fn(),
-    bookmarkStyle,
-    setBookmarkStyle: vi.fn(),
-    dense: false,
-    setDense: vi.fn(),
-    addToBottom: false,
-    setAddToBottom: vi.fn(),
-    addToBottomDefault: false,
-    setAddToBottomDefault: vi.fn(),
-  };
-}
-
 const projectBm: Bookmark = { id: 'b1', label: 'Vacation', kind: 'project', projectId: 'p1', color: '#3b82f6' };
 
 describe('BookmarkBar', () => {
@@ -96,31 +78,10 @@ describe('BookmarkBar', () => {
     expect(button).toBeDisabled();
   });
 
-  it('bar variant hides labels by default (icons mode)', () => {
-    const workspace = ws([{ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' }]);
-    renderWithWs(<BookmarkBar />, workspace); // no SettingsProvider → fallback 'icons'
-    expect(screen.queryByText('#home')).toBeNull(); // name is in the tooltip, not visible text
-    expect(screen.getByRole('button', { name: 'Go to bookmark: #home' })).toBeInTheDocument();
-  });
-
-  it('bar variant shows visible labels when the setting is "labels" (#560)', () => {
-    const workspace = ws([{ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' }]);
-    render(
-      <SettingsContext.Provider value={settings('labels')}>
-        <WorkspaceContext.Provider value={workspace}>
-          <MemoryRouter>
-            <BookmarkBar />
-          </MemoryRouter>
-        </WorkspaceContext.Provider>
-      </SettingsContext.Provider>,
-    );
-    expect(screen.getByText('#home')).toBeInTheDocument();
-  });
-
-  it('list variant reorders with move up/down, committing the full order (#636)', () => {
+  it('reorders with move up/down, committing the full order (#636)', () => {
     const tagBm: Bookmark = { id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' };
     const workspace = ws([projectBm, tagBm]);
-    renderWithWs(<BookmarkBar variant="list" />, workspace);
+    renderWithWs(<BookmarkBar />, workspace);
     // The first row can't move up, the last can't move down.
     expect(screen.getByRole('button', { name: 'Move Vacation up' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Move #home down' })).toBeDisabled();
@@ -128,10 +89,10 @@ describe('BookmarkBar', () => {
     expect(workspace.dispatch).toHaveBeenCalledWith({ type: 'reorderBookmarks', order: ['b2', 'b1'] });
   });
 
-  it('list variant shows visible labels and navigates + fires onNavigate (phone)', () => {
+  it('shows visible labels and navigates + fires onNavigate (phone)', () => {
     const onNavigate = vi.fn();
     const workspace = ws([{ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' }]);
-    renderWithWs(<BookmarkBar variant="list" onNavigate={onNavigate} />, workspace);
+    renderWithWs(<BookmarkBar onNavigate={onNavigate} />, workspace);
     // The label is visible text (not just a tooltip) for touch.
     expect(screen.getByText('#home')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Go to bookmark: #home' }));

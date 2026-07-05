@@ -3,13 +3,10 @@ import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
 import { activateLocale, detectInitialLocale, type Locale } from '@/lib/i18n';
 import {
   ADD_TO_BOTTOM_STORAGE_KEY,
-  BOOKMARK_STYLE_STORAGE_KEY,
   DATE_FORMAT_STORAGE_KEY,
-  DEFAULT_BOOKMARK_STYLE,
   DENSE_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   SettingsContext,
-  type BookmarkStyle,
 } from './settings-context';
 
 const DATE_FORMATS: DateFormat[] = ['medium', 'iso', 'dmy', 'mdy'];
@@ -40,22 +37,11 @@ function initialDense(): boolean {
   }
 }
 
-function initialBookmarkStyle(): BookmarkStyle {
-  try {
-    const stored = localStorage.getItem(BOOKMARK_STYLE_STORAGE_KEY);
-    if (stored === 'icons' || stored === 'labels') return stored;
-  } catch {
-    // localStorage unavailable — fall back to the default.
-  }
-  return DEFAULT_BOOKMARK_STYLE;
-}
-
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
   // The i18n runtime already initialized with this detected locale (first paint is translated,
   // #579); this state just mirrors it for the Settings UI and drives later changes.
   const [language, setLanguage] = useState<Locale>(detectInitialLocale);
-  const [bookmarkStyle, setBookmarkStyle] = useState<BookmarkStyle>(initialBookmarkStyle);
   const [dense, setDense] = useState<boolean>(initialDense);
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
@@ -87,14 +73,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [dense]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(BOOKMARK_STYLE_STORAGE_KEY, bookmarkStyle);
-    } catch {
-      // best-effort persistence
-    }
-  }, [bookmarkStyle]);
-
   // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
   useEffect(() => {
     try {
@@ -117,8 +95,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setDateFormat,
         language,
         setLanguage,
-        bookmarkStyle,
-        setBookmarkStyle,
         dense,
         setDense,
         addToBottom,

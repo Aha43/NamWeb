@@ -17,7 +17,7 @@ import { supabase } from '@/lib/supabase';
 import { buildUserExport, downloadJson } from '@/lib/exportData';
 import { validateNewPassword } from '@/lib/password';
 import { formatDate, type DateFormat } from '@/lib/dates';
-import { useSettings, type BookmarkStyle } from '@/components/settings/settings-context';
+import { useSettings } from '@/components/settings/settings-context';
 import { useTranslation } from 'react-i18next';
 import { LOCALES, type Locale } from '@/lib/i18n';
 
@@ -354,8 +354,6 @@ function PreferencesTab() {
     setDateFormat,
     language,
     setLanguage,
-    bookmarkStyle,
-    setBookmarkStyle,
     dense,
     setDense,
     addToBottomDefault,
@@ -400,19 +398,6 @@ function PreferencesTab() {
         </p>
       </div>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="settings-bookmark-style">{t('settings.bookmarkStyle')}</Label>
-        <select
-          id="settings-bookmark-style"
-          value={bookmarkStyle}
-          onChange={(e) => setBookmarkStyle(e.target.value as BookmarkStyle)}
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
-        >
-          <option value="icons">{t('settings.bookmarkStyleIcons')}</option>
-          <option value="labels">{t('settings.bookmarkStyleLabels')}</option>
-        </select>
-        <p className="text-xs text-muted-foreground">{t('settings.bookmarkStyleHelp')}</p>
-      </div>
 
       <div className="space-y-1.5">
         <label className="flex items-start gap-2 text-sm text-foreground">
