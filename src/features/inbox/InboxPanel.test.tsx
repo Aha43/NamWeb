@@ -74,8 +74,15 @@ describe('InboxPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Select items' }));
     fireEvent.click(screen.getByRole('button', { name: 'Select all' }));
     expect(screen.getByText('2 selected')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: '→ Next' }));
+    // The wizard (#641): Process… → Next (default destination preselected) → choose → Done.
+    fireEvent.click(screen.getByRole('button', { name: 'Process…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' })); // destination step footer
+    fireEvent.click(screen.getByRole('button', { name: 'Next' })); // the status option (footer has Back/Done)
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(onBulkResolve).toHaveBeenCalledWith(['a', 'b'], { kind: 'action', status: 'NEXT', parentId: undefined });
+    // The wizard folded away; the selection was cleared.
+    expect(screen.queryByRole('button', { name: 'Done' })).not.toBeInTheDocument();
+    expect(screen.getByText('0 selected')).toBeInTheDocument();
   });
 
   it('hides the select toggle when bulk is not supported', () => {
