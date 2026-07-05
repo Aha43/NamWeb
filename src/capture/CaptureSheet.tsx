@@ -6,9 +6,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { InlineRename } from '@/features/actions/InlineRename';
 import { useDeleteNode, useDeleteNodes } from '@/features/actions/useDeleteNode';
-import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
+import { ProjectPickerColumns } from '@/features/projects/picker/ProjectPickerColumns';
 import type { ProcessResolution, ProjectTarget } from '@/features/inbox/InboxProcessDialog';
 import { archivedProjectIds, projectPath } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
@@ -66,10 +67,11 @@ function readSize(): CaptureSize | null {
  * the dialog closes — but titles render live from the document, so an edit renames the real inbox
  * item and a row drops off if that item is deleted elsewhere.
  *
- * The list is also a **processing station** (#623): when a streak lands in one domain you often
- * already know how to triage it — select rows and file them somewhere with a status, exactly like
- * inbox bulk triage (same intents, same toolbar verbs), without the roundtrip through the inbox.
- * Processed rows stay listed with a ✓-marker as confirmation of where they went.
+ * The list is also a **processing station** (#623, wizard-style since #635): when a streak lands
+ * in one domain you often already know how to triage it — select rows, hit **Process…**, choose a
+ * destination (the Miller columns embedded right in the dialog; a native select on phone), then a
+ * status, and **Done** commits via the same intents as inbox bulk triage — no roundtrip through
+ * the inbox. Processed rows stay listed with a ✓-marker as confirmation of where they went.
  */
 export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { t } = useTranslation();
@@ -82,11 +84,15 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   // Ids captured during this open; newest first. Cleared when the dialog closes (non-persisted).
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
-  // Bulk processing (#623) — mirrors InboxPanel's select mode (#458).
+  // Bulk processing (#623) — selection mirrors InboxPanel's select mode (#458).
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkTarget, setBulkTarget] = useState(''); // '' = default (Free actions / Top level)
-  const [pickerOpen, setPickerOpen] = useState(false);
+  // The processing wizard (#635): Process… → destination step → status step → Done.
+  const [wizardStep, setWizardStep] = useState<'destination' | 'status' | null>(null);
+  const [wizardChoice, setWizardChoice] = useState<'NEXT' | 'BACKLOG' | 'PROJECT' | null>(null);
+  // The embedded columns' current confirmable destination (desktop; phone's select always is).
+  const [wizardConfirmable, setWizardConfirmable] = useState<string | null>(null);
   // Where each processed id went (session-only marker text, e.g. "Next · Home › Garage").
   const [processed, setProcessed] = useState<Map<string, string>>(new Map());
   // Remembered dialog size (#626); null = the default (max-w-lg, content height).
@@ -156,7 +162,9 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
       setSelectMode(false);
       setSelected(new Set());
       setBulkTarget('');
-      setPickerOpen(false);
+      setWizardStep(null);
+      setWizardChoice(null);
+      setWizardConfirmable(null);
       setProcessed(new Map());
     }
   }, [open]);
@@ -217,13 +225,18 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
       else next.add(id);
       return next;
     });
+  const exitWizard = () => {
+    setWizardStep(null);
+    setWizardChoice(null);
+    setWizardConfirmable(null);
+  };
   const exitSelect = () => {
     setSelectMode(false);
     setSelected(new Set());
     setBulkTarget('');
+    exitWizard();
   };
   const none = selected.size === 0;
-  const parentId = bulkTarget || undefined;
   const targetLabel = bulkTarget
     ? (projectTargets.find((pt) => pt.id === bulkTarget)?.label ?? t('inbox.fallbackProject'))
     : t('inbox.freeActionsTarget');
@@ -266,6 +279,19 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     setSelected(new Set());
   }
 
+  // The wizard's Done: commit the chosen kind/status at the chosen destination, then fold the
+  // wizard away (back to the list, markers visible).
+  const finishWizard = () => {
+    if (wizardChoice === null) return;
+    const parentId = bulkTarget || undefined;
+    resolveSelected(
+      wizardChoice === 'PROJECT'
+        ? { kind: 'project', parentId }
+        : { kind: 'action', status: wizardChoice, parentId },
+    );
+    exitWizard();
+  };
+
   // No Add button (#626): Enter (or the phone keyboard's Go) submits — a visible button is dead
   // weight and teaches the slow path. A single-input form implicitly submits on Enter.
   const form = (
@@ -305,42 +331,17 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           </Tooltip>
         </div>
 
-        {selectMode && (
+        {selectMode && wizardStep === null && (
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
             <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
-            {/* Destination first: the verbs below file into whatever this is set to. */}
-            <Tooltip label={t('inbox.fileIntoTooltip', { target: targetLabel })}>
-              <button
-                type="button"
-                onClick={() => setPickerOpen(true)}
-                className="max-w-[14rem] truncate rounded-md border border-input px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-              >
-                {t('inbox.fileInto')} <span className="font-medium text-foreground">{targetLabel}</span> ▾
-              </button>
-            </Tooltip>
+            {/* One way to process: the wizard (#635) — destination step, then status, then Done. */}
             <button
               type="button"
               disabled={none}
-              onClick={() => resolveSelected({ kind: 'action', status: 'NEXT', parentId })}
-              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+              onClick={() => setWizardStep('destination')}
+              className="rounded-md border border-input px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
             >
-              → {t('domain.status.next')}
-            </button>
-            <button
-              type="button"
-              disabled={none}
-              onClick={() => resolveSelected({ kind: 'action', status: 'BACKLOG', parentId })}
-              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
-            >
-              → {t('domain.status.backlog')}
-            </button>
-            <button
-              type="button"
-              disabled={none}
-              onClick={() => resolveSelected({ kind: 'project', parentId })}
-              className="rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
-            >
-              {t('inbox.makeProjects')}
+              {t('capture.process')}
             </button>
             <ConfirmButton
               aria-label={t('inbox.deleteSelectedAria')}
@@ -373,7 +374,106 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           </div>
         )}
 
-        <ul className="min-h-0 divide-y divide-border overflow-y-auto rounded-md border border-border">
+        {wizardStep === 'destination' && (
+          <div className="flex min-h-0 flex-col rounded-md border border-border">
+            <p className="border-b border-border px-3 py-2 text-sm font-medium">{t('inbox.fileUnderTitle')}</p>
+            {isDesktop ? (
+              // Mounted fresh per wizard entry, so its navigation initializes then (the #607 class).
+              <ProjectPickerColumns
+                targets={[{ id: '', label: t('inbox.defaultTarget') }, ...projectTargets]}
+                initialSelectedId={bulkTarget}
+                onSelectionChange={setWizardConfirmable}
+                onPick={(id) => {
+                  setBulkTarget(id);
+                  setWizardStep('status');
+                }}
+                onCreateProject={createProject}
+                columnsClassName="h-56"
+              />
+            ) : (
+              <label className="flex flex-col gap-1 px-3 py-2 text-sm">
+                <span className="text-muted-foreground">{t('inbox.fileUnder')}</span>
+                <select
+                  aria-label={t('inbox.fileUnder')}
+                  value={bulkTarget}
+                  onChange={(e) => setBulkTarget(e.target.value)}
+                  className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
+                >
+                  <option value="">{t('inbox.defaultTarget')}</option>
+                  {projectTargets.map((target) => (
+                    <option key={target.id} value={target.id}>
+                      {target.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className="flex justify-end gap-2 border-t border-border px-3 py-2">
+              <Button type="button" variant="ghost" size="sm" onClick={exitWizard}>
+                {t('common.cancel')}
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isDesktop && wizardConfirmable === null}
+                onClick={() => {
+                  if (isDesktop && wizardConfirmable !== null) setBulkTarget(wizardConfirmable);
+                  setWizardStep('status');
+                }}
+              >
+                {t('common.next')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {wizardStep === 'status' && (
+          <div className="flex min-h-0 flex-col gap-2 rounded-md border border-border p-3">
+            <p className="text-sm font-medium">{t('capture.statusStepTitle')}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {t('actions.selectedCount', { count: selected.size })} → {targetLabel}
+            </p>
+            <div className="flex flex-col gap-1.5" role="group" aria-label={t('capture.statusStepTitle')}>
+              {(
+                [
+                  ['NEXT', t('domain.status.next')],
+                  ['BACKLOG', t('domain.status.backlog')],
+                  ['PROJECT', t('inbox.makeProjects')],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={wizardChoice === value}
+                  onClick={() => setWizardChoice(value)}
+                  className={cn(
+                    'rounded-md border px-3 py-1.5 text-left text-sm transition-colors',
+                    wizardChoice === value
+                      ? 'border-primary bg-accent font-medium text-foreground'
+                      : 'border-input text-muted-foreground hover:bg-accent hover:text-foreground',
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-1 flex justify-end gap-2">
+              <Button type="button" variant="ghost" size="sm" onClick={() => setWizardStep('destination')}>
+                {t('common.back')}
+              </Button>
+              <Button type="button" size="sm" disabled={wizardChoice === null} onClick={finishWizard}>
+                {t('common.done')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        <ul
+          className={cn(
+            'min-h-0 divide-y divide-border overflow-y-auto rounded-md border border-border',
+            wizardStep !== null && 'hidden', // the wizard step takes the list's place
+          )}
+        >
           {recentNodes.map((node) => {
             const marker = processed.get(node.id);
             return (
@@ -441,19 +541,6 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
       </div>
     ) : null;
 
-  const picker = pickerOpen && (
-    <ProjectPickerDialog
-      open={pickerOpen}
-      onOpenChange={setPickerOpen}
-      title={t('inbox.fileUnderTitle')}
-      confirmLabel={t('common.choose')}
-      targets={[{ id: '', label: t('inbox.defaultTarget') }, ...projectTargets]}
-      initialSelectedId={bulkTarget}
-      onConfirm={setBulkTarget}
-      onCreateProject={createProject}
-    />
-  );
-
   const description = t('capture.description');
 
   if (isDesktop) {
@@ -475,7 +562,6 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           </DialogHeader>
           {form}
           {recentList}
-          {picker}
           {/* Corner resize handle (#626): drag (or arrow keys) to size the dialog; remembered. */}
           <div
             role="separator"
@@ -506,7 +592,6 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
         </SheetHeader>
         {form}
         {recentList}
-        {picker}
       </SheetContent>
     </Sheet>
   );

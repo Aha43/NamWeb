@@ -227,14 +227,22 @@ describe('CaptureSheet — processing station (#623)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Select items' }));
   }
   const check = (title: string) => fireEvent.click(screen.getByRole('checkbox', { name: `Select ${title}` }));
+  // Drive the wizard (#635). The harness renders the phone branch (no matchMedia), so the
+  // destination step is the native select; '' (default location) is preselected.
+  function processVia(statusOption: 'Next' | 'Backlog' | 'Make projects') {
+    fireEvent.click(screen.getByRole('button', { name: 'Process…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' })); // destination step → status step
+    fireEvent.click(screen.getByRole('button', { name: statusOption }));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+  }
 
-  it('selected captures go → Next (default: Free actions) and stay listed with a ✓ marker', () => {
+  it('wizard: selected captures become Next at the default location, marked with ✓', () => {
     renderSpied();
     ['idea one', 'idea two', 'idea three'].forEach(capture);
     enterSelect();
     check('idea one');
     check('idea two');
-    fireEvent.click(screen.getByRole('button', { name: '→ Next' }));
+    processVia('Next');
 
     // The intents moved them out of the inbox with the status set.
     expect(nodeByTitle('idea one').status).toBe('NEXT');
@@ -242,7 +250,7 @@ describe('CaptureSheet — processing station (#623)', () => {
     expect(lastDoc!.nodes['actions'].childIds).toContain(nodeByTitle('idea one').id);
     expect(lastDoc!.nodes['inbox'].childIds).toContain(nodeByTitle('idea three').id); // untouched
 
-    // Processed rows stay, marked; their checkboxes are gone; the third is still selectable.
+    // The wizard folded away; processed rows stay, marked; the third is still selectable.
     const list = screen.getByRole('list');
     expect(within(list).getAllByRole('listitem')).toHaveLength(3);
     expect(within(list).getAllByText('Next')).toHaveLength(2);
@@ -250,12 +258,30 @@ describe('CaptureSheet — processing station (#623)', () => {
     expect(screen.getByRole('checkbox', { name: 'Select idea three' })).toBeInTheDocument();
   });
 
-  it('Make projects converts the selection and marks the rows', () => {
+  it('wizard: Done is disabled until a status is chosen; Back returns to the destination step', () => {
+    renderSpied();
+    capture('undecided');
+    enterSelect();
+    check('undecided');
+    fireEvent.click(screen.getByRole('button', { name: 'Process…' }));
+    expect(screen.getByLabelText('File under')).toBeInTheDocument(); // destination step (phone select)
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(screen.getByRole('button', { name: 'Done' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.getByLabelText('File under')).toBeInTheDocument();
+    // Cancel exits the wizard without committing; the selection is intact.
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+    expect(nodeByTitle('undecided').status).toBe('BACKLOG'); // still a raw inbox item
+    expect(lastDoc!.nodes['inbox'].childIds).toContain(nodeByTitle('undecided').id);
+  });
+
+  it('wizard: Make projects converts the selection and marks the rows', () => {
     renderSpied();
     capture('new epic');
     enterSelect();
     check('new epic');
-    fireEvent.click(screen.getByRole('button', { name: 'Make projects' }));
+    processVia('Make projects');
     expect(nodeByTitle('new epic').project).toBe(true);
     expect(lastDoc!.nodes['projects'].childIds).toContain(nodeByTitle('new epic').id);
     expect(within(screen.getByRole('list')).getByText('Project')).toBeInTheDocument();
@@ -266,9 +292,48 @@ describe('CaptureSheet — processing station (#623)', () => {
     ['p1', 'p2', 'p3'].forEach(capture);
     enterSelect();
     check('p1');
-    fireEvent.click(screen.getByRole('button', { name: '→ Backlog' }));
+    processVia('Backlog');
     fireEvent.click(screen.getByRole('button', { name: 'Select all' }));
     expect(screen.getByText('2 selected')).toBeInTheDocument();
+  });
+
+  it('wizard (desktop): the embedded columns pick a real project destination', () => {
+    const original = window.matchMedia;
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: true, media: query, onchange: null,
+      addEventListener: vi.fn(), removeEventListener: vi.fn(),
+      addListener: vi.fn(), removeListener: vi.fn(), dispatchEvent: vi.fn(),
+    })) as unknown as typeof window.matchMedia;
+    try {
+      renderSpied();
+      // First pass: turn one capture into a project so the columns have a destination.
+      capture('Home');
+      enterSelect();
+      check('Home');
+      fireEvent.click(screen.getByRole('button', { name: 'Process…' }));
+      // Desktop: the Miller columns are embedded; the default location is preselected → Next works.
+      expect(screen.getByRole('button', { name: 'Default (Top level / Free actions)' })).toBeInTheDocument();
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Make projects' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+      expect(nodeByTitle('Home').project).toBe(true);
+
+      // Second pass: file a new capture under it via the columns (mounted fresh per wizard entry).
+      capture('garage door');
+      check('garage door');
+      fireEvent.click(screen.getByRole('button', { name: 'Process…' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Home' })); // select the project column item
+      fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Next', pressed: false })); // the status option
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+
+      const filed = nodeByTitle('garage door');
+      expect(filed.status).toBe('NEXT');
+      expect(nodeByTitle('Home').childIds).toContain(filed.id);
+      expect(screen.getByText('Next · Home')).toBeInTheDocument(); // the ✓ marker names the project
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it('bulk delete confirms, removes the rows, and one grouped Undo restores them', () => {

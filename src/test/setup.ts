@@ -7,6 +7,7 @@ import '@/lib/i18n';
 if (!Element.prototype.hasPointerCapture) Element.prototype.hasPointerCapture = () => false;
 if (!Element.prototype.releasePointerCapture) Element.prototype.releasePointerCapture = () => {};
 if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
+if (!Element.prototype.scrollTo) Element.prototype.scrollTo = (() => {}) as Element['scrollTo'];
 
 // jsdom has no ResizeObserver; TruncatedTitle observes its element to re-measure overflow.
 if (!('ResizeObserver' in globalThis)) {
