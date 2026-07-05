@@ -12,6 +12,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **Bookmarks can be reordered.** Move up/down chevrons on the rows of the Projects/Contexts bookmark menus (the menu stays open while you fiddle) and on the phone More-sheet list. Each menu reorders within its own kind; the other kind's positions are untouched. The order is stored in the workspace, so it follows you across devices. Closes #636.
 
+### Changed
+
+- **Capture processing is now a wizard.** Instead of the inbox-style verb toolbar, select rows and hit **Process…**: the project selector appears right inside the dialog (the Finder-style columns; a native dropdown on phone), **Next** moves to the status choice (Next / Backlog / Make projects), and **Done** commits. Back/Cancel navigate without committing. Selection, Select all/Clear, and Delete-with-undo are unchanged. Closes #635.
+
 ## [0.8.0] - 2026-07-04
 
 The capture dialog grows up: it keeps the whole capture streak (no cap, list-only scrolling),
