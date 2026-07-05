@@ -515,14 +515,20 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       return next;
     }
     case 'reorderBookmarks': {
-      // Persist a user-chosen bookmark order (#636): known ids in the given order, then anything
-      // the order doesn't mention (added on another device since) in their existing relative
-      // order — same tolerance as reorderView. Pure and replay-safe.
+      // Persist a user-chosen bookmark order (#636): known ids in the given order (first
+      // occurrence wins — a malformed/replayed order must not duplicate a bookmark, #645), then
+      // anything the order doesn't mention (added on another device since) in their existing
+      // relative order — same tolerance as reorderView. Pure and replay-safe.
       const existing = next.bookmarks ?? [];
       const mentioned = new Set(intent.order);
       const byId = new Map(existing.map((b) => [b.id, b]));
+      const emitted = new Set<string>();
       next.bookmarks = [
-        ...intent.order.flatMap((id) => (byId.has(id) ? [byId.get(id)!] : [])),
+        ...intent.order.flatMap((id) => {
+          if (!byId.has(id) || emitted.has(id)) return [];
+          emitted.add(id);
+          return [byId.get(id)!];
+        }),
         ...existing.filter((b) => !mentioned.has(b.id)),
       ];
       return next;
