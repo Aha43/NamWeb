@@ -13,6 +13,10 @@ minor = features (breaking changes allowed), patch = fixes.
 - **See and remove bookmarks right in the menus.** The Projects/Contexts bookmark menus now show stale bookmarks greyed (project gone) instead of hiding them, and every row — live or stale — has a remove ✕ that works without closing the menu. Desktop no longer needs the phone list (or the bookmarked page itself) to clean up. Closes #594.
 - **Bookmarks can be reordered.** Move up/down chevrons on the rows of the Projects/Contexts bookmark menus (the menu stays open while you fiddle) and on the phone More-sheet list. Each menu reorders within its own kind; the other kind's positions are untouched. The order is stored in the workspace, so it follows you across devices. Closes #636.
 
+### Fixed
+
+- **Pre-release review follow-ups.** ⌘/Ctrl+Enter now also picks the default destination (Free actions / Top level) in the project columns; a malformed or replayed bookmark-reorder can no longer duplicate a bookmark. Closes #645.
+
 ### Changed
 
 - **Inbox bulk triage uses the processing wizard too.** The select bar's "File into ▾" chip, verb buttons, and popup picker are replaced by the same **Process…** wizard as the capture dialog (now one shared component): destination — with the Finder-style columns embedded right on the page and "New project here" — then status, then **Done**. One processing model everywhere. Closes #641.

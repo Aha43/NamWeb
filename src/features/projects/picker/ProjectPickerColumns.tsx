@@ -133,7 +133,8 @@ export function ProjectPickerColumns({
   };
 
   const pick = () => {
-    if (selectedId && allowed.has(selectedId)) onPick(selectedId);
+    // !== null, not truthiness: the default-location sentinel is '' and is a valid pick (#645).
+    if (selectedId !== null && allowed.has(selectedId)) onPick(selectedId);
   };
   pickRef.current = pick; // keep the keydown handler's closure current
 

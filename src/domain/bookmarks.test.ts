@@ -45,6 +45,13 @@ describe('bookmark intents', () => {
     expect(doc.bookmarks?.map((b) => b.id)).toEqual(['b2', 'b3', 'b1']);
   });
 
+  it('reorderBookmarks ignores duplicate ids in the order — no bookmark is duplicated (#645)', () => {
+    let doc = applyIntent(createDefaultWorkspace(), { type: 'addBookmark', bookmark: bm() });
+    doc = applyIntent(doc, { type: 'addBookmark', bookmark: bm({ id: 'b2', label: 'Two' }) });
+    doc = applyIntent(doc, { type: 'reorderBookmarks', order: ['b2', 'b2', 'b1', 'b2'] });
+    expect(doc.bookmarks?.map((b) => b.id)).toEqual(['b2', 'b1']);
+  });
+
   it('reorderBookmarks on a document with no bookmarks field is a safe no-op', () => {
     const legacy = { ...createDefaultWorkspace() } as WorkspaceDocument;
     delete legacy.bookmarks;
