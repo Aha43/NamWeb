@@ -21,13 +21,15 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenuItem: ({
     children,
     onClick,
+    disabled,
     'aria-label': ariaLabel,
   }: {
     children: ReactNode;
     onClick?: () => void;
+    disabled?: boolean;
     'aria-label'?: string;
   }) => (
-    <button role="menuitem" aria-label={ariaLabel} onClick={onClick}>
+    <button role="menuitem" aria-label={ariaLabel} onClick={onClick} disabled={disabled}>
       {children}
     </button>
   ),
@@ -79,16 +81,32 @@ describe('SidebarBookmarkMenu (#588)', () => {
     expect(screen.queryByRole('button', { name: 'Project bookmarks' })).not.toBeInTheDocument();
   });
 
-  it('renders nothing when the only project bookmark is stale', () => {
-    renderMenu('project', [staleBm]);
-    expect(screen.queryByRole('button', { name: 'Project bookmarks' })).not.toBeInTheDocument();
+  it('shows a stale bookmark greyed (not navigable) with a remove \u2715 (#594)', () => {
+    const dispatch = vi.fn();
+    render(
+      <MemoryRouter>
+        <WorkspaceContext.Provider value={{ document: doc([staleBm]), dispatch } as unknown as UseWorkspace}>
+          <SidebarBookmarkMenu kind="project" />
+        </WorkspaceContext.Provider>
+      </MemoryRouter>,
+    );
+    // The menu renders for the stale-only case — that's the point: see it, remove it.
+    expect(screen.getByRole('button', { name: 'Project bookmarks' })).toBeInTheDocument();
+    const row = screen.getByRole('menuitem', { name: /Old plans/ });
+    expect(row).toBeDisabled(); // greyed, not navigable
+    expect(screen.getByText('(no longer exists)')).toBeInTheDocument();
+    // No "\u2026" browse for a gone project.
+    expect(screen.queryByRole('menuitem', { name: 'Browse from Old plans' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Remove bookmark: Old plans' }));
+    expect(dispatch).toHaveBeenCalledWith({ type: 'removeBookmark', id: 'b2' });
   });
 
-  it('lists live project bookmarks only, and navigates to the project', () => {
+  it('lists project bookmarks (stale greyed), navigates on live ones, and offers remove (#594)', () => {
     renderMenu('project', [projectBm, staleBm, contextBm]);
     expect(screen.getByRole('button', { name: 'Project bookmarks' })).toBeInTheDocument();
-    expect(screen.queryByText('Old plans')).not.toBeInTheDocument(); // stale filtered out
+    expect(screen.getByRole('menuitem', { name: /Old plans/ })).toBeDisabled(); // stale: shown, greyed
     expect(screen.queryByText('#home')).not.toBeInTheDocument(); // other kind
+    expect(screen.getByRole('button', { name: 'Remove bookmark: Vacation' })).toBeInTheDocument(); // live rows too
     fireEvent.click(screen.getByRole('menuitem', { name: 'Vacation' }));
     expect(navigate).toHaveBeenCalledWith('/projects/p1');
   });
