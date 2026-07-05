@@ -23,10 +23,30 @@ test.describe('with bookmarks', () => {
     await page.getByRole('button', { name: 'Project bookmarks' }).click();
     const menu = page.getByRole('menu');
     await expect(menu.getByText('Vacation')).toBeVisible();
-    await expect(menu.getByText('Old plans')).toHaveCount(0); // stale → filtered out
+    // Stale: shown greyed with the suffix, not navigable, but removable (#594).
+    const staleRow = menu.getByRole('menuitem', { name: /Old plans/ });
+    await expect(staleRow).toBeVisible();
+    await expect(staleRow).toHaveAttribute('data-disabled', '');
 
     await menu.getByText('Vacation').click();
     await expect(page).toHaveURL(/\/projects\/vac$/);
+  });
+
+  test('remove a stale (and a live) bookmark right from the menu (#594)', async ({ page, doc }) => {
+    await page.goto('/inbox');
+    await page.getByRole('button', { name: 'Project bookmarks' }).click();
+    const menu = page.getByRole('menu');
+
+    // Removing keeps the menu open — clear the dead one, then a live one.
+    await menu.getByRole('button', { name: 'Remove bookmark: Old plans' }).click();
+    await expect(menu).toBeVisible();
+    await expect(menu.getByText('Old plans')).toHaveCount(0);
+    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual(['bm1', 'bm3']);
+
+    await menu.getByRole('button', { name: 'Remove bookmark: Vacation' }).click();
+    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual(['bm3']);
+    // No project bookmarks left → the chevron disappears.
+    await expect(page.getByRole('button', { name: 'Project bookmarks' })).toHaveCount(0);
   });
 
   test('the Contexts chevron jumps to the bookmarked tag filter', async ({ page }) => {

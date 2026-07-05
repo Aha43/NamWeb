@@ -10,6 +10,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **See and remove bookmarks right in the menus.** The Projects/Contexts bookmark menus now show stale bookmarks greyed (project gone) instead of hiding them, and every row — live or stale — has a remove ✕ that works without closing the menu. Desktop no longer needs the phone list (or the bookmarked page itself) to clean up. Closes #594.
 - **Bookmarks can be reordered.** Move up/down chevrons on the rows of the Projects/Contexts bookmark menus (the menu stays open while you fiddle) and on the phone More-sheet list. Each menu reorders within its own kind; the other kind's positions are untouched. The order is stored in the workspace, so it follows you across devices. Closes #636.
 
 ### Changed
