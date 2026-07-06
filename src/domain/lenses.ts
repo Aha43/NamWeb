@@ -7,6 +7,7 @@
 // appear in action lists.
 
 import type { NamNode, WorkspaceDocument } from './types';
+import { SYSTEM_TAGS } from './systemTags';
 
 /** The container node ids that should never show up as actions. */
 export function structuralNodeIds(doc: WorkspaceDocument): Set<string> {
@@ -420,9 +421,10 @@ export function dueGroups(doc: WorkspaceDocument, now: Date = new Date()): DueGr
   return groups;
 }
 
-/** Sorted, de-duplicated tags present across all nodes, plus the registered tags. */
+/** Sorted, de-duplicated tags present across all nodes, plus the registered tags — and the
+ *  built-in system tags (#651), which are always on offer even before first use. */
 export function allTags(doc: WorkspaceDocument): string[] {
-  const set = new Set<string>(doc.registeredTags);
+  const set = new Set<string>([...SYSTEM_TAGS, ...doc.registeredTags]);
   for (const node of Object.values(doc.nodes)) for (const tag of node.tags) set.add(tag);
   return [...set].sort();
 }

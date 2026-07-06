@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
+import { InProgressToggle } from '@/features/tags/InProgressToggle';
 import { Tooltip } from '@/components/ui/tooltip';
 import { InlineRename } from '../actions/InlineRename';
 import { useHasKeyboard } from '@/shell/useHasKeyboard';
@@ -188,6 +189,7 @@ export function FocusDeck({
                   </button>
                 </Tooltip>
               )}
+              <InProgressToggle id={current.id} title={current.title} />
               <CopyButton value={current.title} label={t('copy.name', { title: current.title })} />
               {onDeleteCard && (
                 <ConfirmButton

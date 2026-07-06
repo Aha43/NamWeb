@@ -377,10 +377,10 @@ describe('tags & search', () => {
     );
   }
 
-  it('allTags is the sorted union of node + registered tags', () => {
+  it('allTags is the sorted union of node + registered tags — plus the system tags (#651)', () => {
     const doc = tagged();
     doc.registeredTags = ['waiting'];
-    expect(allTags(doc)).toEqual(['home', 'urgent', 'waiting']);
+    expect(allTags(doc)).toEqual(['home', 'in progress', 'urgent', 'waiting']);
   });
 
   it('contextItems AND-matches effective tags, excludes done, honours nextOnly', () => {

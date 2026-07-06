@@ -2,6 +2,7 @@ import { useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { isSystemTag } from '@/domain/systemTags';
 
 const MAX_SUGGESTIONS = 8;
 
@@ -114,7 +115,7 @@ export function TagsInput({ id, value, onChange, suggestions }: TagsInputProps) 
                   i === highlight ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent',
                 )}
               >
-                {tag}
+                <span className={cn(isSystemTag(tag) && 'font-semibold')}>{tag}</span>
               </button>
             </li>
           ))}

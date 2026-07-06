@@ -530,6 +530,20 @@ describe('registerTag', () => {
   });
 });
 
+describe('system tags (#651)', () => {
+  it('renameTag refuses a system tag', () => {
+    const doc = { ...workspace([node('a', { tags: ['in progress'] })]), registeredTags: [] };
+    const next = applyIntent(doc, { type: 'renameTag', from: 'in progress', to: 'busy' });
+    expect(next.nodes.a.tags).toEqual(['in progress']);
+  });
+
+  it('deleteTag refuses a system tag', () => {
+    const doc = { ...workspace([node('a', { tags: ['in progress', 'home'] })]), registeredTags: [] };
+    const next = applyIntent(doc, { type: 'deleteTag', tag: 'in progress' });
+    expect(next.nodes.a.tags).toEqual(['in progress', 'home']);
+  });
+});
+
 describe('renameTag', () => {
   it('rewrites the tag across nodes and the registered list', () => {
     const doc = { ...workspace([node('a', { tags: ['home'] }), node('b', { tags: ['home', 'work'] })]), registeredTags: ['home'] };
