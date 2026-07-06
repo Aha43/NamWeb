@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FolderTree } from 'lucide-react';
@@ -6,17 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useSettings } from '@/components/settings/settings-context';
-import { allOpenableProjects } from '@/domain/lenses';
+import { allOpenableActions, allOpenableProjects } from '@/domain/lenses';
 import { ProjectPickerDialog } from './ProjectPickerDialog';
+import { ActionEditorContext } from '@/features/actions/action-editor-context';
 
 /**
- * The **project explorer** (#595): a toolbar button opening the Finder-style column picker in
- * open mode from the top — browse the whole project tree and Open one. Independent of bookmarks
- * (the bookmark rows' "…" opens the same picker pre-navigated to a hub).
+ * The **explorer** (#595, both-mode since #657): a toolbar button opening the Finder-style column
+ * browser from the top — projects as folders, actions as files. Opening a project navigates to its
+ * workbench; opening an action opens its editor. Independent of bookmarks (the bookmark rows' "…"
+ * opens the same picker pre-navigated to a hub).
  */
 export function ProjectExplorerButton() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  // Optional: the provider wraps the whole app; presentational test hosts may render bare.
+  const editor = useContext(ActionEditorContext);
   const { document } = useWorkspaceContext();
   const { dense } = useSettings();
   const [open, setOpen] = useState(false);
@@ -38,10 +42,15 @@ export function ProjectExplorerButton() {
       <ProjectPickerDialog
         open={open}
         onOpenChange={setOpen}
-        title={t('picker.openTitle')}
+        title={t('picker.openAnyTitle')}
         confirmLabel={t('picker.open')}
-        targets={allOpenableProjects(document)}
-        onConfirm={(id) => navigate(`/projects/${id}`)}
+        targets={[...allOpenableProjects(document), ...allOpenableActions(document)]}
+        mode="both"
+        onConfirm={(id) => {
+          // Folders open their workbench; files open their editor (#657).
+          if (document.nodes[id]?.project) navigate(`/projects/${id}`);
+          else editor?.openEditor(id);
+        }}
       />
     </>
   );

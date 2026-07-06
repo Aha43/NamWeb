@@ -265,6 +265,24 @@ export function allOpenableProjects(doc: WorkspaceDocument): ProjectMoveTarget[]
     .map((n) => ({ id: n.id, label: n.title }));
 }
 
+/** Every openable action — non-project, non-structural, not in an archived subtree, not
+ *  DONE/CANCELLED — as picker targets ({id, label: title}). The "files" counterpart of
+ *  allOpenableProjects for the browser's actions/both modes (#657). */
+export function allOpenableActions(doc: WorkspaceDocument): { id: string; label: string }[] {
+  const structural = structuralNodeIds(doc);
+  const archived = archivedNodeIds(doc);
+  return Object.values(doc.nodes)
+    .filter(
+      (n) =>
+        !n.project &&
+        !structural.has(n.id) &&
+        !archived.has(n.id) &&
+        n.status !== 'DONE' &&
+        n.status !== 'CANCELLED',
+    )
+    .map((n) => ({ id: n.id, label: n.title }));
+}
+
 /**
  * Projects that `id` can be moved into (made a sub-project of): a **"Top level"** entry first when
  * `id` is currently nested, then its **current project siblings** (same parent), then every other

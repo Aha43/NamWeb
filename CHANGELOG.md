@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **The explorer opens actions too.** The Finder-style browser now lists actions as files alongside project folders (with folder/file icons; done and archived work stays hidden) — Open a project to land in its workbench, Open an action to jump straight into its editor. Move/file pickers are unchanged (folders only, as before). Closes #657.
+
 ## [0.9.1] - 2026-07-06
 
 Clarify-flow polish: the "Process inbox" deck cycles through skipped items and can walk just your
