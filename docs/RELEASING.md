@@ -88,7 +88,9 @@ finds flakes/regressions a point-in-time review can't.
    ```
    Cover: span (PRs merged, releases), and — most importantly — the **themes** and whether the work
    is **converging vs polishing** (e.g. the "time domain" arc #438 → calendar-board → #493). It goes
-   in the human report, not the CHANGELOG/Release body.
+   in the human report, not the CHANGELOG/Release body — **and is appended verbatim to
+   [`docs/footprints.md`](footprints.md)** (newest first), the historical archive of these
+   paragraphs (#667). The archive commit can ride the next ordinary PR; it doesn't need its own.
 
 That's it — Cloudflare Pages continues to build/deploy from `main` as usual; the tag only drives the
 GitHub Release.
