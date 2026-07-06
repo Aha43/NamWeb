@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-07-06
+
+Clarify-flow polish: the "Process inbox" deck cycles through skipped items and can walk just your
+selection; the new built-in **in progress** tag marks what you're actually on (orthogonal to
+status, one click from any row or the Focus card); and two hardenings land underneath — the
+removed-items flicker is gone (a display rewind in the sync core), and system tags survive
+NamDesktop's casing.
+
 ### Added
 
 - **"in progress" — a built-in system tag.** Mark what you're actually working on, orthogonal to status (a Backlog item you've started but are waiting on is legitimately both). One-click toggle on action rows and the Focus card; always offered in tag suggestions and filters; shown bold everywhere; protected from rename/delete. Syncs to NamDesktop as a plain tag. Closes #651.
@@ -1260,7 +1268,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/Aha43/NamWeb/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Aha43/NamWeb/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Aha43/NamWeb/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/Aha43/NamWeb/compare/v0.6.0...v0.7.0
