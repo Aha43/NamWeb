@@ -8,6 +8,7 @@ import { ConfirmButton } from '@/components/ui/confirm-button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { isSystemTag } from '@/domain/systemTags';
 import type { ActionRowData } from '../actions/rows';
 import type { NodeStatus, SavedView } from '../../domain/types';
 
@@ -112,11 +113,14 @@ export function TagFilterPanel({
                 <ul className="divide-y divide-border rounded-lg border border-border bg-card">
                   {allTags.map((tag) => (
                     <li key={tag} className="flex items-center gap-2 px-3 py-2">
-                      <span className="flex-1 truncate text-sm text-foreground">{tag}</span>
+                      <span className={cn('flex-1 truncate text-sm text-foreground', isSystemTag(tag) && 'font-semibold')}>
+                        {tag}
+                      </span>
                       {tagCounts && (
                         <span className="text-xs text-muted-foreground">{tagCounts[tag] ?? 0}</span>
                       )}
-                      {onRenameTag && (
+                      {/* System tags are part of the app — no rename/delete (#651). */}
+                      {onRenameTag && !isSystemTag(tag) && (
                         <PromptButton
                           aria-label={t('tags.renameTagAria', { tag })}
                           label={t('tags.newTagName')}
@@ -128,7 +132,7 @@ export function TagFilterPanel({
                           <Pencil className="h-3.5 w-3.5" />
                         </PromptButton>
                       )}
-                      {onDeleteTag && (
+                      {onDeleteTag && !isSystemTag(tag) && (
                         <ConfirmButton
                           aria-label={t('tags.deleteTagAria', { tag })}
                           message={
@@ -215,7 +219,7 @@ export function TagFilterPanel({
                       : 'border-input text-muted-foreground hover:bg-accent hover:text-foreground',
                   )}
                 >
-                  {tag}
+                  <span className={cn(isSystemTag(tag) && 'font-bold')}>{tag}</span>
                 </button>
               );
             })}

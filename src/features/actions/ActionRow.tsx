@@ -6,6 +6,8 @@ import { formatAge, formatDate, formatDueHint, type DueTone } from '@/lib/dates'
 import { useSettings } from '@/components/settings/settings-context';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
+import { InProgressToggle } from '@/features/tags/InProgressToggle';
+import { isSystemTag } from '@/domain/systemTags';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
@@ -124,7 +126,13 @@ export function ActionRow({
         <Paperclip aria-label={t('actions.hasResources')} className="h-3 w-3 text-muted-foreground" />
       )}
       {row.tags.map((tag) => (
-        <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
+        <span
+          key={tag}
+          className={cn(
+            'rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground',
+            isSystemTag(tag) && 'font-semibold text-foreground', // system tags read as system (#651)
+          )}
+        >
           {tag}
         </span>
       ))}
@@ -160,6 +168,7 @@ export function ActionRow({
 
   const actionsNode = (
     <>
+      <InProgressToggle id={row.id} title={row.title} />
       <CopyButton value={row.title} label={t('copy.name', { title: row.title })} className="p-2" tooltip />
       {onRename && !renaming && (
         <Tooltip label={t('actions.renameAria', { title: row.title })}>

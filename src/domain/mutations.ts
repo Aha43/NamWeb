@@ -5,6 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
+import { isSystemTag } from './systemTags';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 
 export type Intent =
@@ -372,7 +373,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'renameTag': {
       // Rewrite a tag across the registered list AND every node that uses it
       // (normalize merges it into the target if that already exists). Mirrors
-      // NamDesktop's renameTag.
+      // NamDesktop's renameTag. System tags are protected (#651) — the UI hides the
+      // controls; this guard keeps replayed/foreign intents from renaming them too.
+      if (isSystemTag(intent.from)) return next;
       const from = intent.from.trim().toLowerCase();
       const to = intent.to.trim().toLowerCase();
       if (!from || !to || from === to) return next;
@@ -393,6 +396,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'deleteTag': {
       // Remove a tag from the registered list AND from every node that uses it.
       // Mirrors NamDesktop's deleteTag (the UI confirms with the usage count).
+      // System tags are protected (#651), as above.
+      if (isSystemTag(intent.tag)) return next;
       const tag = intent.tag.trim().toLowerCase();
       if (!tag) return next;
       next.registeredTags = next.registeredTags.filter((t) => t !== tag);
