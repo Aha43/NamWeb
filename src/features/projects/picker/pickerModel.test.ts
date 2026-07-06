@@ -67,10 +67,51 @@ function allProjectTargets(): PickerTarget[] {
 }
 
 describe('specialRoots', () => {
-  it('keeps only targets whose id is not a real project node', () => {
+  it('keeps only container/sentinel targets — not real project or action nodes (#657)', () => {
     expect(specialRoots(doc(), allProjectTargets())).toEqual([
-      { id: 'actions', label: 'Free actions', hasChildren: false, selectable: true, isSpecial: true },
+      { id: 'actions', label: 'Free actions', hasChildren: false, selectable: true, isSpecial: true, kind: 'special' },
     ]);
+    // A real action target is an ordinary row, never a special root.
+    expect(specialRoots(doc(), [{ id: 'tiles', label: 'Buy tiles' }])).toEqual([]);
+  });
+});
+
+describe('picker modes (#657)', () => {
+  it("childColumn lists a project's actions as chevron-less leaves in actions/both modes", () => {
+    const d = doc();
+    // Give 'home' a direct action.
+    d.nodes['fix'] = { ...d.nodes['tiles'], id: 'fix', title: 'Fix door' };
+    d.nodes['home'].childIds.push('fix');
+    const allowed = new Set(['fix']);
+    expect(childColumn(d, 'home', allowed).map((i) => i.id)).not.toContain('fix'); // default: folders only
+    const both = childColumn(d, 'home', allowed, 'both');
+    const fix = both.find((i) => i.id === 'fix')!;
+    expect(fix).toMatchObject({ kind: 'action', hasChildren: false, selectable: true });
+    // Sub-projects come first, actions after.
+    expect(both.findIndex((i) => i.kind === 'project')).toBeLessThan(both.findIndex((i) => i.id === 'fix'));
+  });
+
+  it('rootColumn surfaces free actions in actions/both modes', () => {
+    const d = doc();
+    const root = rootColumn(d, [], new Set(), 'both');
+    expect(root.map((i) => i.id)).toContain('tiles'); // the free action under the actions container
+    expect(rootColumn(d, [], new Set()).map((i) => i.id)).not.toContain('tiles');
+  });
+
+  it('hides DONE/CANCELLED actions from the listing', () => {
+    const d = doc();
+    d.nodes['tiles'].status = 'DONE';
+    expect(rootColumn(d, [], new Set(), 'both').map((i) => i.id)).not.toContain('tiles');
+  });
+
+  it('a project with only actions gets a chevron in both mode, none in projects mode', () => {
+    const d = doc();
+    d.nodes['fix'] = { ...d.nodes['tiles'], id: 'fix', title: 'Fix door' };
+    d.nodes['work'].childIds.push('fix');
+    const inBoth = rootColumn(d, [], new Set(), 'both').find((i) => i.id === 'work')!;
+    const inProjects = rootColumn(d, [], new Set()).find((i) => i.id === 'work')!;
+    expect(inBoth.hasChildren).toBe(true);
+    expect(inProjects.hasChildren).toBe(false);
   });
 });
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bookmark as BookmarkIcon, ChevronDown, ChevronRight } from 'lucide-react';
+import { Bookmark as BookmarkIcon, ChevronDown, ChevronRight, FileText, Folder } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   DropdownMenu,
@@ -11,10 +11,10 @@ import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { isTypingTarget } from '@/shell/useGlobalShortcuts';
-import { buildPath, projectPath } from '@/domain/lenses';
+import { buildPath, projectPath, structuralNodeIds } from '@/domain/lenses';
 import { bookmarksOf, isBookmarkStale } from '@/features/bookmarks/bookmarks';
 import { cn } from '@/lib/utils';
-import { childColumn, rootColumn, type PickerItem, type PickerTarget } from './pickerModel';
+import { childColumn, rootColumn, type PickerItem, type PickerMode, type PickerTarget } from './pickerModel';
 
 export interface ProjectPickerColumnsProps {
   /** The valid destinations the caller already computes ({id,label}); defines what's selectable. */
@@ -35,6 +35,8 @@ export interface ProjectPickerColumnsProps {
   /** Height/growth of the columns strip. Default `h-72`; pass e.g. `min-h-0 flex-1` to fill a
    *  flex column (the capture wizard's resizable dialog). */
   columnsClassName?: string;
+  /** What the browser lists (#657): folders only (default), or actions as leaves too. */
+  mode?: PickerMode;
 }
 
 /**
@@ -55,6 +57,7 @@ export function ProjectPickerColumns({
   onPick,
   onCreateProject,
   columnsClassName,
+  mode = 'projects',
 }: ProjectPickerColumnsProps) {
   const { t } = useTranslation();
   const { document } = useWorkspaceContext();
@@ -65,7 +68,7 @@ export function ProjectPickerColumns({
   const [trail, setTrail] = useState<string[]>(() => {
     if (initialProjectId && document?.nodes[initialProjectId]) {
       const ancestorIds = buildPath(document, initialProjectId).map((n) => n.id);
-      const hasChildren = childColumn(document, initialProjectId, allowed).length > 0;
+      const hasChildren = childColumn(document, initialProjectId, allowed, mode).length > 0;
       return hasChildren ? [...ancestorIds, initialProjectId] : ancestorIds;
     }
     return [];
@@ -111,8 +114,8 @@ export function ProjectPickerColumns({
 
   if (!document) return null;
 
-  const columns: PickerItem[][] = [rootColumn(document, targets, allowed)];
-  for (const pid of trail) columns.push(childColumn(document, pid, allowed));
+  const columns: PickerItem[][] = [rootColumn(document, targets, allowed, mode)];
+  for (const pid of trail) columns.push(childColumn(document, pid, allowed, mode));
 
   const select = (level: number, item: PickerItem) => {
     setSelectedId(item.id);
@@ -127,7 +130,7 @@ export function ProjectPickerColumns({
   );
   const jumpTo = (projectId: string) => {
     const ancestorIds = buildPath(document, projectId).map((n) => n.id);
-    const hasChildren = childColumn(document, projectId, allowed).length > 0;
+    const hasChildren = childColumn(document, projectId, allowed, mode).length > 0;
     setTrail(hasChildren ? [...ancestorIds, projectId] : ancestorIds);
     setSelectedId(projectId);
   };
@@ -149,7 +152,10 @@ export function ProjectPickerColumns({
     if (newId) onPick(newId);
   };
 
-  const specialLabel = targets.find((tg) => tg.id === selectedId && !document.nodes[tg.id]?.project)?.label;
+  const structural = structuralNodeIds(document);
+  const specialLabel = targets.find(
+    (tg) => tg.id === selectedId && (!document.nodes[tg.id] || structural.has(tg.id)),
+  )?.label;
   const crumb = !selectedId
     ? null
     : specialLabel ??
@@ -222,6 +228,14 @@ export function ProjectPickerColumns({
                         !item.selectable && 'text-muted-foreground',
                       )}
                     >
+                      {mode !== 'projects' && item.kind !== 'special' && (
+                        // Mixed content needs the folder/file cue (#657); pure-project pickers stay clean.
+                        item.kind === 'project' ? (
+                          <Folder aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        ) : (
+                          <FileText aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                        )
+                      )}
                       <span className="min-w-0 flex-1 truncate">{item.label}</span>
                       {item.hasChildren && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />}
                     </button>

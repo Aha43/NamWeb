@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ProjectPickerColumns } from './ProjectPickerColumns';
-import type { PickerTarget } from './pickerModel';
+import type { PickerMode, PickerTarget } from './pickerModel';
 
 export interface ProjectPickerDialogProps {
   open: boolean;
@@ -33,6 +33,8 @@ export interface ProjectPickerDialogProps {
    * (the navigated-into project, or `null` = top level) and move into it. Returns the new id.
    */
   onCreateProject?: (parentId: string | null, title: string) => string;
+  /** What the browser lists (#657): folders only (default), or actions as leaves too. */
+  mode?: PickerMode;
 }
 
 /**
@@ -50,6 +52,7 @@ export function ProjectPickerDialog({
   initialProjectId,
   onConfirm,
   onCreateProject,
+  mode,
 }: ProjectPickerDialogProps) {
   const { t } = useTranslation();
   // The columns' current confirmable destination (null = nothing selectable highlighted).
@@ -75,6 +78,7 @@ export function ProjectPickerDialog({
             onSelectionChange={setConfirmable}
             onPick={pick}
             onCreateProject={onCreateProject}
+            mode={mode}
           />
         </DialogBody>
         <DialogFooter className="border-t border-border px-6 py-4">

@@ -406,6 +406,7 @@
   "picker.moveToSibling": "Flytt til {name} (søsken)",
   "picker.moveToSub": "Flytt til {name} (delprosjekt)",
   "picker.open": "Åpne",
+  "picker.openAnyTitle": "Åpne prosjekt eller handling",
   "picker.openTitle": "Åpne prosjekt",
   "picker.newProjectIn": "＋ Nytt prosjekt i “{label}”",
   "picker.newProjectName": "Nytt prosjektnavn",

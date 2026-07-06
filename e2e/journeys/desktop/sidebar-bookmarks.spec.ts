@@ -106,7 +106,7 @@ test.describe('without bookmarks', () => {
   test('the project explorer works without any bookmarks (#595)', async ({ page }) => {
     await page.goto('/inbox');
     await page.getByRole('button', { name: 'Project explorer' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Open project' });
+    const dialog = page.getByRole('dialog', { name: 'Open project or action' });
     await dialog.getByRole('button', { name: 'Vacation' }).click();
     await dialog.getByRole('button', { name: 'Open', exact: true }).click();
     await expect(page).toHaveURL(/\/projects\/vac$/);
