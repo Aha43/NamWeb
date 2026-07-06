@@ -17,6 +17,8 @@ import { TagsInput } from './TagsInput';
 import { InheritedTags } from './InheritedTags';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ResourcesEditor } from './ResourcesEditor';
+import { LinkToHereButton } from './LinkToHereButton';
+import { makeActionLink, parseActionLink } from '@/domain/actionLinks';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -208,7 +210,15 @@ export function ActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex flex-col gap-0 overflow-hidden p-0">
+      <DialogContent
+        className="flex flex-col gap-0 overflow-hidden p-0"
+        // Clicking a toast (the link-back offer, #659) is an "interact outside" — don't let it
+        // close the editor mid-edit. Toast rows render as role="status" (same as CaptureSheet).
+        onInteractOutside={(event) => {
+          const target = event.detail.originalEvent.target;
+          if (target instanceof Element && target.closest('[role="status"]')) event.preventDefault();
+        }}
+      >
         <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader className="border-b border-border px-6 pb-4 pt-6 text-left">
             <DialogTitle>{isProject ? t('editor.editProject') : t('editor.editAction')}</DialogTitle>
@@ -409,6 +419,14 @@ export function ActionDialog({
           </fieldset>
           <CollapsibleSection title={t('editor.resources')} defaultOpen={node.resources.length > 0}>
             <ResourcesEditor resources={resources} onChange={setResources} linkExcludeId={node.id} />
+            <LinkToHereButton
+              nodeId={node.id}
+              onLinkBack={(pickedId) =>
+                setResources((rs) =>
+                  rs.some((r) => parseActionLink(r) === pickedId) ? rs : [...rs, makeActionLink(pickedId)],
+                )
+              }
+            />
           </CollapsibleSection>
           {onAddPrerequisite && onRemovePrerequisite && (
             <CollapsibleSection title={t('editor.blockedBy')} defaultOpen={(blockers?.length ?? 0) > 0}>
