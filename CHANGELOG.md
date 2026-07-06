@@ -14,6 +14,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **System tags survive NamDesktop casing.** A document carrying "In Progress" written by the desktop app is now handled case-insensitively: the working-on-it toggle reads and clears it, the tag lists show one spelling, and the built-in filter finds it. Closes #654.
 - **No more removed-items flicker.** Bulk operations (the wizard's Done, bulk delete, the process deck) removed items, briefly showed them again, then removed them for good — each per-item save was rewinding the display past the still-pending ones. The display now adopts only the final state of a burst; the data was always correct. Closes #650.
 
 ### Changed

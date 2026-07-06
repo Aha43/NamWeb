@@ -12,3 +12,9 @@ export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG];
 export function isSystemTag(tag: string): boolean {
   return SYSTEM_TAGS.includes(tag.trim().toLowerCase());
 }
+
+/** The canonical (lowercase) form of a tag when it's a system tag — shared documents can carry
+ *  case variants written by NamDesktop ("In Progress"); web-side handling collapses them. */
+export function canonicalTag(tag: string): string {
+  return isSystemTag(tag) ? tag.trim().toLowerCase() : tag;
+}
