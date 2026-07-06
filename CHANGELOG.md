@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Linked cards.** An action can link to another: in the editor's Resources, **Link action…** opens the browser (actions as files) — the link is stored as a `nam://action/<id>` URI resource (NamDesktop sees an ordinary URI), shown as the target's live path. Click it to jump into the linked action, "…" to re-pick, ✕ to unlink; a deleted target shows as gone. Links survive workspace import (ids are remapped). Closes #658.
+
 ### Changed
 
 - **The explorer opens actions too.** The Finder-style browser now lists actions as files alongside project folders (with folder/file icons; done and archived work stays hidden) — Open a project to land in its workbench, Open an action to jump straight into its editor. Move/file pickers are unchanged (folders only, as before). Closes #657.

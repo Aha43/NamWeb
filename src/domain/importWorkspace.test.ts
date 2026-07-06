@@ -21,7 +21,11 @@ function doc(): WorkspaceDocument {
     node('actions', { childIds: ['F1'] }),
     node('P1', { project: true, title: 'Roof', childIds: ['A1'] }),
     node('A1', { title: 'Buy tiles', status: 'NEXT', tags: ['home'] }),
-    node('F1', { title: 'Free one', blockedBy: ['A1'] }),
+    node('F1', { title: 'Free one', blockedBy: ['A1'], resources: [
+      { type: 'URI', value: 'nam://action/A1', description: null },
+      { type: 'URI', value: 'nam://action/GONE', description: null },
+      { type: 'URI', value: 'https://kept.example', description: null },
+    ] }),
     node('I1', { title: 'Captured thought' }),
   ]) nodes[n.id] = n;
   return {
@@ -82,6 +86,13 @@ describe('buildImportSeed', () => {
     expect(roof.children?.[0]).toMatchObject({ title: 'Buy tiles', status: 'NEXT', tags: ['home'] });
     const free = seed.children![1];
     expect(free.blockedBy).toEqual([roof.children![0].id]); // remapped to the new A1 id
+    // Action-link resources follow the id map too (#658); a link to something outside the
+    // import dangles (rendered as gone); ordinary resources pass through untouched.
+    expect(free.resources?.map((r) => r.value)).toEqual([
+      `nam://action/${roof.children![0].id}`,
+      'nam://action/GONE',
+      'https://kept.example',
+    ]);
   });
 
   it('preserves all due scheduling metadata through import (#509)', () => {

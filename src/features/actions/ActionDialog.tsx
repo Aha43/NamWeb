@@ -408,7 +408,7 @@ export function ActionDialog({
             </div>
           </fieldset>
           <CollapsibleSection title={t('editor.resources')} defaultOpen={node.resources.length > 0}>
-            <ResourcesEditor resources={resources} onChange={setResources} />
+            <ResourcesEditor resources={resources} onChange={setResources} linkExcludeId={node.id} />
           </CollapsibleSection>
           {onAddPrerequisite && onRemovePrerequisite && (
             <CollapsibleSection title={t('editor.blockedBy')} defaultOpen={(blockers?.length ?? 0) > 0}>

@@ -212,7 +212,9 @@ export function ProjectPickerColumns({
                     <button
                       type="button"
                       aria-label={item.label}
-                      aria-disabled={!item.selectable}
+                      // A row that can't be picked but CAN be drilled into is navigation, not
+                      // disabled (matters in actions mode, where folders are never targets).
+                      aria-disabled={!item.selectable && !item.hasChildren}
                       aria-current={isSelected || undefined}
                       onClick={() => select(level, item)}
                       onDoubleClick={() => {
