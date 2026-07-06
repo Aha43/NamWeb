@@ -87,3 +87,38 @@ describe('useWorkspace — Realtime signal-then-pull', () => {
     expect(view.result.current.notice).toBeNull();
   });
 });
+
+describe('useWorkspace — burst dispatches (#650)', () => {
+  const tagOf = (view: { result: { current: { document: unknown } } }) =>
+    (view.result.current.document as { tag: string }).tag;
+
+  it('adopts only the final committed snapshot — no mid-burst display rewind', async () => {
+    const view = await mountLoaded({ tag: 'v1', version: 1 });
+
+    let resolveA!: (v: unknown) => void;
+    let resolveB!: (v: unknown) => void;
+    commitIntent.mockImplementationOnce(() => new Promise((r) => (resolveA = r)));
+    commitIntent.mockImplementationOnce(() => new Promise((r) => (resolveB = r)));
+
+    await act(async () => {
+      view.result.current.dispatch({ type: 'a' } as never);
+      view.result.current.dispatch({ type: 'b' } as never);
+      await Promise.resolve(); // let the queue start commit A (it drains on microtasks)
+    });
+
+    // The first commit lands while the second is still in flight: adopting its snapshot
+    // (base + intent A only) would rewind the optimistic view — the removed-items flicker.
+    await act(async () => {
+      resolveA({ outcome: 'committed', snapshot: { document: doc('afterA'), version: 2 } });
+      await Promise.resolve(); // A's success handler runs; commit B starts
+      await Promise.resolve();
+    });
+    expect(tagOf(view)).toBe('v1'); // optimistic view kept (identity applyIntent in this harness)
+
+    // The burst's final commit converges the display.
+    await act(async () => {
+      resolveB({ outcome: 'committed', snapshot: { document: doc('afterAB'), version: 3 } });
+    });
+    await waitFor(() => expect(tagOf(view)).toBe('afterAB'));
+  });
+});

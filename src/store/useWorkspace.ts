@@ -191,7 +191,12 @@ export function useWorkspace(): UseWorkspace {
           return;
         }
         committedRef.current = result.snapshot;
-        setSnapshot(result.snapshot);
+        // Adopt into the display only when this is the last write in flight: mid-burst (bulk
+        // resolve/delete, the wizard's Done), this snapshot is base + this intent only, and
+        // adopting it would rewind the optimistic view of the still-queued intents — the
+        // removed-items-come-back flicker (#650). The burst's final commit converges the display,
+        // including the reloaded-from-remote case (later commits build on the reloaded base).
+        if (inFlightRef.current === 1) setSnapshot(result.snapshot);
         if (result.outcome === 'reloaded') setNotice({ kind: 'info', messageKey: INFO_FROM_DEVICE });
       })
       .finally(() => {
