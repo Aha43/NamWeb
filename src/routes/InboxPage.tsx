@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { archivedProjectIds, inboxItems, projectPath, structuralNodeIds, subtreeIds } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
@@ -113,11 +113,32 @@ export function InboxPage() {
     setPos(0);
   }
 
-  function advance() {
+  // The deck cycles (#648): resolving/deleting removes the current id from the remaining set —
+  // the deck ends only when that set is empty (or the dialog is closed). Skip just moves on,
+  // wrapping past the end so skipped items come around again.
+  function dropFromQueue(id: string) {
     if (!queue) return;
-    if (pos + 1 >= queue.length) endDeck();
-    else setPos((p) => p + 1);
+    const next = queue.filter((qid) => qid !== id);
+    if (next.length === 0) endDeck();
+    else {
+      setQueue(next);
+      if (pos >= next.length) setPos(0);
+    }
   }
+
+  function skip() {
+    if (!queue || queue.length === 0) return;
+    setPos((p) => (p + 1) % queue.length);
+  }
+
+  // If the current deck item vanishes underneath us (deleted or processed on another surface),
+  // drop it from the queue rather than leaving the deck stranded on a missing card.
+  useEffect(() => {
+    if (!queue || !deckId) return;
+    if (items.some((n) => n.id === deckId)) return;
+    dropFromQueue(deckId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, queue, deckId]);
 
   function resolve(resolution: ProcessResolution) {
     if (!current) return;
@@ -133,7 +154,7 @@ export function InboxPage() {
         now,
       });
     }
-    if (inDeck) advance();
+    if (inDeck) dropFromQueue(current.id);
     else setProcessingId(null);
   }
 
@@ -146,8 +167,9 @@ export function InboxPage() {
         items={items}
         onAdd={(title) => dispatch({ type: 'addInboxItem', id: newId(), title, atTop: !addToBottom, now: nowIso() })}
         onProcess={setProcessingId}
-        onProcessAll={() => {
-          setQueue(items.map((n) => n.id));
+        onProcessAll={(ids) => {
+          // Over the selection when given (#648), else the whole inbox.
+          setQueue(ids && ids.length > 0 ? ids : items.map((n) => n.id));
           setPos(0);
         }}
         onDelete={(id) => deleteNode(id)}
@@ -176,12 +198,12 @@ export function InboxPage() {
           onCreateProject={createProject}
           {...(inDeck
             ? {
-                remaining: queue.length - pos,
+                remaining: queue.length,
                 onDelete: () => {
                   dispatch({ type: 'deleteLeaf', id: current.id });
-                  advance();
+                  dropFromQueue(current.id);
                 },
-                onSkip: advance,
+                onSkip: skip,
               }
             : {})}
         />

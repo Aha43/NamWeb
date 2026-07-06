@@ -18,8 +18,9 @@ export interface InboxPanelProps {
   items: NamNode[];
   onAdd: (title: string) => void;
   onProcess: (id: string) => void;
-  /** Start the one-at-a-time process-all deck. */
-  onProcessAll?: () => void;
+  /** Start the one-at-a-time process deck — over `ids` when given (the selection, in list
+   *  order), else the whole inbox (#648). */
+  onProcessAll?: (ids?: string[]) => void;
   onDelete: (id: string) => void;
   onRename?: (id: string, title: string) => void;
   /** Triage many selected items at once with one shared resolution (#458). */
@@ -103,9 +104,27 @@ export function InboxPanel({
         {items.length > 0 && (
           <div className="flex items-center justify-end gap-1">
             {onProcessAll && (
-              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onProcessAll}>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  // With a selection, the deck walks just those (list order); the deck takes over,
+                  // so leave select mode (#648).
+                  if (selectMode && selected.size > 0) {
+                    const ids = items.filter((n) => selected.has(n.id)).map((n) => n.id);
+                    exitSelect();
+                    onProcessAll(ids);
+                  } else {
+                    onProcessAll();
+                  }
+                }}
+              >
                 <Target className="h-4 w-4 focus-glow" />
-                {t('inbox.processAll', { count: items.length })}
+                {selectMode && selected.size > 0
+                  ? t('inbox.processSelected', { count: selected.size })
+                  : t('inbox.processAll', { count: items.length })}
               </Button>
             )}
             {bulkCapable && (

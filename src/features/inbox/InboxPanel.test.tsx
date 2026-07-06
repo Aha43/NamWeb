@@ -85,6 +85,29 @@ describe('InboxPanel', () => {
     expect(screen.getByText('0 selected')).toBeInTheDocument();
   });
 
+  it('Process button scopes to the selection and exits select mode (#648)', () => {
+    const onProcessAll = vi.fn();
+    render(
+      <InboxPanel
+        items={[item('a', 'Buy milk'), item('b', 'Call Sam'), item('c', 'Read mail')]}
+        onAdd={vi.fn()}
+        onProcess={vi.fn()}
+        onDelete={vi.fn()}
+        onBulkResolve={vi.fn()}
+        onProcessAll={onProcessAll}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /Process inbox \(3\)/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Select items' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Read mail' }));
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Select Buy milk' }));
+    const scoped = screen.getByRole('button', { name: /Process selected \(2\)/ });
+    fireEvent.click(scoped);
+    // Ids in list order (not tick order); select mode exited as the deck takes over.
+    expect(onProcessAll).toHaveBeenCalledWith(['a', 'c']);
+    expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
+  });
+
   it('hides the select toggle when bulk is not supported', () => {
     setup([item('a', 'Buy milk')]);
     expect(screen.queryByRole('button', { name: 'Select items' })).not.toBeInTheDocument();
