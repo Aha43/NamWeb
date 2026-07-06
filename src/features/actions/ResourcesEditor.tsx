@@ -135,7 +135,8 @@ export function ResourcesEditor({
       ) : (
         <p className="text-xs text-muted-foreground">{t('editor.noResources')}</p>
       )}
-      <div className="flex gap-2">
+      {/* Wraps on narrow (phone) widths — four controls no longer overflow the dialog (#665). */}
+      <div className="flex flex-wrap gap-2">
         <select
           aria-label={t('editor.resourceType')}
           value={type}
@@ -149,6 +150,7 @@ export function ResourcesEditor({
           ))}
         </select>
         <Input
+          className="min-w-32 flex-1 basis-40"
           aria-label={t('editor.resourceValue')}
           placeholder={t('editor.resourcePlaceholder')}
           value={value}

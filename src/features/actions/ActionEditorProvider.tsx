@@ -196,6 +196,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           onAction: () => {
             const fresh = docRef.current?.nodes[target.id];
             if (!fresh) return; // target deleted since the save
+            if (!docRef.current?.nodes[sourceId]) return; // source deleted — don't write a dangling link (#665)
             if (fresh.resources.some((r) => parseActionLink(r) === sourceId)) return; // linked meanwhile
             if (editingIdRef.current === target.id && bufferLinkRef.current) {
               bufferLinkRef.current(sourceId); // its editor is open — go via the buffer
