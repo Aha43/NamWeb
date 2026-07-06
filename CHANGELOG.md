@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Linked-cards hardening (review follow-ups).** The "Link back" toast now re-reads the target when clicked (a stale snapshot could clobber edits made in the meantime — and routes into the target's editor buffer when that editor is open); linking the same card twice collapses to one link; and following a link saves your open edits before switching cards instead of silently discarding them (Closes #663). A Codex pass added: both link endpoints are revalidated when "Link back" fires (a deleted card can no longer receive or produce a dangling link), and the resources toolbar wraps on phone widths instead of overflowing. Closes #665.
+
 ### Added
 
 - **Linking flows: "link to here" and the double-link offer.** With a card open, **Link another action here…** picks a card that should point at this one — the link is created on the picked card instantly. And whichever direction a link is made, a toast offers **Link back** to create the reverse in one click. Closes #659.

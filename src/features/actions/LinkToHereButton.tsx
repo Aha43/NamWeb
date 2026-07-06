@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,9 @@ export function LinkToHereButton({
   const workspace = useContext(WorkspaceContext);
   const [open, setOpen] = useState(false);
   const doc = workspace?.document;
+  // Fire-time state for the toast action (#665): the doc captured at pick time can be 6s stale.
+  const docRef = useRef(doc);
+  docRef.current = doc;
   if (!workspace || !doc || !doc.nodes[nodeId]) return null;
 
   function confirm(pickedId: string) {
@@ -46,7 +49,11 @@ export function LinkToHereButton({
     toast({
       message: t('editor.linkHereDone', { title: picked.title }),
       actionLabel: t('editor.linkBack'),
-      onAction: () => onLinkBack?.(pickedId),
+      // Re-check the picked node at fire time — if it vanished during the toast window, a
+      // buffered reverse link would be broken-on-arrival and persisted by Save (#665).
+      onAction: () => {
+        if (docRef.current?.nodes[pickedId]) onLinkBack?.(pickedId);
+      },
     });
   }
 

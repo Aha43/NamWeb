@@ -267,7 +267,9 @@ export function allOpenableProjects(doc: WorkspaceDocument): ProjectMoveTarget[]
 
 /** Every openable action — non-project, non-structural, not in an archived subtree, not
  *  DONE/CANCELLED — as picker targets ({id, label: title}). The "files" counterpart of
- *  allOpenableProjects for the browser's actions/both modes (#657). */
+ *  allOpenableProjects for the browser's actions/both modes (#657).
+ *  NB: inbox children and sub-actions of actions are included but currently unreachable in the
+ *  columns (no Inbox root; actions aren't drilled into) — inert until a browse root exists (#663). */
 export function allOpenableActions(doc: WorkspaceDocument): { id: string; label: string }[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);

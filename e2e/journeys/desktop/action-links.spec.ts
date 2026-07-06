@@ -96,3 +96,42 @@ test('the double-link offer and link-to-here (#659)', async ({ page, doc }) => {
     .poll(() => doc.current().nodes['sand'].resources.map((r: { value: string }) => r.value))
     .toContain('nam://action/fix');
 });
+
+test('review hardenings: buffer-routed link-back and save-before-follow (#663)', async ({ page, doc }) => {
+  await page.goto('/next');
+  const editor = page.getByRole('dialog', { name: 'Edit action' });
+
+  // Scenario: save Fix→Paint, then open Paint's editor BEFORE clicking Link back. The link-back
+  // must land in Paint's open buffer (a direct dispatch would be reverted by Paint's Save).
+  await page.getByRole('button', { name: 'Edit Fix the door' }).click();
+  await editor.getByRole('button', { name: 'Resources' }).click();
+  await editor.getByRole('button', { name: 'Link action…' }).click();
+  const picker = page.getByRole('dialog', { name: 'Link to action' });
+  await expect
+    .poll(() => picker.evaluate((el) => el.getAnimations().every((a) => a.playState === 'finished')))
+    .toBe(true);
+  await picker.getByRole('button', { name: 'Home', exact: true }).click();
+  await picker.getByRole('button', { name: 'Paint the wall' }).click();
+  await picker.getByRole('button', { name: 'Link', exact: true }).click();
+  await editor.getByRole('button', { name: 'Save' }).click();
+
+  await page.getByRole('button', { name: 'Edit Paint the wall' }).click();
+  await expect(editor.getByRole('textbox', { name: 'Title' })).toHaveValue('Paint the wall');
+  // Pure-CSS locator: the toast predates this modal, so Radix aria-hid it at open — role
+  // queries can't see it (unlike a toast that mounts while the dialog is already open).
+  await page.locator('[role="status"] button', { hasText: 'Link back' }).click();
+  await editor.getByRole('button', { name: 'Resources' }).click();
+  await expect(editor.getByRole('button', { name: 'Open linked action Fix the door' })).toBeVisible();
+  await editor.getByRole('button', { name: 'Save' }).click();
+  await expect
+    .poll(() => doc.current().nodes['paint'].resources.map((r: { value: string }) => r.value))
+    .toContain('nam://action/fix');
+
+  // F3: unsaved edits survive following a link — the dialog saves before switching.
+  await page.getByRole('button', { name: 'Edit Fix the door' }).click();
+  await editor.getByRole('textbox', { name: 'Title' }).fill('Fix the door NOW');
+  // Resources auto-opens (the card has a link now) — no toggle click, or we'd collapse it.
+  await editor.getByRole('button', { name: 'Open linked action Paint the wall' }).click();
+  await expect(editor.getByRole('textbox', { name: 'Title' })).toHaveValue('Paint the wall');
+  await expect.poll(() => doc.current().nodes['fix'].title).toBe('Fix the door NOW');
+});

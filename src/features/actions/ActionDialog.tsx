@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useContext, useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { STATUS_OPTIONS } from './status';
@@ -18,6 +18,7 @@ import { InheritedTags } from './InheritedTags';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ResourcesEditor } from './ResourcesEditor';
 import { LinkToHereButton } from './LinkToHereButton';
+import { ActionEditorContext } from './action-editor-context';
 import { makeActionLink, parseActionLink } from '@/domain/actionLinks';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -71,6 +72,7 @@ export function ActionDialog({
   open,
   onOpenChange,
   onSave,
+  linkBackRef,
   onMakeProject,
   moveTargets,
   onMove,
@@ -89,6 +91,9 @@ export function ActionDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (edits: ActionEdits) => void;
+  /** Registered while mounted: inserts a link to `targetId` into the buffered resources — the
+   *  provider routes a link-back here when THIS node's editor is the toast's target (#663). */
+  linkBackRef?: RefObject<((targetId: string) => void) | null>;
   /** Existing tags to suggest in the tag field (registered + in-use). */
   availableTags?: string[];
   /** Tags inherited from ancestor projects ("rub-off") — shown read-only, can't be edited here. */
@@ -110,6 +115,8 @@ export function ActionDialog({
   deleteConfirmMessage?: string;
 }) {
   const { t } = useTranslation();
+  // Optional — presentational hosts/tests render without the provider; follow-link no-ops there.
+  const editor = useContext(ActionEditorContext);
   const saveHint = IS_MAC ? t('editor.saveHintMac') : t('editor.saveHintOther');
   const isProject = node.project;
   const [title, setTitle] = useState(node.title);
@@ -125,6 +132,16 @@ export function ActionDialog({
   const [dueEndTimeError, setDueEndTimeError] = useState(false);
   const [status, setStatus] = useState<NodeStatus>(node.status);
   const [resources, setResources] = useState<Resource[]>(node.resources);
+  // Register the buffer-inserter for provider-routed link-backs (#663). Dedupe-guarded, like
+  // LinkToHereButton's onLinkBack below.
+  useEffect(() => {
+    if (!linkBackRef) return;
+    linkBackRef.current = (targetId) =>
+      setResources((rs) => (rs.some((r) => parseActionLink(r) === targetId) ? rs : [...rs, makeActionLink(targetId)]));
+    return () => {
+      linkBackRef.current = null;
+    };
+  }, [linkBackRef]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [movePickerOpen, setMovePickerOpen] = useState(false);
   // The scheduling extras (start time-of-day, end date, end time) collapse by default to keep the
@@ -134,37 +151,37 @@ export function ActionDialog({
   );
   const isDesktop = useIsDesktop();
 
-  function doSave() {
+  function doSave(): boolean {
     const trimmedTitle = title.trim();
-    if (!trimmedTitle) return;
+    if (!trimmedTitle) return false;
     const dueAt = parseFlexibleDate(due);
     if (due.trim() && dueAt === null) {
       setDueError(true);
-      return;
+      return false;
     }
     // Optional end date: must parse, and be a real range (needs a start, and end ≥ start).
     const dueEndAt = dueEnd.trim() ? parseFlexibleDate(dueEnd) : null;
     if (dueEnd.trim() && (dueEndAt === null || !dueAt || dueEndAt < dueAt)) {
       setDueEndError(true);
-      return;
+      return false;
     }
     // Optional time of day on the start: must parse when entered (and only kept with a date).
     const dueTimeValue = dueTime.trim() ? parseFlexibleTime(dueTime) : null;
     if (dueTime.trim() && dueTimeValue === null) {
       setDueTimeError(true);
-      return;
+      return false;
     }
     // Optional time of day on the end: must parse when entered (and only kept with an end date).
     const dueEndTimeValue = dueEndTime.trim() ? parseFlexibleTime(dueEndTime) : null;
     if (dueEndTime.trim() && dueEndTimeValue === null) {
       setDueEndTimeError(true);
-      return;
+      return false;
     }
     // On a same-day range, the end time can't be before the start time (#508). HH:MM strings compare
     // chronologically. (Different days are already ordered by the date check above.)
     if (dueAt && dueEndAt && dueAt === dueEndAt && dueTimeValue && dueEndTimeValue && dueEndTimeValue < dueTimeValue) {
       setDueEndTimeError(true);
-      return;
+      return false;
     }
     const trimmedDescription = description.trim();
     const endAt = dueAt ? dueEndAt : null;
@@ -180,6 +197,7 @@ export function ActionDialog({
       resources,
     });
     onOpenChange(false);
+    return true;
   }
 
   function submit(event: FormEvent) {
@@ -418,7 +436,16 @@ export function ActionDialog({
             </div>
           </fieldset>
           <CollapsibleSection title={t('editor.resources')} defaultOpen={node.resources.length > 0}>
-            <ResourcesEditor resources={resources} onChange={setResources} linkExcludeId={node.id} />
+            <ResourcesEditor
+              resources={resources}
+              onChange={setResources}
+              linkExcludeId={node.id}
+              // Following a link remounts this dialog onto the target — save first so buffered
+              // edits (title, notes, fresh links) aren't silently discarded (#663).
+              onFollowLink={(targetId) => {
+                if (doSave()) editor?.openEditor(targetId);
+              }}
+            />
             <LinkToHereButton
               nodeId={node.id}
               onLinkBack={(pickedId) =>

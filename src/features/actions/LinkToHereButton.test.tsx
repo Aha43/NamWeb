@@ -60,6 +60,28 @@ describe('LinkToHereButton (#659)', () => {
     expect(onLinkBack).toHaveBeenCalledWith('other');
   });
 
+  it('Link back no-ops when the picked action vanished during the toast window (#665)', () => {
+    const toasts: ToastOptions[] = [];
+    const onLinkBack = vi.fn();
+    render(
+      <WorkspaceContext.Provider value={{ document: doc, dispatch: vi.fn() } as unknown as UseWorkspace}>
+        <ToastContext.Provider value={{ toast: (o) => toasts.push(o) }}>
+          <LinkToHereButton nodeId="host" onLinkBack={onLinkBack} />
+        </ToastContext.Provider>
+      </WorkspaceContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Link another action here…' }));
+    fireEvent.click(screen.getByRole('button', { name: /Home/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Other card/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Link$/ }));
+    // The picked action disappears before the toast is clicked.
+    const saved = doc.nodes['other'];
+    delete doc.nodes['other'];
+    toasts[0].onAction?.();
+    expect(onLinkBack).not.toHaveBeenCalled();
+    doc.nodes['other'] = saved;
+  });
+
   it('the host card itself is not offered in the picker', () => {
     render(
       <WorkspaceContext.Provider value={{ document: doc, dispatch: vi.fn() } as unknown as UseWorkspace}>
