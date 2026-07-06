@@ -21,7 +21,9 @@ export function InProgressToggle({ id, title }: { id: string; title: string }) {
   const node = workspace?.document?.nodes[id];
   if (!workspace || !node) return null;
   const { dispatch } = workspace;
-  const on = node.tags.includes(IN_PROGRESS_TAG);
+  // Case-insensitive: NamDesktop-written documents can carry "In Progress" (#654).
+  const isMark = (tag: string) => tag.trim().toLowerCase() === IN_PROGRESS_TAG;
+  const on = node.tags.some(isMark);
   const label = t('tags.inProgressToggleAria', { title });
   return (
     <Tooltip label={on ? t('tags.inProgressOn') : t('tags.inProgressOff')}>
@@ -33,7 +35,7 @@ export function InProgressToggle({ id, title }: { id: string; title: string }) {
           dispatch({
             type: 'updateTags',
             id,
-            tags: on ? node.tags.filter((tag) => tag !== IN_PROGRESS_TAG) : [...node.tags, IN_PROGRESS_TAG],
+            tags: on ? node.tags.filter((tag) => !isMark(tag)) : [...node.tags, IN_PROGRESS_TAG],
             now: nowIso(),
           })
         }

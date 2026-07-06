@@ -49,6 +49,16 @@ describe('InProgressToggle (#651)', () => {
     );
   });
 
+  it('treats a NamDesktop-cased variant ("In Progress") as on, and clears it (#654)', () => {
+    const dispatch = renderToggle(['In Progress', 'home']);
+    const button = screen.getByRole('button', { name: 'Working on it: Buy milk' });
+    expect(button).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(button);
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'updateTags', id: 'a', tags: ['home'] }),
+    );
+  });
+
   it('renders nothing without a workspace provider (presentational hosts)', () => {
     const { container } = render(<InProgressToggle id="a" title="x" />);
     expect(container).toBeEmptyDOMElement();

@@ -7,7 +7,7 @@
 // appear in action lists.
 
 import type { NamNode, WorkspaceDocument } from './types';
-import { SYSTEM_TAGS } from './systemTags';
+import { SYSTEM_TAGS, canonicalTag } from './systemTags';
 
 /** The container node ids that should never show up as actions. */
 export function structuralNodeIds(doc: WorkspaceDocument): Set<string> {
@@ -424,8 +424,10 @@ export function dueGroups(doc: WorkspaceDocument, now: Date = new Date()): DueGr
 /** Sorted, de-duplicated tags present across all nodes, plus the registered tags — and the
  *  built-in system tags (#651), which are always on offer even before first use. */
 export function allTags(doc: WorkspaceDocument): string[] {
-  const set = new Set<string>([...SYSTEM_TAGS, ...doc.registeredTags]);
-  for (const node of Object.values(doc.nodes)) for (const tag of node.tags) set.add(tag);
+  // canonicalTag collapses NamDesktop-written case variants of system tags ("In Progress") into
+  // the built-in lowercase form, so the list never shows both spellings (#654).
+  const set = new Set<string>([...SYSTEM_TAGS, ...doc.registeredTags.map(canonicalTag)]);
+  for (const node of Object.values(doc.nodes)) for (const tag of node.tags) set.add(canonicalTag(tag));
   return [...set].sort();
 }
 
@@ -444,8 +446,10 @@ export function contextItems(
     if (n.project || n.status === 'DONE' || structural.has(n.id) || archived.has(n.id)) return false;
     if (nextOnly && n.status !== 'NEXT') return false;
     if (requiredTags.length === 0) return true;
-    const tags = new Set(effectiveTags(doc, n.id));
-    return requiredTags.every((t) => tags.has(t));
+    // Case-insensitive match: the web normalizes tags to lowercase, but NamDesktop-written
+    // documents can carry case variants — a lowercase filter must still find them (#654).
+    const tags = new Set(effectiveTags(doc, n.id).map((t) => t.trim().toLowerCase()));
+    return requiredTags.every((t) => tags.has(t.trim().toLowerCase()));
   });
 }
 

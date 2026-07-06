@@ -383,6 +383,20 @@ describe('tags & search', () => {
     expect(allTags(doc)).toEqual(['home', 'in progress', 'urgent', 'waiting']);
   });
 
+  it('allTags collapses NamDesktop-cased system-tag variants into the canonical form (#654)', () => {
+    const doc = tagged();
+    doc.nodes['a'].tags.push('In Progress'); // desktop-written case variant
+    const tags = allTags(doc);
+    expect(tags).toContain('in progress');
+    expect(tags).not.toContain('In Progress');
+  });
+
+  it('contextItems matches tags case-insensitively (#654)', () => {
+    const doc = tagged();
+    doc.nodes['a'].tags.push('In Progress');
+    expect(ids(contextItems(doc, ['in progress']))).toContain('a');
+  });
+
   it('contextItems AND-matches effective tags, excludes done, honours nextOnly', () => {
     const doc = tagged();
     // 'home' is inherited by all of p1's children; 'a' and 'b' qualify (d is DONE)
