@@ -227,6 +227,7 @@ export function ProjectDetailsPanel({
           <div className="space-y-1.5 border-t border-border pt-3">
             <span className="text-sm font-medium text-foreground">{t('editor.resources')}</span>
             <ResourcesEditor
+              linkExcludeId={project.id}
               resources={resources}
               onChange={(r) => {
                 setResources(r);

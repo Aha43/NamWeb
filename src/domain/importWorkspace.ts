@@ -5,6 +5,7 @@
 // workspace document. Pure + React-free.
 
 import type { NamNode, WorkspaceDocument } from './types';
+import { makeActionLink, parseActionLink } from './actionLinks';
 import type { SeedNode } from './mutations';
 
 interface NamedWorkspace {
@@ -95,7 +96,13 @@ function workspaceContent(source: WorkspaceDocument, newId: () => string): SeedN
       dueTime: n.dueTime ?? null,
       dueEndTime: n.dueEndTime ?? null,
       blockedBy: n.blockedBy.map((b) => idMap.get(b)).filter((x): x is string => Boolean(x)),
-      resources: n.resources,
+      // Action-link resources embed node ids — remap them like blockedBy; a link whose
+      // target isn't part of the import degrades to a dangling link (rendered as gone, #658).
+      resources: n.resources.map((r) => {
+        const target = parseActionLink(r);
+        const mapped = target ? idMap.get(target) : undefined;
+        return mapped ? makeActionLink(mapped) : r;
+      }),
       children: n.childIds.map(convert).filter((x): x is SeedNode => x !== null),
     };
   };
