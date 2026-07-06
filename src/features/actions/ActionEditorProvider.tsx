@@ -7,6 +7,9 @@ import { allTags, archivedProjectIds, canAddPrerequisite, effectiveTags, project
 import { useDeleteNode } from './useDeleteNode';
 import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { newId, nowIso } from '@/lib/local';
+import { useTranslation } from 'react-i18next';
+import { useToast } from '@/components/ui/toast/toast-context';
+import { makeActionLink, parseActionLink } from '@/domain/actionLinks';
 
 /** Same tag list (already normalized) — avoids dispatching a no-op tag update. */
 function sameTags(a: string[], b: string[]): boolean {
@@ -19,6 +22,8 @@ function sameTags(a: string[], b: string[]): boolean {
  * for fields that actually changed.
  */
 export function ActionEditorProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+  const { toast } = useToast();
   const { document, dispatch } = useWorkspaceContext();
   const [editingId, setEditingId] = useState<string | null>(null);
   const node = editingId && document ? document.nodes[editingId] ?? null : null;
@@ -164,6 +169,28 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     }
     if (JSON.stringify(edits.resources) !== JSON.stringify(node.resources)) {
       dispatch({ type: 'updateResources', id: node.id, resources: edits.resources, now });
+      // Double-link offer (#659): a link was just created from this card — offer the reverse.
+      // The target isn't buffered anywhere (this dialog is closing), so the link-back commits
+      // directly. Offered for the last link added in this save.
+      const before = new Set(node.resources.map(parseActionLink).filter(Boolean));
+      const added = edits.resources
+        .map(parseActionLink)
+        .filter((id): id is string => id !== null && !before.has(id));
+      const targetId = added[added.length - 1];
+      const target = targetId ? document?.nodes[targetId] : undefined;
+      if (target && !target.resources.some((r) => parseActionLink(r) === node.id)) {
+        toast({
+          message: t('editor.linkedTo', { title: target.title }),
+          actionLabel: t('editor.linkBack'),
+          onAction: () =>
+            dispatch({
+              type: 'updateResources',
+              id: target.id,
+              resources: [...target.resources, makeActionLink(node.id)],
+              now: nowIso(),
+            }),
+        });
+      }
     }
   }
 

@@ -10,6 +10,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Linking flows: "link to here" and the double-link offer.** With a card open, **Link another action here…** picks a card that should point at this one — the link is created on the picked card instantly. And whichever direction a link is made, a toast offers **Link back** to create the reverse in one click. Closes #659.
 - **Linked cards.** An action can link to another: in the editor's Resources, **Link action…** opens the browser (actions as files) — the link is stored as a `nam://action/<id>` URI resource (NamDesktop sees an ordinary URI), shown as the target's live path. Click it to jump into the linked action, "…" to re-pick, ✕ to unlink; a deleted target shows as gone. Links survive workspace import (ids are remapped). Closes #658.
 
 ### Changed
