@@ -340,6 +340,7 @@
   "inbox.processButton": "Behandle…",
   "inbox.processDeckTitle": "Behandle innboks",
   "inbox.processItemTitle": "Behandle element",
+  "inbox.processSelected": "Behandle valgte ({count})",
   "inbox.quickAddAria": "Hurtiglegg til",
   "inbox.remainingLeft": "{count} igjen",
   "inbox.renameAria": "Gi nytt navn til {title}",

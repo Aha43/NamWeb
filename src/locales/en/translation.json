@@ -340,6 +340,7 @@
   "inbox.processButton": "Process…",
   "inbox.processDeckTitle": "Process inbox",
   "inbox.processItemTitle": "Process item",
+  "inbox.processSelected": "Process selected ({count})",
   "inbox.quickAddAria": "Quick add",
   "inbox.remainingLeft": "{count} left",
   "inbox.renameAria": "Rename {title}",

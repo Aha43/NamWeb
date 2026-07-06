@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **The "Process inbox" deck cycles and honors the selection.** Skip no longer discards an item for the run — it comes back around, and the deck ends only when everything is resolved or deleted (or you close it); the count shows what's left. And with items ticked in select mode, the button becomes **Process selected (n)**: clarify a chosen few one-by-one — each its own way — leaving the rest for later. Closes #648.
+
 ## [0.9.0] - 2026-07-05
 
 One processing model, bookmarks grown up. The wizard born in the capture dialog becomes *the* way
