@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-07-06
+
+Cards link to cards. The Finder-style browser learns to select actions as well as project folders
+— the toolbar explorer now opens either — and on that foundation an action can carry a link to
+another: stored as a `nam://action/<id>` resource on the shared document (NamDesktop-safe), shown
+as the target's live path, one click to follow. Link in either direction ("Link action…" /
+"Link another action here…") and a toast offers the reverse. The cut was hardened by a
+two-reviewer experiment — an independent Claude review and a Codex review with zero overlap
+between their findings, all six fixed.
+
 ### Fixed
 
 - **Linked-cards hardening (review follow-ups).** The "Link back" toast now re-reads the target when clicked (a stale snapshot could clobber edits made in the meantime — and routes into the target's editor buffer when that editor is open); linking the same card twice collapses to one link; and following a link saves your open edits before switching cards instead of silently discarding them (Closes #663). A Codex pass added: both link endpoints are revalidated when "Link back" fires (a deleted card can no longer receive or produce a dangling link), and the resources toolbar wraps on phone widths instead of overflowing. Closes #665.
@@ -1281,7 +1291,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/Aha43/NamWeb/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/Aha43/NamWeb/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Aha43/NamWeb/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/Aha43/NamWeb/compare/v0.7.0...v0.8.0
