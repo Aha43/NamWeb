@@ -12,6 +12,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **"in progress" — a built-in system tag.** Mark what you're actually working on, orthogonal to status (a Backlog item you've started but are waiting on is legitimately both). One-click toggle on action rows and the Focus card; always offered in tag suggestions and filters; shown bold everywhere; protected from rename/delete. Syncs to NamDesktop as a plain tag. Closes #651.
 
+### Fixed
+
+- **No more removed-items flicker.** Bulk operations (the wizard's Done, bulk delete, the process deck) removed items, briefly showed them again, then removed them for good — each per-item save was rewinding the display past the still-pending ones. The display now adopts only the final state of a burst; the data was always correct. Closes #650.
+
 ### Changed
 
 - **The "Process inbox" deck cycles and honors the selection.** Skip no longer discards an item for the run — it comes back around, and the deck ends only when everything is resolved or deleted (or you close it); the count shows what's left. And with items ticked in select mode, the button becomes **Process selected (n)**: clarify a chosen few one-by-one — each its own way — leaving the rest for later. Closes #648.
