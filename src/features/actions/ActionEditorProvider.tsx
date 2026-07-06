@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -26,6 +26,16 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const { document, dispatch } = useWorkspaceContext();
   const [editingId, setEditingId] = useState<string | null>(null);
+  // Fire-time state for the link-back toast (#663): the toast can fire up to 6s after save, so its
+  // action must re-read the *current* document/editing state, never the ones captured at save.
+  const docRef = useRef(document);
+  docRef.current = document;
+  const editingIdRef = useRef<string | null>(null);
+  editingIdRef.current = editingId;
+  // The open ActionDialog registers a buffer-inserter here: a link-back aimed at the node being
+  // edited must land in that dialog's buffered resources — a direct dispatch would be silently
+  // clobbered when the dialog saves its mount-seeded buffer (#663).
+  const bufferLinkRef = useRef<((targetId: string) => void) | null>(null);
   const node = editingId && document ? document.nodes[editingId] ?? null : null;
 
   // If the edited node vanishes under the open dialog (deleted on another surface, sync pull),
@@ -179,16 +189,25 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
       const targetId = added[added.length - 1];
       const target = targetId ? document?.nodes[targetId] : undefined;
       if (target && !target.resources.some((r) => parseActionLink(r) === node.id)) {
+        const sourceId = node.id; // capture ids only — everything else re-read at fire time (#663)
         toast({
           message: t('editor.linkedTo', { title: target.title }),
           actionLabel: t('editor.linkBack'),
-          onAction: () =>
+          onAction: () => {
+            const fresh = docRef.current?.nodes[target.id];
+            if (!fresh) return; // target deleted since the save
+            if (fresh.resources.some((r) => parseActionLink(r) === sourceId)) return; // linked meanwhile
+            if (editingIdRef.current === target.id && bufferLinkRef.current) {
+              bufferLinkRef.current(sourceId); // its editor is open — go via the buffer
+              return;
+            }
             dispatch({
               type: 'updateResources',
               id: target.id,
-              resources: [...target.resources, makeActionLink(node.id)],
+              resources: [...fresh.resources, makeActionLink(sourceId)],
               now: nowIso(),
-            }),
+            });
+          },
         });
       }
     }
@@ -201,6 +220,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
         <ActionDialog
           key={node.id}
           node={node}
+          linkBackRef={bufferLinkRef}
           open
           onOpenChange={(open) => {
             if (!open) setEditingId(null);

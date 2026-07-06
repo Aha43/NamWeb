@@ -80,6 +80,41 @@ describe('ResourcesEditor action links (#658)', () => {
     doc.nodes['p1'].childIds.pop();
   });
 
+  it('picking an already-linked target again is a no-op (#663)', () => {
+    const { onChange } = renderWithProviders([makeActionLink('a1')]);
+    fireEvent.click(screen.getByRole('button', { name: 'Link action…' }));
+    fireEvent.click(screen.getAllByRole('button', { name: /Home/ })[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Fix door/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Link$/ }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('re-picking an existing target via "…" collapses to one row (#663)', () => {
+    const other = node('a2', { title: 'Paint wall', status: 'NEXT' });
+    doc.nodes['a2'] = other;
+    doc.nodes['p1'].childIds.push('a2');
+    // Row 0 links a2, row 1 links a1; re-pick row 1's target to a2 → row 1 dropped.
+    const { onChange } = renderWithProviders([makeActionLink('a2'), makeActionLink('a1')]);
+    fireEvent.click(screen.getAllByRole('button', { name: 'Change link' })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: /Home/ })[0]);
+    fireEvent.click(screen.getByRole('button', { name: /Paint wall/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^Link$/ }));
+    expect(onChange).toHaveBeenCalledWith([makeActionLink('a2')]);
+    delete doc.nodes['a2'];
+    doc.nodes['p1'].childIds.pop();
+  });
+
+  it('onFollowLink overrides the link-row click (#663)', () => {
+    const onFollowLink = vi.fn();
+    render(
+      <WorkspaceContext.Provider value={{ document: doc, dispatch: vi.fn() } as unknown as UseWorkspace}>
+        <ResourcesEditor resources={[makeActionLink('a1')]} onChange={vi.fn()} onFollowLink={onFollowLink} />
+      </WorkspaceContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Open linked action Fix door' }));
+    expect(onFollowLink).toHaveBeenCalledWith('a1');
+  });
+
   it('renders a raw URI row without a workspace provider (presentational hosts)', () => {
     render(<ResourcesEditor resources={[makeActionLink('a1')]} onChange={vi.fn()} />);
     expect(screen.getByText('nam://action/a1')).toBeInTheDocument();

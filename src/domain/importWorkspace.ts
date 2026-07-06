@@ -97,7 +97,9 @@ function workspaceContent(source: WorkspaceDocument, newId: () => string): SeedN
       dueEndTime: n.dueEndTime ?? null,
       blockedBy: n.blockedBy.map((b) => idMap.get(b)).filter((x): x is string => Boolean(x)),
       // Action-link resources embed node ids — remap them like blockedBy; a link whose
-      // target isn't part of the import degrades to a dangling link (rendered as gone, #658).
+      // target isn't part of the import is kept VERBATIM (unlike blockedBy, which drops unmapped
+      // ids): a reference may legitimately point outside the copied subtree — on a same-workspace
+      // re-import it lands on the original node, otherwise it renders as gone (#658/#663).
       resources: n.resources.map((r) => {
         const target = parseActionLink(r);
         const mapped = target ? idMap.get(target) : undefined;

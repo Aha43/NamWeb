@@ -25,11 +25,15 @@ export function ResourcesEditor({
   resources,
   onChange,
   linkExcludeId,
+  onFollowLink,
 }: {
   resources: Resource[];
   onChange: (resources: Resource[]) => void;
   /** The hosting node — excluded from the link picker so a card can't link to itself. */
   linkExcludeId?: string;
+  /** Overrides what clicking a link row does. The buffered ActionDialog host passes
+   *  save-then-switch (#663); without it the row opens the target's editor directly. */
+  onFollowLink?: (targetId: string) => void;
 }) {
   const { t } = useTranslation();
   const workspace = useContext(WorkspaceContext);
@@ -49,9 +53,14 @@ export function ResourcesEditor({
 
   function pickLink(targetId: string) {
     const link = makeActionLink(targetId);
+    // One link per target (#663): a repeat pick is a no-op; re-picking an existing target via
+    // "…" collapses to the already-present row (the replaced row is dropped).
+    const existsAt = resources.findIndex((r) => parseActionLink(r) === targetId);
     if (linkPicker?.replaceIndex != null) {
-      onChange(resources.map((r, idx) => (idx === linkPicker.replaceIndex ? link : r)));
-    } else {
+      const i = linkPicker.replaceIndex;
+      if (existsAt !== -1 && existsAt !== i) onChange(resources.filter((_, idx) => idx !== i));
+      else onChange(resources.map((r, idx) => (idx === i ? link : r)));
+    } else if (existsAt === -1) {
       onChange([...resources, link]);
     }
     setLinkPicker(null);
@@ -68,7 +77,7 @@ export function ResourcesEditor({
         {target ? (
           <button
             type="button"
-            onClick={() => editor?.openEditor(targetId)}
+            onClick={() => (onFollowLink ? onFollowLink(targetId) : editor?.openEditor(targetId))}
             aria-label={t('editor.openLinkAria', { title: target.title })}
             className="min-w-0 flex-1 truncate text-left text-foreground underline-offset-2 hover:underline"
           >
