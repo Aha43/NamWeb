@@ -76,3 +76,13 @@ export function dayActions(doc: WorkspaceDocument, date: string): NamNode[] {
     .filter((n) => coversDay(n, date))
     .sort((a, b) => a.title.localeCompare(b.title));
 }
+
+/** ISO 8601 week number (Monday-start; week 1 holds the year's first Thursday) — the Norwegian
+ *  convention, used by the month grid's week gutter (#680). */
+export function isoWeek(date: Date): number {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum); // shift to the week's Thursday
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86_400_000 + 1) / 7);
+}

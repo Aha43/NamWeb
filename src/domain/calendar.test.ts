@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { calendarMonth, dayActions } from './calendar';
+import { calendarMonth, dayActions, isoWeek } from './calendar';
 
 function node(id: string, p: Partial<NamNode> = {}): NamNode {
   return {
@@ -72,5 +72,14 @@ describe('dayActions (#676)', () => {
       node('x', { title: 'Other day', dueAt: '2026-07-11' }),
     ]);
     expect(dayActions(doc, '2026-07-10').map((n) => n.title)).toEqual(['Alpha', 'Beta']);
+  });
+});
+
+describe('isoWeek (#680)', () => {
+  it('matches ISO 8601 edges', () => {
+    expect(isoWeek(new Date(2026, 6, 7))).toBe(28); // Tue 2026-07-07
+    expect(isoWeek(new Date(2026, 0, 1))).toBe(1); // Thu 2026-01-01 → week 1
+    expect(isoWeek(new Date(2021, 0, 1))).toBe(53); // Fri 2021-01-01 → week 53 of 2020
+    expect(isoWeek(new Date(2024, 11, 30))).toBe(1); // Mon 2024-12-30 → week 1 of 2025
   });
 });
