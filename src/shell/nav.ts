@@ -1,5 +1,6 @@
 import {
   CalendarClock,
+  CalendarDays,
   CheckCircle2,
   Folders,
   Inbox,
@@ -28,6 +29,7 @@ const inbox: NavItem = { to: '/inbox', label: 'domain.inbox', icon: Inbox, hint:
 export const next: NavItem = { to: '/next', label: 'domain.status.next', icon: ListTodo, hint: 'nav.nextHint' };
 const backlog: NavItem = { to: '/backlog', label: 'domain.status.backlog', icon: Layers, hint: 'nav.backlogHint' };
 const due: NavItem = { to: '/due', label: 'domain.due', icon: CalendarClock, hint: 'nav.dueHint' };
+export const calendar: NavItem = { to: '/calendar', label: 'domain.calendar', icon: CalendarDays, hint: 'nav.calendarHint' };
 const blocked: NavItem = { to: '/blocked', label: 'domain.blocked', icon: Lock, hint: 'nav.blockedHint' };
 export const tags: NavItem = { to: '/tags', label: 'domain.tags', icon: Tag, hint: 'nav.tagsHint' };
 const search: NavItem = { to: '/search', label: 'domain.search', icon: Search, hint: 'nav.searchHint' };
@@ -40,7 +42,7 @@ export const focus: NavItem = { to: '/focus', label: 'domain.focus', icon: Targe
 /** All routable surfaces, flat — the phone bottom bar foregrounds a subset (capture + execution) and
  *  the rest live in the More sheet. */
 export const SURFACES: NavItem[] = [
-  inbox, next, backlog, due, blocked, tags, search, projects, goals, templates, done, focus,
+  inbox, next, backlog, due, calendar, blocked, tags, search, projects, goals, templates, done, focus,
 ];
 
 export interface NavGroup {
@@ -55,7 +57,7 @@ export interface NavGroup {
  *  "Views"/"Organize" headings (things are what they are); the phone More sheet keeps its own. */
 export const SIDEBAR_GROUPS: NavGroup[] = [
   { items: [inbox] },
-  { items: [backlog, due, blocked, done] },
+  { items: [backlog, due, calendar, blocked, done] },
   { items: [goals, templates] },
 ];
 
@@ -63,7 +65,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
  *  grouped, and rendered with their `hint` as a subtitle — tooltips don't fire on touch, so this is
  *  how the per-surface descriptions reach mobile. Tags + Search live here too (no toolbar on phone). */
 export const MORE_GROUPS: NavGroup[] = [
-  { label: 'nav.groupViews', items: [backlog, due, blocked, done] },
+  { label: 'nav.groupViews', items: [backlog, due, calendar, blocked, done] },
   { label: 'nav.groupOrganize', items: [projects, goals, templates] },
   { label: 'nav.groupFind', items: [tags, search] },
 ];
