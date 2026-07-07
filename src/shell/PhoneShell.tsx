@@ -85,13 +85,24 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
         <SheetContent
           side="bottom"
           className="max-h-[85dvh] overflow-y-auto"
-          // Tap-through guard (#412): the sheet slides up UNDER the finger that just tapped
-          // "More" — during the 500ms slide every row transits that spot, so a rapid second tap
-          // lands on whichever row is passing (any row; at rest the spot belongs to the footer,
-          // i.e. Sign out) and navigates "for no reason". Swallow every click until the slide is
-          // done (window ≥ the sheet's data-[state=open]:duration-500, #671).
+          // Tap-through guard (#412/#673): the sheet slides up UNDER the finger that just
+          // tapped "More" — while it slides, every row transits that spot, so a rapid second tap
+          // lands on whichever row is passing (at rest the spot belongs to the footer, i.e. Sign
+          // out). Suppress only what can physically be that mis-tap: a pointer-generated click
+          // (keyboard activation can't be tap-through) landing in the bottom tab-bar zone, while
+          // the sheet is actually animating (its real lifecycle, not a stopwatch — on slow
+          // devices the slide starts well after the button's onClick) or in the instant-render
+          // moments right after open (reduced motion has no animation to track).
           onClickCapture={(e) => {
-            if (performance.now() - openedAtRef.current < 500) {
+            const pointer = e.detail > 0 || (e.nativeEvent as PointerEvent).pointerType;
+            if (!pointer) return;
+            if (e.clientY < window.innerHeight - 100) return;
+            const content = e.currentTarget as HTMLElement;
+            const sliding =
+              typeof content.getAnimations === 'function' &&
+              content.getAnimations().some((a) => a.playState === 'running');
+            const justOpened = performance.now() - openedAtRef.current < 350;
+            if (sliding || justOpened) {
               e.preventDefault();
               e.stopPropagation();
             }

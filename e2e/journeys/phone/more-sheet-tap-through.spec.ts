@@ -23,7 +23,19 @@ test('a rapid double-tap on More does not navigate; a deliberate tap still does'
   await expect(page).toHaveURL(/\/inbox$/);
   await expect(page.getByRole('dialog')).toBeVisible(); // the sheet is still open, not misfired
 
-  // After the guard window, rows behave normally.
+  // The sheet is open from the double-tap — the close ✕ (top of the sheet, outside the
+  // tap-through zone) closes it.
+  await page.getByRole('button', { name: 'Close' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  // Keyboard-style activation (detail 0) is never suppressed, even inside the window (#673).
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.getByRole('button', { name: 'Close' }).dispatchEvent('click');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+
+  // After the slide, deliberate row taps navigate normally.
+  await page.getByRole('button', { name: 'More' }).click();
+  await page.waitForTimeout(600);
   await page.getByRole('link', { name: 'Account', exact: true }).click();
   await expect(page).toHaveURL(/\/account$/);
 });
