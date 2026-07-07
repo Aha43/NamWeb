@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **No more surprise jumps to Account/Settings on the phone.** Root-caused at last: the More sheet slides up under the finger that just tapped More, so a quick second tap landed on whichever row passed that spot and navigated. The sheet now ignores taps in its first moments after opening. Closes #412.
+
 ### Added
 
 - **Release-footprint archive.** The "footprint since last release" paragraph reported at every cut is now filed verbatim in `docs/footprints.md` (newest first) for historical analysis — themes over time, converging-vs-polishing calls, process experiments. Seeded with v0.9.0/v0.9.1/v0.10.0; the RELEASING ritual now includes the append. Closes #667.

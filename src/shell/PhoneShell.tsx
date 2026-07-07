@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { HelpCircle, Inbox, ListTodo, MoreHorizontal, Plus, Settings, Target, User, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +27,7 @@ import { SyncNotice } from './SyncNotice';
 export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
   const { t } = useTranslation();
   const [moreOpen, setMoreOpen] = useState(false);
+  const openedAtRef = useRef(0);
   const { openCapture } = useCapture();
 
   return (
@@ -69,7 +70,10 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
 
         <button
           type="button"
-          onClick={() => setMoreOpen(true)}
+          onClick={() => {
+            openedAtRef.current = performance.now();
+            setMoreOpen(true);
+          }}
           className="flex flex-col items-center gap-0.5 py-2 text-xs font-medium text-muted-foreground hover:text-foreground"
         >
           <MoreHorizontal className="h-5 w-5" />
@@ -78,7 +82,20 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
       </nav>
 
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="max-h-[85dvh] overflow-y-auto">
+        <SheetContent
+          side="bottom"
+          className="max-h-[85dvh] overflow-y-auto"
+          // Tap-through guard (#412): the sheet slides up UNDER the finger that just tapped
+          // "More" — a rapid second tap (impatience, or mid-animation) lands on whatever row
+          // passes that spot (Account/Settings sit right there on short screens) and navigates
+          // "for no reason". Swallow every click in the first moments after open.
+          onClickCapture={(e) => {
+            if (performance.now() - openedAtRef.current < 350) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+          }}
+        >
           <SheetHeader>
             <SheetTitle>{t('nav.more')}</SheetTitle>
             <SheetDescription>{t('nav.moreDesc')}</SheetDescription>
