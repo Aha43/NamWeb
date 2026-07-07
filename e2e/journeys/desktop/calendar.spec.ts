@@ -89,3 +89,24 @@ test('day drill-in: click a day, see its actions, edit one, come back (#676)', a
   await page.getByRole('button', { name: 'Calendar', exact: true }).click();
   await expect(page.getByRole('grid')).toBeVisible();
 });
+
+test('create an action from a day, due prefilled at noon (#681)', async ({ page, doc }) => {
+  await page.goto('/calendar');
+  await expect(page.getByRole('grid')).toBeVisible();
+  await page.locator(`[aria-label^="${localDate(0)}:"]`).click();
+
+  await page.getByRole('button', { name: 'New action' }).click();
+  const editor = page.getByRole('dialog', { name: 'Edit action' });
+  await expect(editor.getByRole('textbox', { name: 'Title' })).toHaveValue('New action');
+  await editor.getByRole('textbox', { name: 'Title' }).fill('Plan the party');
+  await editor.getByRole('button', { name: 'Save' }).click();
+
+  // Born scheduled: the listed day at noon; visible in the day list immediately.
+  await expect.poll(() => {
+    const n = Object.values(doc.current().nodes).find((x: { title: string }) => x.title === 'Plan the party') as
+      | { dueAt: string; dueTime: string }
+      | undefined;
+    return n && `${n.dueAt} ${n.dueTime}`;
+  }).toBe(`${localDate(0)} 12:00`);
+  await expect(page.getByText('Plan the party')).toBeVisible();
+});

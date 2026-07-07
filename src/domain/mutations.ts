@@ -32,7 +32,7 @@ export type Intent =
   | { type: 'renameTag'; from: string; to: string }
   | { type: 'deleteTag'; tag: string }
   | { type: 'updateResources'; id: string; resources: Resource[]; now: string }
-  | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; atTop?: boolean; now: string }
+  | { type: 'addAction'; parentId: string; id: string; title: string; status: NodeStatus; atTop?: boolean; dueAt?: string; dueTime?: string; now: string }
   | { type: 'addSubProject'; parentId: string; id: string; title: string; atTop?: boolean; now: string }
   | { type: 'moveNode'; id: string; newParentId: string; now: string }
   | { type: 'convertActionToProject'; id: string; now: string }
@@ -428,6 +428,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
         ...newNode(intent.id, intent.title, intent.now),
         status: intent.status,
         statusChangedAt: intent.now,
+        // Optional scheduling at birth — the calendar's create-for-a-day flow (#681).
+        dueAt: intent.dueAt ?? null,
+        dueTime: intent.dueTime ?? null,
       };
       // Top by default (visible without scrolling a long list); bottom when the user prefers it.
       placeChild(next.nodes[intent.parentId], intent.id, intent.atTop);
