@@ -20,6 +20,10 @@ test.describe('with bookmarks', () => {
     // The toolbar strip is gone.
     await expect(page.getByRole('button', { name: /Go to bookmark:/ })).toHaveCount(0);
 
+    // The ▾ trigger hints on hover (#679) and still opens the menu (the Tooltip wraps the
+    // DropdownMenuTrigger — both clone onto one button; wrong nesting kills the menu).
+    await page.getByRole('button', { name: 'Project bookmarks' }).hover();
+    await expect(page.getByRole('tooltip')).toHaveText('Project bookmarks');
     await page.getByRole('button', { name: 'Project bookmarks' }).click();
     const menu = page.getByRole('menu');
     await expect(menu.getByText('Vacation')).toBeVisible();

@@ -180,7 +180,7 @@ export function ProjectsPanel({
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
           </Tooltip>
-          <CopyButton value={project.title} label={t('copy.name', { title: project.title })} className="p-1.5" />
+          <CopyButton value={project.title} label={t('copy.name', { title: project.title })} className="p-1.5" tooltip />
           {onRename && (
             <Tooltip label={t('actions.renameAria', { title: project.title })}>
               <button
