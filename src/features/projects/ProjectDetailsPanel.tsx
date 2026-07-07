@@ -135,12 +135,12 @@ export function ProjectDetailsPanel({
               }}
               onBlur={commitTitle}
             />
-            <CopyButton value={title} label={t('copy.title')} />
+            <CopyButton value={title} label={t('copy.title')} tooltip />
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="project-description">{t('editor.fieldDescription')}</Label>
-              <CopyButton value={description} label={t('copy.description')} />
+              <CopyButton value={description} label={t('copy.description')} tooltip />
             </div>
             <Textarea
               id="project-description"

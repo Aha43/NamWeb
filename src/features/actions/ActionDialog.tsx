@@ -246,14 +246,14 @@ export function ActionDialog({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="action-title">{t('editor.fieldTitle')}</Label>
-              <CopyButton value={title} label={t('copy.title')} />
+              <CopyButton value={title} label={t('copy.title')} tooltip />
             </div>
             <Input id="action-title" autoFocus value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label htmlFor="action-description">{t('editor.fieldDescription')}</Label>
-              <CopyButton value={description} label={t('copy.description')} />
+              <CopyButton value={description} label={t('copy.description')} tooltip />
             </div>
             <Textarea
               id="action-description"

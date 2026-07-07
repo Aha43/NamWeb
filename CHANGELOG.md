@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Tooltips everywhere they were missing.** The project/context bookmark ▾ triggers now hint on hover, and every copy icon carries its tooltip (Focus deck, project rows, resources, and the editor/details title+description copies). Closes #679.
+
+### Added
+
+- **Week numbers in the calendar.** Each week row carries its ISO week number in a blue left gutter — hover says "Week N" for anyone wondering. Closes #680.
+
 ### Added
 
 - **Create an action straight from a calendar day.** The day list's New action button opens the normal editor with the due date prefilled to that day (noon) — a great way to plan a day from the calendar; edit the date away if you realized something else. Closes #681.

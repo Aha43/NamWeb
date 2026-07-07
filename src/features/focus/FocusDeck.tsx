@@ -190,7 +190,7 @@ export function FocusDeck({
                 </Tooltip>
               )}
               <InProgressToggle id={current.id} title={current.title} />
-              <CopyButton value={current.title} label={t('copy.name', { title: current.title })} />
+              <CopyButton value={current.title} label={t('copy.name', { title: current.title })} tooltip />
               {onDeleteCard && (
                 <ConfirmButton
                   id={DELETE_TRIGGER_ID}
