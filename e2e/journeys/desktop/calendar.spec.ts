@@ -34,6 +34,12 @@ test('toolbar opens the month grid: counts, overdue tint, today ring, month nav'
   await expect(dayCell(localDate(-1))).toHaveText(/1/);
   await expect(dayCell(localDate(-1))).toHaveClass(/destructive/);
 
+  // Week gutter (#680): the row for today carries a blue ISO week number with a tooltip.
+  const weekCells = page.locator('[aria-label^="Week "]');
+  await expect(weekCells.first()).toBeVisible();
+  await weekCells.first().hover();
+  await expect(page.getByRole('tooltip')).toHaveText(/Week \d+/);
+
   // Month navigation drives the URL; Today returns.
   await page.getByRole('button', { name: 'Next month' }).click();
   await expect(page).toHaveURL(/calendar\?m=\d{4}-\d{2}/);
