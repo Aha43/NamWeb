@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **The global calendar.** A new Calendar surface (toolbar button and Views navigation) showing the classic current-month grid: Monday-start weeks, today ringed, each day summarizing its open dated work — a count, range actions lighting every day they span, and a warning tint on past days with unfinished actions. Navigate with « ‹ Today › » (the shown month lives in the URL). Built as a thin shell around interchangeable calendar views — the month grid is the first. Closes #675.
+
 ## [1.0.0] - 2026-07-07
 
 **NamWeb 1.0.** What began as a deliberately small web companion to NamDesktop — "add a thought,

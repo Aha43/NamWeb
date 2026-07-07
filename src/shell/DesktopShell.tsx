@@ -10,12 +10,13 @@ import { SettingsPanel } from './SettingsPanel';
 import type { SettingsTab } from '@/routes/AccountPage';
 import { SidebarBookmarkMenu } from '@/features/bookmarks/SidebarBookmarkMenu';
 import { ProjectExplorerButton } from '@/features/projects/picker/ProjectExplorerButton';
+import { CalendarDays } from 'lucide-react';
 import { useCapture } from '@/capture/capture-context';
 import { useSettings } from '@/components/settings/settings-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
-import { SIDEBAR_GROUPS, focus, next, projects, tags } from './nav';
+import { SIDEBAR_GROUPS, focus, next, projects, tags, calendar } from './nav';
 import { TOOLBAR_SEARCH_ID } from './useGlobalShortcuts';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -122,6 +123,14 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 <NavLink to="/focus" aria-label={t('domain.focus')}>
                   <Target className="focus-glow" />
                   {!dense && <span className="hidden lg:inline">{t('domain.focus')}</span>}
+                </NavLink>
+              </Button>
+            </Tooltip>
+            <Tooltip label={t(calendar.hint!)}>
+              <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
+                <NavLink to={calendar.to} aria-label={t(calendar.label)}>
+                  <CalendarDays />
+                  {!dense && <span className="hidden lg:inline">{t(calendar.label)}</span>}
                 </NavLink>
               </Button>
             </Tooltip>

@@ -11,6 +11,24 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.0.0 — 2026-07-07
+
+*(one day; 6 PRs, 1 release — the release)* A milestone earned, not declared. The road to the
+number ran through a deliberately boring diff — a docs archive, two hygiene fixes, a stale-issue
+audit that closed three epics the code had quietly finished long ago (onboarding, Learn NAM,
+i18n) — because the decision itself was the work: **1.0 stamps the foundation, not a feature**,
+cut from the quietest point in the repo's history rather than after the next splash. The gate
+turned out to be anything but ceremonial: the dual review's second full cycle found six more real
+issues with — again — zero overlap between reviewers, including a P1 that every automated gate
+was structurally blind to: committed merge-conflict markers sitting in the CHANGELOG, aimed
+directly at the 1.0.0 release notes. (The fix shipped with a permanent gate; prose is no longer
+ungated.) Even the one eternal ghost got exorcised on the way — the phantom Account/Settings
+navigation, root-caused by automation as sheet-slide tap-through and fixed twice over as both
+reviewers sharpened the guard. The verdict written into the version number: the
+capture→clarify→work loop, the sync core, the shared contract, and the quality machine around
+them are trusted. **1.x belongs to the calendar era; 2.0 is the day an AI works this app over
+MCP.** The foundation era is closed — by shipping it.
+
 ## v0.10.0 — 2026-07-06
 
 *(hours after v0.9.1, same day; 4 PRs, 1 release)* A release that **opened a frontier** — the

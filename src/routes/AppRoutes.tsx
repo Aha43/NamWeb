@@ -9,6 +9,7 @@ import { ProjectsPage } from './ProjectsPage';
 import { ProjectWorkbenchPage } from './ProjectWorkbenchPage';
 import { DonePage } from './DonePage';
 import { DuePage } from './DuePage';
+import { CalendarPage } from './CalendarPage';
 import { BlockedPage } from './BlockedPage';
 import { TagsPage } from './TagsPage';
 import { SearchPage } from './SearchPage';
@@ -49,6 +50,7 @@ export function AppRoutes() {
         <Route path="projects/:id" element={<ProjectWorkbenchPage />} />
         <Route path="done" element={<DonePage />} />
         <Route path="due" element={<DuePage />} />
+        <Route path="calendar" element={<CalendarPage />} />
         <Route path="blocked" element={<BlockedPage />} />
         <Route path="tags" element={<TagsPage />} />
         <Route path="search" element={<SearchPage />} />
