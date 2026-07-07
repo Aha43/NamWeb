@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { calendarMonth, dayActions, localDateString } from '@/domain/calendar';
@@ -10,6 +10,7 @@ import { toActionRow } from '@/features/actions/rows';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { newId, nowIso } from '@/lib/local';
 
 /**
  * The global calendar (#675) — a thin shell around interchangeable calendar *views*: header with
@@ -20,7 +21,7 @@ import { useWorkspaceContext } from '@/store/workspace-context';
  */
 export function CalendarPage() {
   const { t, i18n } = useTranslation();
-  const { document } = useWorkspaceContext();
+  const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
   const [params, setParams] = useSearchParams();
@@ -60,7 +61,31 @@ export function CalendarPage() {
             <ArrowLeft className="h-4 w-4" />
             {t('calendar.backToCalendar')}
           </Button>
-          <h2 className="min-w-0 truncate text-lg font-semibold capitalize">{dayTitle}</h2>
+          <h2 className="min-w-0 flex-1 truncate text-lg font-semibold capitalize">{dayTitle}</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={() => {
+              // Create-for-this-day (#681): born with the listed date (noon), then the normal
+              // editor for everything else. Cancelling leaves a visible, deletable placeholder.
+              const id = newId();
+              dispatch({
+                type: 'addAction',
+                parentId: document.nextActionsNodeId,
+                id,
+                title: t('calendar.newActionTitle'),
+                status: 'NEXT',
+                dueAt: day,
+                dueTime: '12:00',
+                now: nowIso(),
+              });
+              openEditor(id);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            {t('calendar.newAction')}
+          </Button>
         </div>
         {rows.length === 0 ? (
           <p className="px-1 text-sm text-muted-foreground">{t('calendar.emptyDay')}</p>

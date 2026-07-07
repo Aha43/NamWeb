@@ -544,6 +544,21 @@ describe('system tags (#651)', () => {
   });
 });
 
+describe('addAction scheduling (#681)', () => {
+  it('creates the action with dueAt/dueTime when given, null otherwise', () => {
+    const doc = workspace();
+    const next = applyIntent(doc, {
+      type: 'addAction', parentId: 'actions', id: 'n1', title: 'Party', status: 'NEXT',
+      dueAt: '2026-07-20', dueTime: '12:00', now: '2026-07-07T10:00:00',
+    });
+    expect(next.nodes.n1).toMatchObject({ dueAt: '2026-07-20', dueTime: '12:00', status: 'NEXT' });
+    const plain = applyIntent(doc, {
+      type: 'addAction', parentId: 'actions', id: 'n2', title: 'Plain', status: 'NEXT', now: '2026-07-07T10:00:00',
+    });
+    expect(plain.nodes.n2).toMatchObject({ dueAt: null, dueTime: null });
+  });
+});
+
 describe('renameTag', () => {
   it('rewrites the tag across nodes and the registered list', () => {
     const doc = { ...workspace([node('a', { tags: ['home'] }), node('b', { tags: ['home', 'work'] })]), registeredTags: ['home'] };

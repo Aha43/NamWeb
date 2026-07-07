@@ -166,6 +166,8 @@
   "calendar.weekTooltip": "Uke {week}",
   "calendar.backToCalendar": "Kalender",
   "calendar.emptyDay": "Ingenting med frist denne dagen.",
+  "calendar.newAction": "Ny handling",
+  "calendar.newActionTitle": "Ny handling",
   "domain.focus": "Fokus",
   "domain.goals": "Mål",
   "domain.inbox": "Innboks",

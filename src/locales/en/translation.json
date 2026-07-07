@@ -166,6 +166,8 @@
   "calendar.weekTooltip": "Week {week}",
   "calendar.backToCalendar": "Calendar",
   "calendar.emptyDay": "Nothing due this day.",
+  "calendar.newAction": "New action",
+  "calendar.newActionTitle": "New action",
   "domain.focus": "Focus",
   "domain.goals": "Goals",
   "domain.inbox": "Inbox",
