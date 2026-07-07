@@ -86,11 +86,12 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
           side="bottom"
           className="max-h-[85dvh] overflow-y-auto"
           // Tap-through guard (#412): the sheet slides up UNDER the finger that just tapped
-          // "More" — a rapid second tap (impatience, or mid-animation) lands on whatever row
-          // passes that spot (Account/Settings sit right there on short screens) and navigates
-          // "for no reason". Swallow every click in the first moments after open.
+          // "More" — during the 500ms slide every row transits that spot, so a rapid second tap
+          // lands on whichever row is passing (any row; at rest the spot belongs to the footer,
+          // i.e. Sign out) and navigates "for no reason". Swallow every click until the slide is
+          // done (window ≥ the sheet's data-[state=open]:duration-500, #671).
           onClickCapture={(e) => {
-            if (performance.now() - openedAtRef.current < 350) {
+            if (performance.now() - openedAtRef.current < 500) {
               e.preventDefault();
               e.stopPropagation();
             }

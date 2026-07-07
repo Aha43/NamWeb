@@ -10,11 +10,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
-<<<<<<< HEAD
+- **Pre-1.0 review follow-ups.** Repaired merge-conflict markers that had slipped into this very file (and added a test that fails on markers in any markdown, so they can never reach release notes); the phone More-sheet tap guard now covers the sheet's whole slide-up. Closes #671.
 - **No more surprise jumps to Account/Settings on the phone.** Root-caused at last: the More sheet slides up under the finger that just tapped More, so a quick second tap landed on whichever row passed that spot and navigated. The sheet now ignores taps in its first moments after opening. Closes #412.
-=======
 - **Hover tooltips are back on inbox row actions.** The per-item copy, rename, Process and delete controls show their hint on hover again (the aria-labels were always there; the tooltips had gone missing). Closes #543.
->>>>>>> origin/main
 
 ### Added
 

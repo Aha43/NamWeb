@@ -14,12 +14,12 @@ test('a rapid double-tap on More does not navigate; a deliberate tap still does'
   const x = box.x + box.width / 2;
   const y = box.y + box.height / 2;
 
-  // Impatient double-tap: second tap ~150ms after the first, same spot (pre-fix this landed on
+  // Impatient double-tap: second tap ~80ms after the first, same spot (pre-fix this landed on
   // a sheet row — observed navigating to /blocked in this viewport; Account/Settings on others).
   await page.touchscreen.tap(x, y);
-  await page.waitForTimeout(150);
+  await page.waitForTimeout(80); // well inside the guard window, with dispatch budget on slow CI
   await page.touchscreen.tap(x, y);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(600);
   await expect(page).toHaveURL(/\/inbox$/);
   await expect(page.getByRole('dialog')).toBeVisible(); // the sheet is still open, not misfired
 
