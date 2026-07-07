@@ -8,6 +8,22 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-07-07
+
+**NamWeb 1.0.** What began as a deliberately small web companion to NamDesktop — "add a thought,
+check what's next, tick something done" — grew, sprint by dogfooded sprint, into a complete GTD
+surface in its own right: capture anywhere (with a streak-friendly dialog that resizes and
+remembers), one wizard-shaped clarify model across the app, a process deck that cycles until the
+inbox is truly empty, Focus mode, due dates and ranges, tags with contexts and the built-in
+**in progress** system tag, bookmarks that reorder and self-clean, a Finder-style browser that
+opens projects *and* actions — and cards that link to cards. Under it: real accounts (sign-up,
+verify, reset, export, delete), optimistic sync with conflict-retry and realtime reconcile over
+the workspace document shared with NamDesktop (every change additive, never breaking), full
+English + Norwegian, a no-account demo, and a quality culture that grew with the code — per-PR
+gates, ~700 unit tests, >100 end-to-end journeys, and a pre-release ritual of **two independent
+AI reviews** whose findings have never once overlapped. 1.0 stamps the foundation, not a feature:
+the calendar era (1.x) builds on it next, and AI working the app over MCP is the 2.0 horizon.
+
 ### Fixed
 
 - **Pre-1.0 review follow-ups.** Repaired merge-conflict markers that had slipped into this very file (and added a test that fails on markers in any markdown, so they can never reach release notes); the phone More-sheet tap guard now tracks the sheet's actual slide (not a stopwatch) and suppresses only pointer taps in the tab-bar zone — the close ✕ and keyboard activation always work (Closes #671, #673).
@@ -1301,7 +1317,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Aha43/NamWeb/compare/v0.10.0...v1.0.0
 [0.10.0]: https://github.com/Aha43/NamWeb/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/Aha43/NamWeb/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/Aha43/NamWeb/compare/v0.8.0...v0.9.0
