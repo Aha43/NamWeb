@@ -9,6 +9,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { allOpenableProjects } from '@/domain/lenses';
@@ -50,11 +51,14 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
   return (
     <>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" aria-label={aria} className={cn('h-9 w-7 shrink-0', className)}>
-            <ChevronDown className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
+        {/* Tooltip outside the trigger: both asChild layers clone onto the same Button (#679). */}
+        <Tooltip label={aria}>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label={aria} className={cn('h-9 w-7 shrink-0', className)}>
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+        </Tooltip>
         <DropdownMenuContent align="start">
           {bookmarks.map((bookmark, index) => {
             const stale = isBookmarkStale(document, bookmark);
