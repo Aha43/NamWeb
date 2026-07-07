@@ -55,3 +55,37 @@ test('a date range lights every day it spans', async ({ page }) => {
     await expect(dayCell(localDate(offset))).toHaveText(/1/);
   }
 });
+
+test('day drill-in: click a day, see its actions, edit one, come back (#676)', async ({ page }) => {
+  await page.goto('/calendar');
+  await expect(page.getByRole('grid')).toBeVisible();
+  await page.locator(`[aria-label^="${localDate(0)}:"]`).click();
+
+  // The grid swapped for the day's list; DONE stays invisible.
+  await expect(page).toHaveURL(new RegExp(`d=${localDate(0)}`));
+  await expect(page.getByText('Due today A')).toBeVisible();
+  await expect(page.getByText('Due today B')).toBeVisible();
+  await expect(page.getByText('Finished')).toHaveCount(0);
+
+  // Rows carry the standard affordances — editing opens the action editor.
+  await page.getByRole('button', { name: 'Edit Due today A' }).click();
+  const editor = page.getByRole('dialog', { name: 'Edit action' });
+  await expect(editor.getByRole('textbox', { name: 'Title' })).toHaveValue('Due today A');
+  await editor.getByRole('button', { name: 'Cancel' }).click();
+
+  // The back affordance returns to the same month's grid.
+  await page.getByRole('button', { name: 'Calendar', exact: true }).click();
+  await expect(page.getByRole('grid')).toBeVisible();
+  await expect(page.locator(`[aria-label^="${localDate(0)}:"]`)).toHaveClass(/ring-2/);
+
+  // An empty day says so, with the way back intact. Tomorrow is empty (the range starts at +2);
+  // near month-end it may live in the next month's grid — navigate there like a user would.
+  const emptyDay = localDate(1);
+  if ((await page.locator(`[aria-label^="${emptyDay}:"]`).count()) === 0) {
+    await page.getByRole('button', { name: 'Next month' }).click();
+  }
+  await page.locator(`[aria-label^="${emptyDay}:"]`).click();
+  await expect(page.getByText('Nothing due this day.')).toBeVisible();
+  await page.getByRole('button', { name: 'Calendar', exact: true }).click();
+  await expect(page.getByRole('grid')).toBeVisible();
+});
