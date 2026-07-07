@@ -254,37 +254,43 @@ export function InboxPanel({
                 ) : null;
               })()}
               {!selectMode && renamingId !== item.id && (
-                <CopyButton value={item.title} label={t('copy.name', { title: item.title })} className="p-1.5" />
+                <CopyButton value={item.title} label={t('copy.name', { title: item.title })} className="p-1.5" tooltip />
               )}
               {!selectMode && onRename && renamingId !== item.id && (
-                <button
-                  type="button"
-                  aria-label={t('inbox.renameAria', { title: item.title })}
-                  onClick={() => setRenamingId(item.id)}
-                  className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
+                <Tooltip label={t('inbox.renameAria', { title: item.title })}>
+                  <button
+                    type="button"
+                    aria-label={t('inbox.renameAria', { title: item.title })}
+                    onClick={() => setRenamingId(item.id)}
+                    className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
               )}
               {!selectMode && (
-                <button
-                  type="button"
-                  aria-label={t('inbox.processAria', { title: item.title })}
-                  onClick={() => onProcess(item.id)}
-                  className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
-                >
-                  {t('inbox.processButton')}
-                </button>
+                <Tooltip label={t('inbox.processAria', { title: item.title })}>
+                  <button
+                    type="button"
+                    aria-label={t('inbox.processAria', { title: item.title })}
+                    onClick={() => onProcess(item.id)}
+                    className="rounded-md px-2 py-1 text-xs font-medium text-primary hover:bg-accent"
+                  >
+                    {t('inbox.processButton')}
+                  </button>
+                </Tooltip>
               )}
               {!selectMode && (
-                <button
-                  type="button"
-                  aria-label={t('inbox.deleteAria', { title: item.title })}
-                  onClick={() => onDelete(item.id)}
-                  className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive', TOUCH_TARGET)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                <Tooltip label={t('inbox.deleteAria', { title: item.title })}>
+                  <button
+                    type="button"
+                    aria-label={t('inbox.deleteAria', { title: item.title })}
+                    onClick={() => onDelete(item.id)}
+                    className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive', TOUCH_TARGET)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
               )}
             </li>
           ))}

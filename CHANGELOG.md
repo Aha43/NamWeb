@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Hover tooltips are back on inbox row actions.** The per-item copy, rename, Process and delete controls show their hint on hover again (the aria-labels were always there; the tooltips had gone missing). Closes #543.
+
 ### Added
 
 - **Release-footprint archive.** The "footprint since last release" paragraph reported at every cut is now filed verbatim in `docs/footprints.md` (newest first) for historical analysis — themes over time, converging-vs-polishing calls, process experiments. Seeded with v0.9.0/v0.9.1/v0.10.0; the RELEASING ritual now includes the append. Closes #667.
