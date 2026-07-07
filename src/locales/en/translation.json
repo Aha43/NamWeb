@@ -163,6 +163,8 @@
   "calendar.nextMonth": "Next month",
   "calendar.nextYear": "Next year",
   "calendar.today": "Today",
+  "calendar.backToCalendar": "Calendar",
+  "calendar.emptyDay": "Nothing due this day.",
   "domain.focus": "Focus",
   "domain.goals": "Goals",
   "domain.inbox": "Inbox",
