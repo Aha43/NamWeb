@@ -85,6 +85,21 @@ describe('InboxPanel', () => {
     expect(screen.getByText('0 selected')).toBeInTheDocument();
   });
 
+  it('row action icons carry hover tooltips (#543)', async () => {
+    render(
+      <InboxPanel
+        items={[item('a', 'Buy milk')]}
+        onAdd={vi.fn()}
+        onProcess={vi.fn()}
+        onDelete={vi.fn()}
+        onRename={vi.fn()}
+        onBulkResolve={vi.fn()}
+      />,
+    );
+    fireEvent.focus(screen.getByRole('button', { name: 'Delete Buy milk' }));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Delete Buy milk');
+  });
+
   it('Process button scopes to the selection and exits select mode (#648)', () => {
     const onProcessAll = vi.fn();
     render(
