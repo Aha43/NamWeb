@@ -10,7 +10,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+<<<<<<< HEAD
+- **No more surprise jumps to Account/Settings on the phone.** Root-caused at last: the More sheet slides up under the finger that just tapped More, so a quick second tap landed on whichever row passed that spot and navigated. The sheet now ignores taps in its first moments after opening. Closes #412.
+=======
 - **Hover tooltips are back on inbox row actions.** The per-item copy, rename, Process and delete controls show their hint on hover again (the aria-labels were always there; the tooltips had gone missing). Closes #543.
+>>>>>>> origin/main
 
 ### Added
 
