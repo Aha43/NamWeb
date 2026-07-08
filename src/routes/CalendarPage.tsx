@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
-import { calendarMonth, dayActions, localDateString } from '@/domain/calendar';
+import { calendarMonth, dayActions, isValidLocalDate, localDateString } from '@/domain/calendar';
 import { MonthGrid } from '@/features/calendar/MonthGrid';
 import { ActionRow } from '@/features/actions/ActionRow';
 import { toActionRow } from '@/features/actions/rows';
@@ -27,14 +27,17 @@ export function CalendarPage() {
   const [params, setParams] = useSearchParams();
 
   const now = new Date();
+  // Validate beyond shape — `?m=2026-99` / `?d=2026-99-99` otherwise reach date math and
+  // formatters as Invalid Dates (which throw); garbage falls back to today's month / the grid (#696).
   const m = /^(\d{4})-(\d{2})$/.exec(params.get('m') ?? '');
-  const year = m ? Number(m[1]) : now.getFullYear();
-  const month = m ? Number(m[2]) : now.getMonth() + 1; // 1-12
+  const requested = m && Number(m[2]) >= 1 && Number(m[2]) <= 12 ? { year: Number(m[1]), month: Number(m[2]) } : null;
+  const year = requested ? requested.year : now.getFullYear();
+  const month = requested ? requested.month : now.getMonth() + 1; // 1-12
   const monthParam = `${year}-${String(month).padStart(2, '0')}`;
   // Drill-in day (#676): with ?d= the grid swaps for that day's action list; browser back and the
   // explicit back button both return to the same month.
   const dParam = params.get('d');
-  const day = dParam && /^\d{4}-\d{2}-\d{2}$/.test(dParam) ? dParam : null;
+  const day = dParam && isValidLocalDate(dParam) ? dParam : null;
 
   function show(y: number, mo: number) {
     // Normalize (month 0 → Dec of prev year, 13 → Jan of next).

@@ -31,8 +31,13 @@ test('toolbar opens the month grid: counts, overdue tint, today ring, month nav'
   // Today: 2 open (DONE invisible) and ringed; yesterday: 1 with the warning tint.
   await expect(dayCell(localDate(0))).toHaveText(/2/);
   await expect(dayCell(localDate(0))).toHaveClass(/ring-2/);
+  // On the 1st, yesterday lives in the previous month's grid — navigate there like a user would (#696).
+  const yesterdayElsewhere = (await dayCell(localDate(-1)).count()) === 0;
+  if (yesterdayElsewhere) await page.getByRole('button', { name: 'Previous month' }).click();
   await expect(dayCell(localDate(-1))).toHaveText(/1/);
   await expect(dayCell(localDate(-1))).toHaveClass(/destructive/);
+  // Back to the current month for the checks below (Today is disabled when already there).
+  if (yesterdayElsewhere) await page.getByRole('button', { name: 'Today', exact: true }).click();
 
   // Week gutter (#680): the row for today carries a blue ISO week number with a tooltip.
   const weekCells = page.locator('[aria-label^="Week "]');
@@ -47,6 +52,15 @@ test('toolbar opens the month grid: counts, overdue tint, today ring, month nav'
   await page.getByRole('button', { name: 'Today', exact: true }).click();
   await expect(page).toHaveURL(/\/calendar$/);
   await expect(dayCell(localDate(0))).toHaveClass(/ring-2/);
+});
+
+test('garbage calendar URLs fall back instead of crashing (#696)', async ({ page }) => {
+  // ?d= that passes the shape check but is not a real date must not reach the date formatter.
+  await page.goto('/calendar?d=2026-99-99');
+  await expect(page.getByRole('grid')).toBeVisible();
+  // Nonsense month falls back to today's month (today ring present).
+  await page.goto('/calendar?m=2026-99');
+  await expect(page.locator(`[aria-label^="${localDate(0)}:"]`)).toHaveClass(/ring-2/);
 });
 
 test("hovering a day lists that day's action titles (#689)", async ({ page }) => {
