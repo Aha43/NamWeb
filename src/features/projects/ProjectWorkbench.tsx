@@ -2,6 +2,7 @@ import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'r
 import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, LayoutTemplate, Pencil, Target, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InlineRename } from '../actions/InlineRename';
+import { DueHintLabel } from '../actions/DueHintLabel';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { PromptButton } from '@/components/ui/prompt-button';
@@ -327,6 +328,8 @@ export function ProjectWorkbench({
             ) : (
               <TruncatedTitle text={sub.title} className="min-w-0 flex-1 text-sm text-foreground" />
             )}
+            {/* Sub-projects tell time too (#700) — the same urgency-toned hint action rows carry. */}
+            <DueHintLabel dueAt={sub.dueAt} dueEndAt={sub.dueEndAt} dueTime={sub.dueTime} dueEndTime={sub.dueEndTime} />
             {sub.childIds.length > 0 && (
               <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
             )}

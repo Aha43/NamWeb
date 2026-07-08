@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Project rows tell time.** The Projects list and the workbench's sub-project rows now carry the same urgency-toned due hint action rows have (range- and time-aware, honoring the date-format setting) — a dated project is visible where you browse, not only inside its Details panel. Closes #700.
+
 ## [1.1.0] - 2026-07-08
 
 **The calendar era opens.** A real month view grew in two days from grid to daily driver — drill
