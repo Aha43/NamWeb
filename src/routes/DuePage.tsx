@@ -28,13 +28,9 @@ export function DuePage() {
 
   return (
     <div className="space-y-3">
-      {hasDueNow && (
-        <div className="flex justify-end">
-          <FocusButton to="/focus?source=due" label="Focus what's due now" />
-        </div>
-      )}
       <DuePanel
       groups={groups}
+      focusSlot={hasDueNow ? <FocusButton to="/focus?source=due" label="Focus what's due now" /> : undefined}
       onSetStatus={setStatus}
       onEdit={openEditor}
       onDelete={deleteNode}

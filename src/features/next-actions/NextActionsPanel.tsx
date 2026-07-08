@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
@@ -29,6 +29,8 @@ export interface NextActionsPanelProps {
   onReorder?: (ids: string[]) => void;
   /** Whether drag-and-drop is mounted (desktop). Buttons remain regardless. */
   dndEnabled?: boolean;
+  /** The Focus entry point (a FocusButton) — pinned in the sticky header so it stays reachable. */
+  focusSlot?: ReactNode;
 }
 
 /** Next Actions: the list with an inline status switch + manual reorder (buttons + desktop drag).
@@ -46,6 +48,7 @@ export function NextActionsPanel({
   onMove,
   onReorder,
   dndEnabled,
+  focusSlot,
 }: NextActionsPanelProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
@@ -75,9 +78,10 @@ export function NextActionsPanel({
             <Button type="submit">{t('common.add')}</Button>
           </form>
         )}
-        {sortMode && onCycleSort && rows.length > 0 && (
-          <div className="mb-2 flex justify-end">
-            <SortButton mode={sortMode} onCycle={onCycleSort} />
+        {(focusSlot || (sortMode && onCycleSort && rows.length > 0)) && (
+          <div className="mb-2 flex items-center justify-end gap-1">
+            {focusSlot}
+            {sortMode && onCycleSort && rows.length > 0 && <SortButton mode={sortMode} onCycle={onCycleSort} />}
           </div>
         )}
       </div>

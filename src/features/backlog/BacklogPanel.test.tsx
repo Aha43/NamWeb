@@ -13,6 +13,13 @@ describe('BacklogPanel', () => {
     expect(screen.getByText('Backlog is empty')).toBeInTheDocument();
   });
 
+  it('pins the Focus entry point in the sticky header (#687)', () => {
+    render(
+      <BacklogPanel rows={[row()]} onSetStatus={vi.fn()} focusSlot={<button type="button">Focus me</button>} />,
+    );
+    expect(screen.getByRole('button', { name: 'Focus me' }).closest('.sticky')).not.toBeNull();
+  });
+
   it('renders rows with a status control', () => {
     render(<BacklogPanel rows={[row({ id: 'x', title: 'Buy milk' })]} onSetStatus={vi.fn()} />);
     expect(screen.getByText('Buy milk')).toBeInTheDocument();

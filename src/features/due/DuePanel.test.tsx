@@ -15,6 +15,17 @@ describe('DuePanel', () => {
     expect(screen.getByText('Nothing due')).toBeInTheDocument();
   });
 
+  it('pins the Focus entry point in a sticky header (#687)', () => {
+    render(
+      <DuePanel
+        groups={{ ...EMPTY, today: [row('t', 'Call back')] }}
+        onSetStatus={vi.fn()}
+        focusSlot={<button type="button">Focus me</button>}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Focus me' }).closest('.sticky')).not.toBeNull();
+  });
+
   it('renders only the non-empty sections', () => {
     render(
       <DuePanel

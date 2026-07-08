@@ -30,6 +30,19 @@ describe('NextActionsPanel', () => {
     expect(screen.getByLabelText('Add a next action').closest('.sticky')).not.toBeNull();
   });
 
+  it('pins the Focus entry point in the sticky header (#687)', () => {
+    render(
+      <MemoryRouter>
+        <NextActionsPanel
+          rows={[row()]}
+          onSetStatus={vi.fn()}
+          focusSlot={<button type="button">Focus me</button>}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: 'Focus me' }).closest('.sticky')).not.toBeNull();
+  });
+
   it('renders title, project path (as links), tags, and a formatted due hint', () => {
     setup([
       row({
