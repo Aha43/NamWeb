@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **"Save as template…" moved up to the project header.** It sits as a quiet icon beside Summary — a project-level, rarely-used operation shouldn't wedge itself between the add-sub-project box and the list. New sub-projects now appear directly under where you typed; the "Add from template…" picker stays in the Sub-projects section, below the list. Closes #686.
+
 ### Fixed
 
 - **Tooltips everywhere they were missing.** The project/context bookmark ▾ triggers now hint on hover, and every copy icon carries its tooltip (Focus deck, project rows, resources, and the editor/details title+description copies). Closes #679.
