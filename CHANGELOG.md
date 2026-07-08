@@ -24,6 +24,7 @@ minor = features (breaking changes allowed), patch = fixes.
 - **The global calendar.** A new Calendar surface (toolbar button and Views navigation) showing the classic current-month grid: Monday-start weeks, today ringed, each day summarizing its open dated work — a count, range actions lighting every day they span, and a warning tint on past days with unfinished actions. Navigate with « ‹ Today › » (the shown month lives in the URL). Built as a thin shell around interchangeable calendar views — the month grid is the first. Closes #675.
 - **Click a day to see its work.** A day box swaps the calendar for that day's action list — the standard rows (edit, delete, the works) — with a Calendar back button (and browser back) returning to the same month; empty days say so. Closes #676.
 - **Move an action into a project straight from Next and Backlog.** The workbench's folder icon now sits on rows in the two triage views too — proximate destinations in the quick menu, "Browse all projects…" (with New project here) behind it; the inline dropdown on phone. Closes #688.
+- **Hover a calendar day to see what's on it.** Day boxes with work now tooltip the titles of that day's actions (up to five, then "+N more") — a peek without the drill-in. Closes #689.
 
 ## [1.0.0] - 2026-07-07
 

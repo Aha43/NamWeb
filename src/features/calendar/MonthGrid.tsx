@@ -3,6 +3,9 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { isoWeek, type CalendarDay } from '@/domain/calendar';
 
+/** How many action titles a day tooltip lists before "+N more". */
+const MAX_TOOLTIP_TITLES = 5;
+
 /**
  * The classic month grid (#675) — the global calendar's first view. Monday-start weeks, localized
  * weekday headers, today ringed. Day boxes are deliberately small summaries: the count of open
@@ -61,6 +64,23 @@ export function MonthGrid({
     </div>
   );
 
+  // The day tooltip: the day's action titles, capped so a busy day stays scannable (#689).
+  function dayTooltip(day: CalendarDay) {
+    if (day.titles.length === 0) return undefined;
+    const shown = day.titles.slice(0, MAX_TOOLTIP_TITLES);
+    const more = day.titles.length - shown.length;
+    return (
+      <div className="space-y-0.5">
+        {shown.map((title, i) => (
+          <div key={i} className="truncate">
+            {title}
+          </div>
+        ))}
+        {more > 0 && <div className="text-muted-foreground">{t('calendar.dayMore', { count: more })}</div>}
+      </div>
+    );
+  }
+
   function renderDay(day: CalendarDay) {
     const dayNo = Number(day.date.slice(-2));
     const isToday = day.date === today;
@@ -86,19 +106,22 @@ export function MonthGrid({
       onSelectDay && 'transition-colors hover:bg-accent',
     );
     return onSelectDay ? (
-      <button
-        key={day.date}
-        type="button"
-        aria-label={t('calendar.dayAria', { date: day.date, count: day.count })}
-        onClick={() => onSelectDay(day.date)}
-        className={className}
-      >
-        {body}
-      </button>
+      <Tooltip key={day.date} label={dayTooltip(day)}>
+        <button
+          type="button"
+          aria-label={t('calendar.dayAria', { date: day.date, count: day.count })}
+          onClick={() => onSelectDay(day.date)}
+          className={className}
+        >
+          {body}
+        </button>
+      </Tooltip>
     ) : (
-      <div key={day.date} aria-label={t('calendar.dayAria', { date: day.date, count: day.count })} className={className}>
-        {body}
-      </div>
+      <Tooltip key={day.date} label={dayTooltip(day)}>
+        <div aria-label={t('calendar.dayAria', { date: day.date, count: day.count })} className={className}>
+          {body}
+        </div>
+      </Tooltip>
     );
   }
 }

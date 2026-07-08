@@ -49,6 +49,15 @@ test('toolbar opens the month grid: counts, overdue tint, today ring, month nav'
   await expect(dayCell(localDate(0))).toHaveClass(/ring-2/);
 });
 
+test("hovering a day lists that day's action titles (#689)", async ({ page }) => {
+  await page.goto('/calendar');
+  await expect(page.getByRole('grid')).toBeVisible();
+  await page.locator(`[aria-label^="${localDate(0)}:"]`).hover();
+  const tip = page.getByRole('tooltip');
+  await expect(tip).toContainText('Due today A');
+  await expect(tip).toContainText('Due today B');
+});
+
 test('a date range lights every day it spans', async ({ page }) => {
   await page.goto('/calendar');
   const dayCell = (date: string) => page.locator(`[aria-label^="${date}:"]`);
