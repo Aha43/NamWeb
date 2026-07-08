@@ -14,6 +14,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **Review hardenings (Codex review).** Hand-mangled calendar URLs (`?d=2026-99-99`, `?m=2026-99`, February 31) now fall back to the grid / today's month instead of crashing the route or silently rolling into the next month; the calendar e2e journey no longer fails when run on the first of a month; the shared en/nb domain vocabulary was regenerated for `domain.calendar` and `i18n:check` joined the per-PR CI gate so vocab drift can't land again. Closes #696.
 - **Review hardenings (independent Claude review).** Free actions — the ones you'd most want to file into a project — now get the move-to-project menu in Next/Backlog (top-level projects as quick destinations; on desktop the folder icon always offers "Browse all projects…", even with no projects yet). The Due view no longer lists CANCELLED actions, agreeing with the calendar. The "Add from template…" picker hides while the Sub-projects section is collapsed instead of applying into an invisible list. Closes #694.
 - **The Focus button no longer scrolls away.** On Next, Backlog, Due, and Done the green Focus target now lives in the frozen header row (Due and Done gained one — Done's pins its select tools too), so the entry into Focus stays reachable however long the list. Closes #687.
 - **Tooltips everywhere they were missing.** The project/context bookmark ▾ triggers now hint on hover, and every copy icon carries its tooltip (Focus deck, project rows, resources, and the editor/details title+description copies). Closes #679.

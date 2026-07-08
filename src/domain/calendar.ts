@@ -28,6 +28,15 @@ export function localDateString(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** Whether a string is a real local calendar date — shape alone lets `2026-99-99` (Invalid Date,
+ *  formatters throw) and `2026-02-31` (silently rolls into March) through, so round-trip via Date
+ *  and require the components to survive (#696). */
+export function isValidLocalDate(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00`);
+  return !Number.isNaN(d.getTime()) && localDateString(d) === s;
+}
+
 function openDatedActions(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);

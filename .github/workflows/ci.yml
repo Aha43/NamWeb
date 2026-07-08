@@ -29,6 +29,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run i18n:check # incl. shared domain vocab sync — drift slipped to main once (#696)
       - run: npm run test
       - run: npm run build
 

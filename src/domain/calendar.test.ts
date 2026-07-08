@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { calendarMonth, dayActions, isoWeek } from './calendar';
+import { calendarMonth, dayActions, isValidLocalDate, isoWeek } from './calendar';
 
 function node(id: string, p: Partial<NamNode> = {}): NamNode {
   return {
@@ -82,6 +82,18 @@ describe('dayActions (#676)', () => {
       node('x', { title: 'Other day', dueAt: '2026-07-11' }),
     ]);
     expect(dayActions(doc, '2026-07-10').map((n) => n.title)).toEqual(['Alpha', 'Beta']);
+  });
+});
+
+describe('isValidLocalDate (#696)', () => {
+  it('accepts real dates, rejects shape-only impostors', () => {
+    expect(isValidLocalDate('2026-07-08')).toBe(true);
+    expect(isValidLocalDate('2028-02-29')).toBe(true); // leap day
+    expect(isValidLocalDate('2026-99-99')).toBe(false); // Invalid Date — formatters would throw
+    expect(isValidLocalDate('2026-02-31')).toBe(false); // silently rolls into March
+    expect(isValidLocalDate('2026-00-10')).toBe(false);
+    expect(isValidLocalDate('2026-7-8')).toBe(false); // unpadded
+    expect(isValidLocalDate('garbage')).toBe(false);
   });
 });
 
