@@ -39,13 +39,9 @@ export function BacklogPage() {
 
   return (
     <div className="space-y-3">
-      {ordered.length > 0 && (
-        <div className="flex justify-end">
-          <FocusButton to="/focus?source=backlog" label="Focus your Backlog" />
-        </div>
-      )}
       <BacklogPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
+      focusSlot={ordered.length > 0 ? <FocusButton to="/focus?source=backlog" label="Focus your Backlog" /> : undefined}
       sortMode={sortMode}
       onCycleSort={cycleSort}
       reorderable={sortMode === 'none'}

@@ -39,13 +39,9 @@ export function NextActionsPage() {
 
   return (
     <div className="space-y-3">
-      {ordered.length > 0 && (
-        <div className="flex justify-end">
-          <FocusButton to="/focus" label="Focus your Next actions" />
-        </div>
-      )}
       <NextActionsPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
+      focusSlot={ordered.length > 0 ? <FocusButton to="/focus" label="Focus your Next actions" /> : undefined}
       onAdd={
         document
           ? (title) => {

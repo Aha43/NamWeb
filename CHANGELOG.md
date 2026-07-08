@@ -14,6 +14,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **The Focus button no longer scrolls away.** On Next, Backlog, Due, and Done the green Focus target now lives in the frozen header row (Due and Done gained one — Done's pins its select tools too), so the entry into Focus stays reachable however long the list. Closes #687.
 - **Tooltips everywhere they were missing.** The project/context bookmark ▾ triggers now hint on hover, and every copy icon carries its tooltip (Focus deck, project rows, resources, and the editor/details title+description copies). Closes #679.
 
 ### Added

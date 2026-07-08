@@ -13,6 +13,20 @@ describe('DonePanel', () => {
     expect(screen.getByText('Nothing done yet')).toBeInTheDocument();
   });
 
+  it('pins the Focus entry point (and select toggle) in a sticky header (#687)', () => {
+    render(
+      <DonePanel
+        rows={[row()]}
+        onRestore={vi.fn()}
+        onBacklog={vi.fn()}
+        onDelete={vi.fn()}
+        focusSlot={<button type="button">Focus me</button>}
+      />,
+    );
+    expect(screen.getByRole('button', { name: 'Focus me' }).closest('.sticky')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Select actions' }).closest('.sticky')).not.toBeNull();
+  });
+
   it('restores, backlogs, and deletes by id', () => {
     const handlers = { onRestore: vi.fn(), onBacklog: vi.fn(), onDelete: vi.fn() };
     render(<DonePanel rows={[row({ id: 'x', title: 'Buy milk' })]} {...handlers} />);
