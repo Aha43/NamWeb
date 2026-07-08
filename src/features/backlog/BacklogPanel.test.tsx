@@ -26,6 +26,22 @@ describe('BacklogPanel', () => {
     expect(screen.getByRole('button', { name: /status of Buy milk/i })).toBeInTheDocument();
   });
 
+  it('moves an action into a project from its row (#688)', () => {
+    const onMoveInto = vi.fn();
+    render(
+      <BacklogPanel
+        rows={[row({ id: 'x', title: 'Buy milk' })]}
+        onSetStatus={vi.fn()}
+        moveTargets={() => [{ id: 'p1', label: 'Kitchen', kind: 'sibling' }]}
+        moveBrowseTargets={() => [{ id: 'p1', label: 'Kitchen' }]}
+        onMoveInto={onMoveInto}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Move Buy milk to another project' }), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Kitchen' }));
+    expect(onMoveInto).toHaveBeenCalledWith('x', 'p1');
+  });
+
   it('offers a drag handle alongside the up/down buttons when drag is enabled', () => {
     render(
       <BacklogPanel

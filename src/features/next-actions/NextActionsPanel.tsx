@@ -7,8 +7,11 @@ import { SortButton } from '../actions/SortButton';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
 import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
+import { MoveActionMenu } from '../projects/picker/MoveActionMenu';
+import type { PickerTarget } from '../projects/picker/pickerModel';
 import type { SortMode } from '../actions/sort';
 import type { ActionRowData } from '../actions/rows';
+import type { QuickMoveTarget } from '@/domain/lenses';
 import type { NodeStatus } from '@/domain/types';
 
 export interface NextActionsPanelProps {
@@ -20,6 +23,14 @@ export interface NextActionsPanelProps {
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
+  /** Proximate destinations for the per-row move-into-project menu (#688). */
+  moveTargets?: (id: string) => QuickMoveTarget[];
+  /** Full "Browse all projects…" destination set for the move picker. */
+  moveBrowseTargets?: (id: string) => PickerTarget[];
+  /** Move the action under `targetId` (a project, or the Free-actions root). */
+  onMoveInto?: (id: string, targetId: string) => void;
+  /** Create a project inside the browse picker ("New project here"). */
+  onCreateProject?: (parentId: string | null, title: string) => string;
   sortMode?: SortMode;
   onCycleSort?: () => void;
   /** Manual ordering is available (the list is in "Unsorted" mode). */
@@ -42,6 +53,10 @@ export function NextActionsPanel({
   onSetStatus,
   onEdit,
   onRename,
+  moveTargets,
+  moveBrowseTargets,
+  onMoveInto,
+  onCreateProject,
   sortMode,
   onCycleSort,
   reorderable,
@@ -103,6 +118,15 @@ export function NextActionsPanel({
                   title={row.title}
                   onUp={index > 0 ? () => onMove(row.id, 'up') : undefined}
                   onDown={index < rows.length - 1 ? () => onMove(row.id, 'down') : undefined}
+                />
+              )}
+              {onMoveInto && moveTargets && (
+                <MoveActionMenu
+                  title={row.title}
+                  quickTargets={moveTargets(row.id)}
+                  browseTargets={() => moveBrowseTargets?.(row.id) ?? []}
+                  onMove={(targetId) => onMoveInto(row.id, targetId)}
+                  onCreateProject={onCreateProject}
                 />
               )}
               <StatusMenu
