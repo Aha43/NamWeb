@@ -795,7 +795,9 @@ export function ProjectWorkbench({
                   </ul>
                 </SortableList>
               ))}
-              {onApplyTemplate && templateNames && templateNames.length > 0 && (
+              {/* Hidden while collapsed — applying a template into an invisible list reads as "nothing
+                  happened" (#694). */}
+              {!sectionCollapsed('subprojects') && onApplyTemplate && templateNames && templateNames.length > 0 && (
                 <div className="flex justify-start pt-1">
                   <select
                     aria-label={t('workbench.addFromTemplateAria')}

@@ -14,6 +14,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **Review hardenings (independent Claude review).** Free actions — the ones you'd most want to file into a project — now get the move-to-project menu in Next/Backlog (top-level projects as quick destinations; on desktop the folder icon always offers "Browse all projects…", even with no projects yet). The Due view no longer lists CANCELLED actions, agreeing with the calendar. The "Add from template…" picker hides while the Sub-projects section is collapsed instead of applying into an invisible list. Closes #694.
 - **The Focus button no longer scrolls away.** On Next, Backlog, Due, and Done the green Focus target now lives in the frozen header row (Due and Done gained one — Done's pins its select tools too), so the entry into Focus stays reachable however long the list. Closes #687.
 - **Tooltips everywhere they were missing.** The project/context bookmark ▾ triggers now hint on hover, and every copy icon carries its tooltip (Focus deck, project rows, resources, and the editor/details title+description copies). Closes #679.
 
