@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
@@ -7,8 +7,11 @@ import { SortButton } from '../actions/SortButton';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
 import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
+import { MoveActionMenu } from '../projects/picker/MoveActionMenu';
+import type { PickerTarget } from '../projects/picker/pickerModel';
 import type { SortMode } from '../actions/sort';
 import type { ActionRowData } from '../actions/rows';
+import type { QuickMoveTarget } from '@/domain/lenses';
 import type { NodeStatus } from '@/domain/types';
 
 export interface BacklogPanelProps {
@@ -20,6 +23,14 @@ export interface BacklogPanelProps {
   /** Inline delete (with confirm) per row. */
   onDelete?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
+  /** Proximate destinations for the per-row move-into-project menu (#688). */
+  moveTargets?: (id: string) => QuickMoveTarget[];
+  /** Full "Browse all projects…" destination set for the move picker. */
+  moveBrowseTargets?: (id: string) => PickerTarget[];
+  /** Move the action under `targetId` (a project, or the Free-actions root). */
+  onMoveInto?: (id: string, targetId: string) => void;
+  /** Create a project inside the browse picker ("New project here"). */
+  onCreateProject?: (parentId: string | null, title: string) => string;
   sortMode?: SortMode;
   onCycleSort?: () => void;
   /** Manual ordering is available (the list is in "Unsorted" mode). */
@@ -29,6 +40,8 @@ export interface BacklogPanelProps {
   onReorder?: (ids: string[]) => void;
   /** Whether drag-and-drop is mounted (desktop). Buttons remain regardless. */
   dndEnabled?: boolean;
+  /** The Focus entry point (a FocusButton) — pinned in the sticky header so it stays reachable. */
+  focusSlot?: ReactNode;
 }
 
 /** Backlog: the list with an inline status switch + manual reorder (buttons + desktop drag).
@@ -40,12 +53,17 @@ export function BacklogPanel({
   onEdit,
   onDelete,
   onRename,
+  moveTargets,
+  moveBrowseTargets,
+  onMoveInto,
+  onCreateProject,
   sortMode,
   onCycleSort,
   reorderable,
   onMove,
   onReorder,
   dndEnabled,
+  focusSlot,
 }: BacklogPanelProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
@@ -75,9 +93,10 @@ export function BacklogPanel({
             <Button type="submit">{t('common.add')}</Button>
           </form>
         )}
-        {sortMode && onCycleSort && rows.length > 0 && (
-          <div className="mb-2 flex justify-end">
-            <SortButton mode={sortMode} onCycle={onCycleSort} />
+        {(focusSlot || (sortMode && onCycleSort && rows.length > 0)) && (
+          <div className="mb-2 flex items-center justify-end gap-1">
+            {focusSlot}
+            {sortMode && onCycleSort && rows.length > 0 && <SortButton mode={sortMode} onCycle={onCycleSort} />}
           </div>
         )}
       </div>
@@ -99,6 +118,15 @@ export function BacklogPanel({
                   title={row.title}
                   onUp={index > 0 ? () => onMove(row.id, 'up') : undefined}
                   onDown={index < rows.length - 1 ? () => onMove(row.id, 'down') : undefined}
+                />
+              )}
+              {onMoveInto && moveTargets && (
+                <MoveActionMenu
+                  title={row.title}
+                  quickTargets={moveTargets(row.id)}
+                  browseTargets={() => moveBrowseTargets?.(row.id) ?? []}
+                  onMove={(targetId) => onMoveInto(row.id, targetId)}
+                  onCreateProject={onCreateProject}
                 />
               )}
               <StatusMenu

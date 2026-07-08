@@ -30,6 +30,19 @@ describe('NextActionsPanel', () => {
     expect(screen.getByLabelText('Add a next action').closest('.sticky')).not.toBeNull();
   });
 
+  it('pins the Focus entry point in the sticky header (#687)', () => {
+    render(
+      <MemoryRouter>
+        <NextActionsPanel
+          rows={[row()]}
+          onSetStatus={vi.fn()}
+          focusSlot={<button type="button">Focus me</button>}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: 'Focus me' }).closest('.sticky')).not.toBeNull();
+  });
+
   it('renders title, project path (as links), tags, and a formatted due hint', () => {
     setup([
       row({
@@ -54,6 +67,24 @@ describe('NextActionsPanel', () => {
     expect(inherited).toHaveClass('italic');
     expect(inherited).toHaveAttribute('title', 'From project');
     expect(screen.getByText('urgent')).not.toHaveClass('italic'); // own tags stay plain
+  });
+
+  it('moves an action into a project from its row (#688)', () => {
+    const onMoveInto = vi.fn();
+    render(
+      <MemoryRouter>
+        <NextActionsPanel
+          rows={[row({ id: 'x', title: 'Buy milk' })]}
+          onSetStatus={vi.fn()}
+          moveTargets={() => [{ id: 'p1', label: 'Kitchen', kind: 'sibling' }]}
+          moveBrowseTargets={() => [{ id: 'p1', label: 'Kitchen' }]}
+          onMoveInto={onMoveInto}
+        />
+      </MemoryRouter>,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Move Buy milk to another project' }), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Kitchen' }));
+    expect(onMoveInto).toHaveBeenCalledWith('x', 'p1');
   });
 
   it('renders a status control for each row', () => {

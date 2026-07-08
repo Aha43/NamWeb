@@ -1,4 +1,4 @@
-import { applyViewOrder, backlogItems } from '@/domain/lenses';
+import { actionMoveTargets, actionMoveTargetsAll, applyViewOrder, backlogItems } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
@@ -39,13 +39,9 @@ export function BacklogPage() {
 
   return (
     <div className="space-y-3">
-      {ordered.length > 0 && (
-        <div className="flex justify-end">
-          <FocusButton to="/focus?source=backlog" label="Focus your Backlog" />
-        </div>
-      )}
       <BacklogPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
+      focusSlot={ordered.length > 0 ? <FocusButton to="/focus?source=backlog" label="Focus your Backlog" /> : undefined}
       sortMode={sortMode}
       onCycleSort={cycleSort}
       reorderable={sortMode === 'none'}
@@ -72,6 +68,25 @@ export function BacklogPage() {
           : undefined
       }
       onDelete={deleteNode}
+      moveTargets={document ? (id) => actionMoveTargets(document, id) : undefined}
+      moveBrowseTargets={document ? (id) => actionMoveTargetsAll(document, id) : undefined}
+      onMoveInto={(id, targetId) => dispatch({ type: 'moveNode', id, newParentId: targetId, now: nowIso() })}
+      onCreateProject={
+        document
+          ? (parentId, title) => {
+              const newProjectId = newId();
+              dispatch({
+                type: 'addSubProject',
+                parentId: parentId ?? document.projectsNodeId,
+                id: newProjectId,
+                title,
+                atTop: !addToBottom,
+                now: nowIso(),
+              });
+              return newProjectId;
+            }
+          : undefined
+      }
       onSetStatus={setStatus}
       onEdit={openEditor}
       onRename={(id, title) => {

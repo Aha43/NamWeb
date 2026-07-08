@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
@@ -18,6 +19,8 @@ export interface DuePanelProps {
   /** Inline delete (with confirm) per row. */
   onDelete?: (id: string) => void;
   onRename?: (id: string, title: string) => void;
+  /** The Focus entry point (a FocusButton) — pinned in a sticky header so it stays reachable. */
+  focusSlot?: ReactNode;
 }
 
 // Labels are i18n keys, translated at render.
@@ -29,7 +32,7 @@ const SECTIONS: { key: keyof DueRowGroups; label: string; tone: string }[] = [
 ];
 
 /** Due actions grouped by urgency; empty sections are hidden. Presentational. */
-export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename }: DuePanelProps) {
+export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focusSlot }: DuePanelProps) {
   const { t } = useTranslation();
   const total = SECTIONS.reduce((n, s) => n + groups[s.key].length, 0);
   if (total === 0) {
@@ -42,6 +45,12 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename }: Du
 
   return (
     <section className="space-y-4">
+      {/* Pin the Focus entry point so it stays reachable while the groups scroll under. */}
+      {focusSlot && (
+        <div className="sticky top-0 z-10 bg-background pt-1">
+          <div className="mb-2 flex justify-end">{focusSlot}</div>
+        </div>
+      )}
       {SECTIONS.map((section) => {
         const rows = groups[section.key];
         if (rows.length === 0) return null;

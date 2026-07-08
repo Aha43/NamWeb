@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, Pencil, Target, Trash2 } from 'lucide-react';
+import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, LayoutTemplate, Pencil, Target, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InlineRename } from '../actions/InlineRename';
 import { Button } from '@/components/ui/button';
@@ -429,6 +429,18 @@ export function ProjectWorkbench({
         </nav>
         <div className="flex shrink-0 items-center gap-1">
           {bookmarkSlot}
+          {onSaveAsTemplate && (
+            <PromptButton
+              aria-label={t('workbench.saveAsTemplate')}
+              label={t('workbench.templateName')}
+              initialValue={project.title}
+              submitLabel={t('common.save')}
+              onSubmit={onSaveAsTemplate}
+              className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+            >
+              <LayoutTemplate className="h-4 w-4" />
+            </PromptButton>
+          )}
           <Tooltip label={t('workbench.summaryTooltip')}>
             <Button
               type="button"
@@ -740,45 +752,9 @@ export function ProjectWorkbench({
                 onToggle={() => onToggleSection('subprojects')}
                 shortcutKey="z"
               />
-              {/* Add-sub-project row + template tools live in the Sub-projects section, always reachable. */}
+              {/* Add-sub-project row lives in the Sub-projects section, always reachable — the list
+                  renders directly under it so a new sub-project appears where you just typed. */}
               <QuickAdd label={t('workbench.addSubProject')} placeholder={t('workbench.addSubProjectPlaceholder')} onAdd={onAddSubProject} />
-              {((onApplyTemplate && templateNames && templateNames.length > 0) || onSaveAsTemplate) && (
-                <div className="flex flex-wrap items-center gap-2">
-                  {onApplyTemplate && templateNames && templateNames.length > 0 && (
-                    <select
-                      aria-label={t('workbench.addFromTemplateAria')}
-                      defaultValue=""
-                      onChange={(e) => {
-                        if (e.target.value) {
-                          onApplyTemplate(e.target.value);
-                          e.target.value = '';
-                        }
-                      }}
-                      className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
-                    >
-                      <option value="" disabled>
-                        {t('workbench.addFromTemplateOption')}
-                      </option>
-                      {templateNames.map((name) => (
-                        <option key={name} value={name}>
-                          {name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                  {onSaveAsTemplate && (
-                    <PromptButton
-                      label={t('workbench.templateName')}
-                      initialValue={project.title}
-                      submitLabel={t('common.save')}
-                      onSubmit={onSaveAsTemplate}
-                      className="ml-auto rounded-md px-2.5 py-1 text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground"
-                    >
-                      {t('workbench.saveAsTemplate')}
-                    </PromptButton>
-                  )}
-                </div>
-              )}
               {!sectionCollapsed('subprojects') && subProjects.length > 0 && (viewMode === 'heatmap' && subProjectStats ? (
                 <div className="grid grid-cols-2 gap-2">
                   {subProjectStats.map((stat) => (
@@ -819,6 +795,30 @@ export function ProjectWorkbench({
                   </ul>
                 </SortableList>
               ))}
+              {onApplyTemplate && templateNames && templateNames.length > 0 && (
+                <div className="flex justify-start pt-1">
+                  <select
+                    aria-label={t('workbench.addFromTemplateAria')}
+                    defaultValue=""
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        onApplyTemplate(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
+                  >
+                    <option value="" disabled>
+                      {t('workbench.addFromTemplateOption')}
+                    </option>
+                    {templateNames.map((name) => (
+                      <option key={name} value={name}>
+                        {name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
 
           {/* Empty leaf project: offer to turn it back into an action (the sections above carry the add rows). */}

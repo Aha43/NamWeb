@@ -17,13 +17,11 @@ export function DonePage() {
   const rows = document ? doneItems(document).map((n) => toActionRow(document, n)) : [];
   return (
     <div className="space-y-3">
-      {rows.length > 0 && (
-        <div className="flex justify-end">
-          <FocusButton to="/focus?source=done" label="Focus Done — re-triage what wasn't really done" />
-        </div>
-      )}
       <DonePanel
         rows={rows}
+        focusSlot={
+          rows.length > 0 ? <FocusButton to="/focus?source=done" label="Focus Done — re-triage what wasn't really done" /> : undefined
+        }
         onRestore={(id) => setStatus(id, 'NEXT')}
         onBacklog={(id) => setStatus(id, 'BACKLOG')}
         onRestoreMany={(ids) => setStatuses(ids, 'NEXT')}

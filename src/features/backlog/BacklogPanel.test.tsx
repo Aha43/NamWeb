@@ -13,10 +13,33 @@ describe('BacklogPanel', () => {
     expect(screen.getByText('Backlog is empty')).toBeInTheDocument();
   });
 
+  it('pins the Focus entry point in the sticky header (#687)', () => {
+    render(
+      <BacklogPanel rows={[row()]} onSetStatus={vi.fn()} focusSlot={<button type="button">Focus me</button>} />,
+    );
+    expect(screen.getByRole('button', { name: 'Focus me' }).closest('.sticky')).not.toBeNull();
+  });
+
   it('renders rows with a status control', () => {
     render(<BacklogPanel rows={[row({ id: 'x', title: 'Buy milk' })]} onSetStatus={vi.fn()} />);
     expect(screen.getByText('Buy milk')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /status of Buy milk/i })).toBeInTheDocument();
+  });
+
+  it('moves an action into a project from its row (#688)', () => {
+    const onMoveInto = vi.fn();
+    render(
+      <BacklogPanel
+        rows={[row({ id: 'x', title: 'Buy milk' })]}
+        onSetStatus={vi.fn()}
+        moveTargets={() => [{ id: 'p1', label: 'Kitchen', kind: 'sibling' }]}
+        moveBrowseTargets={() => [{ id: 'p1', label: 'Kitchen' }]}
+        onMoveInto={onMoveInto}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Move Buy milk to another project' }), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Kitchen' }));
+    expect(onMoveInto).toHaveBeenCalledWith('x', 'p1');
   });
 
   it('offers a drag handle alongside the up/down buttons when drag is enabled', () => {

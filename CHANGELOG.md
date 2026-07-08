@@ -8,8 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **"Save as template…" moved up to the project header.** It sits as a quiet icon beside Summary — a project-level, rarely-used operation shouldn't wedge itself between the add-sub-project box and the list. New sub-projects now appear directly under where you typed; the "Add from template…" picker stays in the Sub-projects section, below the list. Closes #686.
+
 ### Fixed
 
+- **The Focus button no longer scrolls away.** On Next, Backlog, Due, and Done the green Focus target now lives in the frozen header row (Due and Done gained one — Done's pins its select tools too), so the entry into Focus stays reachable however long the list. Closes #687.
 - **Tooltips everywhere they were missing.** The project/context bookmark ▾ triggers now hint on hover, and every copy icon carries its tooltip (Focus deck, project rows, resources, and the editor/details title+description copies). Closes #679.
 
 ### Added
@@ -18,6 +23,7 @@ minor = features (breaking changes allowed), patch = fixes.
 - **Create an action straight from a calendar day.** The day list's New action button opens the normal editor with the due date prefilled to that day (noon) — a great way to plan a day from the calendar; edit the date away if you realized something else. Closes #681.
 - **The global calendar.** A new Calendar surface (toolbar button and Views navigation) showing the classic current-month grid: Monday-start weeks, today ringed, each day summarizing its open dated work — a count, range actions lighting every day they span, and a warning tint on past days with unfinished actions. Navigate with « ‹ Today › » (the shown month lives in the URL). Built as a thin shell around interchangeable calendar views — the month grid is the first. Closes #675.
 - **Click a day to see its work.** A day box swaps the calendar for that day's action list — the standard rows (edit, delete, the works) — with a Calendar back button (and browser back) returning to the same month; empty days say so. Closes #676.
+- **Move an action into a project straight from Next and Backlog.** The workbench's folder icon now sits on rows in the two triage views too — proximate destinations in the quick menu, "Browse all projects…" (with New project here) behind it; the inline dropdown on phone. Closes #688.
 - **Hover a calendar day to see what's on it.** Day boxes with work now tooltip the titles of that day's actions (up to five, then "+N more") — a peek without the drill-in. Closes #689.
 
 ## [1.0.0] - 2026-07-07

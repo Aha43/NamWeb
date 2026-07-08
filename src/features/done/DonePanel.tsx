@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { CheckSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
@@ -20,11 +20,13 @@ export interface DonePanelProps {
   /** Bulk move-to-Backlog with a single Undo toast; falls back to per-id `onBacklog` when absent. */
   onBacklogMany?: (ids: string[]) => void;
   onEdit?: (id: string) => void;
+  /** The Focus entry point (a FocusButton) — pinned in the sticky header so it stays reachable. */
+  focusSlot?: ReactNode;
 }
 
 /** Done: completed actions with restore / backlog / delete — plus a select mode for bulk ops
  *  (you often spot several that were not actually done). Presentational. */
-export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, onRestoreMany, onBacklogMany, onEdit }: DonePanelProps) {
+export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, onRestoreMany, onBacklogMany, onEdit, focusSlot }: DonePanelProps) {
   const { t } = useTranslation();
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -65,7 +67,10 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
 
   return (
     <section className="space-y-2">
-      <div className="flex items-center justify-end">
+      {/* Pin the Focus entry + select toggle (and the bulk bar) while the list scrolls under. */}
+      <div className="sticky top-0 z-10 space-y-2 bg-background pt-1">
+      <div className="flex items-center justify-end gap-1">
+        {focusSlot}
         <Tooltip label={selectMode ? t('list.exitSelect') : t('done.selectActions')}>
           <button
             type="button"
@@ -129,6 +134,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
           </button>
         </div>
       )}
+      </div>
 
       <ActionList>
         {rows.map((row) => (
