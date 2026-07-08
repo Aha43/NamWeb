@@ -4,17 +4,16 @@ import { useTranslation } from 'react-i18next';
 import { STATUS_OPTIONS } from '../actions/status';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DatePickerPopover } from '@/components/ui/date-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { TagsInput } from '../actions/TagsInput';
 import { InheritedTags } from '../actions/InheritedTags';
 import { ResourcesEditor } from '../actions/ResourcesEditor';
+import { DueFieldset, type DueFields } from '../actions/DueFieldset';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import type { ActionEdits } from '../actions/ActionDialog';
 import { cn } from '@/lib/utils';
-import { parseFlexibleDate } from '@/lib/dates';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
 
 /**
@@ -48,33 +47,37 @@ export function ProjectDetailsPanel({
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? '');
   const [tags, setTags] = useState(project.tags.join(', '));
-  const [due, setDue] = useState(project.dueAt ?? '');
-  const [dueError, setDueError] = useState(false);
+  // The due fields live in DueFieldset (drafts + validation); this mirror is the last committed
+  // set, so commits from OTHER fields carry the current due values too.
+  const [dueFields, setDueFields] = useState<DueFields>({
+    dueAt: project.dueAt ?? null,
+    dueEndAt: project.dueEndAt ?? null,
+    dueTime: project.dueTime ?? null,
+    dueEndTime: project.dueEndTime ?? null,
+  });
   const [status, setStatus] = useState<NodeStatus>(project.status);
   const [resources, setResources] = useState<Resource[]>(project.resources);
   const [saved, setSaved] = useState(false);
 
   // Build the edits snapshot from current state (with optional overrides for a just-changed discrete
-  // control, to dodge setState's async staleness) and report it. Never persists an empty title or an
-  // unparseable due — those fall back to the project's current value, so one bad field can't block
-  // saving the others. The page diffs this snapshot into per-field intents (one small synced write).
+  // control, to dodge setState's async staleness) and report it. Never persists an empty title —
+  // it falls back to the project's current value, so one bad field can't block saving the others.
+  // The page diffs this snapshot into per-field intents (one small synced write).
   const commit = (override: Partial<{
     title: string;
     description: string;
     tags: string;
-    due: string;
+    due: DueFields;
     status: NodeStatus;
     resources: Resource[];
   }> = {}) => {
     const rawTitle = (override.title ?? title).trim();
-    const rawDue = override.due ?? due;
-    const parsedDue = parseFlexibleDate(rawDue);
     const trimmedDescription = (override.description ?? description).trim();
     onSave({
       title: rawTitle || project.title,
       description: trimmedDescription ? trimmedDescription : null,
       tags: (override.tags ?? tags).split(',').map((tag) => tag.trim()).filter(Boolean),
-      dueAt: rawDue.trim() === '' ? null : (parsedDue ?? project.dueAt),
+      ...(override.due ?? dueFields),
       status: override.status ?? status,
       resources: override.resources ?? resources,
     });
@@ -88,19 +91,6 @@ export function ProjectDetailsPanel({
       return;
     }
     commit();
-  };
-  const commitDue = () => {
-    if (due.trim() === '') {
-      commit({ due: '' });
-      return;
-    }
-    const iso = parseFlexibleDate(due);
-    if (iso === null) {
-      setDueError(true); // flag it, keep the persisted due
-      return;
-    }
-    setDue(iso); // normalize the entry to ISO
-    commit({ due: iso });
   };
 
   return (
@@ -167,34 +157,14 @@ export function ProjectDetailsPanel({
               />
               <InheritedTags tags={inheritedTags} />
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="project-due">{t('editor.fieldDue')}</Label>
-              <div className="flex gap-1.5">
-                <Input
-                  id="project-due"
-                  className="min-w-0 flex-1"
-                  placeholder={t('editor.duePlaceholder')}
-                  value={due}
-                  aria-invalid={dueError}
-                  onChange={(e) => {
-                    setDue(e.target.value);
-                    setSaved(false);
-                    if (dueError) setDueError(false);
-                  }}
-                  onBlur={commitDue}
-                />
-                <DatePickerPopover
-                  value={parseFlexibleDate(due)}
-                  onSelect={(isoDate) => { setDue(isoDate); setDueError(false); commit({ due: isoDate }); }}
-                  label={t('editor.pickDueDate')}
-                />
-              </div>
-              {dueError && (
-                <p role="alert" className="text-xs text-destructive">
-                  {t('editor.dueError')}
-                </p>
-              )}
-            </div>
+            <DueFieldset
+              idPrefix="project"
+              value={dueFields}
+              onCommit={(fields) => {
+                setDueFields(fields);
+                commit({ due: fields });
+              }}
+            />
           </div>
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium text-foreground">{t('editor.statusLegend')}</legend>

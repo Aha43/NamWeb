@@ -71,6 +71,37 @@ describe('ProjectDetailsPanel', () => {
     expect(due).toHaveValue('2026-08-15'); // normalized in place
   });
 
+  it('autosaves a full date range with times — parity with the action editor (#699)', () => {
+    const onSave = vi.fn();
+    render(
+      <ProjectDetailsPanel
+        project={project({ dueAt: '2026-08-10' })}
+        collapsed={false}
+        onToggle={vi.fn()}
+        onSave={onSave}
+      />,
+    );
+    // The extras are collapsed (only a start date is set) — expand, then fill the range + times.
+    fireEvent.click(screen.getByRole('button', { name: /add time or a range/i }));
+    const end = screen.getByLabelText('Due end (optional)');
+    fireEvent.change(end, { target: { value: '26-8-12' } });
+    fireEvent.blur(end);
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ dueAt: '2026-08-10', dueEndAt: '2026-08-12', dueTime: null, dueEndTime: null }),
+    );
+    const time = screen.getByLabelText('Due time (optional)');
+    fireEvent.change(time, { target: { value: '9' } });
+    fireEvent.blur(time);
+    expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ dueTime: '09:00' }));
+    // A commit from ANOTHER field still carries the due set (the panel mirrors the last commit).
+    const title = screen.getByLabelText('Title');
+    fireEvent.change(title, { target: { value: 'Roof v2' } });
+    fireEvent.blur(title);
+    expect(onSave).toHaveBeenLastCalledWith(
+      expect.objectContaining({ title: 'Roof v2', dueAt: '2026-08-10', dueEndAt: '2026-08-12', dueTime: '09:00' }),
+    );
+  });
+
   it('autosaves a status change immediately', () => {
     const onSave = vi.fn();
     render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
