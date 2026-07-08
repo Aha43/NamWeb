@@ -198,6 +198,30 @@ describe('ProjectWorkbench', () => {
     expect(onApplyTemplate).toHaveBeenCalledWith('Starter');
   });
 
+  it('offers Save as template… as a quiet icon control in the pinned header (#686)', () => {
+    const onSaveAsTemplate = vi.fn();
+    setup({ onSaveAsTemplate });
+    const trigger = screen.getByRole('button', { name: 'Save as template…' });
+    // Lives beside Summary in the header, not down in the Sub-projects section.
+    expect(trigger.parentElement).toContainElement(screen.getByRole('button', { name: 'Summary' }));
+    fireEvent.click(trigger);
+    const input = screen.getByLabelText('Template name');
+    expect(input).toHaveValue('Kitchen reno');
+    fireEvent.change(input, { target: { value: 'Reno starter' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSaveAsTemplate).toHaveBeenCalledWith('Reno starter');
+  });
+
+  it('keeps the sub-projects list directly under its add box, template picker below (#686)', () => {
+    setup({ templateNames: ['Starter'], onApplyTemplate: vi.fn(), onSaveAsTemplate: vi.fn() });
+    const addBox = screen.getByLabelText('Add sub-project');
+    const list = screen.getByRole('button', { name: 'Open Plumbing' });
+    const picker = screen.getByLabelText('Add from template');
+    // Top to bottom: add box → list → template picker, so a new sub-project lands where you typed.
+    expect(addBox.compareDocumentPosition(list) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(list.compareDocumentPosition(picker) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('offers convert-to-action for a leaf project', () => {
     const onConvertToAction = vi.fn();
     setup({ actions: [], subProjects: [], onConvertToAction });
