@@ -182,8 +182,9 @@ export interface QuickMoveTarget extends ProjectMoveTarget {
  * Where an **action** can be moved (from the project it's in): its **parent project** (one level up;
  * "Free actions" when the action sits in a top-level project), its **sibling projects** (other
  * projects under the same parent), **down** into its current project's own **sub-projects**, and
- * **Free actions** (the loose-actions root). Excludes archived projects and the action's current
- * container. Actions only — empty for projects.
+ * **Free actions** (the loose-actions root). A **free** action (already in the loose-actions root)
+ * gets the **top-level projects** instead — the natural places to file it (#694). Excludes archived
+ * projects and the action's current container. Actions only — empty for projects.
  */
 export function actionMoveTargets(doc: WorkspaceDocument, actionId: string): QuickMoveTarget[] {
   const action = doc.nodes[actionId];
@@ -213,6 +214,14 @@ export function actionMoveTargets(doc: WorkspaceDocument, actionId: string): Qui
   }
   // Free actions (the loose-actions root) — unless the action is already there.
   if (containerId !== doc.nextActionsNodeId) targets.push({ id: doc.nextActionsNodeId, label: 'Free actions', kind: 'free' });
+  // A free action's proximate destinations are the top-level projects (#694) — without this the
+  // loose actions you'd most want to file somewhere had no quick targets at all.
+  if (containerId === doc.nextActionsNodeId) {
+    for (const cid of doc.nodes[doc.projectsNodeId]?.childIds ?? []) {
+      const n = doc.nodes[cid];
+      if (n?.project && !archived.has(cid)) targets.push({ id: cid, label: labelFor(n), kind: 'toplevel' });
+    }
+  }
   return targets;
 }
 
@@ -419,8 +428,9 @@ export interface DueGroups {
 }
 
 /**
- * Non-done actions with a due date, grouped by urgency relative to `now`:
- * overdue / today / within a week / later. Mirrors NamDesktop's DueLens.
+ * Open (not DONE/CANCELLED) actions with a due date, grouped by urgency relative to `now`:
+ * overdue / today / within a week / later. Mirrors NamDesktop's DueLens; agrees with the
+ * calendar's notion of "open" (#694).
  */
 export function dueGroups(doc: WorkspaceDocument, now: Date = new Date()): DueGroups {
   const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -428,7 +438,7 @@ export function dueGroups(doc: WorkspaceDocument, now: Date = new Date()): DueGr
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   for (const node of Object.values(doc.nodes)) {
-    if (node.project || node.status === 'DONE' || structural.has(node.id) || archived.has(node.id) || !node.dueAt) continue;
+    if (node.project || node.status === 'DONE' || node.status === 'CANCELLED' || structural.has(node.id) || archived.has(node.id) || !node.dueAt) continue;
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueAt);
     if (!match) continue;
     const due0 = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime();

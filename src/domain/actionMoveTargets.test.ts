@@ -43,12 +43,19 @@ describe('actionMoveTargets', () => {
     expect(ids(doc, 's1').sort()).toEqual(['A', doc.nextActionsNodeId].sort());
   });
 
-  it('free action → the top-level projects (no Free actions entry, already free)', () => {
+  it('free action → the top-level projects (no Free actions entry, already free) (#694)', () => {
     const doc = build();
-    const targets = ids(doc, 'f1');
-    expect(targets).not.toContain(doc.nextActionsNodeId); // already free
-    // Free actions live under the actions root (not a project) → no parent/sibling projects offered.
-    expect(targets).toEqual([]);
+    const targets = actionMoveTargets(doc, 'f1');
+    expect(targets.map((t) => t.id)).not.toContain(doc.nextActionsNodeId); // already free
+    // The natural places to file a loose action: the top-level projects.
+    expect(targets.map((t) => t.id).sort()).toEqual(['A', 'B']);
+    expect(targets.every((t) => t.kind === 'toplevel')).toBe(true);
+  });
+
+  it('free action → archived top-level projects are not offered (#694)', () => {
+    let doc = build();
+    doc = applyIntent(doc, { type: 'setStatus', id: 'B', status: 'ARCHIVED', now: 't' });
+    expect(ids(doc, 'f1')).toEqual(['A']);
   });
 
   it('returns nothing for a project node', () => {

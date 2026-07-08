@@ -40,7 +40,9 @@ export function MoveActionMenu({
   const { t } = useTranslation();
   const isDesktop = useIsDesktop();
   const [browseOpen, setBrowseOpen] = useState(false);
-  if (quickTargets.length === 0) return null;
+  // Desktop always has "Browse all projects…" (+ New project here) to offer, even with no quick
+  // targets; the phone dropdown lists only the quick set, so it hides when that's empty (#694).
+  if (quickTargets.length === 0 && !isDesktop) return null;
 
   return (
     <>

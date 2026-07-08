@@ -352,8 +352,9 @@ describe('dueGroups', () => {
         node('w', { status: 'NEXT', dueAt: '2026-06-14' }),
         node('l', { status: 'NEXT', dueAt: '2026-08-01' }),
         node('done', { status: 'DONE', dueAt: '2026-06-01' }), // excluded
+        node('cancelled', { status: 'CANCELLED', dueAt: '2026-06-01' }), // excluded — agrees with the calendar (#694)
       ],
-      (d) => ['o', 't', 'w', 'l', 'done'].forEach((id) => addChild(d, 'actions', id)),
+      (d) => ['o', 't', 'w', 'l', 'done', 'cancelled'].forEach((id) => addChild(d, 'actions', id)),
     );
     const g = dueGroups(doc, now);
     expect(ids(g.overdue)).toEqual(['o']);

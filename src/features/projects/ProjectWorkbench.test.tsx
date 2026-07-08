@@ -198,6 +198,11 @@ describe('ProjectWorkbench', () => {
     expect(onApplyTemplate).toHaveBeenCalledWith('Starter');
   });
 
+  it('hides the template picker while the Sub-projects section is collapsed (#694)', () => {
+    setup({ templateNames: ['Starter'], onApplyTemplate: vi.fn(), collapsedSections: new Set(['subprojects']) });
+    expect(screen.queryByLabelText('Add from template')).not.toBeInTheDocument();
+  });
+
   it('offers Save as template… as a quiet icon control in the pinned header (#686)', () => {
     const onSaveAsTemplate = vi.fn();
     setup({ onSaveAsTemplate });
