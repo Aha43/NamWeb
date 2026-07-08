@@ -15,6 +15,8 @@ export interface CalendarDay {
   count: number;
   /** The day is in the past and still has open work — the warning color. */
   overdue: boolean;
+  /** Titles of the day's open actions, title-sorted — feeds the day tooltip (#689). */
+  titles: string[];
 }
 
 function pad(n: number): string {
@@ -64,8 +66,11 @@ export function calendarMonth(
   const days: CalendarDay[] = [];
   for (let d = 1; d <= daysInMonth; d++) {
     const date = `${year}-${pad(month)}-${pad(d)}`;
-    const count = actions.reduce((acc, n) => (coversDay(n, date) ? acc + 1 : acc), 0);
-    days.push({ date, count, overdue: count > 0 && date < today });
+    const titles = actions
+      .filter((n) => coversDay(n, date))
+      .map((n) => n.title)
+      .sort((a, b) => a.localeCompare(b));
+    days.push({ date, count: titles.length, overdue: titles.length > 0 && date < today, titles });
   }
   return days;
 }

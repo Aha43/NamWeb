@@ -36,7 +36,7 @@ describe('calendarMonth (#675)', () => {
     ]);
     const days = calendarMonth(doc, 2026, 7, NOW);
     expect(days).toHaveLength(31);
-    expect(days[9]).toEqual({ date: '2026-07-10', count: 2, overdue: true }); // past day, open work
+    expect(days[9]).toEqual({ date: '2026-07-10', count: 2, overdue: true, titles: ['a', 'b'] }); // past day, open work
     expect(days[10].count).toBe(0);
   });
 
@@ -55,6 +55,16 @@ describe('calendarMonth (#675)', () => {
     const days = calendarMonth(doc, 2026, 7, NOW);
     expect(days[14]).toMatchObject({ count: 1, overdue: false });
     expect(days[13]).toMatchObject({ count: 1, overdue: true });
+  });
+
+  it("carries each day's titles, title-sorted and range-aware (#689)", () => {
+    const doc = workspace([
+      node('b', { title: 'Beta', dueAt: '2026-07-10' }),
+      node('a', { title: 'Alpha', dueAt: '2026-07-08', dueEndAt: '2026-07-12' } as Partial<NamNode>),
+    ]);
+    const days = calendarMonth(doc, 2026, 7, NOW);
+    expect(days[9].titles).toEqual(['Alpha', 'Beta']); // the range action covers the 10th too
+    expect(days[0].titles).toEqual([]);
   });
 
   it('handles month lengths (Feb of a leap year)', () => {

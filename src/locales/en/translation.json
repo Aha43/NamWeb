@@ -164,6 +164,7 @@
   "calendar.nextYear": "Next year",
   "calendar.today": "Today",
   "calendar.weekTooltip": "Week {week}",
+  "calendar.dayMore": "+{count} more",
   "calendar.backToCalendar": "Calendar",
   "calendar.emptyDay": "Nothing due this day.",
   "calendar.newAction": "New action",
