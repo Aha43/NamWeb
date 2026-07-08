@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-07-08
+
+**The calendar era opens.** A real month view grew in two days from grid to daily driver — drill
+into a day, plan one straight from it, week numbers in the gutter, titles on hover — alongside a
+dogfooding-driven polish pass on the everyday surfaces (the Focus entry stopped scrolling away,
+loose actions learned to file themselves into projects, the template tools stopped hogging the
+sub-projects section). Cut through the full dual-review dance: six findings, two reviewers, zero
+overlap — all fixed in-range, one new CI gate.
+
 ### Changed
 
 - **"Save as template…" moved up to the project header.** It sits as a quiet icon beside Summary — a project-level, rarely-used operation shouldn't wedge itself between the add-sub-project box and the list. New sub-projects now appear directly under where you typed; the "Add from template…" picker stays in the Sub-projects section, below the list. Closes #686.
@@ -1337,7 +1346,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Aha43/NamWeb/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Aha43/NamWeb/compare/v0.10.0...v1.0.0
 [0.10.0]: https://github.com/Aha43/NamWeb/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/Aha43/NamWeb/compare/v0.9.0...v0.9.1

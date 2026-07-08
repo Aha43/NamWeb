@@ -11,6 +11,24 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.1.0 — 2026-07-08
+
+*(two days; 12 PRs, 1 release)* The 1.x thesis made good on its first page: the **calendar era**
+went from "no calendar" to daily driver in five feature PRs — month grid, day drill-in,
+ISO week gutter, plan-a-day-from-the-day, titles-on-hover — a textbook converging arc where each
+PR made the previous one more useful. Around it, the first **dogfooding dividend**: four small
+UX debts the user only saw by living in the app (a Focus button that scrolled away, loose actions
+with no way into a project, over-promoted template tools, "did my sub-project get created?") fixed
+in one parallel auto-sprint, branches deliberately anchored apart so the merge train needed one
+trivial conflict resolution instead of last train's heading cleanup. The quality machine then ran
+its full dance **mid-cycle for the first time** (not just at the gate): Claude review → 3 findings
+→ fix PR → Codex review → 3 findings → fix PR — six real issues, third consecutive cycle with
+**zero overlap** between reviewers, headlined by a domain gap (free actions had no move targets,
+the very case the feature was built for) and a route crash from a hand-mangled URL. One finding
+became infrastructure: `i18n:check` joined the per-PR CI gate, closing the drift class it caught.
+Verdict: the calendar arc is **converging** fast; everything else is the polishing of a surface
+that increasingly just works.
+
 ## v1.0.0 — 2026-07-07
 
 *(one day; 6 PRs, 1 release — the release)* A milestone earned, not declared. The road to the
