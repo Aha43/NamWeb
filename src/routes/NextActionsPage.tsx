@@ -1,4 +1,4 @@
-import { applyViewOrder, nextActions } from '@/domain/lenses';
+import { actionMoveTargets, actionMoveTargetsAll, applyViewOrder, nextActions } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
@@ -66,6 +66,25 @@ export function NextActionsPage() {
           : undefined
       }
       onDelete={deleteNode}
+      moveTargets={document ? (id) => actionMoveTargets(document, id) : undefined}
+      moveBrowseTargets={document ? (id) => actionMoveTargetsAll(document, id) : undefined}
+      onMoveInto={(id, targetId) => dispatch({ type: 'moveNode', id, newParentId: targetId, now: nowIso() })}
+      onCreateProject={
+        document
+          ? (parentId, title) => {
+              const newProjectId = newId();
+              dispatch({
+                type: 'addSubProject',
+                parentId: parentId ?? document.projectsNodeId,
+                id: newProjectId,
+                title,
+                atTop: !addToBottom,
+                now: nowIso(),
+              });
+              return newProjectId;
+            }
+          : undefined
+      }
       sortMode={sortMode}
       onCycleSort={cycleSort}
       reorderable={sortMode === 'none'}
