@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **In progress ends when the action does.** Marking an action Done (or Cancelled) now sheds the built-in *in progress* tag — by any path: status menu, bulk ops, the Focus deck — and finished rows no longer offer the working-on-it toggle. Restoring an action doesn't resurrect the tag. Closes #716.
+
 ## [1.2.0] - 2026-07-09
 
 **Projects tell time.** One arc, start to finish: projects got the action editor's full due

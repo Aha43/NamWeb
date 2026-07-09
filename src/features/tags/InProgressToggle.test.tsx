@@ -13,11 +13,11 @@ function node(id: string, p: Partial<NamNode> = {}): NamNode {
   };
 }
 
-function renderToggle(tags: string[]) {
+function renderToggle(tags: string[], status: NamNode['status'] = 'BACKLOG') {
   const dispatch = vi.fn();
   const document = {
     formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects', nextActionsNodeId: 'actions',
-    nodes: { a: node('a', { title: 'Buy milk', tags }) },
+    nodes: { a: node('a', { title: 'Buy milk', tags, status }) },
     registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
   } as WorkspaceDocument;
   render(
@@ -62,5 +62,15 @@ describe('InProgressToggle (#651)', () => {
   it('renders nothing without a workspace provider (presentational hosts)', () => {
     const { container } = render(<InProgressToggle id="a" title="x" />);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('hides on terminal rows — a finished action is not being worked on (#716)', () => {
+    renderToggle([], 'DONE');
+    expect(screen.queryByRole('button', { name: 'Working on it: Buy milk' })).not.toBeInTheDocument();
+  });
+
+  it('hides on cancelled rows too (#716)', () => {
+    renderToggle([], 'CANCELLED');
+    expect(screen.queryByRole('button', { name: 'Working on it: Buy milk' })).not.toBeInTheDocument();
   });
 });

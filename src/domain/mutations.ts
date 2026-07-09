@@ -5,7 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
-import { isSystemTag } from './systemTags';
+import { IN_PROGRESS_TAG, canonicalTag, isSystemTag } from './systemTags';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 
 export type Intent =
@@ -332,6 +332,12 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!node) return next;
       if (intent.expectedStatus !== undefined && node.status !== intent.expectedStatus) return next;
       node.status = intent.status;
+      // A finished action isn't being worked on: terminal statuses shed the in-progress system
+      // tag (#716) — case-insensitively, since NamDesktop writes case variants (#654). Restoring
+      // to NEXT/BACKLOG never re-adds it.
+      if (intent.status === 'DONE' || intent.status === 'CANCELLED') {
+        node.tags = node.tags.filter((tag) => canonicalTag(tag) !== IN_PROGRESS_TAG);
+      }
       node.updatedAt = intent.now;
       node.statusChangedAt = intent.statusChangedAt === undefined ? intent.now : intent.statusChangedAt;
       return next;
