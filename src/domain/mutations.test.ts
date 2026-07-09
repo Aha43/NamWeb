@@ -407,6 +407,15 @@ describe('applyIntent', () => {
     expect(deleted.missionControls).toEqual([]);
   });
 
+  it('setDeriveDue: on sets the flag; off removes it (absent = off, byte-identical docs) (#706)', () => {
+    const doc = workspace([node('p', { project: true })]);
+    const on = applyIntent(doc, { type: 'setDeriveDue', id: 'p', on: true, now: 't' });
+    expect(on.nodes['p'].deriveDue).toBe(true);
+    expect(on.nodes['p'].updatedAt).toBe('t');
+    const off = applyIntent(on, { type: 'setDeriveDue', id: 'p', on: false, now: 't2' });
+    expect('deriveDue' in off.nodes['p']).toBe(false);
+  });
+
   it('templates: saveAsTemplate captures the subtree; deleteTemplate removes it', () => {
     const doc = workspace([
       node('p', { project: true, title: 'Reno', childIds: ['s', 'a'] }),

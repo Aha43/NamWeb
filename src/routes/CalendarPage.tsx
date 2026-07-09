@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { calendarMonth, dayActions, dayProjects, isValidLocalDate, localDateString } from '@/domain/calendar';
+import { effectiveDue } from '@/domain/derivedDue';
 import { MonthGrid } from '@/features/calendar/MonthGrid';
 import { ActionRow } from '@/features/actions/ActionRow';
 import { DueHintLabel } from '@/features/actions/DueHintLabel';
@@ -129,7 +130,7 @@ export function CalendarPage() {
                       >
                         <Folder className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
                         <TruncatedTitle text={p.title} className="min-w-0 flex-1 text-sm text-foreground" />
-                        <DueHintLabel dueAt={p.dueAt} dueEndAt={p.dueEndAt} dueTime={p.dueTime} dueEndTime={p.dueEndTime} />
+                        <DueHintLabel {...effectiveDue(document, p.id)} />
                         <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                       </button>
                     </li>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { projectMoveTargets, projectQuickMoveTargets, projects, reorderKindWithinChildren } from '@/domain/lenses';
+import { effectiveDue } from '@/domain/derivedDue';
 import { buildLearnNam } from '@/domain/learnNam';
 import { importSeedFromJson } from '@/domain/importWorkspace';
 import { newId, nowIso } from '@/lib/local';
@@ -25,6 +26,7 @@ export function ProjectsPage() {
   return (
     <ProjectsPanel
       projects={visibleProjects}
+      effectiveDueOf={document ? (id) => effectiveDue(document, id) : undefined}
       showArchived={showArchived}
       onToggleShowArchived={() => setShowArchived((v) => !v)}
       archivedCount={archivedCount}

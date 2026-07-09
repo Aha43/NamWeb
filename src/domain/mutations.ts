@@ -27,6 +27,7 @@ export type Intent =
     }
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; dueEndAt?: string | null; dueTime?: string | null; dueEndTime?: string | null; now: string }
+  | { type: 'setDeriveDue'; id: string; on: boolean; now: string }
   | { type: 'updateTags'; id: string; tags: string[]; now: string }
   | { type: 'registerTag'; tag: string }
   | { type: 'renameTag'; from: string; to: string }
@@ -355,6 +356,15 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       }
       // The end time is meaningless without an end date.
       if (!node.dueEndAt) node.dueEndTime = null;
+      node.updatedAt = intent.now;
+      return next;
+    }
+    case 'setDeriveDue': {
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      // Off = absent, so untouched documents stay byte-identical (additive contract, #706).
+      if (intent.on) node.deriveDue = true;
+      else delete node.deriveDue;
       node.updatedAt = intent.now;
       return next;
     }

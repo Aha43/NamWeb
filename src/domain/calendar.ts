@@ -7,6 +7,7 @@
 
 import type { NamNode, WorkspaceDocument } from './types';
 import { archivedNodeIds, structuralNodeIds } from './lenses';
+import { effectiveDue } from './derivedDue';
 
 export interface CalendarDay {
   /** Local date, YYYY-MM-DD. */
@@ -41,7 +42,7 @@ export function isValidLocalDate(s: string): boolean {
   return !Number.isNaN(d.getTime()) && localDateString(d) === s;
 }
 
-function openDatedNodes(doc: WorkspaceDocument, projects: boolean): NamNode[] {
+function openNodes(doc: WorkspaceDocument, projects: boolean): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter(
@@ -50,28 +51,46 @@ function openDatedNodes(doc: WorkspaceDocument, projects: boolean): NamNode[] {
       !structural.has(n.id) &&
       !archived.has(n.id) &&
       n.status !== 'DONE' &&
-      n.status !== 'CANCELLED' &&
-      !!n.dueAt &&
-      /^\d{4}-\d{2}-\d{2}$/.test(n.dueAt),
+      n.status !== 'CANCELLED',
   );
 }
 
-const openDatedActions = (doc: WorkspaceDocument) => openDatedNodes(doc, false);
-const openDatedProjects = (doc: WorkspaceDocument) => openDatedNodes(doc, true);
-
-/** The titles of `nodes` covering `date`, title-sorted. */
-function titlesOn(nodes: NamNode[], date: string): string[] {
-  return nodes
-    .filter((n) => coversDay(n, date))
-    .map((n) => n.title)
-    .sort((a, b) => a.localeCompare(b));
+function openDatedActions(doc: WorkspaceDocument): NamNode[] {
+  return openNodes(doc, false).filter((n) => !!n.dueAt && /^\d{4}-\d{2}-\d{2}$/.test(n.dueAt));
 }
 
-/** Whether an action's due day/range covers the given local date. */
-function coversDay(n: NamNode, date: string): boolean {
-  const start = n.dueAt!;
-  const end = n.dueEndAt && n.dueEndAt >= start ? n.dueEndAt : start;
-  return start <= date && date <= end;
+/** A dated node with its resolved [start, end] span — for projects the *effective* span, so a
+ *  deriving project (#706) marks the calendar just like an explicitly dated one. */
+interface Dated {
+  node: NamNode;
+  start: string;
+  end: string;
+}
+
+function datedActions(doc: WorkspaceDocument): Dated[] {
+  return openDatedActions(doc).map((n) => ({
+    node: n,
+    start: n.dueAt!,
+    end: n.dueEndAt && n.dueEndAt >= n.dueAt! ? n.dueEndAt : n.dueAt!,
+  }));
+}
+
+function datedProjects(doc: WorkspaceDocument): Dated[] {
+  const out: Dated[] = [];
+  for (const n of openNodes(doc, true)) {
+    const eff = effectiveDue(doc, n.id);
+    if (!eff.dueAt || !/^\d{4}-\d{2}-\d{2}$/.test(eff.dueAt)) continue;
+    out.push({ node: n, start: eff.dueAt, end: eff.dueEndAt && eff.dueEndAt >= eff.dueAt ? eff.dueEndAt : eff.dueAt });
+  }
+  return out;
+}
+
+/** The titles of `dated` entries covering `date`, title-sorted. */
+function titlesOn(dated: Dated[], date: string): string[] {
+  return dated
+    .filter((d) => d.start <= date && date <= d.end)
+    .map((d) => d.node.title)
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /**
@@ -84,8 +103,8 @@ export function calendarMonth(
   month: number,
   now: Date = new Date(),
 ): CalendarDay[] {
-  const actions = openDatedActions(doc);
-  const projects = openDatedProjects(doc);
+  const actions = datedActions(doc);
+  const projects = datedProjects(doc);
   const today = localDateString(now);
   const daysInMonth = new Date(year, month, 0).getDate();
   const days: CalendarDay[] = [];
@@ -105,16 +124,18 @@ export function calendarMonth(
 
 /** The open actions due on `date` (range-aware), title-sorted for a stable list (#676). */
 export function dayActions(doc: WorkspaceDocument, date: string): NamNode[] {
-  return openDatedActions(doc)
-    .filter((n) => coversDay(n, date))
+  return datedActions(doc)
+    .filter((d) => d.start <= date && date <= d.end)
+    .map((d) => d.node)
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
-/** The open dated projects covering `date` (full span), title-sorted — the day drill-in's
- *  Projects section (#703). */
+/** The open dated projects covering `date` (full effective span, #706), title-sorted — the day
+ *  drill-in's Projects section (#703). */
 export function dayProjects(doc: WorkspaceDocument, date: string): NamNode[] {
-  return openDatedProjects(doc)
-    .filter((n) => coversDay(n, date))
+  return datedProjects(doc)
+    .filter((d) => d.start <= date && date <= d.end)
+    .map((d) => d.node)
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 

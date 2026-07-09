@@ -35,6 +35,7 @@ import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
 import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
 import type { QuickMoveTarget } from '@/domain/lenses';
+import type { EffectiveDue } from '@/domain/derivedDue';
 import type { NamNode, NodeStatus } from '../../domain/types';
 
 type MoveDirection = 'up' | 'down';
@@ -74,6 +75,10 @@ export interface ProjectWorkbenchProps {
   onSaveDetails?: (edits: ActionEdits) => void;
   /** Tags this project inherits from its ancestors ("rub-off") — shown read-only in Details. */
   projectInheritedTags?: string[];
+  /** Persist the "derive from contents" toggle (#706) — the Details panel's checkbox. */
+  onSetDeriveDue?: (on: boolean) => void;
+  /** A project's effective due span (derived gap-fill, #706) — row hints + Details ghosts. */
+  effectiveDueOf?: (id: string) => EffectiveDue;
   /** Delete the current project — opens the advanced-delete dialog from the Details panel. */
   onDeleteProject?: () => void;
   /** Enter Focus mode over this project's open direct actions. */
@@ -172,6 +177,8 @@ export function ProjectWorkbench({
   onToggleDetails = () => {},
   onSaveDetails,
   projectInheritedTags = [],
+  onSetDeriveDue,
+  effectiveDueOf,
   onDeleteProject,
   onFocus,
   onDeleteAction,
@@ -328,8 +335,13 @@ export function ProjectWorkbench({
             ) : (
               <TruncatedTitle text={sub.title} className="min-w-0 flex-1 text-sm text-foreground" />
             )}
-            {/* Sub-projects tell time too (#700) — the same urgency-toned hint action rows carry. */}
-            <DueHintLabel dueAt={sub.dueAt} dueEndAt={sub.dueEndAt} dueTime={sub.dueTime} dueEndTime={sub.dueEndTime} />
+            {/* Sub-projects tell time too (#700) — the same urgency-toned hint action rows carry,
+                derived edges italic (#706). */}
+            {effectiveDueOf ? (
+              <DueHintLabel {...effectiveDueOf(sub.id)} />
+            ) : (
+              <DueHintLabel dueAt={sub.dueAt} dueEndAt={sub.dueEndAt} dueTime={sub.dueTime} dueEndTime={sub.dueEndTime} />
+            )}
             {sub.childIds.length > 0 && (
               <span className="text-xs text-muted-foreground">{sub.childIds.length}</span>
             )}
@@ -469,6 +481,8 @@ export function ProjectWorkbench({
           availableTags={allTags}
           inheritedTags={projectInheritedTags}
           onDelete={onDeleteProject}
+          onSetDeriveDue={onSetDeriveDue}
+          derivedDue={effectiveDueOf?.(project.id)}
         />
       )}
 

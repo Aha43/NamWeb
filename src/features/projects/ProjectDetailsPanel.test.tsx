@@ -71,6 +71,34 @@ describe('ProjectDetailsPanel', () => {
     expect(due).toHaveValue('2026-08-15'); // normalized in place
   });
 
+  it('the derive-from-contents toggle persists via its own callback (#706)', () => {
+    const onSetDeriveDue = vi.fn();
+    render(
+      <ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={vi.fn()} onSetDeriveDue={onSetDeriveDue} />,
+    );
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Derive from contents' }));
+    expect(onSetDeriveDue).toHaveBeenCalledWith(true);
+  });
+
+  it('shows derived edges as ghost placeholders when deriving (#706)', () => {
+    render(
+      <ProjectDetailsPanel
+        project={project({ deriveDue: true } as Partial<NamNode>)}
+        collapsed={false}
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+        onSetDeriveDue={vi.fn()}
+        derivedDue={{
+          dueAt: '2026-08-10', dueEndAt: '2026-08-14', dueTime: null, dueEndTime: null,
+          derivedStart: true, derivedEnd: true,
+        }}
+      />,
+    );
+    expect(screen.getByLabelText('Due')).toHaveAttribute('placeholder', '2026-08-10');
+    // The ghost end also opens the extras so it's visible without a click.
+    expect(screen.getByLabelText('Due end (optional)')).toHaveAttribute('placeholder', '2026-08-14');
+  });
+
   it('autosaves a full date range with times — parity with the action editor (#699)', () => {
     const onSave = vi.fn();
     render(

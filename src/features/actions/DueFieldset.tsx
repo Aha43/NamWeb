@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,12 +26,16 @@ export function DueFieldset({
   idPrefix,
   value,
   onCommit,
+  placeholders,
 }: {
   /** Prefix for the input ids (e.g. `"project"` → `project-due`, `project-due-end`, …). */
   idPrefix: string;
   /** The persisted fields — seeds the drafts and decides whether the extras start open. */
   value: DueFields;
   onCommit: (fields: DueFields) => void;
+  /** Ghost values for derived edges (#706) — shown as the input placeholder while the draft is
+   *  empty (typing makes the edge explicit; clearing falls back to the ghost). */
+  placeholders?: { dueAt?: string | null; dueEndAt?: string | null };
 }) {
   const { t } = useTranslation();
   const [due, setDue] = useState(value.dueAt ?? '');
@@ -42,10 +46,16 @@ export function DueFieldset({
   const [dueEndError, setDueEndError] = useState(false);
   const [dueTimeError, setDueTimeError] = useState(false);
   const [dueEndTimeError, setDueEndTimeError] = useState(false);
-  // The scheduling extras collapse by default; open when the node already carries any (#559).
+  // The scheduling extras collapse by default; open when the node already carries any (#559) —
+  // or when a derived end has a ghost to show (#706).
   const [showExtras, setShowExtras] = useState(
-    Boolean(value.dueTime || value.dueEndAt || value.dueEndTime),
+    Boolean(value.dueTime || value.dueEndAt || value.dueEndTime || placeholders?.dueEndAt),
   );
+  // A ghost end appearing later (the derive toggle flipped on) reveals the extras too. Opens
+  // only — never re-collapses, so it can't fight the user's own expander click.
+  useEffect(() => {
+    if (placeholders?.dueEndAt) setShowExtras(true);
+  }, [placeholders?.dueEndAt]);
 
   const clearErrors = () => {
     setDueError(false);
@@ -124,7 +134,7 @@ export function DueFieldset({
         <Input
           id={`${idPrefix}-due`}
           className="min-w-0 flex-1"
-          placeholder={t('editor.duePlaceholder')}
+          placeholder={placeholders?.dueAt ?? t('editor.duePlaceholder')}
           value={due}
           aria-invalid={dueError}
           onChange={(e) => {
@@ -172,7 +182,7 @@ export function DueFieldset({
             <Input
               id={`${idPrefix}-due-end`}
               aria-label={t('editor.dueEndAria')}
-              placeholder={t('editor.dueEndPlaceholder')}
+              placeholder={placeholders?.dueEndAt ?? t('editor.dueEndPlaceholder')}
               className="min-w-0 flex-1"
               value={dueEnd}
               aria-invalid={dueEndError}
