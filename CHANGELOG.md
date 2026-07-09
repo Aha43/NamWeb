@@ -10,6 +10,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **Review hardenings (Codex review).** The due editor now writes only what you actually edited: untouched inputs commit nothing on blur, and pristine drafts follow changes syncing in from another device (an active edit still wins — the app's existing conflict model), closing the last path where stale dates could overwrite fresh ones. The derive-from-contents toggle also survives a workspace import, and converting a project to an action sheds it. Closes #711.
 - **Review hardenings (independent Claude review).** A project's due dates now persist only when *they* are edited — previously, with the Details panel open across a sync from another device, blurring any other field could write the panel's stale due values back over the fresh ones. Derived time also got a non-hover voice: the italic hint carries screen-reader text and the ghost due inputs a "Derived from contents" hover title. The inverse holiday (typed end, derived start) is deliberately deferred to #708. Closes #709.
 
 ### Added

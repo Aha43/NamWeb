@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -64,10 +64,25 @@ export function DueFieldset({
     setDueEndTimeError(false);
   };
 
+  // Whether the user has edited since the last commit. Blurring untouched inputs commits
+  // nothing, and pristine drafts resync when `value` changes underneath (another device edited
+  // the dates while this panel was open) — the review-found clobber's last path (#711). A remote
+  // change DURING an active edit stays last-writer-wins, the app's existing conflict model.
+  const dirtyRef = useRef(false);
+  useEffect(() => {
+    if (dirtyRef.current) return;
+    setDue(value.dueAt ?? '');
+    setDueEnd(value.dueEndAt ?? '');
+    setDueTime(value.dueTime ?? '');
+    setDueEndTime(value.dueEndTime ?? '');
+    clearErrors();
+  }, [value.dueAt, value.dueEndAt, value.dueTime, value.dueEndTime]);
+
   // Validate the four drafts together (overrides dodge setState's async staleness); on success
   // echo the canonical forms and report the complete set. One bad field blocks only the due
   // commit — never the caller's other fields.
   const commitIfValid = (override: Partial<{ due: string; dueEnd: string; dueTime: string; dueEndTime: string }> = {}) => {
+    if (!dirtyRef.current) return; // untouched inputs report nothing on blur (#711)
     const rawDue = override.due ?? due;
     const rawEnd = override.dueEnd ?? dueEnd;
     const rawTime = override.dueTime ?? dueTime;
@@ -107,6 +122,7 @@ export function DueFieldset({
     setDueTime(timeValue ?? '');
     const endTimeValue = endAt ? dueEndTimeValue : null;
     setDueEndTime(endTimeValue ?? '');
+    dirtyRef.current = false; // committed — drafts are canonical again
     onCommit({ dueAt, dueEndAt: endAt, dueTime: timeValue, dueEndTime: endTimeValue });
   };
 
@@ -116,6 +132,7 @@ export function DueFieldset({
     setDueTime('');
     setDueEndTime('');
     clearErrors();
+    dirtyRef.current = false;
     onCommit({ dueAt: null, dueEndAt: null, dueTime: null, dueEndTime: null });
   };
 
@@ -140,6 +157,7 @@ export function DueFieldset({
           value={due}
           aria-invalid={dueError}
           onChange={(e) => {
+            dirtyRef.current = true;
             setDue(e.target.value);
             if (dueError) setDueError(false);
           }}
@@ -147,7 +165,7 @@ export function DueFieldset({
         />
         <DatePickerPopover
           value={parseFlexibleDate(due)}
-          onSelect={(isoDate) => { setDue(isoDate); setDueError(false); commitIfValid({ due: isoDate }); }}
+          onSelect={(isoDate) => { dirtyRef.current = true; setDue(isoDate); setDueError(false); commitIfValid({ due: isoDate }); }}
           label={t('editor.pickDueDate')}
         />
       </div>
@@ -173,6 +191,7 @@ export function DueFieldset({
               value={dueTime}
               aria-invalid={dueTimeError}
               onChange={(e) => {
+                dirtyRef.current = true;
                 setDueTime(e.target.value);
                 if (dueTimeError) setDueTimeError(false);
               }}
@@ -190,6 +209,7 @@ export function DueFieldset({
               value={dueEnd}
               aria-invalid={dueEndError}
               onChange={(e) => {
+                dirtyRef.current = true;
                 setDueEnd(e.target.value);
                 if (dueEndError) setDueEndError(false);
               }}
@@ -197,7 +217,7 @@ export function DueFieldset({
             />
             <DatePickerPopover
               value={parseFlexibleDate(dueEnd)}
-              onSelect={(isoDate) => { setDueEnd(isoDate); setDueEndError(false); commitIfValid({ dueEnd: isoDate }); }}
+              onSelect={(isoDate) => { dirtyRef.current = true; setDueEnd(isoDate); setDueEndError(false); commitIfValid({ dueEnd: isoDate }); }}
               label={t('editor.pickEndDate')}
             />
           </div>
@@ -212,6 +232,7 @@ export function DueFieldset({
               value={dueEndTime}
               aria-invalid={dueEndTimeError}
               onChange={(e) => {
+                dirtyRef.current = true;
                 setDueEndTime(e.target.value);
                 if (dueEndTimeError) setDueEndTimeError(false);
               }}

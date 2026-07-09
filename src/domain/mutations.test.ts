@@ -416,6 +416,24 @@ describe('applyIntent', () => {
     expect('deriveDue' in off.nodes['p']).toBe(false);
   });
 
+  it('seedProject carries deriveDue for project nodes (#711)', () => {
+    const doc = workspace();
+    const seeded = applyIntent(doc, {
+      type: 'seedProject',
+      parentId: doc.projectsNodeId,
+      nodes: [{ id: 'p', title: 'Trip', project: true, deriveDue: true, children: [] }],
+      now: 't',
+    });
+    expect(seeded.nodes['p'].deriveDue).toBe(true);
+  });
+
+  it('convertProjectToAction drops the projects-only deriveDue flag (#711)', () => {
+    let doc = workspace([node('p', { project: true, deriveDue: true })]);
+    doc = applyIntent(doc, { type: 'convertProjectToAction', id: 'p', status: 'NEXT', now: 't' });
+    expect(doc.nodes['p'].project).toBe(false);
+    expect('deriveDue' in doc.nodes['p']).toBe(false);
+  });
+
   it('templates: saveAsTemplate captures the subtree; deleteTemplate removes it', () => {
     const doc = workspace([
       node('p', { project: true, title: 'Reno', childIds: ['s', 'a'] }),

@@ -181,6 +181,8 @@ export interface SeedNode {
   dueEndAt?: string | null;
   dueTime?: string | null;
   dueEndTime?: string | null;
+  /** Projects only: the derive-from-contents toggle (#706) — carried so import preserves it (#711). */
+  deriveDue?: boolean;
   /** Prerequisite ids — must reference other nodes within the same seed. */
   blockedBy?: string[];
   resources?: Resource[];
@@ -200,6 +202,7 @@ function insertSeed(doc: WorkspaceDocument, parentId: string, nodes: SeedNode[],
     node.dueEndAt = seed.dueEndAt ?? null;
     node.dueTime = seed.dueTime ?? null;
     node.dueEndTime = seed.dueEndTime ?? null;
+    if (seed.project && seed.deriveDue) node.deriveDue = true; // off = absent (#706)
     node.blockedBy = seed.blockedBy ?? [];
     node.resources = seed.resources ?? [];
     doc.nodes[seed.id] = node;
@@ -479,6 +482,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const node = next.nodes[intent.id];
       if (!node || node.childIds.length > 0) return next; // leaf only
       node.project = false;
+      delete node.deriveDue; // projects-only flag — off/irrelevant is absence (#711)
       node.status = intent.status;
       node.updatedAt = intent.now;
       node.statusChangedAt = intent.now;

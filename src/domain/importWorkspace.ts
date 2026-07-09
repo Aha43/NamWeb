@@ -95,6 +95,7 @@ function workspaceContent(source: WorkspaceDocument, newId: () => string): SeedN
       dueEndAt: n.dueEndAt ?? null,
       dueTime: n.dueTime ?? null,
       dueEndTime: n.dueEndTime ?? null,
+      deriveDue: n.deriveDue, // the derive-from-contents toggle survives import too (#711)
       blockedBy: n.blockedBy.map((b) => idMap.get(b)).filter((x): x is string => Boolean(x)),
       // Action-link resources embed node ids — remap them like blockedBy; a link whose
       // target isn't part of the import is kept VERBATIM (unlike blockedBy, which drops unmapped
