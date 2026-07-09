@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Inbox tooltips.** The Process inbox / Process selected button (the glowing target) now explains itself on hover, and both "Process…" wizard-openers (inbox select mode and the capture dialog) hint what clarifying together means. Closes #714.
+
 ## [1.2.0] - 2026-07-09
 
 **Projects tell time.** One arc, start to finish: projects got the action editor's full due
