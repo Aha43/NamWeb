@@ -83,6 +83,11 @@ describe('ProjectWorkbench', () => {
     expect(onFocus).toHaveBeenCalled();
   });
 
+  it('shows the due hint on a dated sub-project row (#700)', () => {
+    setup({ subProjects: [pnode('s', 'Plumbing', { dueAt: '2026-03-20' })] });
+    expect(screen.getByText('Due Mar 20, 2026')).toBeInTheDocument();
+  });
+
   it('inline-renames a sub-project via the rename button (not the editor)', () => {
     const { onRename, onEdit } = setup();
     fireEvent.click(screen.getByRole('button', { name: 'Rename Plumbing' }));

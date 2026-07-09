@@ -16,6 +16,7 @@ import {
 import { SortableList } from '@/components/dnd/SortableList';
 import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRow';
 import { InlineRename } from '../actions/InlineRename';
+import { DueHintLabel } from '../actions/DueHintLabel';
 import { ReorderControls } from '../actions/ReorderControls';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
@@ -164,13 +165,15 @@ export function ProjectsPanel({
               ) : (
                 <TruncatedTitle text={project.title} className="text-sm text-foreground" />
               )}
-              {project.tags.length > 0 && (
-                <span className="mt-0.5 flex flex-wrap gap-1">
+              {(project.tags.length > 0 || project.dueAt) && (
+                <span className="mt-0.5 flex flex-wrap items-center gap-1">
                   {project.tags.map((tag) => (
                     <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                       {tag}
                     </span>
                   ))}
+                  {/* Projects tell time too (#700) — the same urgency-toned hint action rows carry. */}
+                  <DueHintLabel dueAt={project.dueAt} dueEndAt={project.dueEndAt} dueTime={project.dueTime} dueEndTime={project.dueEndTime} />
                 </span>
               )}
             </span>

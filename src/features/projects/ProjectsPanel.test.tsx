@@ -44,6 +44,15 @@ describe('ProjectsPanel', () => {
     expect(onOpen).toHaveBeenCalledWith('p');
   });
 
+  it('shows the due hint on a dated project row (#700)', () => {
+    setup([
+      project('p', 'Kitchen reno', { dueAt: '2026-03-20', dueEndAt: '2026-03-22' } as Partial<NamNode>),
+      project('q', 'Undated'),
+    ]);
+    expect(screen.getByText('Due Mar 20, 2026 – Mar 22, 2026')).toBeInTheDocument();
+    expect(screen.queryAllByText(/^Due /)).toHaveLength(1); // undated rows stay clean
+  });
+
   it('offers a copy-name button on each project row', () => {
     setup([project('p', 'Kitchen reno')]);
     expect(screen.getByRole('button', { name: 'Copy name "Kitchen reno"' })).toBeInTheDocument();

@@ -2,8 +2,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Paperclip, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { formatAge, formatDate, formatDueHint, type DueTone } from '@/lib/dates';
-import { useSettings } from '@/components/settings/settings-context';
+import { formatAge } from '@/lib/dates';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { InProgressToggle } from '@/features/tags/InProgressToggle';
@@ -11,17 +10,11 @@ import { isSystemTag } from '@/domain/systemTags';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
+import { DueHintLabel } from './DueHintLabel';
 import { STATUS_TEXT_TONE } from './status';
 import { ProjectPathLinks } from './ProjectPathLinks';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { descriptionTooltip, type ActionRowData } from './rows';
-
-const DUE_TONE: Record<DueTone, string> = {
-  overdue: 'text-red-600 dark:text-red-400',
-  today: 'text-amber-600 dark:text-amber-400',
-  soon: 'text-blue-600 dark:text-blue-400',
-  later: 'text-muted-foreground',
-};
 
 /** One action row: project path, title, tags, due hint, and a slot for actions. */
 export function ActionRow({
@@ -63,16 +56,7 @@ export function ActionRow({
    *  e.g. inside a project page, whose header already names it (#569). */
   showPath?: boolean;
 }) {
-  const { t, i18n } = useTranslation();
-  const { dateFormat } = useSettings();
-  const due = row.dueAt ? formatDueHint(row.dueAt, undefined, dateFormat, t, i18n.language) : null;
-  // A date range: append the end date when it's set and not before the start.
-  const dueEnd =
-    row.dueAt && row.dueEndAt && row.dueEndAt >= row.dueAt ? formatDate(row.dueEndAt, dateFormat, i18n.language) : null;
-  // Optional time of day on the start, shown after the date (#493).
-  const dueTime = row.dueAt && row.dueTime ? row.dueTime : null;
-  // Optional time of day on the end, shown after the end date (#500).
-  const dueEndTime = dueEnd && row.dueEndTime ? row.dueEndTime : null;
+  const { t } = useTranslation();
   const isCard = variant === 'card';
   // The age label is list-only noise on a Kanban card (nearly every card would read "today").
   const age = !isCard && row.touchedAt ? formatAge(row.touchedAt, undefined, t) : null;
@@ -119,7 +103,7 @@ export function ActionRow({
       titleEl
     );
 
-  const hasMeta = row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || !!due || !!age || !!row.hasResources;
+  const hasMeta = row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || !!row.dueAt || !!age || !!row.hasResources;
   const metaNode = hasMeta ? (
     <div className="mt-0.5 flex flex-wrap items-center gap-1">
       {row.hasResources && (
@@ -145,14 +129,7 @@ export function ActionRow({
           {tag}
         </span>
       ))}
-      {due && (
-        <span className={cn('text-[11px] font-medium whitespace-nowrap', DUE_TONE[due.tone])}>
-          {t('actions.dueLabel', { label: due.label })}
-          {dueTime && ` ${dueTime}`}
-          {dueEnd && ` – ${dueEnd}`}
-          {dueEndTime && ` ${dueEndTime}`}
-        </span>
-      )}
+      <DueHintLabel dueAt={row.dueAt} dueEndAt={row.dueEndAt} dueTime={row.dueTime} dueEndTime={row.dueEndTime} />
       {age && (
         <span
           className={cn(
