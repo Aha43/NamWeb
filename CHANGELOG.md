@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-07-09
+
+**Projects tell time.** One arc, start to finish: projects got the action editor's full due
+controls, their dates became visible on rows, they took their place on the calendar — and then
+learned to *derive* their span from their contents, opt-in per project, explicit dates winning
+per edge, so a holiday starts when you leave the house and ends whenever the last booking says.
+Nothing derived is ever written. Hardened by the full dual-review dance — six findings, zero
+overlap, including one clobber bug the two reviewers closed from opposite ends.
+
 ### Fixed
 
 - **Review hardenings (Codex review).** The due editor now writes only what you actually edited: untouched inputs commit nothing on blur, and pristine drafts follow changes syncing in from another device (an active edit still wins — the app's existing conflict model), closing the last path where stale dates could overwrite fresh ones. The derive-from-contents toggle also survives a workspace import, and converting a project to an action sheds it. Closes #711.
@@ -1358,7 +1367,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Aha43/NamWeb/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Aha43/NamWeb/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Aha43/NamWeb/compare/v0.10.0...v1.0.0
 [0.10.0]: https://github.com/Aha43/NamWeb/compare/v0.9.1...v0.10.0
