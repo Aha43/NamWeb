@@ -10,6 +10,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Projects tell time like actions do.** The workbench Details panel grew the action editor's full due controls — date range and times behind the same "＋ Add time or a range" expander — instead of a lone due date; same parsing, same validation, autosaved on blur. First step of the projects×time arc. Closes #699.
 - **Project rows tell time.** The Projects list and the workbench's sub-project rows now carry the same urgency-toned due hint action rows have (range- and time-aware, honoring the date-format setting) — a dated project is visible where you browse, not only inside its Details panel. Closes #700.
 
 ## [1.1.0] - 2026-07-08
