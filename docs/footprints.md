@@ -11,6 +11,25 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.2.0 — 2026-07-09
+
+*(one day; 7 PRs, 1 release)* The cleanest arc the repo has run: **projects×time**, planned as a
+deliberate tip-toe and walked in order — due-controls parity (#701), dates visible on rows
+(#702), projects on the calendar (#704), then the design-flavored step got its design note
+(#705, the repo's process honored mid-stride) before **derived project time** (#707) landed the
+arc's idea: a project's span breathing from its contents, explicit dates winning per edge,
+nothing derived ever written. The user's own instincts drove every design call — opt-in, the
+holiday that starts before its first flight, "natural recursion always on my mind" — and the
+feature shipped the day before a real holiday, its perfect dogfood. The quality machine ran the
+full dance mid-arc and produced its best story yet: six findings, fourth consecutive
+zero-overlap cycle, and one bug — a stale-draft clobber over remote edits — that **neither
+reviewer saw whole**: Claude closed the cross-field path (#710), Codex the in-field path (#712),
+the pincer only visible in retrospect. One finding was deliberately *not* fixed: the inverse
+holiday (#708) waits for a design pass because it touches a shared contract convention —
+restraint as a feature. Verdict: the time domain now spans actions **and** projects and is
+**converged**; what remains (Due view, the inverse holiday) is known, small, and parked on
+purpose.
+
 ## v1.1.0 — 2026-07-08
 
 *(two days; 12 PRs, 1 release)* The 1.x thesis made good on its first page: the **calendar era**
