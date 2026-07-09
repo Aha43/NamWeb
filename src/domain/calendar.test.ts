@@ -80,6 +80,20 @@ describe('calendarMonth (#675)', () => {
     expect(days[12].projectTitles).toEqual([]);
   });
 
+  it('a deriving project marks the calendar by its effective span (#706)', () => {
+    const doc = workspace([
+      node('p', { title: 'Trip', project: true, deriveDue: true, childIds: ['a', 'b'] } as Partial<NamNode>),
+      node('a', { dueAt: '2026-07-10' }),
+      node('b', { dueAt: '2026-07-12' }),
+    ]);
+    const days = calendarMonth(doc, 2026, 7, NOW);
+    expect(days[9].projectTitles).toEqual(['Trip']);
+    expect(days[10].projectTitles).toEqual(['Trip']); // full span, not just the edges
+    expect(days[11].projectTitles).toEqual(['Trip']);
+    expect(days[12].projectTitles).toEqual([]);
+    expect(dayProjects(doc, '2026-07-11').map((n) => n.title)).toEqual(['Trip']);
+  });
+
   it('handles month lengths (Feb of a leap year)', () => {
     const days = calendarMonth(workspace([]), 2028, 2, NOW);
     expect(days).toHaveLength(29);

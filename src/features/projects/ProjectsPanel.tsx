@@ -23,6 +23,7 @@ import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
 import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
 import type { QuickMoveTarget } from '@/domain/lenses';
+import type { EffectiveDue } from '@/domain/derivedDue';
 import type { NamNode } from '../../domain/types';
 
 /** A project the row can be moved into (made a sub-project of). */
@@ -63,6 +64,8 @@ export interface ProjectsPanelProps {
   showArchived?: boolean;
   onToggleShowArchived?: () => void;
   archivedCount?: number;
+  /** A project's effective due span (derived gap-fill, #706); raw fields when absent. */
+  effectiveDueOf?: (id: string) => EffectiveDue;
 }
 
 /** Top-level projects: quick-add plus the list, each opening into the workbench. Presentational. */
@@ -85,6 +88,7 @@ export function ProjectsPanel({
   showArchived,
   onToggleShowArchived,
   archivedCount = 0,
+  effectiveDueOf,
 }: ProjectsPanelProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
@@ -136,6 +140,14 @@ export function ProjectsPanel({
     const targets = onMoveInto && !isArchived && moveTargets ? moveTargets(project.id) : [];
     const quickTargets = onMoveInto && !isArchived && quickMoveTargets ? quickMoveTargets(project.id) : [];
     const descTip = descriptionTooltip(project.description);
+    const due = effectiveDueOf?.(project.id) ?? {
+      dueAt: project.dueAt,
+      dueEndAt: project.dueEndAt ?? null,
+      dueTime: project.dueTime ?? null,
+      dueEndTime: project.dueEndTime ?? null,
+      derivedStart: false,
+      derivedEnd: false,
+    };
     return (
     <li
       ref={drag?.setNodeRef}
@@ -165,15 +177,16 @@ export function ProjectsPanel({
               ) : (
                 <TruncatedTitle text={project.title} className="text-sm text-foreground" />
               )}
-              {(project.tags.length > 0 || project.dueAt) && (
+              {(project.tags.length > 0 || due.dueAt) && (
                 <span className="mt-0.5 flex flex-wrap items-center gap-1">
                   {project.tags.map((tag) => (
                     <span key={tag} className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
                       {tag}
                     </span>
                   ))}
-                  {/* Projects tell time too (#700) — the same urgency-toned hint action rows carry. */}
-                  <DueHintLabel dueAt={project.dueAt} dueEndAt={project.dueEndAt} dueTime={project.dueTime} dueEndTime={project.dueEndTime} />
+                  {/* Projects tell time too (#700) — the same urgency-toned hint action rows carry,
+                      derived edges italic (#706). */}
+                  <DueHintLabel {...due} />
                 </span>
               )}
             </span>

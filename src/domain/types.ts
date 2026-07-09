@@ -48,6 +48,13 @@ export interface NamNode {
    * when `dueEndAt` is set. Same additive shared-contract treatment as `dueTime`. See #500.
    */
   dueEndTime?: string | null;
+  /**
+   * Projects only: derive the time span from the subtree's dated contents (opt-in; absent = off =
+   * explicit dates only). Explicit `dueAt`/`dueEndAt` win per edge; derivation fills the gaps.
+   * Derived values are never persisted — a pure read-model lens (`effectiveDue`). Same additive
+   * shared-contract treatment as `dueTime`. See docs/features/derived-project-time/design.md.
+   */
+  deriveDue?: boolean;
 }
 
 export interface SavedView {

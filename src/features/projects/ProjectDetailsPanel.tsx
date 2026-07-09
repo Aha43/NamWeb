@@ -10,6 +10,7 @@ import { TagsInput } from '../actions/TagsInput';
 import { InheritedTags } from '../actions/InheritedTags';
 import { ResourcesEditor } from '../actions/ResourcesEditor';
 import { DueFieldset, type DueFields } from '../actions/DueFieldset';
+import type { EffectiveDue } from '@/domain/derivedDue';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import type { ActionEdits } from '../actions/ActionDialog';
@@ -32,6 +33,8 @@ export function ProjectDetailsPanel({
   availableTags = [],
   inheritedTags = [],
   onDelete,
+  onSetDeriveDue,
+  derivedDue,
 }: {
   project: NamNode;
   collapsed: boolean;
@@ -42,6 +45,10 @@ export function ProjectDetailsPanel({
   inheritedTags?: string[];
   /** Delete the project — opens the advanced-delete dialog (content disposition + undo). */
   onDelete?: () => void;
+  /** Persist the "derive from contents" toggle (#706); the checkbox shows only when wired. */
+  onSetDeriveDue?: (on: boolean) => void;
+  /** The project's effective span — feeds the ghost placeholders on derived edges (#706). */
+  derivedDue?: EffectiveDue;
 }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState(project.title);
@@ -157,14 +164,39 @@ export function ProjectDetailsPanel({
               />
               <InheritedTags tags={inheritedTags} />
             </div>
-            <DueFieldset
-              idPrefix="project"
-              value={dueFields}
-              onCommit={(fields) => {
-                setDueFields(fields);
-                commit({ due: fields });
-              }}
-            />
+            <div className="space-y-1.5">
+              <DueFieldset
+                idPrefix="project"
+                value={dueFields}
+                onCommit={(fields) => {
+                  setDueFields(fields);
+                  commit({ due: fields });
+                }}
+                placeholders={
+                  project.deriveDue
+                    ? {
+                        dueAt: derivedDue?.derivedStart ? derivedDue.dueAt : null,
+                        dueEndAt: derivedDue?.derivedEnd ? derivedDue.dueEndAt : null,
+                      }
+                    : undefined
+                }
+              />
+              {/* Derive-from-contents (#706): the span breathes with the subtree's dated items;
+                  typed dates above win per edge. NOT "rub-off" — that means tags flowing down. */}
+              {onSetDeriveDue && (
+                <label className="flex w-fit cursor-pointer items-center gap-2 pt-1 text-sm text-muted-foreground hover:text-foreground">
+                  <input
+                    type="checkbox"
+                    checked={project.deriveDue ?? false}
+                    onChange={(e) => {
+                      onSetDeriveDue(e.target.checked);
+                      setSaved(true);
+                    }}
+                  />
+                  {t('editor.deriveDue')}
+                </label>
+              )}
+            </div>
           </div>
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium text-foreground">{t('editor.statusLegend')}</legend>

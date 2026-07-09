@@ -49,7 +49,8 @@ describe('ProjectsPanel', () => {
       project('p', 'Kitchen reno', { dueAt: '2026-03-20', dueEndAt: '2026-03-22' } as Partial<NamNode>),
       project('q', 'Undated'),
     ]);
-    expect(screen.getByText('Due Mar 20, 2026 – Mar 22, 2026')).toBeInTheDocument();
+    // The hint splits into start/end segments (#706); assert the composed text on their parent.
+    expect(screen.getByText('Due Mar 20, 2026').parentElement).toHaveTextContent('Due Mar 20, 2026 – Mar 22, 2026');
     expect(screen.queryAllByText(/^Due /)).toHaveLength(1); // undated rows stay clean
   });
 

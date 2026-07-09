@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { actionMoveTargets, actionMoveTargetsAll, allTags, buildParentIndex, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
+import { effectiveDue } from '@/domain/derivedDue';
 import { newId, nowIso } from '@/lib/local';
 import { normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
@@ -243,6 +244,8 @@ export function ProjectWorkbenchPage() {
       detailsCollapsed={detailsCollapsed}
       onToggleDetails={toggleDetails}
       onSaveDetails={saveDetails}
+      onSetDeriveDue={(on) => dispatch({ type: 'setDeriveDue', id, on, now: nowIso() })}
+      effectiveDueOf={(nodeId) => effectiveDue(document, nodeId)}
       projectInheritedTags={effectiveTags(document, id).filter((t) => !project.tags.includes(t))}
       onDeleteProject={deleteProject}
       onFocus={() => navigate(`/focus?project=${id}`)}
