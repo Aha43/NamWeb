@@ -12,6 +12,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **Projects tell time like actions do.** The workbench Details panel grew the action editor's full due controls — date range and times behind the same "＋ Add time or a range" expander — instead of a lone due date; same parsing, same validation, autosaved on blur. First step of the projects×time arc. Closes #699.
 - **Project rows tell time.** The Projects list and the workbench's sub-project rows now carry the same urgency-toned due hint action rows have (range- and time-aware, honoring the date-format setting) — a dated project is visible where you browse, not only inside its Details panel. Closes #700.
+- **Projects on the calendar.** A dated project marks every day of its span with a small folder badge — separate from the action count, which keeps meaning exactly "N actions due" (and a project alone never paints a past day with the overdue warning). Hover a day and the tooltip names its projects after its actions; drill in and a Projects section sits under the day's action list, each row opening its workbench. Creating projects stays on the Projects surface — the day's New action button is unchanged. Closes #703.
 
 ## [1.1.0] - 2026-07-08
 

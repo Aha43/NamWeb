@@ -1,9 +1,9 @@
 // The global calendar's read model (#675) — pure lenses over the workspace document, separate
 // from lenses.ts so the calendar's date math stays in one place. "Open" mirrors the Due view's
-// notion: non-project, non-structural, not DONE/CANCELLED, not in an archived subtree, and
-// carrying a due date. A date-range action (dueAt..dueEndAt) counts on EVERY day of its range —
-// that's what ranges are for. All dates are local-date strings (YYYY-MM-DD), compared as strings
-// (ISO order == chronological order).
+// notion: non-structural, not DONE/CANCELLED, not in an archived subtree, and carrying a due
+// date. A date-range node (dueAt..dueEndAt) counts on EVERY day of its range — that's what
+// ranges are for; projects mark their full span the same way (#703). All dates are local-date
+// strings (YYYY-MM-DD), compared as strings (ISO order == chronological order).
 
 import type { NamNode, WorkspaceDocument } from './types';
 import { archivedNodeIds, structuralNodeIds } from './lenses';
@@ -13,10 +13,14 @@ export interface CalendarDay {
   date: string;
   /** Open actions due on this day (ranges cover each day they span). */
   count: number;
-  /** The day is in the past and still has open work — the warning color. */
+  /** The day is in the past and still has open work — the warning color. Actions only: a long
+   *  project span shouldn't paint its past days red (#703). */
   overdue: boolean;
   /** Titles of the day's open actions, title-sorted — feeds the day tooltip (#689). */
   titles: string[];
+  /** Titles of the day's open dated projects (full span), title-sorted — the grid's folder
+   *  marker + the tooltip's projects group (#703). */
+  projectTitles: string[];
 }
 
 function pad(n: number): string {
@@ -37,12 +41,12 @@ export function isValidLocalDate(s: string): boolean {
   return !Number.isNaN(d.getTime()) && localDateString(d) === s;
 }
 
-function openDatedActions(doc: WorkspaceDocument): NamNode[] {
+function openDatedNodes(doc: WorkspaceDocument, projects: boolean): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter(
     (n) =>
-      !n.project &&
+      n.project === projects &&
       !structural.has(n.id) &&
       !archived.has(n.id) &&
       n.status !== 'DONE' &&
@@ -50,6 +54,17 @@ function openDatedActions(doc: WorkspaceDocument): NamNode[] {
       !!n.dueAt &&
       /^\d{4}-\d{2}-\d{2}$/.test(n.dueAt),
   );
+}
+
+const openDatedActions = (doc: WorkspaceDocument) => openDatedNodes(doc, false);
+const openDatedProjects = (doc: WorkspaceDocument) => openDatedNodes(doc, true);
+
+/** The titles of `nodes` covering `date`, title-sorted. */
+function titlesOn(nodes: NamNode[], date: string): string[] {
+  return nodes
+    .filter((n) => coversDay(n, date))
+    .map((n) => n.title)
+    .sort((a, b) => a.localeCompare(b));
 }
 
 /** Whether an action's due day/range covers the given local date. */
@@ -70,16 +85,20 @@ export function calendarMonth(
   now: Date = new Date(),
 ): CalendarDay[] {
   const actions = openDatedActions(doc);
+  const projects = openDatedProjects(doc);
   const today = localDateString(now);
   const daysInMonth = new Date(year, month, 0).getDate();
   const days: CalendarDay[] = [];
   for (let d = 1; d <= daysInMonth; d++) {
     const date = `${year}-${pad(month)}-${pad(d)}`;
-    const titles = actions
-      .filter((n) => coversDay(n, date))
-      .map((n) => n.title)
-      .sort((a, b) => a.localeCompare(b));
-    days.push({ date, count: titles.length, overdue: titles.length > 0 && date < today, titles });
+    const titles = titlesOn(actions, date);
+    days.push({
+      date,
+      count: titles.length,
+      overdue: titles.length > 0 && date < today,
+      titles,
+      projectTitles: titlesOn(projects, date),
+    });
   }
   return days;
 }
@@ -87,6 +106,14 @@ export function calendarMonth(
 /** The open actions due on `date` (range-aware), title-sorted for a stable list (#676). */
 export function dayActions(doc: WorkspaceDocument, date: string): NamNode[] {
   return openDatedActions(doc)
+    .filter((n) => coversDay(n, date))
+    .sort((a, b) => a.title.localeCompare(b.title));
+}
+
+/** The open dated projects covering `date` (full span), title-sorted — the day drill-in's
+ *  Projects section (#703). */
+export function dayProjects(doc: WorkspaceDocument, date: string): NamNode[] {
+  return openDatedProjects(doc)
     .filter((n) => coversDay(n, date))
     .sort((a, b) => a.title.localeCompare(b.title));
 }

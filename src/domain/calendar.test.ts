@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { calendarMonth, dayActions, isValidLocalDate, isoWeek } from './calendar';
+import { calendarMonth, dayActions, dayProjects, isValidLocalDate, isoWeek } from './calendar';
 
 function node(id: string, p: Partial<NamNode> = {}): NamNode {
   return {
@@ -36,7 +36,7 @@ describe('calendarMonth (#675)', () => {
     ]);
     const days = calendarMonth(doc, 2026, 7, NOW);
     expect(days).toHaveLength(31);
-    expect(days[9]).toEqual({ date: '2026-07-10', count: 2, overdue: true, titles: ['a', 'b'] }); // past day, open work
+    expect(days[9]).toEqual({ date: '2026-07-10', count: 2, overdue: true, titles: ['a', 'b'], projectTitles: [] }); // past day, open work
     expect(days[10].count).toBe(0);
   });
 
@@ -67,6 +67,19 @@ describe('calendarMonth (#675)', () => {
     expect(days[0].titles).toEqual([]);
   });
 
+  it('projects mark their full span separately — never the action count or the overdue tint (#703)', () => {
+    const doc = workspace([
+      node('p', { title: 'Reno', project: true, dueAt: '2026-07-10', dueEndAt: '2026-07-12' } as Partial<NamNode>),
+      node('doneP', { title: 'Shipped', project: true, dueAt: '2026-07-10', status: 'DONE' }),
+      node('a', { title: 'Act', dueAt: '2026-07-11' }),
+    ]);
+    const days = calendarMonth(doc, 2026, 7, NOW);
+    expect(days[9]).toMatchObject({ count: 0, overdue: false, projectTitles: ['Reno'] }); // past day: project alone ≠ warning
+    expect(days[10]).toMatchObject({ count: 1, titles: ['Act'], projectTitles: ['Reno'] });
+    expect(days[11].projectTitles).toEqual(['Reno']);
+    expect(days[12].projectTitles).toEqual([]);
+  });
+
   it('handles month lengths (Feb of a leap year)', () => {
     const days = calendarMonth(workspace([]), 2028, 2, NOW);
     expect(days).toHaveLength(29);
@@ -82,6 +95,18 @@ describe('dayActions (#676)', () => {
       node('x', { title: 'Other day', dueAt: '2026-07-11' }),
     ]);
     expect(dayActions(doc, '2026-07-10').map((n) => n.title)).toEqual(['Alpha', 'Beta']);
+  });
+});
+
+describe('dayProjects (#703)', () => {
+  it("returns the day's open dated projects (range-aware), title-sorted", () => {
+    const doc = workspace([
+      node('z', { title: 'Zeta', project: true, dueAt: '2026-07-10' }),
+      node('a', { title: 'Alpha', project: true, dueAt: '2026-07-08', dueEndAt: '2026-07-12' } as Partial<NamNode>),
+      node('other', { title: 'Elsewhere', project: true, dueAt: '2026-07-20' }),
+      node('act', { title: 'An action', dueAt: '2026-07-10' }), // actions never leak in
+    ]);
+    expect(dayProjects(doc, '2026-07-10').map((n) => n.title)).toEqual(['Alpha', 'Zeta']);
   });
 });
 
