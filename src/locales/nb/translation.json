@@ -247,6 +247,8 @@
   "editor.pickEndDate": "Velg en sluttdato fra en kalender",
   "editor.removePrereqAria": "Fjern forutsetning {title}",
   "editor.removeResourceAria": "Fjern ressurs {value}",
+  "editor.resourceName": "Lenkenavn (valgfritt)",
+  "editor.resourceNamePlaceholder": "navn (valgfritt)",
   "editor.resourcePlaceholder": "https://… eller et notat",
   "editor.resourceType": "Ressurstype",
   "editor.resourceValue": "Ressursverdi",
