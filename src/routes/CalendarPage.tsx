@@ -1,11 +1,13 @@
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Plus } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Folder, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
-import { calendarMonth, dayActions, isValidLocalDate, localDateString } from '@/domain/calendar';
+import { TruncatedTitle } from '@/components/ui/truncated-title';
+import { calendarMonth, dayActions, dayProjects, isValidLocalDate, localDateString } from '@/domain/calendar';
 import { MonthGrid } from '@/features/calendar/MonthGrid';
 import { ActionRow } from '@/features/actions/ActionRow';
+import { DueHintLabel } from '@/features/actions/DueHintLabel';
 import { toActionRow } from '@/features/actions/rows';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
@@ -24,6 +26,7 @@ export function CalendarPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
   const now = new Date();
@@ -49,6 +52,7 @@ export function CalendarPage() {
 
   if (day) {
     const rows = dayActions(document, day).map((n) => toActionRow(document, n));
+    const projects = dayProjects(document, day);
     const dayTitle = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'full' }).format(
       new Date(`${day}T00:00:00`),
     );
@@ -90,20 +94,50 @@ export function CalendarPage() {
             {t('calendar.newAction')}
           </Button>
         </div>
-        {rows.length === 0 ? (
+        {rows.length === 0 && projects.length === 0 ? (
           <p className="px-1 text-sm text-muted-foreground">{t('calendar.emptyDay')}</p>
         ) : (
-          <ul className="flex flex-col gap-1">
-            {rows.map((row) => (
-              <ActionRow
-                key={row.id}
-                row={row}
-                actions={null}
-                onEdit={() => openEditor(row.id)}
-                onDelete={() => deleteNode(row.id)}
-              />
-            ))}
-          </ul>
+          <>
+            {rows.length > 0 && (
+              <ul className="flex flex-col gap-1">
+                {rows.map((row) => (
+                  <ActionRow
+                    key={row.id}
+                    row={row}
+                    actions={null}
+                    onEdit={() => openEditor(row.id)}
+                    onDelete={() => deleteNode(row.id)}
+                  />
+                ))}
+              </ul>
+            )}
+            {/* The day's projects (#703) — context/milestones under the workable actions; each
+                opens its workbench. Deliberately no create-project here. */}
+            {projects.length > 0 && (
+              <div className="space-y-1">
+                <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {t('domain.projects')}
+                </h3>
+                <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+                  {projects.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        aria-label={t('column.openAria', { title: p.title })}
+                        onClick={() => navigate(`/projects/${p.id}`)}
+                        className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
+                      >
+                        <Folder className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
+                        <TruncatedTitle text={p.title} className="min-w-0 flex-1 text-sm text-foreground" />
+                        <DueHintLabel dueAt={p.dueAt} dueEndAt={p.dueEndAt} dueTime={p.dueTime} dueEndTime={p.dueEndTime} />
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
         )}
       </div>
     );

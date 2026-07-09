@@ -19,6 +19,8 @@ test.use({
     .action('past', 'Slipped', { dueAt: localDate(-1) })
     .action('range', 'Offsite', { dueAt: localDate(2), dueEndAt: localDate(4) })
     .action('doneOld', 'Finished', { dueAt: localDate(0), status: 'DONE' })
+    // A dated project (#703): due today only, so the empty-tomorrow assertions stay true.
+    .project('proj', 'Launch v2', { dueAt: localDate(0) })
     .build(),
 });
 
@@ -52,6 +54,26 @@ test('toolbar opens the month grid: counts, overdue tint, today ring, month nav'
   await page.getByRole('button', { name: 'Today', exact: true }).click();
   await expect(page).toHaveURL(/\/calendar$/);
   await expect(dayCell(localDate(0))).toHaveClass(/ring-2/);
+});
+
+test('a dated project marks the grid and lists in the day drill-in (#703)', async ({ page }) => {
+  await page.goto('/calendar');
+  await expect(page.getByRole('grid')).toBeVisible();
+  // The day aria names the project count separately from the action count.
+  const todayCell = page.locator(`[aria-label="${localDate(0)}: 2 due, 1 project"]`);
+  await expect(todayCell).toBeVisible();
+  // Hover: the tooltip lists the project title after the action titles.
+  await todayCell.hover();
+  await expect(page.getByRole('tooltip')).toContainText('Launch v2');
+
+  // Drill in: the Projects section sits under the day's actions and opens the workbench.
+  // (Assert the action via its row button — the just-hovered tooltip also carries the title.)
+  await todayCell.click();
+  await expect(page.getByRole('button', { name: 'Edit Due today A' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Projects' })).toBeVisible();
+  await page.getByRole('button', { name: 'Open Launch v2' }).click();
+  await expect(page).toHaveURL(/\/projects\//);
+  await expect(page.getByText('Launch v2').first()).toBeVisible();
 });
 
 test('garbage calendar URLs fall back instead of crashing (#696)', async ({ page }) => {

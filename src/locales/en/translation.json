@@ -165,6 +165,7 @@
   "calendar.today": "Today",
   "calendar.weekTooltip": "Week {week}",
   "calendar.dayMore": "+{count} more",
+  "calendar.dayAriaProjects": "{count, plural, one {# project} other {# projects}}",
   "calendar.backToCalendar": "Calendar",
   "calendar.emptyDay": "Nothing due this day.",
   "calendar.newAction": "New action",

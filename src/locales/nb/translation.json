@@ -165,6 +165,7 @@
   "calendar.today": "I dag",
   "calendar.weekTooltip": "Uke {week}",
   "calendar.dayMore": "+{count} til",
+  "calendar.dayAriaProjects": "{count, plural, one {# prosjekt} other {# prosjekter}}",
   "calendar.backToCalendar": "Kalender",
   "calendar.emptyDay": "Ingenting med frist denne dagen.",
   "calendar.newAction": "Ny handling",
