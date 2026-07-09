@@ -61,13 +61,13 @@ describe('ProjectDetailsPanel', () => {
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ tags: ['home'] }));
   });
 
-  it('autosaves the due date on blur, parsing a flexible date', () => {
-    const onSave = vi.fn();
-    render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
+  it('autosaves the due date on blur via its own path, parsing a flexible date (#709)', () => {
+    const onSaveDue = vi.fn();
+    render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={vi.fn()} onSaveDue={onSaveDue} />);
     const due = screen.getByLabelText('Due');
     fireEvent.change(due, { target: { value: '26-8-15' } });
     fireEvent.blur(due);
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ dueAt: '2026-08-15' }));
+    expect(onSaveDue).toHaveBeenCalledWith({ dueAt: '2026-08-15', dueEndAt: null, dueTime: null, dueEndTime: null });
     expect(due).toHaveValue('2026-08-15'); // normalized in place
   });
 
@@ -100,13 +100,14 @@ describe('ProjectDetailsPanel', () => {
   });
 
   it('autosaves a full date range with times — parity with the action editor (#699)', () => {
-    const onSave = vi.fn();
+    const onSaveDue = vi.fn();
     render(
       <ProjectDetailsPanel
         project={project({ dueAt: '2026-08-10' })}
         collapsed={false}
         onToggle={vi.fn()}
-        onSave={onSave}
+        onSave={vi.fn()}
+        onSaveDue={onSaveDue}
       />,
     );
     // The extras are collapsed (only a start date is set) — expand, then fill the range + times.
@@ -114,20 +115,31 @@ describe('ProjectDetailsPanel', () => {
     const end = screen.getByLabelText('Due end (optional)');
     fireEvent.change(end, { target: { value: '26-8-12' } });
     fireEvent.blur(end);
-    expect(onSave).toHaveBeenCalledWith(
+    expect(onSaveDue).toHaveBeenCalledWith(
       expect.objectContaining({ dueAt: '2026-08-10', dueEndAt: '2026-08-12', dueTime: null, dueEndTime: null }),
     );
     const time = screen.getByLabelText('Due time (optional)');
     fireEvent.change(time, { target: { value: '9' } });
     fireEvent.blur(time);
-    expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ dueTime: '09:00' }));
-    // A commit from ANOTHER field still carries the due set (the panel mirrors the last commit).
+    expect(onSaveDue).toHaveBeenLastCalledWith(expect.objectContaining({ dueTime: '09:00' }));
+  });
+
+  it('a title blur never carries due edits — dues persist only via onSaveDue (#709)', () => {
+    const onSave = vi.fn();
+    const onSaveDue = vi.fn();
+    render(
+      <ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} onSaveDue={onSaveDue} />,
+    );
+    // Commit a due, then blur the title: the edits snapshot reports the PROJECT's persisted due
+    // (null here), not the just-typed one — so a stale mirror can never clobber remote changes.
+    const due = screen.getByLabelText('Due');
+    fireEvent.change(due, { target: { value: '2026-08-15' } });
+    fireEvent.blur(due);
     const title = screen.getByLabelText('Title');
     fireEvent.change(title, { target: { value: 'Roof v2' } });
     fireEvent.blur(title);
-    expect(onSave).toHaveBeenLastCalledWith(
-      expect.objectContaining({ title: 'Roof v2', dueAt: '2026-08-10', dueEndAt: '2026-08-12', dueTime: '09:00' }),
-    );
+    expect(onSave).toHaveBeenLastCalledWith(expect.objectContaining({ title: 'Roof v2', dueAt: null }));
+    expect(onSaveDue).toHaveBeenCalledTimes(1); // the due commit itself, nothing more
   });
 
   it('autosaves a status change immediately', () => {

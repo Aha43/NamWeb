@@ -8,6 +8,7 @@ import type { NamNode } from '@/domain/types';
 import type { ClonedTemplateNode } from '@/domain/mutations';
 import type { TemplateNode } from '@/domain/types';
 import type { ActionEdits } from '@/features/actions/ActionDialog';
+import type { DueFields } from '@/features/actions/DueFieldset';
 import { toActionRow, type ActionRowData } from '@/features/actions/rows';
 import { sortByDue } from '@/features/actions/sort';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
@@ -79,28 +80,27 @@ export function ProjectWorkbenchPage() {
     if (tags.length !== project.tags.length || tags.some((t, i) => t !== project.tags[i])) {
       dispatch({ type: 'updateTags', id, tags, now });
     }
-    // All four due fields (#699) — the panel always reports the complete set; omitting a field
-    // from setDue would leave its old value behind.
-    if (
-      edits.dueAt !== (project.dueAt ?? null) ||
-      (edits.dueEndAt ?? null) !== (project.dueEndAt ?? null) ||
-      (edits.dueTime ?? null) !== (project.dueTime ?? null) ||
-      (edits.dueEndTime ?? null) !== (project.dueEndTime ?? null)
-    ) {
-      dispatch({
-        type: 'setDue',
-        id,
-        dueAt: edits.dueAt,
-        dueEndAt: edits.dueEndAt ?? null,
-        dueTime: edits.dueTime ?? null,
-        dueEndTime: edits.dueEndTime ?? null,
-        now,
-      });
-    }
+    // Due fields deliberately absent here (#709): they persist only via saveDue below, fired by
+    // an actual due commit — so no other field's blur can carry a stale due mirror over a
+    // remote change (the review-found clobber).
     if (edits.status !== project.status) dispatch({ type: 'setStatus', id, status: edits.status, now });
     if (JSON.stringify(edits.resources) !== JSON.stringify(project.resources)) {
       dispatch({ type: 'updateResources', id, resources: edits.resources, now });
     }
+  };
+
+  // A due commit from the Details panel — fresh user intent for all four fields; skip the no-op
+  // (DueFieldset commits on every valid blur, changed or not).
+  const saveDue = (fields: DueFields) => {
+    if (
+      fields.dueAt === (project.dueAt ?? null) &&
+      fields.dueEndAt === (project.dueEndAt ?? null) &&
+      fields.dueTime === (project.dueTime ?? null) &&
+      fields.dueEndTime === (project.dueEndTime ?? null)
+    ) {
+      return;
+    }
+    dispatch({ type: 'setDue', id, ...fields, now: nowIso() });
   };
 
   // Delete the whole project (recursive) from its Details panel, then climb to the parent project
@@ -245,6 +245,7 @@ export function ProjectWorkbenchPage() {
       onToggleDetails={toggleDetails}
       onSaveDetails={saveDetails}
       onSetDeriveDue={(on) => dispatch({ type: 'setDeriveDue', id, on, now: nowIso() })}
+      onSaveDue={saveDue}
       effectiveDueOf={(nodeId) => effectiveDue(document, nodeId)}
       projectInheritedTags={effectiveTags(document, id).filter((t) => !project.tags.includes(t))}
       onDeleteProject={deleteProject}

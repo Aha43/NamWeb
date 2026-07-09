@@ -70,8 +70,19 @@ so there is nothing else to agree on.
 - Projects in the **Due view** (still excluded by `dueGroups`' project guard — separate decision).
 - Any automatic enabling — `deriveDue` defaults off for every project, existing and new.
 - Desktop UI for the toggle.
+- **The inverse holiday** (explicit end + derived start): all three layers assume start-anchored
+  ranges, including the shared `setDue` convention that clears a lone end — supporting it is a
+  deliberate contract-adjacent relaxation, tracked as **#708**.
 
-## Open questions (small, decide during implementation)
+## Clarifications (post-review, 2026-07-09)
 
-- Ghost-placeholder ergonomics in `DueFieldset` (placeholder text vs a prefilled-but-dimmed
-  value) — pick whatever reads best in the existing component.
+- **DONE asymmetry is intentional.** A project whose *own* status is DONE (or CANCELLED/archived)
+  leaves the calendar — its status says the endeavor is finished. DONE *contents* still feed a
+  live project's span: "book flights" being ticked doesn't shrink the holiday.
+- **The recursion clamps per level.** A deriving sub-project's contribution is its *effective*
+  span — so a child dated before that sub-project's own explicit start is clamped there and does
+  not reach the grandparent. "Earliest among dated descendants" reads through effective spans,
+  not raw dates.
+- **Ghost ergonomics (resolved):** derived edges render as input placeholders with a
+  "Derived from contents" `title`; the derived hint on rows carries screen-reader text alongside
+  the italic (#709).

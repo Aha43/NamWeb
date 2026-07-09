@@ -34,6 +34,7 @@ export function ProjectDetailsPanel({
   inheritedTags = [],
   onDelete,
   onSetDeriveDue,
+  onSaveDue,
   derivedDue,
 }: {
   project: NamNode;
@@ -47,6 +48,9 @@ export function ProjectDetailsPanel({
   onDelete?: () => void;
   /** Persist the "derive from contents" toggle (#706); the checkbox shows only when wired. */
   onSetDeriveDue?: (on: boolean) => void;
+  /** Persist a due-fields commit (#709). Fired ONLY by DueFieldset's own valid commits, so no
+   *  other field's blur can ever carry (possibly stale) due values — the review-found clobber. */
+  onSaveDue?: (fields: DueFields) => void;
   /** The project's effective span — feeds the ghost placeholders on derived edges (#706). */
   derivedDue?: EffectiveDue;
 }) {
@@ -54,14 +58,6 @@ export function ProjectDetailsPanel({
   const [title, setTitle] = useState(project.title);
   const [description, setDescription] = useState(project.description ?? '');
   const [tags, setTags] = useState(project.tags.join(', '));
-  // The due fields live in DueFieldset (drafts + validation); this mirror is the last committed
-  // set, so commits from OTHER fields carry the current due values too.
-  const [dueFields, setDueFields] = useState<DueFields>({
-    dueAt: project.dueAt ?? null,
-    dueEndAt: project.dueEndAt ?? null,
-    dueTime: project.dueTime ?? null,
-    dueEndTime: project.dueEndTime ?? null,
-  });
   const [status, setStatus] = useState<NodeStatus>(project.status);
   const [resources, setResources] = useState<Resource[]>(project.resources);
   const [saved, setSaved] = useState(false);
@@ -69,12 +65,13 @@ export function ProjectDetailsPanel({
   // Build the edits snapshot from current state (with optional overrides for a just-changed discrete
   // control, to dodge setState's async staleness) and report it. Never persists an empty title —
   // it falls back to the project's current value, so one bad field can't block saving the others.
-  // The page diffs this snapshot into per-field intents (one small synced write).
+  // The page diffs this snapshot into per-field intents (one small synced write). Due fields are
+  // deliberately NOT mirrored here — they persist only via onSaveDue (#709); the snapshot carries
+  // the project's own current values purely to satisfy the shared ActionEdits shape.
   const commit = (override: Partial<{
     title: string;
     description: string;
     tags: string;
-    due: DueFields;
     status: NodeStatus;
     resources: Resource[];
   }> = {}) => {
@@ -84,7 +81,10 @@ export function ProjectDetailsPanel({
       title: rawTitle || project.title,
       description: trimmedDescription ? trimmedDescription : null,
       tags: (override.tags ?? tags).split(',').map((tag) => tag.trim()).filter(Boolean),
-      ...(override.due ?? dueFields),
+      dueAt: project.dueAt ?? null,
+      dueEndAt: project.dueEndAt ?? null,
+      dueTime: project.dueTime ?? null,
+      dueEndTime: project.dueEndTime ?? null,
       status: override.status ?? status,
       resources: override.resources ?? resources,
     });
@@ -167,10 +167,15 @@ export function ProjectDetailsPanel({
             <div className="space-y-1.5">
               <DueFieldset
                 idPrefix="project"
-                value={dueFields}
+                value={{
+                  dueAt: project.dueAt ?? null,
+                  dueEndAt: project.dueEndAt ?? null,
+                  dueTime: project.dueTime ?? null,
+                  dueEndTime: project.dueEndTime ?? null,
+                }}
                 onCommit={(fields) => {
-                  setDueFields(fields);
-                  commit({ due: fields });
+                  onSaveDue?.(fields);
+                  setSaved(true);
                 }}
                 placeholders={
                   project.deriveDue
