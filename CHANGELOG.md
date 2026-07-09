@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Projects tell time like actions do.** The workbench Details panel grew the action editor's full due controls — date range and times behind the same "＋ Add time or a range" expander — instead of a lone due date; same parsing, same validation, autosaved on blur. First step of the projects×time arc. Closes #699.
+
 ## [1.1.0] - 2026-07-08
 
 **The calendar era opens.** A real month view grew in two days from grid to daily driver — drill

@@ -78,7 +78,24 @@ export function ProjectWorkbenchPage() {
     if (tags.length !== project.tags.length || tags.some((t, i) => t !== project.tags[i])) {
       dispatch({ type: 'updateTags', id, tags, now });
     }
-    if (edits.dueAt !== project.dueAt) dispatch({ type: 'setDue', id, dueAt: edits.dueAt, now });
+    // All four due fields (#699) — the panel always reports the complete set; omitting a field
+    // from setDue would leave its old value behind.
+    if (
+      edits.dueAt !== (project.dueAt ?? null) ||
+      (edits.dueEndAt ?? null) !== (project.dueEndAt ?? null) ||
+      (edits.dueTime ?? null) !== (project.dueTime ?? null) ||
+      (edits.dueEndTime ?? null) !== (project.dueEndTime ?? null)
+    ) {
+      dispatch({
+        type: 'setDue',
+        id,
+        dueAt: edits.dueAt,
+        dueEndAt: edits.dueEndAt ?? null,
+        dueTime: edits.dueTime ?? null,
+        dueEndTime: edits.dueEndTime ?? null,
+        now,
+      });
+    }
     if (edits.status !== project.status) dispatch({ type: 'setStatus', id, status: edits.status, now });
     if (JSON.stringify(edits.resources) !== JSON.stringify(project.resources)) {
       dispatch({ type: 'updateResources', id, resources: edits.resources, now });
