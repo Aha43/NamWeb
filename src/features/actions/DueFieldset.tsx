@@ -135,6 +135,8 @@ export function DueFieldset({
           id={`${idPrefix}-due`}
           className="min-w-0 flex-1"
           placeholder={placeholders?.dueAt ?? t('editor.duePlaceholder')}
+          // A ghost is a real derived value, not sample text — say so without hover-hunting (#709).
+          title={placeholders?.dueAt && !due ? t('actions.derivedFromContents') : undefined}
           value={due}
           aria-invalid={dueError}
           onChange={(e) => {
@@ -183,6 +185,7 @@ export function DueFieldset({
               id={`${idPrefix}-due-end`}
               aria-label={t('editor.dueEndAria')}
               placeholder={placeholders?.dueEndAt ?? t('editor.dueEndPlaceholder')}
+              title={placeholders?.dueEndAt && !dueEnd ? t('actions.derivedFromContents') : undefined}
               className="min-w-0 flex-1"
               value={dueEnd}
               aria-invalid={dueEndError}

@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Review hardenings (independent Claude review).** A project's due dates now persist only when *they* are edited — previously, with the Details panel open across a sync from another device, blurring any other field could write the panel's stale due values back over the fresh ones. Derived time also got a non-hover voice: the italic hint carries screen-reader text and the ghost due inputs a "Derived from contents" hover title. The inverse holiday (typed end, derived start) is deliberately deferred to #708. Closes #709.
+
 ### Added
 
 - **Projects tell time like actions do.** The workbench Details panel grew the action editor's full due controls — date range and times behind the same "＋ Add time or a range" expander — instead of a lone due date; same parsing, same validation, autosaved on blur. First step of the projects×time arc. Closes #699.

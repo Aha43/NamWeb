@@ -49,6 +49,8 @@ export function DueHintLabel({
         {time && ` ${time}`}
       </span>
       {end && <span className={cn(derivedEnd && 'italic')}>{` – ${end}`}{endTime && ` ${endTime}`}</span>}
+      {/* Italic alone is invisible to screen readers — announce derived-ness in text too (#709). */}
+      {(derivedStart || derivedEnd) && <span className="sr-only"> ({t('actions.derivedFromContents')})</span>}
     </span>
   );
   return derivedStart || derivedEnd ? <Tooltip label={t('actions.derivedFromContents')}>{label}</Tooltip> : label;

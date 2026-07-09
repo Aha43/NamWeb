@@ -36,6 +36,7 @@ import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
 import type { QuickMoveTarget } from '@/domain/lenses';
 import type { EffectiveDue } from '@/domain/derivedDue';
+import type { DueFields } from '../actions/DueFieldset';
 import type { NamNode, NodeStatus } from '../../domain/types';
 
 type MoveDirection = 'up' | 'down';
@@ -77,6 +78,8 @@ export interface ProjectWorkbenchProps {
   projectInheritedTags?: string[];
   /** Persist the "derive from contents" toggle (#706) — the Details panel's checkbox. */
   onSetDeriveDue?: (on: boolean) => void;
+  /** Persist a due-fields commit from the Details panel (#709) — dues no longer ride onSaveDetails. */
+  onSaveDue?: (fields: DueFields) => void;
   /** A project's effective due span (derived gap-fill, #706) — row hints + Details ghosts. */
   effectiveDueOf?: (id: string) => EffectiveDue;
   /** Delete the current project — opens the advanced-delete dialog from the Details panel. */
@@ -178,6 +181,7 @@ export function ProjectWorkbench({
   onSaveDetails,
   projectInheritedTags = [],
   onSetDeriveDue,
+  onSaveDue,
   effectiveDueOf,
   onDeleteProject,
   onFocus,
@@ -482,6 +486,7 @@ export function ProjectWorkbench({
           inheritedTags={projectInheritedTags}
           onDelete={onDeleteProject}
           onSetDeriveDue={onSetDeriveDue}
+          onSaveDue={onSaveDue}
           derivedDue={effectiveDueOf?.(project.id)}
         />
       )}
