@@ -115,6 +115,14 @@ describe('buildImportSeed', () => {
     });
   });
 
+  it('preserves the derive-from-contents toggle through import (#711)', () => {
+    const d = doc();
+    d.nodes['P1'] = { ...d.nodes['P1'], deriveDue: true };
+    let n = 0;
+    const seed = buildImportSeed([{ name: 'Main', doc: d }], () => `n${n++}`, new Date('2026-06-20T00:00:00'));
+    expect(findByTitle(seed, 'Roof')).toMatchObject({ deriveDue: true });
+  });
+
   it('multiple workspaces: each becomes its own sub-project under the import root', () => {
     let n = 0;
     const seed = buildImportSeed(
