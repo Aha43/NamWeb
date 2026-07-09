@@ -30,6 +30,11 @@ A project can **derive its time span from its contents** — opt-in, per project
   distinction: italic in the due hint plus a "derived from contents" tooltip. In the Details
   panel's due inputs, derived values appear as **ghost placeholders** you can type over (typing
   makes that edge explicit; clearing it falls back to derived).
+- **Natural recursion (resolved 2026-07-09).** A deriving **sub-project** contributes its
+  **effective** span upward — derived edges included — so nesting composes: the holiday derives
+  from the road-trip leg, which derives from its stops. A sub-project with `deriveDue` off
+  contributes only its explicit dates, exactly like an action. (Implementation note: compute
+  bottom-up / memoize per node; the tree is acyclic, so nothing beyond that is needed.)
 - **Vocabulary:** UI copy says **"derive from contents"** (or similar) — *not* "rub off", which in
   NAM already means tags flowing **down** from ancestors. This flows **up** from contents.
 
@@ -68,8 +73,5 @@ so there is nothing else to agree on.
 
 ## Open questions (small, decide during implementation)
 
-- Does a deriving **sub-project** contribute its *effective* (derived) span to its parent's
-  derivation, or only explicit dates? Leaning **effective** (natural recursion), but guard
-  against surprises in deep trees.
 - Ghost-placeholder ergonomics in `DueFieldset` (placeholder text vs a prefilled-but-dimmed
   value) — pick whatever reads best in the existing component.
