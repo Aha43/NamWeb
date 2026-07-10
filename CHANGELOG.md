@@ -8,9 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
-### Fixed
+## [1.3.0] - 2026-07-10
 
-- **Review hardenings (independent Claude review).** Pressing Enter in the move picker's "New project" prompt no longer saves and closes the whole editor underneath it (the same portal-bubbling bug as the resource dialog's, now fixed at the source in the shared prompt control); a due block collapsed over invalid text auto-expands when Save flags it, so the error is never invisible; Undo of an accidental Done now restores the *in progress* mark the terminal strip removed; editing a non-URL resource no longer wipes its (possibly desktop-written) description; the tag field can no longer re-attach *in progress* to a finished item; and a deriving project's collapsed due line in the editor shows its effective span like the Details panel does. Closes #724.
+**The editor slims down.** Two dogfooding sprints in one cut: web links became first-class
+(display names, real click-to-open), *in progress* learned to end when the action does, and then
+the editor's two bulkiest blocks went dense — resources as clean display rows with dialog editing,
+due controls collapsed to a one-line hint until asked for. Hardened by the dual-review dance: six
+Claude findings (including a portal-bubbling bug fixed at its source), and the first fully clean
+Codex pass.
 
 ### Changed
 
@@ -23,6 +28,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **Review hardenings (independent Claude review).** Pressing Enter in the move picker's "New project" prompt no longer saves and closes the whole editor underneath it (the same portal-bubbling bug as the resource dialog's, now fixed at the source in the shared prompt control); a due block collapsed over invalid text auto-expands when Save flags it, so the error is never invisible; Undo of an accidental Done now restores the *in progress* mark the terminal strip removed; editing a non-URL resource no longer wipes its (possibly desktop-written) description; the tag field can no longer re-attach *in progress* to a finished item; and a deriving project's collapsed due line in the editor shows its effective span like the Details panel does. Closes #724.
 - **Inbox tooltips.** The Process inbox / Process selected button (the glowing target) now explains itself on hover, and both "Process…" wizard-openers (inbox select mode and the capture dialog) hint what clarifying together means. Closes #714.
 - **In progress ends when the action does.** Marking an action Done (or Cancelled) now sheds the built-in *in progress* tag — by any path: status menu, bulk ops, the Focus deck — and finished rows no longer offer the working-on-it toggle. Restoring an action doesn't resurrect the tag. Closes #716.
 
@@ -1385,7 +1391,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/Aha43/NamWeb/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Aha43/NamWeb/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Aha43/NamWeb/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Aha43/NamWeb/compare/v0.10.0...v1.0.0
