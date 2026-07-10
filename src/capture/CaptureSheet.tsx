@@ -308,14 +308,16 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
             <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
             {/* One way to process: the wizard (#635) — destination step, then status, then Done. */}
-            <button
-              type="button"
-              disabled={none}
-              onClick={() => setWizardOpen(true)}
-              className="rounded-md border border-input px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
-            >
-              {t('capture.process')}
-            </button>
+            <Tooltip label={none ? undefined : t('capture.processTooltip')}>
+              <button
+                type="button"
+                disabled={none}
+                onClick={() => setWizardOpen(true)}
+                className="rounded-md border border-input px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+              >
+                {t('capture.process')}
+              </button>
+            </Tooltip>
             <ConfirmButton
               aria-label={t('inbox.deleteSelectedAria')}
               message={t('inbox.deleteSelectedConfirm', { count: selected.size })}

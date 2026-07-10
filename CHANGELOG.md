@@ -8,8 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Web links grew up.** A URL resource can carry a display name — stored in the resource's existing (never-used) description field, so the value stays a pure URL and nothing new syncs. Rows show the name when set, hovering reveals the underlying URL either way, and clicking an http(s) resource opens it in the browser like the normal link it is (new tab). Closes #715.
+
 ### Fixed
 
+- **Inbox tooltips.** The Process inbox / Process selected button (the glowing target) now explains itself on hover, and both "Process…" wizard-openers (inbox select mode and the capture dialog) hint what clarifying together means. Closes #714.
 - **In progress ends when the action does.** Marking an action Done (or Cancelled) now sheds the built-in *in progress* tag — by any path: status menu, bulk ops, the Focus deck — and finished rows no longer offer the working-on-it toggle. Restoring an action doesn't resurrect the tag. Closes #716.
 
 ## [1.2.0] - 2026-07-09

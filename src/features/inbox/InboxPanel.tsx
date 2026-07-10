@@ -104,28 +104,36 @@ export function InboxPanel({
         {items.length > 0 && (
           <div className="flex items-center justify-end gap-1">
             {onProcessAll && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => {
-                  // With a selection, the deck walks just those (list order); the deck takes over,
-                  // so leave select mode (#648).
-                  if (selectMode && selected.size > 0) {
-                    const ids = items.filter((n) => selected.has(n.id)).map((n) => n.id);
-                    exitSelect();
-                    onProcessAll(ids);
-                  } else {
-                    onProcessAll();
-                  }
-                }}
+              <Tooltip
+                label={
+                  selectMode && selected.size > 0
+                    ? t('inbox.processSelectedTooltip')
+                    : t('inbox.processAllTooltip')
+                }
               >
-                <Target className="h-4 w-4 focus-glow" />
-                {selectMode && selected.size > 0
-                  ? t('inbox.processSelected', { count: selected.size })
-                  : t('inbox.processAll', { count: items.length })}
-              </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => {
+                    // With a selection, the deck walks just those (list order); the deck takes over,
+                    // so leave select mode (#648).
+                    if (selectMode && selected.size > 0) {
+                      const ids = items.filter((n) => selected.has(n.id)).map((n) => n.id);
+                      exitSelect();
+                      onProcessAll(ids);
+                    } else {
+                      onProcessAll();
+                    }
+                  }}
+                >
+                  <Target className="h-4 w-4 focus-glow" />
+                  {selectMode && selected.size > 0
+                    ? t('inbox.processSelected', { count: selected.size })
+                    : t('inbox.processAll', { count: items.length })}
+                </Button>
+              </Tooltip>
             )}
             {bulkCapable && (
               <Tooltip label={selectMode ? t('inbox.exitSelect') : t('inbox.selectItems')}>
@@ -151,14 +159,16 @@ export function InboxPanel({
           <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
             <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
             {/* One way to process: the shared wizard (#641) — destination, then status, then Done. */}
-            <button
-              type="button"
-              disabled={none}
-              onClick={() => setWizardOpen(true)}
-              className="rounded-md border border-input px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
-            >
-              {t('capture.process')}
-            </button>
+            <Tooltip label={none ? undefined : t('capture.processTooltip')}>
+              <button
+                type="button"
+                disabled={none}
+                onClick={() => setWizardOpen(true)}
+                className="rounded-md border border-input px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
+              >
+                {t('capture.process')}
+              </button>
+            </Tooltip>
             {onBulkDelete && (
               <ConfirmButton
                 aria-label={t('inbox.deleteSelectedAria')}
