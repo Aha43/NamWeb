@@ -41,14 +41,19 @@ export function ResourcesEditor({
   const doc = workspace?.document ?? null;
   const [type, setType] = useState<ResourceType>('URI');
   const [value, setValue] = useState('');
+  // Optional display name for a link (#715) — stored in the existing Resource.description
+  // (NEVER encoded into value: the desktop interprets value as the URI, and copy copies it).
+  const [name, setName] = useState('');
   // The link picker's mode: append a new link, or replace the link at an index ("…").
   const [linkPicker, setLinkPicker] = useState<{ replaceIndex: number | null } | null>(null);
 
   function add() {
     const trimmed = value.trim();
     if (!trimmed) return;
-    onChange([...resources, { type, value: trimmed, description: null }]);
+    const description = type === 'URI' && name.trim() ? name.trim() : null;
+    onChange([...resources, { type, value: trimmed, description }]);
     setValue('');
+    setName('');
   }
 
   function pickLink(targetId: string) {
@@ -115,10 +120,29 @@ export function ResourcesEditor({
           {resources.map((r, i) => {
             const targetId = doc ? parseActionLink(r) : null;
             if (targetId) return linkRow(r, i, targetId);
+            // http(s) links open the browser (#715); the display name (description) shows when
+            // set, the raw value otherwise — hovering always reveals the underlying value.
+            const isHttp = r.type === 'URI' && /^https?:\/\//i.test(r.value);
+            const display = r.description?.trim() ? r.description : r.value;
             return (
               <li key={i} className="flex items-center gap-2 text-sm">
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{r.type}</span>
-                <span className="min-w-0 flex-1 truncate text-foreground">{r.value}</span>
+                {isHttp ? (
+                  <Tooltip label={r.value}>
+                    <a
+                      href={r.value}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="min-w-0 flex-1 truncate text-foreground underline-offset-2 hover:underline"
+                    >
+                      {display}
+                    </a>
+                  </Tooltip>
+                ) : (
+                  <Tooltip label={display !== r.value ? r.value : undefined}>
+                    <span className="min-w-0 flex-1 truncate text-foreground">{display}</span>
+                  </Tooltip>
+                )}
                 <CopyButton value={r.value} label={t('copy.resource', { value: r.value })} tooltip />
                 <button
                   type="button"
@@ -162,6 +186,21 @@ export function ResourcesEditor({
             }
           }}
         />
+        {type === 'URI' && (
+          <Input
+            className="min-w-24 flex-1 basis-32"
+            aria-label={t('editor.resourceName')}
+            placeholder={t('editor.resourceNamePlaceholder')}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                add();
+              }
+            }}
+          />
+        )}
         <Button type="button" variant="outline" size="sm" onClick={add}>
           {t('common.add')}
         </Button>

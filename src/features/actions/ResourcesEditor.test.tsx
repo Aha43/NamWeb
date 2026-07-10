@@ -120,3 +120,49 @@ describe('ResourcesEditor action links (#658)', () => {
     expect(screen.getByText('nam://action/a1')).toBeInTheDocument();
   });
 });
+
+describe('ResourcesEditor http links (#715)', () => {
+  it('adds a URI with an optional display name stored in description — value stays the pure URL', () => {
+    const onChange = vi.fn();
+    render(<ResourcesEditor resources={[]} onChange={onChange} />);
+    fireEvent.change(screen.getByLabelText('Resource value'), { target: { value: 'https://example.com/docs' } });
+    fireEvent.change(screen.getByLabelText('Link name (optional)'), { target: { value: 'The docs' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onChange).toHaveBeenCalledWith([
+      { type: 'URI', value: 'https://example.com/docs', description: 'The docs' },
+    ]);
+  });
+
+  it('an http resource renders as a real link — named when a name is set, opening a new tab', () => {
+    render(
+      <ResourcesEditor
+        resources={[{ type: 'URI', value: 'https://example.com/docs', description: 'The docs' }]}
+        onChange={vi.fn()}
+      />,
+    );
+    const link = screen.getByRole('link', { name: 'The docs' });
+    expect(link).toHaveAttribute('href', 'https://example.com/docs');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', expect.stringContaining('noopener'));
+  });
+
+  it('an unnamed http resource shows (and links) the URL itself', () => {
+    render(
+      <ResourcesEditor
+        resources={[{ type: 'URI', value: 'https://example.com', description: null }]}
+        onChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('link', { name: 'https://example.com' })).toHaveAttribute('href', 'https://example.com');
+  });
+
+  it('non-http values stay plain text; the name field only appears for URI', () => {
+    render(
+      <ResourcesEditor resources={[{ type: 'TEXT', value: 'just a note', description: null }]} onChange={vi.fn()} />,
+    );
+    expect(screen.getByText('just a note')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'TEXT' } });
+    expect(screen.queryByLabelText('Link name (optional)')).not.toBeInTheDocument();
+  });
+});
