@@ -11,6 +11,7 @@ minor = features (breaking changes allowed), patch = fixes.
 ### Changed
 
 - **Resources are rows, not forms.** The always-visible add-form under the resources list is gone: rows show each resource doing its job (a named link linking, a note reading) with a "…" on the left opening a small type-appropriate dialog — which also means resources are finally *editable* (fixing a URL typo no longer takes delete + re-add). One "Add resource…" button creates via the same dialog; "Link action…" is unchanged. The editor's ⌘-Enter save now politely waits while any of these nested dialogs is open. Closes #720.
+- **Due controls are dense until asked for.** In the action editor and the project Details panel, the four-input due block collapses to the set time shown as the same compact hint rows use (range, times, derived edges italic) with a small edit affordance — or a "＋ Add due date" opener when nothing is set. Expanding reveals the familiar full controls (a ⌃ beside Clear collapses back); nothing about how due dates save has changed. Closes #721.
 
 ### Added
 

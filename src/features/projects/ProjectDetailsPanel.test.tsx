@@ -11,6 +11,14 @@ function project(partial: Partial<NamNode> = {}): NamNode {
   };
 }
 
+
+/** The due controls are dense until asked for (#721) — open them like a user would. Idempotent:
+ *  a no-op when already expanded (or when the surface renders without the collapse shell). */
+function expandDue() {
+  const opener = screen.queryByRole('button', { name: /add due date|edit due date/i });
+  if (opener) fireEvent.click(opener);
+}
+
 describe('ProjectDetailsPanel', () => {
   it('hides its fields when collapsed', () => {
     render(<ProjectDetailsPanel project={project()} collapsed onToggle={vi.fn()} onSave={vi.fn()} />);
@@ -30,6 +38,7 @@ describe('ProjectDetailsPanel', () => {
     expect(screen.getByLabelText('Title')).toHaveValue('Roof');
     expect(screen.getByLabelText('Description')).toHaveValue('fix the leak');
     expect(screen.getByLabelText('Tags')).toHaveValue('home');
+    expandDue();
     expect(screen.getByLabelText('Due')).toHaveValue('2026-07-01');
   });
 
@@ -64,6 +73,7 @@ describe('ProjectDetailsPanel', () => {
   it('autosaves the due date on blur via its own path, parsing a flexible date (#709)', () => {
     const onSaveDue = vi.fn();
     render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={vi.fn()} onSaveDue={onSaveDue} />);
+    expandDue();
     const due = screen.getByLabelText('Due');
     fireEvent.change(due, { target: { value: '26-8-15' } });
     fireEvent.blur(due);
@@ -76,6 +86,7 @@ describe('ProjectDetailsPanel', () => {
     render(
       <ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={vi.fn()} onSetDeriveDue={onSetDeriveDue} />,
     );
+    expandDue();
     fireEvent.click(screen.getByRole('checkbox', { name: 'Derive from contents' }));
     expect(onSetDeriveDue).toHaveBeenCalledWith(true);
   });
@@ -94,6 +105,7 @@ describe('ProjectDetailsPanel', () => {
         }}
       />,
     );
+    expandDue();
     expect(screen.getByLabelText('Due')).toHaveAttribute('placeholder', '2026-08-10');
     // The ghost end also opens the extras so it's visible without a click.
     expect(screen.getByLabelText('Due end (optional)')).toHaveAttribute('placeholder', '2026-08-14');
@@ -111,6 +123,7 @@ describe('ProjectDetailsPanel', () => {
       />,
     );
     // The extras are collapsed (only a start date is set) — expand, then fill the range + times.
+    expandDue();
     fireEvent.click(screen.getByRole('button', { name: /add time or a range/i }));
     const end = screen.getByLabelText('Due end (optional)');
     fireEvent.change(end, { target: { value: '26-8-12' } });
@@ -132,6 +145,7 @@ describe('ProjectDetailsPanel', () => {
     );
     // Commit a due, then blur the title: the edits snapshot reports the PROJECT's persisted due
     // (null here), not the just-typed one — so a stale mirror can never clobber remote changes.
+    expandDue();
     const due = screen.getByLabelText('Due');
     fireEvent.change(due, { target: { value: '2026-08-15' } });
     fireEvent.blur(due);
@@ -162,6 +176,7 @@ describe('ProjectDetailsPanel', () => {
   it('flags an invalid due date on blur and does not persist it', () => {
     const onSave = vi.fn();
     render(<ProjectDetailsPanel project={project()} collapsed={false} onToggle={vi.fn()} onSave={onSave} />);
+    expandDue();
     const due = screen.getByLabelText('Due');
     fireEvent.change(due, { target: { value: 'whenever' } });
     fireEvent.blur(due);

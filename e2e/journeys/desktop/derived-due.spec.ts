@@ -22,6 +22,8 @@ test.use({
 test('derive from contents: ghosts in Details, span on the calendar (#706)', async ({ page }) => {
   await page.goto('/projects/hol');
   await page.getByRole('button', { name: 'Details' }).click();
+  // The due controls are dense until expanded (#721); the derive toggle lives inside.
+  await page.getByRole('button', { name: /Add due date|Edit due date/i }).click();
   await page.getByRole('checkbox', { name: 'Derive from contents' }).check();
 
   // The derived span appears as ghost placeholders — nothing typed, nothing persisted.
@@ -50,6 +52,8 @@ test('derive from contents: ghosts in Details, span on the calendar (#706)', asy
 test('the holiday case: an explicit start wins, the end keeps deriving (#706)', async ({ page, doc }) => {
   await page.goto('/projects/hol');
   await page.getByRole('button', { name: 'Details' }).click();
+  // The due controls are dense until expanded (#721); the derive toggle lives inside.
+  await page.getByRole('button', { name: /Add due date|Edit due date/i }).click();
   await page.getByRole('checkbox', { name: 'Derive from contents' }).check();
 
   // Leave the house before the first flight: type an explicit start.

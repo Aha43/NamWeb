@@ -12,6 +12,7 @@ test('set a due-date range in the editor; it saves and shows on the row', async 
 
   await page.getByRole('button', { name: 'Edit Trip' }).click();
   const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /Add due date|Edit due date/i }).click(); // expand the dense due control (#721)
   await dialog.getByLabel('Due', { exact: true }).fill('2026-08-12');
   await dialog.getByRole('button', { name: /Add time or a range/ }).click();
   await dialog.getByLabel('Due end (optional)').fill('2026-08-16');
@@ -30,6 +31,7 @@ test('rejects an end before the start (no save)', async ({ page, doc }) => {
 
   await page.getByRole('button', { name: 'Edit Trip' }).click();
   const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /Add due date|Edit due date/i }).click(); // expand the dense due control (#721)
   await dialog.getByLabel('Due', { exact: true }).fill('2026-08-16');
   await dialog.getByRole('button', { name: /Add time or a range/ }).click();
   await dialog.getByLabel('Due end (optional)').fill('2026-08-12');

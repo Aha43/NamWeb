@@ -11,6 +11,8 @@ test('pick a due date from the calendar popover', async ({ page, doc }) => {
   await page.getByRole('button', { name: 'Edit Book flights' }).click();
   const dialog = page.getByRole('dialog');
 
+  // The due controls are dense until expanded (#721).
+  await dialog.getByRole('button', { name: /Add due date|Edit due date/i }).click();
   // Open the calendar by the Due input and pick a day.
   await dialog.getByRole('button', { name: 'Pick a due date from a calendar' }).click();
   const calendar = page.getByRole('button', { name: '2026-08-12' });

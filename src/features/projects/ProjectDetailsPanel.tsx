@@ -10,6 +10,7 @@ import { TagsInput } from '../actions/TagsInput';
 import { InheritedTags } from '../actions/InheritedTags';
 import { ResourcesEditor } from '../actions/ResourcesEditor';
 import { DueFieldset, type DueFields } from '../actions/DueFieldset';
+import { CollapsedDue } from '../actions/CollapsedDue';
 import type { EffectiveDue } from '@/domain/derivedDue';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -164,44 +165,61 @@ export function ProjectDetailsPanel({
               />
               <InheritedTags tags={inheritedTags} />
             </div>
-            <div className="space-y-1.5">
-              <DueFieldset
-                idPrefix="project"
-                value={{
-                  dueAt: project.dueAt ?? null,
-                  dueEndAt: project.dueEndAt ?? null,
-                  dueTime: project.dueTime ?? null,
-                  dueEndTime: project.dueEndTime ?? null,
-                }}
-                onCommit={(fields) => {
-                  onSaveDue?.(fields);
-                  setSaved(true);
-                }}
-                placeholders={
-                  project.deriveDue
-                    ? {
-                        dueAt: derivedDue?.derivedStart ? derivedDue.dueAt : null,
-                        dueEndAt: derivedDue?.derivedEnd ? derivedDue.dueEndAt : null,
-                      }
-                    : undefined
-                }
-              />
-              {/* Derive-from-contents (#706): the span breathes with the subtree's dated items;
-                  typed dates above win per edge. NOT "rub-off" — that means tags flowing down. */}
-              {onSetDeriveDue && (
-                <label className="flex w-fit cursor-pointer items-center gap-2 pt-1 text-sm text-muted-foreground hover:text-foreground">
-                  <input
-                    type="checkbox"
-                    checked={project.deriveDue ?? false}
-                    onChange={(e) => {
-                      onSetDeriveDue(e.target.checked);
-                      setSaved(true);
-                    }}
-                  />
-                  {t('editor.deriveDue')}
-                </label>
+            {/* Dense until asked for (#721) — deriving projects show their effective span. */}
+            <CollapsedDue
+              fields={
+                project.deriveDue && derivedDue
+                  ? derivedDue
+                  : {
+                      dueAt: project.dueAt ?? null,
+                      dueEndAt: project.dueEndAt ?? null,
+                      dueTime: project.dueTime ?? null,
+                      dueEndTime: project.dueEndTime ?? null,
+                    }
+              }
+            >
+              {(collapse) => (
+              <div className="space-y-1.5">
+                <DueFieldset
+                  idPrefix="project"
+                  value={{
+                    dueAt: project.dueAt ?? null,
+                    dueEndAt: project.dueEndAt ?? null,
+                    dueTime: project.dueTime ?? null,
+                    dueEndTime: project.dueEndTime ?? null,
+                  }}
+                  onCommit={(fields) => {
+                    onSaveDue?.(fields);
+                    setSaved(true);
+                  }}
+                  placeholders={
+                    project.deriveDue
+                      ? {
+                          dueAt: derivedDue?.derivedStart ? derivedDue.dueAt : null,
+                          dueEndAt: derivedDue?.derivedEnd ? derivedDue.dueEndAt : null,
+                        }
+                      : undefined
+                  }
+                  onCollapse={collapse}
+                />
+                {/* Derive-from-contents (#706): the span breathes with the subtree's dated items;
+                    typed dates above win per edge. NOT "rub-off" — that means tags flowing down. */}
+                {onSetDeriveDue && (
+                  <label className="flex w-fit cursor-pointer items-center gap-2 pt-1 text-sm text-muted-foreground hover:text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={project.deriveDue ?? false}
+                      onChange={(e) => {
+                        onSetDeriveDue(e.target.checked);
+                        setSaved(true);
+                      }}
+                    />
+                    {t('editor.deriveDue')}
+                  </label>
+                )}
+              </div>
               )}
-            </div>
+            </CollapsedDue>
           </div>
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium text-foreground">{t('editor.statusLegend')}</legend>

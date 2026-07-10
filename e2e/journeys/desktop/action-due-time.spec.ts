@@ -12,6 +12,7 @@ test('set a due time in the editor; it saves and shows on the row', async ({ pag
 
   await page.getByRole('button', { name: 'Edit Doctor' }).click();
   const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /Add due date|Edit due date/i }).click(); // expand the dense due control (#721)
   await dialog.getByLabel('Due', { exact: true }).fill('2026-08-12');
   await dialog.getByRole('button', { name: /Add time or a range/ }).click();
   await dialog.getByLabel('Due time (optional)').fill('14:30');
@@ -27,6 +28,7 @@ test('a bare hour fills minutes (9 → 09:00)', async ({ page, doc }) => {
 
   await page.getByRole('button', { name: 'Edit Doctor' }).click();
   const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /Add due date|Edit due date/i }).click(); // expand the dense due control (#721)
   await dialog.getByLabel('Due', { exact: true }).fill('2026-08-12');
   await dialog.getByRole('button', { name: /Add time or a range/ }).click();
   await dialog.getByLabel('Due time (optional)').fill('9');
@@ -40,6 +42,7 @@ test('the range end can carry its own time (#500)', async ({ page, doc }) => {
 
   await page.getByRole('button', { name: 'Edit Doctor' }).click();
   const dialog = page.getByRole('dialog');
+  await dialog.getByRole('button', { name: /Add due date|Edit due date/i }).click(); // expand the dense due control (#721)
   await dialog.getByLabel('Due', { exact: true }).fill('2026-08-12');
   await dialog.getByRole('button', { name: /Add time or a range/ }).click();
   await dialog.getByLabel('Due time (optional)').fill('9');
