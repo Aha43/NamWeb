@@ -386,12 +386,16 @@ describe('ActionDialog', () => {
     expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument();
   });
 
-  it('adds a resource and reports it on save', () => {
+  it('adds a resource (via the #720 dialog) and reports it on save', () => {
     const onSave = vi.fn();
     render(<ActionDialog node={node()} open onOpenChange={vi.fn()} onSave={onSave} />);
     fireEvent.click(screen.getByRole('button', { name: 'Resources' })); // expand the section
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
     fireEvent.change(screen.getByLabelText('Resource value'), { target: { value: 'https://docs.test' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    // The nested form's submit must NOT reach the editor's form (the portal-bubbling guard) —
+    // the editor stays open, nothing saved yet.
+    expect(onSave).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     expect(onSave).toHaveBeenCalledWith(
       expect.objectContaining({ resources: [{ type: 'URI', value: 'https://docs.test', description: null }] }),
@@ -429,10 +433,10 @@ describe('ActionDialog', () => {
     );
     // Resources / Move section controls are hidden until their disclosure is opened, so the
     // common fields + Save stay together at the top.
-    expect(screen.queryByLabelText('Resource value')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add resource…' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Make project' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Resources' }));
-    expect(screen.getByLabelText('Resource value')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add resource…' })).toBeInTheDocument();
   });
 
   it('opens the Blocked-by section by default when the action already has prerequisites', () => {

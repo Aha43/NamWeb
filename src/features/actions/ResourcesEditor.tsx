@@ -1,22 +1,22 @@
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2, MoreHorizontal } from 'lucide-react';
+import { Link2, MoreHorizontal, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
-import { Input } from '@/components/ui/input';
 import { Tooltip } from '@/components/ui/tooltip';
-import type { Resource, ResourceType } from '@/domain/types';
+import type { Resource } from '@/domain/types';
 import { makeActionLink, parseActionLink } from '@/domain/actionLinks';
 import { allOpenableActions, projectPath } from '@/domain/lenses';
 import { WorkspaceContext } from '@/store/workspace-context';
 import { ActionEditorContext } from './action-editor-context';
+import { ResourceDialog } from './ResourceDialog';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
 
-const RESOURCE_TYPES: ResourceType[] = ['URI', 'EMAIL', 'FILE', 'TEXT'];
-
-/** Add/remove attached resources (links/files/notes). Local edits are reported via onChange and
- *  committed by the surrounding editor (the action dialog, or the project workbench Details panel).
- *  FILE is link/metadata only (no upload).
+/** Attached resources (links/files/notes) as pure display rows (#720): the resource doing its job
+ *  (a named link linking, a note reading) with a "…" on the left opening the type-appropriate
+ *  dialog — create and edit both happen in dialogs, not inline forms. FILE is link/metadata only
+ *  (no upload). Local edits are reported via onChange and committed by the surrounding editor
+ *  (the action dialog, or the project workbench Details panel).
  *
  *  Action links (#658) are URI resources with the nam:// scheme: the row shows the target's live
  *  breadcrumb path (click opens its editor), "…" re-picks the target, ✕ unlinks. Both contexts are
@@ -26,6 +26,7 @@ export function ResourcesEditor({
   onChange,
   linkExcludeId,
   onFollowLink,
+  onNestedOpenChange,
 }: {
   resources: Resource[];
   onChange: (resources: Resource[]) => void;
@@ -34,26 +35,30 @@ export function ResourcesEditor({
   /** Overrides what clicking a link row does. The buffered ActionDialog host passes
    *  save-then-switch (#663); without it the row opens the target's editor directly. */
   onFollowLink?: (targetId: string) => void;
+  /** Fires when a nested dialog (resource form, link picker) opens/closes — a hosting dialog
+   *  suspends its own save-from-anywhere shortcut while true (the #574 rule; #720). */
+  onNestedOpenChange?: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
   const workspace = useContext(WorkspaceContext);
   const editor = useContext(ActionEditorContext);
   const doc = workspace?.document ?? null;
-  const [type, setType] = useState<ResourceType>('URI');
-  const [value, setValue] = useState('');
-  // Optional display name for a link (#715) — stored in the existing Resource.description
-  // (NEVER encoded into value: the desktop interprets value as the URI, and copy copies it).
-  const [name, setName] = useState('');
+  // The resource dialog's mode: create (editIndex null) or edit the row at an index.
+  const [resourceDialog, setResourceDialog] = useState<{ editIndex: number | null } | null>(null);
   // The link picker's mode: append a new link, or replace the link at an index ("…").
   const [linkPicker, setLinkPicker] = useState<{ replaceIndex: number | null } | null>(null);
 
-  function add() {
-    const trimmed = value.trim();
-    if (!trimmed) return;
-    const description = type === 'URI' && name.trim() ? name.trim() : null;
-    onChange([...resources, { type, value: trimmed, description }]);
-    setValue('');
-    setName('');
+  // Tell the hosting dialog when any nested modal is up (this also covers the pre-existing link
+  // picker, which had the same ⌘Enter hole).
+  const nestedOpen = resourceDialog !== null || linkPicker !== null;
+  useEffect(() => {
+    onNestedOpenChange?.(nestedOpen);
+  }, [nestedOpen, onNestedOpenChange]);
+
+  function submitResource(resource: Resource) {
+    const i = resourceDialog?.editIndex;
+    if (i != null) onChange(resources.map((r, idx) => (idx === i ? resource : r)));
+    else onChange([...resources, resource]);
   }
 
   function pickLink(targetId: string) {
@@ -71,6 +76,35 @@ export function ResourcesEditor({
     setLinkPicker(null);
   }
 
+  /** The "…" opener every row starts with — the one edit affordance (#720). */
+  function editButton(label: string, onClick: () => void) {
+    return (
+      <Tooltip label={label}>
+        <button
+          type="button"
+          aria-label={label}
+          onClick={onClick}
+          className="shrink-0 rounded-md px-1.5 text-muted-foreground hover:text-foreground"
+        >
+          <MoreHorizontal className="h-3.5 w-3.5" />
+        </button>
+      </Tooltip>
+    );
+  }
+
+  function removeButton(value: string, i: number) {
+    return (
+      <button
+        type="button"
+        aria-label={t('editor.removeResourceAria', { value })}
+        onClick={() => onChange(resources.filter((_, idx) => idx !== i))}
+        className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
+      >
+        ×
+      </button>
+    );
+  }
+
   function linkRow(r: Resource, i: number, targetId: string) {
     const target = doc?.nodes[targetId];
     const label = target
@@ -78,6 +112,7 @@ export function ResourcesEditor({
       : t('editor.linkGone');
     return (
       <li key={i} className="flex items-center gap-2 text-sm">
+        {editButton(t('editor.editLinkAria'), () => setLinkPicker({ replaceIndex: i }))}
         <Link2 aria-hidden className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
         {target ? (
           <button
@@ -91,24 +126,7 @@ export function ResourcesEditor({
         ) : (
           <span className="min-w-0 flex-1 truncate italic text-muted-foreground">{label}</span>
         )}
-        <Tooltip label={t('editor.editLinkAria')}>
-          <button
-            type="button"
-            aria-label={t('editor.editLinkAria')}
-            onClick={() => setLinkPicker({ replaceIndex: i })}
-            className="rounded-md px-1.5 text-muted-foreground hover:text-foreground"
-          >
-            <MoreHorizontal className="h-3.5 w-3.5" />
-          </button>
-        </Tooltip>
-        <button
-          type="button"
-          aria-label={t('editor.removeResourceAria', { value: target ? target.title : r.value })}
-          onClick={() => onChange(resources.filter((_, idx) => idx !== i))}
-          className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
-        >
-          ×
-        </button>
+        {removeButton(target ? target.title : r.value, i)}
       </li>
     );
   }
@@ -126,6 +144,7 @@ export function ResourcesEditor({
             const display = r.description?.trim() ? r.description : r.value;
             return (
               <li key={i} className="flex items-center gap-2 text-sm">
+                {editButton(t('editor.editResourceAria', { value: display }), () => setResourceDialog({ editIndex: i }))}
                 <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{r.type}</span>
                 {isHttp ? (
                   <Tooltip label={r.value}>
@@ -144,14 +163,7 @@ export function ResourcesEditor({
                   </Tooltip>
                 )}
                 <CopyButton value={r.value} label={t('copy.resource', { value: r.value })} tooltip />
-                <button
-                  type="button"
-                  aria-label={t('editor.removeResourceAria', { value: r.value })}
-                  onClick={() => onChange(resources.filter((_, idx) => idx !== i))}
-                  className="rounded-md px-1.5 text-muted-foreground hover:text-destructive"
-                >
-                  ×
-                </button>
+                {removeButton(r.value, i)}
               </li>
             );
           })}
@@ -159,50 +171,10 @@ export function ResourcesEditor({
       ) : (
         <p className="text-xs text-muted-foreground">{t('editor.noResources')}</p>
       )}
-      {/* Wraps on narrow (phone) widths — four controls no longer overflow the dialog (#665). */}
       <div className="flex flex-wrap gap-2">
-        <select
-          aria-label={t('editor.resourceType')}
-          value={type}
-          onChange={(e) => setType(e.target.value as ResourceType)}
-          className="rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
-        >
-          {RESOURCE_TYPES.map((rt) => (
-            <option key={rt} value={rt}>
-              {rt}
-            </option>
-          ))}
-        </select>
-        <Input
-          className="min-w-32 flex-1 basis-40"
-          aria-label={t('editor.resourceValue')}
-          placeholder={t('editor.resourcePlaceholder')}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              add();
-            }
-          }}
-        />
-        {type === 'URI' && (
-          <Input
-            className="min-w-24 flex-1 basis-32"
-            aria-label={t('editor.resourceName')}
-            placeholder={t('editor.resourceNamePlaceholder')}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                add();
-              }
-            }}
-          />
-        )}
-        <Button type="button" variant="outline" size="sm" onClick={add}>
-          {t('common.add')}
+        <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setResourceDialog({ editIndex: null })}>
+          <Plus className="h-3.5 w-3.5" />
+          {t('editor.addResource')}
         </Button>
         {doc && (
           <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => setLinkPicker({ replaceIndex: null })}>
@@ -211,6 +183,16 @@ export function ResourcesEditor({
           </Button>
         )}
       </div>
+      {resourceDialog && (
+        <ResourceDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setResourceDialog(null);
+          }}
+          initial={resourceDialog.editIndex != null ? resources[resourceDialog.editIndex] : null}
+          onSubmit={submitResource}
+        />
+      )}
       {doc && (
         <ProjectPickerDialog
           open={linkPicker !== null}
