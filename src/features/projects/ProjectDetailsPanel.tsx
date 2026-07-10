@@ -178,6 +178,7 @@ export function ProjectDetailsPanel({
                     }
               }
             >
+              {(collapse) => (
               <div className="space-y-1.5">
                 <DueFieldset
                   idPrefix="project"
@@ -199,6 +200,7 @@ export function ProjectDetailsPanel({
                         }
                       : undefined
                   }
+                  onCollapse={collapse}
                 />
                 {/* Derive-from-contents (#706): the span breathes with the subtree's dated items;
                     typed dates above win per edge. NOT "rub-off" — that means tags flowing down. */}
@@ -216,6 +218,7 @@ export function ProjectDetailsPanel({
                   </label>
                 )}
               </div>
+              )}
             </CollapsedDue>
           </div>
           <fieldset className="space-y-1.5">

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
+import { ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Tooltip } from '@/components/ui/tooltip';
 import { DatePickerPopover } from '@/components/ui/date-picker';
 import { parseFlexibleDate, parseFlexibleTime } from '@/lib/dates';
 
@@ -27,6 +29,7 @@ export function DueFieldset({
   value,
   onCommit,
   placeholders,
+  onCollapse,
 }: {
   /** Prefix for the input ids (e.g. `"project"` → `project-due`, `project-due-end`, …). */
   idPrefix: string;
@@ -36,6 +39,8 @@ export function DueFieldset({
   /** Ghost values for derived edges (#706) — shown as the input placeholder while the draft is
    *  empty (typing makes the edge explicit; clearing falls back to the ghost). */
   placeholders?: { dueAt?: string | null; dueEndAt?: string | null };
+  /** Back to the dense one-line display (#721) — renders a ⌃ in the label row when given. */
+  onCollapse?: () => void;
 }) {
   const { t } = useTranslation();
   const [due, setDue] = useState(value.dueAt ?? '');
@@ -140,11 +145,25 @@ export function DueFieldset({
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
         <Label htmlFor={`${idPrefix}-due`}>{t('editor.fieldDue')}</Label>
-        {(due || dueEnd || dueTime || dueEndTime) && (
-          <button type="button" onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground">
-            {t('common.clear')}
-          </button>
-        )}
+        <span className="flex items-center gap-2">
+          {(due || dueEnd || dueTime || dueEndTime) && (
+            <button type="button" onClick={clearAll} className="text-xs text-muted-foreground hover:text-foreground">
+              {t('common.clear')}
+            </button>
+          )}
+          {onCollapse && (
+            <Tooltip label={t('editor.collapseDue')}>
+              <button
+                type="button"
+                aria-label={t('editor.collapseDue')}
+                onClick={onCollapse}
+                className="rounded-md text-muted-foreground hover:text-foreground"
+              >
+                <ChevronUp className="h-3.5 w-3.5" />
+              </button>
+            </Tooltip>
+          )}
+        </span>
       </div>
       {/* Type-in stays primary; the calendar button is an optional way to see weekdays (#499). */}
       <div className="flex gap-1.5">

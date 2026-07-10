@@ -16,6 +16,21 @@ describe('CollapsedDue (#721)', () => {
     expect(screen.queryByText('Due Mar 20, 2026')).not.toBeInTheDocument();
   });
 
+  it('the render-prop collapse goes back to the dense line — expand/collapse is symmetric', () => {
+    render(
+      <CollapsedDue fields={{ dueAt: '2026-03-20' }}>
+        {(collapse) => (
+          <button type="button" onClick={collapse}>
+            back to one line
+          </button>
+        )}
+      </CollapsedDue>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit due date' }));
+    fireEvent.click(screen.getByRole('button', { name: 'back to one line' }));
+    expect(screen.getByText('Due Mar 20, 2026')).toBeInTheDocument();
+  });
+
   it('offers "＋ Add due date" when nothing is set', () => {
     render(
       <CollapsedDue fields={{ dueAt: null }}>

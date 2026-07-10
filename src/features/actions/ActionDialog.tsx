@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, ChevronUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { STATUS_OPTIONS } from './status';
 import {
@@ -268,36 +268,50 @@ export function ActionDialog({
               <TagsInput id="action-tags" value={tags} onChange={setTags} suggestions={availableTags} />
               <InheritedTags tags={inheritedTags} />
             </div>
-            {/* Dense until asked for (#721) — collapsed shows the node's set time compactly. */}
+            {/* Dense until asked for (#721) — the collapsed line reads the live drafts, so
+                buffered (not-yet-saved) edits show correctly after a re-collapse. */}
             <CollapsedDue
               fields={{
-                dueAt: node.dueAt ?? null,
-                dueEndAt: node.dueEndAt ?? null,
-                dueTime: node.dueTime ?? null,
-                dueEndTime: node.dueEndTime ?? null,
+                dueAt: parseFlexibleDate(due),
+                dueEndAt: parseFlexibleDate(dueEnd),
+                dueTime: parseFlexibleTime(dueTime),
+                dueEndTime: parseFlexibleTime(dueEndTime),
               }}
             >
+            {(collapseDue) => (
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="action-due">{t('editor.fieldDue')}</Label>
-                {(due || dueEnd || dueTime || dueEndTime) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDue('');
-                      setDueEnd('');
-                      setDueTime('');
-                      setDueEndTime('');
-                      setDueError(false);
-                      setDueEndError(false);
-                      setDueTimeError(false);
-                      setDueEndTimeError(false);
-                    }}
-                    className="text-xs text-muted-foreground hover:text-foreground"
-                  >
-                    {t('common.clear')}
-                  </button>
-                )}
+                <span className="flex items-center gap-2">
+                  {(due || dueEnd || dueTime || dueEndTime) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDue('');
+                        setDueEnd('');
+                        setDueTime('');
+                        setDueEndTime('');
+                        setDueError(false);
+                        setDueEndError(false);
+                        setDueTimeError(false);
+                        setDueEndTimeError(false);
+                      }}
+                      className="text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      {t('common.clear')}
+                    </button>
+                  )}
+                  <Tooltip label={t('editor.collapseDue')}>
+                    <button
+                      type="button"
+                      aria-label={t('editor.collapseDue')}
+                      onClick={collapseDue}
+                      className="rounded-md text-muted-foreground hover:text-foreground"
+                    >
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    </button>
+                  </Tooltip>
+                </span>
               </div>
               {/* Type-in stays primary; the calendar button is an optional way to see weekdays (#499). */}
               <div className="flex gap-1.5">
@@ -419,6 +433,7 @@ export function ActionDialog({
                 </p>
               )}
             </div>
+            )}
             </CollapsedDue>
           </div>
           <fieldset className="space-y-1.5">

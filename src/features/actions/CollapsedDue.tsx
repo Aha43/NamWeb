@@ -8,8 +8,8 @@ import { DueHintLabel } from './DueHintLabel';
  * The due controls, dense until asked for (#721): collapsed, the set time shows as the same
  * compact hint rows carry (range/times, derived edges italic) with an edit affordance — or a
  * "＋ Add due date" opener when nothing is set. Expanding reveals `children` (the full control
- * set: the panel's DueFieldset, the action editor's inline block) and stays open for the rest of
- * the editing session — re-collapsing mid-edit would hide state the user is working on.
+ * set: the panel's DueFieldset, the action editor's inline block); the expanded block offers the
+ * way back via the `collapse` render-prop argument — a ⌃ in its own header row.
  */
 export function CollapsedDue({
   fields,
@@ -24,11 +24,13 @@ export function CollapsedDue({
     derivedStart?: boolean;
     derivedEnd?: boolean;
   };
-  children: ReactNode;
+  /** The full controls. The render-prop form receives `collapse` so the expanded block can offer
+   *  the way back in its own header (a ⌃ beside Clear) — expand/collapse stays symmetric. */
+  children: ReactNode | ((collapse: () => void) => ReactNode);
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  if (expanded) return <>{children}</>;
+  if (expanded) return <>{typeof children === 'function' ? children(() => setExpanded(false)) : children}</>;
   return (
     <div className="space-y-1.5">
       <Label>{t('editor.fieldDue')}</Label>
