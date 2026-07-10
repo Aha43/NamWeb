@@ -11,6 +11,25 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.3.0 — 2026-07-10
+
+*(two days; 6 PRs, 1 release)* Two small dogfooding sprints that share one instinct: **the
+editor earns density**. First the loose ends real use exposed — URL resources became honest
+links (display name riding the never-used `description` field, so nothing new syncs — the
+contract-frugal choice over a `name:uri` encoding, #718), *in progress* learned to end when the
+action does (#719), the inbox's glowing button finally explains itself (#717). Then the "meaty"
+one: the editor's two bulkiest blocks went dense — resources as pure display rows with a "…"
+opening type-appropriate dialogs (rows finally *editable*, #722), and the four-input due block
+collapsed to the same one-line hint rows use, expandable on demand (#723) — with the user's
+mid-review nudge (a ⌃ to collapse back, "the x + x trick is neat but not intuitive") folded in
+before merge. The review dance produced a first: Claude's six findings (#725) included the
+portal-bubbling submit bug found in a *sibling* control after the handover invited the hunt,
+and a premise-rejection accepted mid-flight (Undo must restore the stripped mark — landed as a
+replay-safe intent flag, not a UI patch); Codex then returned the archive's **first fully clean
+pass**, five verdicts, zero findings. Verdict: **polishing**, deliberately — the calendar and
+time arcs rest while everyday-editor friction burns down; the parked design items (#708 inverse
+holiday, projects in Due view) are the next converging candidates.
+
 ## v1.2.0 — 2026-07-09
 
 *(one day; 7 PRs, 1 release)* The cleanest arc the repo has run: **projects×time**, planned as a
