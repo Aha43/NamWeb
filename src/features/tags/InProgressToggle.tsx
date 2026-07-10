@@ -20,6 +20,8 @@ export function InProgressToggle({ id, title }: { id: string; title: string }) {
   const workspace = useContext(WorkspaceContext);
   const node = workspace?.document?.nodes[id];
   if (!workspace || !node) return null;
+  // A finished action isn't being worked on — no toggle on terminal rows (#716).
+  if (node.status === 'DONE' || node.status === 'CANCELLED') return null;
   const { dispatch } = workspace;
   // Case-insensitive: NamDesktop-written documents can carry "In Progress" (#654).
   const isMark = (tag: string) => tag.trim().toLowerCase() === IN_PROGRESS_TAG;

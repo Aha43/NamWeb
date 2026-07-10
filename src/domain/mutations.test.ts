@@ -152,6 +152,23 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ status: 'DONE', updatedAt: NOW, statusChangedAt: NOW });
   });
 
+  it('terminal statuses shed the in-progress tag — case-insensitively; restore never re-adds (#716)', () => {
+    const doc = workspace([
+      node('a', { status: 'NEXT', tags: ['home', 'In Progress'] }), // desktop-cased variant (#654)
+      node('b', { status: 'NEXT', tags: ['in progress'] }),
+      node('c', { status: 'NEXT', tags: ['in progress'] }),
+    ]);
+    const done = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'DONE', now: NOW });
+    expect(done.nodes['a'].tags).toEqual(['home']);
+    const cancelled = applyIntent(doc, { type: 'setStatus', id: 'b', status: 'CANCELLED', now: NOW });
+    expect(cancelled.nodes['b'].tags).toEqual([]);
+    // Non-terminal changes keep it; restoring a done action does not resurrect it.
+    const backlog = applyIntent(doc, { type: 'setStatus', id: 'c', status: 'BACKLOG', now: NOW });
+    expect(backlog.nodes['c'].tags).toEqual(['in progress']);
+    const restored = applyIntent(done, { type: 'setStatus', id: 'a', status: 'NEXT', now: NOW });
+    expect(restored.nodes['a'].tags).toEqual(['home']);
+  });
+
   it('setStatus with expectedStatus no-ops when the node has since changed (#573)', () => {
     const doc = workspace([node('a', { status: 'BACKLOG' })]); // newer change already applied
     doc.nodes['actions'].childIds.push('a');
