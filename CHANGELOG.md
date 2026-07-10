@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Picking a prerequisite browses, not scrolls.** The editor's "Blocked by" section adds a prerequisite through the same column-style action browser used for linking and moving — instead of the old flat select listing every action in the workspace, which was nearly unusable with real data. Same valid-target rules (no cycles, no projects); the ⌘-Enter save politely waits while the browser is open. Closes #727.
+
 ## [1.3.0] - 2026-07-10
 
 **The editor slims down.** Two dogfooding sprints in one cut: web links became first-class

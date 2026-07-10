@@ -352,27 +352,80 @@ describe('ActionDialog', () => {
     expect(onMove).toHaveBeenCalledWith('p1');
   });
 
-  it('manages prerequisites and shows would-unblock', () => {
+  it('manages prerequisites and shows would-unblock — adding browses the action picker (#727)', () => {
     const onAddPrerequisite = vi.fn();
     const onRemovePrerequisite = vi.fn();
+    // A workspace document for the picker's columns: the candidate lives under a project.
+    const doc: WorkspaceDocument = {
+      formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects', nextActionsNodeId: 'actions',
+      nodes: {
+        root: node({ id: 'root', childIds: ['inbox', 'projects', 'actions'] }),
+        inbox: node({ id: 'inbox' }),
+        projects: node({ id: 'projects', childIds: ['p1'] }),
+        actions: node({ id: 'actions' }),
+        p1: node({ id: 'p1', title: 'Home', project: true, childIds: ['c1'] }),
+        c1: node({ id: 'c1', title: 'Other task', status: 'NEXT' }),
+      },
+      registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
+    };
     render(
-      <ActionDialog
-        node={node()}
-        open
-        onOpenChange={vi.fn()}
-        onSave={vi.fn()}
-        blockers={[{ id: 'b1', title: 'Prep', done: false }]}
-        blockerCandidates={[{ id: 'c1', label: 'Other task' }]}
-        wouldUnblock={['Ship it']}
-        onAddPrerequisite={onAddPrerequisite}
-        onRemovePrerequisite={onRemovePrerequisite}
-      />,
+      <WorkspaceContext.Provider value={{ document: doc, dispatch: vi.fn() } as unknown as UseWorkspace}>
+        <ActionDialog
+          node={node()}
+          open
+          onOpenChange={vi.fn()}
+          onSave={vi.fn()}
+          blockers={[{ id: 'b1', title: 'Prep', done: false }]}
+          blockerCandidates={[{ id: 'c1', label: 'Other task' }]}
+          wouldUnblock={['Ship it']}
+          onAddPrerequisite={onAddPrerequisite}
+          onRemovePrerequisite={onRemovePrerequisite}
+        />
+      </WorkspaceContext.Provider>,
     );
     expect(screen.getByText('Would unblock: Ship it')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove prerequisite Prep' }));
     expect(onRemovePrerequisite).toHaveBeenCalledWith('b1');
-    fireEvent.change(screen.getByLabelText('Add prerequisite'), { target: { value: 'c1' } });
+    // Adding goes through the action browser, not a flat select: drill into the project,
+    // pick the candidate, confirm.
+    fireEvent.click(screen.getByRole('button', { name: 'Add a prerequisite…' }));
+    expect(screen.getByText('"Buy milk" is blocked by…')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /Home/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Other task/ }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add prerequisite' }));
     expect(onAddPrerequisite).toHaveBeenCalledWith('c1');
+  });
+
+  it('suspends the save shortcut while the prerequisite picker is on top (#574, #727)', () => {
+    const doc: WorkspaceDocument = {
+      formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects', nextActionsNodeId: 'actions',
+      nodes: {
+        root: node({ id: 'root', childIds: ['inbox', 'projects', 'actions'] }),
+        inbox: node({ id: 'inbox' }),
+        projects: node({ id: 'projects' }),
+        actions: node({ id: 'actions', childIds: ['c1'] }),
+        c1: node({ id: 'c1', title: 'Other task', status: 'NEXT' }),
+      },
+      registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
+    };
+    const onSave = vi.fn();
+    render(
+      <WorkspaceContext.Provider value={{ document: doc, dispatch: vi.fn() } as unknown as UseWorkspace}>
+        <ActionDialog
+          node={node({ title: 'Keep' })}
+          open
+          onOpenChange={vi.fn()}
+          onSave={onSave}
+          blockerCandidates={[{ id: 'c1', label: 'Other task' }]}
+          onAddPrerequisite={vi.fn()}
+          onRemovePrerequisite={vi.fn()}
+        />
+      </WorkspaceContext.Provider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Blocked by' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Add a prerequisite…' }));
+    fireEvent.keyDown(document, { key: 'Enter', metaKey: true });
+    expect(onSave).not.toHaveBeenCalled();
   });
 
   it('deletes a project directly (the advanced-delete dialog confirms), with an "Edit project" title', () => {

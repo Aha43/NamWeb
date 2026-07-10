@@ -59,6 +59,7 @@ test.describe('blocked', () => {
     seedDoc: new DocBuilder()
       .action('pre', 'Write release notes')
       .action('blk', 'Ship the release', { blockedBy: ['pre'] })
+      .action('oth', 'Order stickers')
       .build(),
   });
 
@@ -69,6 +70,27 @@ test.describe('blocked', () => {
 
     await page.getByRole('button', { name: 'Open blocker Write release notes' }).click();
     await expect(page.getByRole('dialog').getByText('Edit action')).toBeVisible();
+  });
+
+  test('adds a prerequisite through the action browser (#727)', async ({ page, doc }) => {
+    await page.goto('/next');
+
+    await page.getByRole('button', { name: 'Edit Write release notes' }).click();
+    const editor = page.getByRole('dialog', { name: 'Edit action' });
+    await editor.getByRole('button', { name: 'Blocked by' }).click(); // expand the section
+    await editor.getByRole('button', { name: 'Add a prerequisite…' }).click();
+
+    const picker = page.getByRole('dialog', { name: '"Write release notes" is blocked by…' });
+    // Let the nested dialog's zoom-in animation finish before clicking rows (stability check).
+    await expect
+      .poll(() => picker.evaluate((el) => el.getAnimations().every((a) => a.playState === 'finished')))
+      .toBe(true);
+    await picker.getByRole('button', { name: 'Order stickers' }).click();
+    await picker.getByRole('button', { name: 'Add prerequisite' }).click();
+
+    // The intent dispatched immediately (no Save needed) and the section lists the blocker.
+    await expect(editor.getByRole('button', { name: 'Remove prerequisite Order stickers' })).toBeVisible();
+    await expect.poll(() => doc.current().nodes['pre'].blockedBy).toEqual(['oth']);
   });
 });
 
