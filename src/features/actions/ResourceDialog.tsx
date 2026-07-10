@@ -48,7 +48,10 @@ export function ResourceDialog({
     onSubmit({
       type,
       value: trimmed,
-      description: type === 'URI' && name.trim() ? name.trim() : null,
+      // The name field only shows for URI, where an empty entry is a deliberate clear. For other
+      // types, PRESERVE any existing description — it's a shared-contract field the desktop can
+      // populate; a web-side value edit must not silently null it (#724).
+      description: type === 'URI' ? (name.trim() ? name.trim() : null) : (initial?.description ?? null),
     });
     onOpenChange(false);
   }

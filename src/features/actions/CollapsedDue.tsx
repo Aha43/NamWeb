@@ -1,7 +1,6 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Pencil } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Label } from '@/components/ui/label';
 import { DueHintLabel } from './DueHintLabel';
 
 /**
@@ -13,6 +12,7 @@ import { DueHintLabel } from './DueHintLabel';
  */
 export function CollapsedDue({
   fields,
+  forceExpand = false,
   children,
 }: {
   /** What the dense display shows — pass the effective span for deriving projects (#706). */
@@ -24,16 +24,25 @@ export function CollapsedDue({
     derivedStart?: boolean;
     derivedEnd?: boolean;
   };
+  /** Opens the block (open-only, never re-collapses). The action editor flags this on due
+   *  validation errors, so a failing Save can't hide its alert behind the dense line (#724). */
+  forceExpand?: boolean;
   /** The full controls. The render-prop form receives `collapse` so the expanded block can offer
    *  the way back in its own header (a ⌃ beside Clear) — expand/collapse stays symmetric. */
   children: ReactNode | ((collapse: () => void) => ReactNode);
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  if (expanded) return <>{typeof children === 'function' ? children(() => setExpanded(false)) : children}</>;
+  useEffect(() => {
+    if (forceExpand) setExpanded(true);
+  }, [forceExpand]);
+  if (expanded || forceExpand) {
+    return <>{typeof children === 'function' ? children(() => setExpanded(false)) : children}</>;
+  }
   return (
     <div className="space-y-1.5">
-      <Label>{t('editor.fieldDue')}</Label>
+      {/* Styled like the field labels around it, but there's no single control to point at. */}
+      <span className="text-sm font-medium leading-none text-foreground">{t('editor.fieldDue')}</span>
       {fields.dueAt ? (
         <div>
           <button

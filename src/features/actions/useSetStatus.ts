@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useToast } from '@/components/ui/toast/toast-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { nowIso } from '@/lib/local';
+import { IN_PROGRESS_TAG, canonicalTag } from '@/domain/systemTags';
 import { statusLabel } from './status';
 import type { NodeStatus } from '@/domain/types';
 
@@ -10,11 +11,13 @@ function short(title: string): string {
   return title.length > 40 ? `${title.slice(0, 39)}…` : title;
 }
 
-/** What Undo must put back: the status *and* the original change-time. */
+/** What Undo must put back: the status, the original change-time — and the in-progress mark,
+ *  which terminal statuses strip (#716); an accidental Done must not lose it (#724). */
 interface StatusCapture {
   id: string;
   status: NodeStatus;
   statusChangedAt: string | null;
+  hadInProgress: boolean;
 }
 
 /**
@@ -33,7 +36,12 @@ export function useSetStatuses(): (ids: string[], status: NodeStatus) => void {
     for (const id of ids) {
       const node = document.nodes[id];
       if (!node || node.status === status) continue;
-      captures.push({ id, status: node.status, statusChangedAt: node.statusChangedAt });
+      captures.push({
+        id,
+        status: node.status,
+        statusChangedAt: node.statusChangedAt,
+        hadInProgress: node.tags.some((tag) => canonicalTag(tag) === IN_PROGRESS_TAG),
+      });
       dispatch({ type: 'setStatus', id, status, now: nowIso() });
     }
     if (captures.length === 0) return;
@@ -55,6 +63,10 @@ export function useSetStatuses(): (ids: string[], status: NodeStatus) => void {
             status: capture.status,
             statusChangedAt: capture.statusChangedAt,
             expectedStatus: status, // stale Undo must not overwrite a newer change (#573)
+            // Terminal statuses strip the in-progress mark (#716); an Undo of an accidental
+            // Done puts it back (#724). Reducer-side so the expectedStatus guard, fresh state,
+            // and sync conflict-replay all apply.
+            restoreInProgress: capture.hadInProgress,
             now: nowIso(),
           });
         }

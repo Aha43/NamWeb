@@ -152,6 +152,32 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ status: 'DONE', updatedAt: NOW, statusChangedAt: NOW });
   });
 
+  it('an Undo restore with restoreInProgress puts the stripped mark back (#724)', () => {
+    let doc = workspace([node('a', { status: 'NEXT', tags: ['home', 'in progress'] })]);
+    doc = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'DONE', now: NOW });
+    expect(doc.nodes['a'].tags).toEqual(['home']);
+    // The undo path: restore the old status AND the mark, guarded like any status undo (#573).
+    const undone = applyIntent(doc, {
+      type: 'setStatus', id: 'a', status: 'NEXT', expectedStatus: 'DONE', restoreInProgress: true, now: NOW,
+    });
+    expect(undone.nodes['a'].tags).toEqual(['home', 'in progress']);
+    // A stale undo (status changed again since) restores neither status nor tag.
+    const changed = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'BACKLOG', now: NOW });
+    const stale = applyIntent(changed, {
+      type: 'setStatus', id: 'a', status: 'NEXT', expectedStatus: 'DONE', restoreInProgress: true, now: NOW,
+    });
+    expect(stale.nodes['a']).toMatchObject({ status: 'BACKLOG', tags: ['home'] });
+    // restoreInProgress toward a TERMINAL status never applies (the strip wins).
+    const terminal = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'CANCELLED', restoreInProgress: true, now: NOW });
+    expect(terminal.nodes['a'].tags).toEqual(['home']);
+  });
+
+  it('updateTags cannot re-attach in-progress to a terminal node (#724)', () => {
+    const doc = workspace([node('a', { status: 'DONE', tags: ['home'] })]);
+    const next = applyIntent(doc, { type: 'updateTags', id: 'a', tags: ['home', 'In Progress'], now: NOW });
+    expect(next.nodes['a'].tags).toEqual(['home']);
+  });
+
   it('terminal statuses shed the in-progress tag — case-insensitively; restore never re-adds (#716)', () => {
     const doc = workspace([
       node('a', { status: 'NEXT', tags: ['home', 'In Progress'] }), // desktop-cased variant (#654)

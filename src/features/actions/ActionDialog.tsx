@@ -19,6 +19,8 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { ResourcesEditor } from './ResourcesEditor';
 import { LinkToHereButton } from './LinkToHereButton';
 import { ActionEditorContext } from './action-editor-context';
+import { WorkspaceContext } from '@/store/workspace-context';
+import { effectiveDue } from '@/domain/derivedDue';
 import { makeActionLink, parseActionLink } from '@/domain/actionLinks';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
@@ -120,6 +122,11 @@ export function ActionDialog({
   const editor = useContext(ActionEditorContext);
   const saveHint = IS_MAC ? t('editor.saveHintMac') : t('editor.saveHintOther');
   const isProject = node.project;
+  // A deriving project's dense due line falls back to its effective span (#706/#724) — optional
+  // context, like ResourcesEditor: presentational hosts render without it and just skip this.
+  const workspace = useContext(WorkspaceContext);
+  const effective =
+    isProject && node.deriveDue && workspace?.document ? effectiveDue(workspace.document, node.id) : null;
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
   const [tags, setTags] = useState(node.tags.join(', '));
@@ -272,14 +279,19 @@ export function ActionDialog({
               <InheritedTags tags={inheritedTags} />
             </div>
             {/* Dense until asked for (#721) — the collapsed line reads the live drafts, so
-                buffered (not-yet-saved) edits show correctly after a re-collapse. */}
+                buffered (not-yet-saved) edits show correctly after a re-collapse. A deriving
+                project's empty edges fall back to its effective span, matching the Details panel
+                (#724); errors force the block open so a failing Save can't hide its alert. */}
             <CollapsedDue
               fields={{
-                dueAt: parseFlexibleDate(due),
-                dueEndAt: parseFlexibleDate(dueEnd),
+                dueAt: parseFlexibleDate(due) ?? (effective?.derivedStart ? effective.dueAt : null),
+                dueEndAt: parseFlexibleDate(dueEnd) ?? (effective?.derivedEnd ? effective.dueEndAt : null),
                 dueTime: parseFlexibleTime(dueTime),
                 dueEndTime: parseFlexibleTime(dueEndTime),
+                derivedStart: !parseFlexibleDate(due) && Boolean(effective?.derivedStart),
+                derivedEnd: !parseFlexibleDate(dueEnd) && Boolean(effective?.derivedEnd),
               }}
+              forceExpand={dueError || dueEndError || dueTimeError || dueEndTimeError}
             >
             {(collapseDue) => (
             <div className="space-y-1.5">
