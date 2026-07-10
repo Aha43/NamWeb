@@ -3,6 +3,24 @@ import { describe, expect, it, vi } from 'vitest';
 import { PromptButton } from './prompt-button';
 
 describe('PromptButton', () => {
+  it('a form-hosted prompt never submits the hosting form — Radix portals keep React bubbling (#724)', () => {
+    const outerSubmit = vi.fn((e: React.FormEvent) => e.preventDefault());
+    const onSubmit = vi.fn();
+    render(
+      <form onSubmit={outerSubmit}>
+        <PromptButton aria-label="New project" label="Project name" onSubmit={onSubmit}>
+          open
+        </PromptButton>
+      </form>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'New project' }));
+    const input = screen.getByLabelText('Project name');
+    fireEvent.change(input, { target: { value: 'Trip' } });
+    fireEvent.submit(input.closest('form')!);
+    expect(onSubmit).toHaveBeenCalledWith('Trip');
+    expect(outerSubmit).not.toHaveBeenCalled(); // the #720-class bubble: caught at the source now
+  });
+
   it('opens a pre-filled input and submits the trimmed value', () => {
     const onSubmit = vi.fn();
     render(

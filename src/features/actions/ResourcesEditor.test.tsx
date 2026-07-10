@@ -195,6 +195,22 @@ describe('ResourcesEditor dialogs (#720)', () => {
     ]);
   });
 
+  it('editing a non-URI resource preserves its (possibly desktop-written) description (#724)', () => {
+    const onChange = vi.fn();
+    render(
+      <ResourcesEditor
+        resources={[{ type: 'FILE', value: '/old/path.pdf', description: 'Q3 report scan' }]}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit resource Q3 report scan' }));
+    fireEvent.change(screen.getByLabelText('Resource value'), { target: { value: '/new/path.pdf' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onChange).toHaveBeenCalledWith([
+      { type: 'FILE', value: '/new/path.pdf', description: 'Q3 report scan' },
+    ]);
+  });
+
   it('the commit button disables on an empty value; cancel discards', () => {
     const onChange = vi.fn();
     render(<ResourcesEditor resources={[]} onChange={onChange} />);

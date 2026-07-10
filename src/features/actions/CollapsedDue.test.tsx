@@ -31,6 +31,21 @@ describe('CollapsedDue (#721)', () => {
     expect(screen.getByText('Due Mar 20, 2026')).toBeInTheDocument();
   });
 
+  it('forceExpand opens the block so a validation alert cannot hide behind the dense line (#724)', () => {
+    const { rerender } = render(
+      <CollapsedDue fields={{ dueAt: null }} forceExpand={false}>
+        <div>the full controls</div>
+      </CollapsedDue>,
+    );
+    expect(screen.queryByText('the full controls')).not.toBeInTheDocument();
+    rerender(
+      <CollapsedDue fields={{ dueAt: null }} forceExpand>
+        <div>the full controls</div>
+      </CollapsedDue>,
+    );
+    expect(screen.getByText('the full controls')).toBeInTheDocument();
+  });
+
   it('offers "＋ Add due date" when nothing is set', () => {
     render(
       <CollapsedDue fields={{ dueAt: null }}>

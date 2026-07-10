@@ -18,9 +18,10 @@ function node(id: string, p: Partial<NamNode> = {}): NamNode {
 const doc: WorkspaceDocument = {
   formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects', nextActionsNodeId: 'actions',
   nodes: {
-    root: node('root', { childIds: ['a', 'b'] }),
+    root: node('root', { childIds: ['a', 'b', 'wip'] }),
     a: node('a', { status: 'NEXT', statusChangedAt: '2026-01-01T00:00:00.000Z' }),
     b: node('b', { status: 'NEXT' }),
+    wip: node('wip', { status: 'NEXT', tags: ['in progress'] }),
   },
   registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
 };
@@ -104,6 +105,24 @@ describe('useSetStatus — Undo toast (#567)', () => {
       ([i]) => i.type === 'setStatus' && i.status === 'NEXT',
     );
     expect(restores).toHaveLength(2);
+  });
+
+  it("Undo of an accidental Done restores the in-progress mark; a plain node's doesn't (#724)", () => {
+    const dispatch = vi.fn();
+    renderHarness(dispatch, ['wip'], 'DONE');
+    fireEvent.click(screen.getByText('go'));
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'setStatus', id: 'wip', status: 'NEXT', restoreInProgress: true }),
+    );
+
+    const dispatch2 = vi.fn();
+    renderHarness(dispatch2, ['a'], 'DONE');
+    fireEvent.click(screen.getAllByText('go')[1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(dispatch2).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'setStatus', id: 'a', status: 'NEXT', restoreInProgress: false }),
+    );
   });
 
   it('bulk no-ops entirely when every node already has the target status', () => {

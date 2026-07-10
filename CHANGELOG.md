@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Review hardenings (independent Claude review).** Pressing Enter in the move picker's "New project" prompt no longer saves and closes the whole editor underneath it (the same portal-bubbling bug as the resource dialog's, now fixed at the source in the shared prompt control); a due block collapsed over invalid text auto-expands when Save flags it, so the error is never invisible; Undo of an accidental Done now restores the *in progress* mark the terminal strip removed; editing a non-URL resource no longer wipes its (possibly desktop-written) description; the tag field can no longer re-attach *in progress* to a finished item; and a deriving project's collapsed due line in the editor shows its effective span like the Details panel does. Closes #724.
+
 ### Changed
 
 - **Resources are rows, not forms.** The always-visible add-form under the resources list is gone: rows show each resource doing its job (a named link linking, a note reading) with a "…" on the left opening a small type-appropriate dialog — which also means resources are finally *editable* (fixing a URL typo no longer takes delete + re-add). One "Add resource…" button creates via the same dialog; "Link action…" is unchanged. The editor's ⌘-Enter save now politely waits while any of these nested dialogs is open. Closes #720.

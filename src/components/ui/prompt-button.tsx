@@ -93,6 +93,10 @@ export function PromptButton({
           <form
             onSubmit={(e) => {
               e.preventDefault();
+              // Radix portals keep React-tree bubbling: without this, a PromptButton hosted
+              // inside another form (the ActionDialog's move picker) submits THAT form too —
+              // saving and closing the editor underneath the popover (#724).
+              e.stopPropagation();
               // If a suggestion is highlighted, Enter picks it instead of submitting.
               if (showList && matches[highlight]) {
                 setValue(matches[highlight]);

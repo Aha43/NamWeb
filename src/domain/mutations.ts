@@ -24,6 +24,9 @@ export type Intent =
       /** Apply only while the node still has this status. Lets a stale Undo (the node has since
        *  been re-statused by a newer change) no-op instead of overwriting the newer choice. */
       expectedStatus?: NodeStatus;
+      /** Undo of a terminal change: re-add the in-progress mark the strip removed (#716/#724).
+       *  Applies only when the restored status is non-terminal and the tag is absent. */
+      restoreInProgress?: boolean;
     }
   | { type: 'updateNode'; id: string; title: string; description: string | null; now: string }
   | { type: 'setDue'; id: string; dueAt: string | null; dueEndAt?: string | null; dueTime?: string | null; dueEndTime?: string | null; now: string }
@@ -333,10 +336,13 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (intent.expectedStatus !== undefined && node.status !== intent.expectedStatus) return next;
       node.status = intent.status;
       // A finished action isn't being worked on: terminal statuses shed the in-progress system
-      // tag (#716) — case-insensitively, since NamDesktop writes case variants (#654). Restoring
-      // to NEXT/BACKLOG never re-adds it.
+      // tag (#716) — case-insensitively, since NamDesktop writes case variants (#654). A plain
+      // restore never re-adds it; an UNDO of an accidental terminal change does (#724), carried
+      // on the intent so fresh state, the expectedStatus guard, and conflict-replay all apply.
       if (intent.status === 'DONE' || intent.status === 'CANCELLED') {
         node.tags = node.tags.filter((tag) => canonicalTag(tag) !== IN_PROGRESS_TAG);
+      } else if (intent.restoreInProgress && !node.tags.some((tag) => canonicalTag(tag) === IN_PROGRESS_TAG)) {
+        node.tags = [...node.tags, IN_PROGRESS_TAG];
       }
       node.updatedAt = intent.now;
       node.statusChangedAt = intent.statusChangedAt === undefined ? intent.now : intent.statusChangedAt;
@@ -381,6 +387,11 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const node = next.nodes[intent.id];
       if (!node) return next;
       node.tags = normalizeTags(intent.tags);
+      // The terminal-strip invariant holds here too (#724): the editor's tag field could
+      // otherwise re-attach "in progress" to a finished item, with no row toggle to remove it.
+      if (node.status === 'DONE' || node.status === 'CANCELLED') {
+        node.tags = node.tags.filter((tag) => canonicalTag(tag) !== IN_PROGRESS_TAG);
+      }
       node.updatedAt = intent.now;
       return next;
     }
