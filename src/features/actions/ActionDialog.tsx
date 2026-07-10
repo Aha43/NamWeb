@@ -152,6 +152,7 @@ export function ActionDialog({
   }, [linkBackRef]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [movePickerOpen, setMovePickerOpen] = useState(false);
+  const [blockerPickerOpen, setBlockerPickerOpen] = useState(false);
   // A nested modal inside ResourcesEditor (resource dialog / link picker) — same ⌘Enter rule
   // as the move picker (#574, #720).
   const [resourcesModalOpen, setResourcesModalOpen] = useState(false);
@@ -226,7 +227,7 @@ export function ActionDialog({
   const saveRef = useRef(doSave);
   saveRef.current = doSave;
   useEffect(() => {
-    if (!open || movePickerOpen || resourcesModalOpen) return;
+    if (!open || movePickerOpen || resourcesModalOpen || blockerPickerOpen) return;
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.isComposing) {
         e.preventDefault();
@@ -235,7 +236,7 @@ export function ActionDialog({
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, movePickerOpen, resourcesModalOpen]);
+  }, [open, movePickerOpen, resourcesModalOpen, blockerPickerOpen]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -523,23 +524,24 @@ export function ActionDialog({
                 <p className="text-xs text-muted-foreground">{t('editor.noPrereqs')}</p>
               )}
               {blockerCandidates && blockerCandidates.length > 0 && (
-                <select
-                  aria-label={t('editor.addPrereqAria')}
-                  defaultValue=""
-                  onChange={(e) => {
-                    if (e.target.value) onAddPrerequisite(e.target.value);
-                  }}
-                  className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
-                >
-                  <option value="" disabled>
+                // The action browser (#657), not a flat select — the whole workspace's actions
+                // in one <select> is unusable past a handful. `blockerCandidates` stays the
+                // selectable set (canAddPrerequisite already excludes self, cycles, projects),
+                // so projects are navigable but only valid prerequisites confirm (#727).
+                <>
+                  <Button type="button" variant="outline" size="sm" onClick={() => setBlockerPickerOpen(true)}>
                     {t('editor.addPrereqOption')}
-                  </option>
-                  {blockerCandidates.map((candidate) => (
-                    <option key={candidate.id} value={candidate.id}>
-                      {candidate.label}
-                    </option>
-                  ))}
-                </select>
+                  </Button>
+                  <ProjectPickerDialog
+                    open={blockerPickerOpen}
+                    onOpenChange={setBlockerPickerOpen}
+                    title={t('editor.addPrereqTitle', { title: node.title })}
+                    confirmLabel={t('editor.addPrereqConfirm')}
+                    targets={blockerCandidates}
+                    mode="actions"
+                    onConfirm={onAddPrerequisite}
+                  />
+                </>
               )}
               {wouldUnblock && wouldUnblock.length > 0 && (
                 <p className="text-xs text-muted-foreground">{t('editor.wouldUnblock', { list: wouldUnblock.join(', ') })}</p>
