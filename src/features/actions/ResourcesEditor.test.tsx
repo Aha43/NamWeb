@@ -122,15 +122,18 @@ describe('ResourcesEditor action links (#658)', () => {
 });
 
 describe('ResourcesEditor http links (#715)', () => {
-  it('adds a URI with an optional display name stored in description — value stays the pure URL', () => {
+  it('adds a URI with an optional display name stored in description — via the dialog (#720)', () => {
     const onChange = vi.fn();
     render(<ResourcesEditor resources={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
     fireEvent.change(screen.getByLabelText('Resource value'), { target: { value: 'https://example.com/docs' } });
     fireEvent.change(screen.getByLabelText('Link name (optional)'), { target: { value: 'The docs' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(onChange).toHaveBeenCalledWith([
       { type: 'URI', value: 'https://example.com/docs', description: 'The docs' },
     ]);
+    // The dialog closed after the commit.
+    expect(screen.queryByLabelText('Resource value')).not.toBeInTheDocument();
   });
 
   it('an http resource renders as a real link — named when a name is set, opening a new tab', () => {
@@ -162,7 +165,52 @@ describe('ResourcesEditor http links (#715)', () => {
     );
     expect(screen.getByText('just a note')).toBeInTheDocument();
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
     fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'TEXT' } });
     expect(screen.queryByLabelText('Link name (optional)')).not.toBeInTheDocument();
+  });
+});
+
+describe('ResourcesEditor dialogs (#720)', () => {
+  it('edits a resource in place via the row\'s "…" — prefilled, mapped back to its index', () => {
+    const onChange = vi.fn();
+    render(
+      <ResourcesEditor
+        resources={[
+          { type: 'TEXT', value: 'keep me', description: null },
+          { type: 'URI', value: 'https://example.com/docs', description: 'The docs' },
+        ]}
+        onChange={onChange}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit resource The docs' }));
+    const value = screen.getByLabelText('Resource value');
+    expect(value).toHaveValue('https://example.com/docs');
+    expect(screen.getByLabelText('Link name (optional)')).toHaveValue('The docs');
+    fireEvent.change(screen.getByLabelText('Link name (optional)'), { target: { value: 'The real docs' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onChange).toHaveBeenCalledWith([
+      { type: 'TEXT', value: 'keep me', description: null },
+      { type: 'URI', value: 'https://example.com/docs', description: 'The real docs' },
+    ]);
+  });
+
+  it('the commit button disables on an empty value; cancel discards', () => {
+    const onChange = vi.fn();
+    render(<ResourcesEditor resources={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    expect(screen.getByRole('button', { name: 'Add' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Resource value'), { target: { value: 'x' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('reports nested-dialog state so a hosting editor can suspend ⌘Enter (#574/#720)', () => {
+    const onNestedOpenChange = vi.fn();
+    render(<ResourcesEditor resources={[]} onChange={vi.fn()} onNestedOpenChange={onNestedOpenChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    expect(onNestedOpenChange).toHaveBeenLastCalledWith(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(onNestedOpenChange).toHaveBeenLastCalledWith(false);
   });
 });

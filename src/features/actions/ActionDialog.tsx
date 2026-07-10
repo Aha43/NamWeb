@@ -144,6 +144,9 @@ export function ActionDialog({
   }, [linkBackRef]);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [movePickerOpen, setMovePickerOpen] = useState(false);
+  // A nested modal inside ResourcesEditor (resource dialog / link picker) — same ⌘Enter rule
+  // as the move picker (#574, #720).
+  const [resourcesModalOpen, setResourcesModalOpen] = useState(false);
   // The scheduling extras (start time-of-day, end date, end time) collapse by default to keep the
   // common case — just a due date — tidy; open when the action already carries any of that data (#559).
   const [showDueExtras, setShowDueExtras] = useState(
@@ -215,7 +218,7 @@ export function ActionDialog({
   const saveRef = useRef(doSave);
   saveRef.current = doSave;
   useEffect(() => {
-    if (!open || movePickerOpen) return;
+    if (!open || movePickerOpen || resourcesModalOpen) return;
     function onKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.isComposing) {
         e.preventDefault();
@@ -224,7 +227,7 @@ export function ActionDialog({
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, movePickerOpen]);
+  }, [open, movePickerOpen, resourcesModalOpen]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -445,6 +448,9 @@ export function ActionDialog({
               onFollowLink={(targetId) => {
                 if (doSave()) editor?.openEditor(targetId);
               }}
+              // The topmost modal owns ⌘Enter (#574): suspend save-from-anywhere while the
+              // nested resource dialog / link picker is open (#720).
+              onNestedOpenChange={setResourcesModalOpen}
             />
             <LinkToHereButton
               nodeId={node.id}

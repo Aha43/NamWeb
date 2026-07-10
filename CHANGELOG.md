@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Resources are rows, not forms.** The always-visible add-form under the resources list is gone: rows show each resource doing its job (a named link linking, a note reading) with a "…" on the left opening a small type-appropriate dialog — which also means resources are finally *editable* (fixing a URL typo no longer takes delete + re-add). One "Add resource…" button creates via the same dialog; "Link action…" is unchanged. The editor's ⌘-Enter save now politely waits while any of these nested dialogs is open. Closes #720.
+
 ### Added
 
 - **Web links grew up.** A URL resource can carry a display name — stored in the resource's existing (never-used) description field, so the value stays a pure URL and nothing new syncs. Rows show the name when set, hovering reveals the underlying URL either way, and clicking an http(s) resource opens it in the browser like the normal link it is (new tab). Closes #715.
