@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform);
 import { parseFlexibleDate, parseFlexibleTime } from '@/lib/dates';
 import { DatePickerPopover } from '@/components/ui/date-picker';
+import { CollapsedDue } from './CollapsedDue';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
 
 /** The edited fields the dialog produces on save. Tags are raw (un-normalized). */
@@ -267,6 +268,15 @@ export function ActionDialog({
               <TagsInput id="action-tags" value={tags} onChange={setTags} suggestions={availableTags} />
               <InheritedTags tags={inheritedTags} />
             </div>
+            {/* Dense until asked for (#721) — collapsed shows the node's set time compactly. */}
+            <CollapsedDue
+              fields={{
+                dueAt: node.dueAt ?? null,
+                dueEndAt: node.dueEndAt ?? null,
+                dueTime: node.dueTime ?? null,
+                dueEndTime: node.dueEndTime ?? null,
+              }}
+            >
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor="action-due">{t('editor.fieldDue')}</Label>
@@ -409,6 +419,7 @@ export function ActionDialog({
                 </p>
               )}
             </div>
+            </CollapsedDue>
           </div>
           <fieldset className="space-y-1.5">
             <legend className="text-sm font-medium text-foreground">{t('editor.statusLegend')}</legend>

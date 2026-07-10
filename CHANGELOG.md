@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Due controls are dense until asked for.** In the action editor and the project Details panel, the four-input due block collapses to the set time shown as the same compact hint rows use (range, times, derived edges italic) with a small edit affordance — or a "＋ Add due date" opener when nothing is set. Expanding reveals the familiar full controls; nothing about how due dates save has changed. Closes #721.
+
 ### Added
 
 - **Web links grew up.** A URL resource can carry a display name — stored in the resource's existing (never-used) description field, so the value stays a pure URL and nothing new syncs. Rows show the name when set, hovering reveals the underlying URL either way, and clicking an http(s) resource opens it in the browser like the normal link it is (new tab). Closes #715.
