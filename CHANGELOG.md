@@ -14,6 +14,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **Dense mode trims the Summary button to its icon.** The document icon is descriptive on its own and the tooltip still names it (and the `s` shortcut) — one less word on the dense workbench header. Closes #731.
 - **Picking a prerequisite browses, not scrolls.** The editor's "Blocked by" section adds a prerequisite through the same column-style action browser used for linking and moving — instead of the old flat select listing every action in the workspace, which was nearly unusable with real data. Same valid-target rules (no cycles, no projects); the ⌘-Enter save politely waits while the browser is open. Closes #727.
 
 ## [1.3.0] - 2026-07-10

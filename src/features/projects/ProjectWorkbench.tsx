@@ -5,6 +5,7 @@ import { InlineRename } from '../actions/InlineRename';
 import { DueHintLabel } from '../actions/DueHintLabel';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
+import { useSettings } from '@/components/settings/settings-context';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import {
@@ -229,6 +230,7 @@ export function ProjectWorkbench({
 
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const { dense } = useSettings();
 
   // Workbench keyboard shortcuts: `x` Details, `y` Actions, `z` Sub-projects (#436), `s` Summary
   // (#472). One key per target so each is predictable, rather than one overloaded "toggle all".
@@ -466,10 +468,12 @@ export function ProjectWorkbench({
               variant="ghost"
               size="sm"
               className="gap-1.5"
+              aria-label={t('workbench.summary')}
               onClick={() => setSummaryOpen(true)}
             >
               <FileText className="h-4 w-4" />
-              {t('workbench.summary')}
+              {/* Dense trims the text — the icon is descriptive and the tooltip names it (#731). */}
+              {!dense && t('workbench.summary')}
             </Button>
           </Tooltip>
         </div>

@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { NamNode } from '../../domain/types';
 import type { ActionRowData } from '../actions/rows';
 import { ProjectWorkbench } from './ProjectWorkbench';
+import { SettingsContext, type SettingsContextValue } from '@/components/settings/settings-context';
 
 function pnode(id: string, title: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -35,6 +36,30 @@ function setup(over: Partial<React.ComponentProps<typeof ProjectWorkbench>> = {}
 }
 
 describe('ProjectWorkbench', () => {
+  it('dense mode trims the Summary button to its icon, keeping the accessible name (#731)', () => {
+    const settings = { dense: true } as SettingsContextValue;
+    render(
+      <SettingsContext.Provider value={settings}>
+        <ProjectWorkbench
+          project={pnode('p', 'Kitchen reno')}
+          breadcrumb={[]}
+          actions={[]}
+          subProjects={[]}
+          onOpenProject={vi.fn()} onOpenProjects={vi.fn()} onAddAction={vi.fn()}
+          onAddSubProject={vi.fn()} onSetStatus={vi.fn()} onEdit={vi.fn()} onRename={vi.fn()}
+        />
+      </SettingsContext.Provider>,
+    );
+    const button = screen.getByRole('button', { name: 'Summary' });
+    expect(button).toBeInTheDocument();
+    expect(button).not.toHaveTextContent('Summary'); // icon-only — the label text is gone
+  });
+
+  it('comfortable (non-dense) keeps the Summary text label (#731)', () => {
+    setup();
+    expect(screen.getByRole('button', { name: 'Summary' })).toHaveTextContent('Summary');
+  });
+
   it('shows the breadcrumb, actions, and sub-project sections', () => {
     setup();
     expect(screen.getByText('Kitchen reno')).toBeInTheDocument();
