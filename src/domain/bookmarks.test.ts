@@ -31,6 +31,27 @@ describe('bookmark intents', () => {
     expect(doc.bookmarks?.map((b) => b.id)).toEqual(['b2']);
   });
 
+  it('renameBookmark sets the label; trims; empty and unknown ids are safe no-ops (#732)', () => {
+    let doc = applyIntent(createDefaultWorkspace(), { type: 'addBookmark', bookmark: bm() });
+    doc = applyIntent(doc, { type: 'renameBookmark', id: 'b1', label: '  Vacation (Japan)  ' });
+    expect(doc.bookmarks?.[0].label).toBe('Vacation (Japan)');
+    // Everything else on the bookmark survives a rename.
+    expect(doc.bookmarks?.[0]).toEqual(bm({ label: 'Vacation (Japan)' }));
+    // Empty (after trim) never lands — the dialog guards, this covers replay/imports.
+    doc = applyIntent(doc, { type: 'renameBookmark', id: 'b1', label: '   ' });
+    expect(doc.bookmarks?.[0].label).toBe('Vacation (Japan)');
+    // Unknown id (removed on another device since): tolerated no-op.
+    doc = applyIntent(doc, { type: 'renameBookmark', id: 'ghost', label: 'x' });
+    expect(doc.bookmarks).toHaveLength(1);
+  });
+
+  it('renameBookmark on a document with no bookmarks field is a safe no-op', () => {
+    const doc = createDefaultWorkspace();
+    delete (doc as Partial<WorkspaceDocument>).bookmarks;
+    const next = applyIntent(doc, { type: 'renameBookmark', id: 'b1', label: 'x' });
+    expect(next.bookmarks ?? []).toEqual([]);
+  });
+
   it('reorderBookmarks stores the permutation; unknown ids skipped, unmentioned appended (#636)', () => {
     let doc = applyIntent(createDefaultWorkspace(), { type: 'addBookmark', bookmark: bm() });
     doc = applyIntent(doc, { type: 'addBookmark', bookmark: bm({ id: 'b2', label: 'Two' }) });

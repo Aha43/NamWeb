@@ -50,6 +50,7 @@ export type Intent =
   | { type: 'deleteMissionControl'; name: string }
   | { type: 'addBookmark'; bookmark: Bookmark }
   | { type: 'removeBookmark'; id: string }
+  | { type: 'renameBookmark'; id: string; label: string }
   | { type: 'reorderBookmarks'; order: string[] }
   | { type: 'reorderView'; view: string; order: string[] }
   | { type: 'reorderChildren'; parentId: string; order: string[] }
@@ -263,6 +264,7 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'deleteTag' ||
     intent.type === 'addBookmark' ||
     intent.type === 'removeBookmark' ||
+    intent.type === 'renameBookmark' ||
     intent.type === 'reorderBookmarks' ||
     intent.type === 'restoreNodes'
   ) {
@@ -551,6 +553,14 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'removeBookmark': {
       next.bookmarks = (next.bookmarks ?? []).filter((b) => b.id !== intent.id);
+      return next;
+    }
+    case 'renameBookmark': {
+      // An empty label never lands (the dialog guards too — this covers replay/imports);
+      // an unknown id is a tolerated no-op (removed on another device since).
+      const label = intent.label.trim();
+      if (!label) return next;
+      next.bookmarks = (next.bookmarks ?? []).map((b) => (b.id === intent.id ? { ...b, label } : b));
       return next;
     }
     case 'reorderBookmarks': {

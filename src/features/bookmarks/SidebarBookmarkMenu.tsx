@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, Ellipsis, X } from 'lucide-react';
+import { ChevronDown, Ellipsis, Pencil, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,9 +12,10 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useWorkspaceContext } from '@/store/workspace-context';
-import { allOpenableProjects } from '@/domain/lenses';
+import { allOpenableProjects, projectPath } from '@/domain/lenses';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
 import { ReorderControls } from '@/features/actions/ReorderControls';
+import { RenameBookmarkDialog } from './RenameBookmarkDialog';
 import { bookmarksOf, bookmarkTarget, isBookmarkStale, movedBookmarkOrder } from './bookmarks';
 import type { Bookmark } from '@/domain/types';
 
@@ -39,6 +40,8 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
   const { document, dispatch } = useWorkspaceContext();
   // The project id the "…" picker starts from; null = picker closed.
   const [browseFrom, setBrowseFrom] = useState<string | null>(null);
+  // The bookmark being renamed (#732); null = dialog closed.
+  const [renaming, setRenaming] = useState<Bookmark | null>(null);
   // Stale bookmarks included (greyed) — the desktop must be able to see and remove them (#594).
   const bookmarks = document ? bookmarksOf(document).filter((b) => b.kind === kind) : [];
   if (!document || bookmarks.length === 0) return null;
@@ -47,6 +50,17 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
   const move = (id: string, direction: 'up' | 'down') => {
     const order = movedBookmarkOrder(document, bookmarks, id, direction);
     if (order) dispatch({ type: 'reorderBookmarks', order });
+  };
+  // The technical truth behind a label (#732): the full project path, or the tag selection —
+  // a renamed bookmark stays legible on hover. Stale rows carry their own suffix instead.
+  const tooltipFor = (bookmark: Bookmark): string => {
+    if (isBookmarkStale(document, bookmark)) return '';
+    if (bookmark.kind === 'project' && bookmark.projectId) {
+      const node = document.nodes[bookmark.projectId];
+      return [...projectPath(document, node.id), node.title].join(' › ');
+    }
+    const tags = (bookmark.tags ?? []).join(', ');
+    return bookmark.nextOnly ? t('bookmarks.tagsTooltipNext', { tags }) : tags;
   };
   return (
     <>
@@ -70,21 +84,25 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
                   onUp={index > 0 ? () => move(bookmark.id, 'up') : undefined}
                   onDown={index < bookmarks.length - 1 ? () => move(bookmark.id, 'down') : undefined}
                 />
-                <DropdownMenuItem
-                  className={cn('min-w-0 flex-1', stale && 'text-muted-foreground')}
-                  disabled={stale}
-                  onClick={() => navigate(bookmarkTarget(bookmark))}
-                >
-                  <span
-                    aria-hidden
-                    className="mr-2 h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={stale ? undefined : { backgroundColor: bookmark.color }}
-                  />
-                  <span className="max-w-[14rem] truncate">
-                    {bookmark.label}
-                    {stale && <span className="text-muted-foreground">{t('bookmarks.staleSuffix')}</span>}
-                  </span>
-                </DropdownMenuItem>
+                {/* side=bottom: a right-side tooltip would sit exactly over the row's own
+                    pencil/✕ buttons and intercept the pointer (hovering it keeps it open). */}
+                <Tooltip label={tooltipFor(bookmark)} side="bottom">
+                  <DropdownMenuItem
+                    className={cn('min-w-0 flex-1', stale && 'text-muted-foreground')}
+                    disabled={stale}
+                    onClick={() => navigate(bookmarkTarget(bookmark))}
+                  >
+                    <span
+                      aria-hidden
+                      className="mr-2 h-2.5 w-2.5 shrink-0 rounded-full"
+                      style={stale ? undefined : { backgroundColor: bookmark.color }}
+                    />
+                    <span className="max-w-[14rem] truncate">
+                      {bookmark.label}
+                      {stale && <span className="text-muted-foreground">{t('bookmarks.staleSuffix')}</span>}
+                    </span>
+                  </DropdownMenuItem>
+                </Tooltip>
                 {kind === 'project' && bookmark.projectId && !stale && (
                   <DropdownMenuItem
                     aria-label={t('bookmarks.browseFromAria', { label: bookmark.label })}
@@ -92,6 +110,19 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
                     onClick={() => setBrowseFrom(bookmark.projectId!)}
                   >
                     <Ellipsis className="h-4 w-4" />
+                  </DropdownMenuItem>
+                )}
+                {/* A menu item (not a plain button): selecting closes the menu before the dialog
+                    opens — an open dropdown is modal and would aria-hide the page under it.
+                    Renaming is a one-at-a-time act anyway (unlike removing dead ones in a row).
+                    Stale rows don't offer it — a dead bookmark gets removed, not polished. */}
+                {!stale && (
+                  <DropdownMenuItem
+                    aria-label={t('bookmarks.renameAria', { label: bookmark.label })}
+                    className="shrink-0 px-2 text-muted-foreground"
+                    onClick={() => setRenaming(bookmark)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
                   </DropdownMenuItem>
                 )}
                 {/* Plain button: removing keeps the menu open (remove several dead ones in a row). */}
@@ -108,6 +139,19 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
           })}
         </DropdownMenuContent>
       </DropdownMenu>
+      <RenameBookmarkDialog
+        open={renaming !== null}
+        bookmark={renaming}
+        projectName={
+          renaming?.kind === 'project' && renaming.projectId && !isBookmarkStale(document, renaming)
+            ? document.nodes[renaming.projectId]?.title
+            : undefined
+        }
+        onOpenChange={(open) => {
+          if (!open) setRenaming(null);
+        }}
+        onRename={(label) => renaming && dispatch({ type: 'renameBookmark', id: renaming.id, label })}
+      />
       {kind === 'project' && (
         <ProjectPickerDialog
           open={browseFrom !== null}
