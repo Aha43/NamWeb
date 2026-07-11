@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-07-11
+
+**Small dials, daily surfaces.** Three one-and-two-issue sprints straight from holiday
+dogfooding, each closing a friction the heaviest-used features had grown: prerequisites are
+picked in the column browser instead of an unusable flat select, the exported summary can be
+edited in place before copying (Regenerate as the undo, a guard so a stray Escape can't eat
+your words), bookmarks take custom names with the technical truth on hover, and dense mode
+sheds one more word. Hardened by the dual-review dance — three Claude findings (one a genuine
+capability gap: a dead-end picker), then a second consecutive fully clean Codex pass.
+
 ### Fixed
 
 - **Review hardenings (independent Claude review).** The prerequisite picker's candidate list now agrees exactly with what its columns can browse — no more dead-end picker (an "Add a prerequisite…" button whose targets were all unreachable), and inbox captures are deliberately out of the candidate set: clarify first, then block. Closing the summary dialog with edited-but-uncopied Markdown now asks before discarding (Regenerate stays the deliberate in-dialog undo; ⌘-Enter copy-&-close never asks — the copy is what makes it safe). Plus a dead locale key swept. Closes #735.
@@ -1405,7 +1415,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/Aha43/NamWeb/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Aha43/NamWeb/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Aha43/NamWeb/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Aha43/NamWeb/compare/v1.0.0...v1.1.0
