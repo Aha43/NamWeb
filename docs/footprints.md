@@ -11,6 +11,28 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.4.0 — 2026-07-11
+
+*(one day; 6 PRs, 1 release)* The first release cut mid-dogfooding-holiday, and it reads like
+one: three micro-sprints (one issue, one issue, two issues) each born from a concrete moment of
+friction in the features the user leans on hardest. The blocked-by selector — "an old style
+almost impossible to use flat list" — became the column browser (#728), and the review round
+turned that swap into the cut's best finding: the browser was *usable but incomplete* (inbox
+captures were valid candidates no column could reach — a dead-end picker), fixed at the lens so
+the candidate set and the browsable set can never disagree again (#736), with a deliberate
+product call recorded: clarify a capture first, then block on it. The summary export — the
+user's handover artifact to his AI workflows — learned in-place editing with Regenerate as undo
+(#730), then grew a discard guard when the reviewer weighed Escape across the new editor family
+and found it heavier in one dialog than the others. Bookmarks took custom names ("Next sprint
+(NamWeb)", "Economy of trip to Japan") over an already-stored label field that had been half a
+feature since #560 (#734), tooltips now carrying the technical truth. Process note: the
+sprint-planning prelude did real work this round — four user actions became two issues once the
+overlap was seen, and the parallel merge train landed without a single CHANGELOG conflict.
+Codex: second consecutive fully clean pass. Verdict: **polishing**, contentedly — the everyday
+surfaces are absorbing dogfooding faster than it finds new arcs; the parked design items (#708
+inverse holiday, projects in Due view, an Inbox browse column if the dropped workflow is
+missed) wait for the next converging mood.
+
 ## v1.3.0 — 2026-07-10
 
 *(two days; 6 PRs, 1 release)* Two small dogfooding sprints that share one instinct: **the
