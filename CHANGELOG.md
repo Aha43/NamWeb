@@ -10,6 +10,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Bookmark labels grow up.** A bookmark's name is now yours: a pencil in the bookmark menus opens a rename dialog (prefilled; project bookmarks get a one-click "Use project name"; empty names can't save — duplicates are your call). So the third "Next sprint" bookmark can become "Next sprint (NamWeb)", and a tag pair like `economy` + `summer-trip-26` can read "Economy of trip to Japan". Hover a row for the technical truth underneath: the full project path, or the tag list (+ Next only). Closes #732.
 - **Edit the summary before you copy it.** The project summary dialog grew an Edit toggle: tweak the generated Markdown in place — a remark for the reader, a one-off note that doesn't belong in the project — and Copy/⌘-Enter take your version. Regenerate discards the edits and returns to the live generated text (the include-filters lock while a draft exists, so a filter flip can't silently clobber your words). Real content still belongs in the project as actions; this is for the small stuff. Closes #729.
 
 ### Changed

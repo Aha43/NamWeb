@@ -97,6 +97,59 @@ test.describe('bookmark as starting point (#595)', () => {
   });
 });
 
+test.describe('bookmark labels grow up (#732)', () => {
+  // The dogfooding case: every dev project has a "Next sprint" — the bookmark needs its own name.
+  const seed = new DocBuilder()
+    .project('dev', 'NAM dev')
+    .project('web', 'Web', { under: 'dev' })
+    .project('sprint', 'Next sprint', { under: 'web' })
+    .action('a1', 'Book flights', { tags: ['economy', 'summer-trip-26'] })
+    .build();
+  seed.bookmarks = [
+    { id: 'bm1', label: 'Next sprint', kind: 'project' as const, projectId: 'sprint', color: '#3b82f6' },
+    { id: 'bm2', label: '#economy', kind: 'tagFilter' as const, tags: ['economy', 'summer-trip-26'], nextOnly: true, color: '#10b981' },
+  ];
+  test.use({ seedDoc: seed });
+
+  test('a project bookmark tells its full path on hover and takes a custom name', async ({ page, doc }) => {
+    await page.goto('/inbox');
+    await page.getByRole('button', { name: 'Project bookmarks' }).click();
+    const menu = page.getByRole('menu');
+
+    // The row's tooltip is the technical truth: the full project path.
+    await menu.getByRole('menuitem', { name: 'Next sprint', exact: true }).hover();
+    await expect(page.getByRole('tooltip')).toHaveText('NAM dev › Web › Next sprint');
+
+    // Rename via the pencil — the label is the bookmark's own, the project is untouched.
+    await menu.getByRole('menuitem', { name: 'Rename bookmark: Next sprint' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Rename bookmark' });
+    await dialog.getByLabel('Name').fill('Next sprint (NamWeb)');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect.poll(() => doc.current().bookmarks?.[0].label).toBe('Next sprint (NamWeb)');
+    expect(doc.current().nodes['sprint'].title).toBe('Next sprint');
+
+    await page.getByRole('button', { name: 'Project bookmarks' }).click();
+    await expect(page.getByRole('menu').getByText('Next sprint (NamWeb)')).toBeVisible();
+  });
+
+  test('a context bookmark lists its tags on hover and takes a human name', async ({ page, doc }) => {
+    await page.goto('/inbox');
+    await page.getByRole('button', { name: 'Context bookmarks' }).click();
+    const menu = page.getByRole('menu');
+
+    await menu.getByRole('menuitem', { name: '#economy', exact: true }).hover();
+    await expect(page.getByRole('tooltip')).toHaveText('economy, summer-trip-26 · Next only');
+
+    await menu.getByRole('menuitem', { name: 'Rename bookmark: #economy' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Rename bookmark' });
+    // No live project behind a tag filter — no "Use project name" helper.
+    await expect(dialog.getByRole('button', { name: 'Use project name' })).toHaveCount(0);
+    await dialog.getByLabel('Name').fill('Economy of trip to Japan');
+    await dialog.getByRole('button', { name: 'Save' }).click();
+    await expect.poll(() => doc.current().bookmarks?.[1].label).toBe('Economy of trip to Japan');
+  });
+});
+
 test.describe('without bookmarks', () => {
   test.use({ seedDoc: new DocBuilder().project('vac', 'Vacation').build() });
 

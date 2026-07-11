@@ -132,6 +132,49 @@ describe('SidebarBookmarkMenu (#588)', () => {
     expect(dispatch).toHaveBeenCalledWith({ type: 'reorderBookmarks', order: ['b3', 'b4', 'b1'] });
   });
 
+  it('the pencil opens a rename dialog — prefilled, empty-guarded, dispatching renameBookmark (#732)', () => {
+    const dispatch = vi.fn();
+    render(
+      <MemoryRouter>
+        <WorkspaceContext.Provider value={{ document: doc([projectBm]), dispatch } as unknown as UseWorkspace}>
+          <SidebarBookmarkMenu kind="project" />
+        </WorkspaceContext.Provider>
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rename bookmark: Vacation' }));
+    const input = screen.getByLabelText('Name');
+    expect(input).toHaveValue('Vacation'); // prefilled with the current label
+
+    // Empty (whitespace) can't be saved.
+    fireEvent.change(input, { target: { value: '   ' } });
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+
+    // "Use project name" pulls the live project title back in.
+    fireEvent.click(screen.getByRole('button', { name: 'Use project name' }));
+    expect(input).toHaveValue('Vacation');
+
+    fireEvent.change(input, { target: { value: 'Vacation (Japan)' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(dispatch).toHaveBeenCalledWith({ type: 'renameBookmark', id: 'b1', label: 'Vacation (Japan)' });
+    expect(screen.queryByLabelText('Name')).not.toBeInTheDocument(); // dialog closed
+  });
+
+  it('a context bookmark renames too, but has no "Use project name" (#732)', () => {
+    const dispatch = vi.fn();
+    render(
+      <MemoryRouter>
+        <WorkspaceContext.Provider value={{ document: doc([contextBm]), dispatch } as unknown as UseWorkspace}>
+          <SidebarBookmarkMenu kind="tagFilter" />
+        </WorkspaceContext.Provider>
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rename bookmark: #home' }));
+    expect(screen.queryByRole('button', { name: 'Use project name' })).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Economy of trip to Japan' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(dispatch).toHaveBeenCalledWith({ type: 'renameBookmark', id: 'b3', label: 'Economy of trip to Japan' });
+  });
+
   it('a context bookmark navigates with tags + nextOnly encoded', () => {
     renderMenu('tagFilter', [projectBm, contextBm]);
     fireEvent.click(screen.getByRole('menuitem', { name: '#home' }));
