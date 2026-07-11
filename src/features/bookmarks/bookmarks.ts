@@ -71,6 +71,14 @@ export function bookmarkTarget(bookmark: Bookmark): string {
   return params ? `/tags?${params}` : '/tags';
 }
 
+/** The speed-dial route (#738): focus scoped to the bookmark — the deck, not the view. Both
+ *  scopes are long-standing FocusPage URLs (project = the workbench Focus semantics). */
+export function bookmarkFocusTarget(bookmark: Bookmark): string {
+  if (bookmark.kind === 'project') return `/focus?project=${bookmark.projectId}`;
+  const params = tagFilterParams(bookmark.tags ?? [], Boolean(bookmark.nextOnly)).toString();
+  return params ? `/focus?${params}` : '/focus';
+}
+
 /** A project bookmark whose project no longer exists (or is no longer a project) is stale. */
 export function isBookmarkStale(doc: WorkspaceDocument, bookmark: Bookmark): boolean {
   if (bookmark.kind !== 'project') return false;

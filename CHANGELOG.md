@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **The Focus speed dial.** The command bar's Focus entry became a split-button like its neighbors: the ▾ chevron lists all your bookmarks, and clicking one deals the deck scoped to it — a project bookmark focuses its open actions (the workbench Focus, minus the walk), a context bookmark focuses its tag filter. Your rituals, one click from anywhere: tune a context once, name it ("After work"), speed-dial into it daily. The plain Focus click keeps meaning what it always did. Closes #738.
+
 ## [1.4.0] - 2026-07-11
 
 **Small dials, daily surfaces.** Three one-and-two-issue sprints straight from holiday
