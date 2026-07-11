@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Edit the summary before you copy it.** The project summary dialog grew an Edit toggle: tweak the generated Markdown in place — a remark for the reader, a one-off note that doesn't belong in the project — and Copy/⌘-Enter take your version. Regenerate discards the edits and returns to the live generated text (the include-filters lock while a draft exists, so a filter flip can't silently clobber your words). Real content still belongs in the project as actions; this is for the small stuff. Closes #729.
+
 ### Changed
 
 - **Picking a prerequisite browses, not scrolls.** The editor's "Blocked by" section adds a prerequisite through the same column-style action browser used for linking and moving — instead of the old flat select listing every action in the workspace, which was nearly unusable with real data. Same valid-target rules (no cycles, no projects); the ⌘-Enter save politely waits while the browser is open. Closes #727.
