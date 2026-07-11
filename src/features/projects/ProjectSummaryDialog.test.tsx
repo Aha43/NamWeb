@@ -81,6 +81,56 @@ describe('ProjectSummaryDialog', () => {
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
   });
 
+  it('closing with un-copied edits asks first; Regenerate-free discard needs the confirm (#735)', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <ProjectSummaryDialog open onOpenChange={onOpenChange} title="P" buildSummary={() => '# generated'} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByLabelText('Project summary (Markdown)'), { target: { value: 'my words' } });
+
+    // Close with a dirty draft → the confirm appears instead of closing.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]); // corner ✕ and footer Close share the guard
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(screen.getByText('Discard your edits?')).toBeInTheDocument();
+
+    // Cancel keeps editing (nothing lost)…
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByLabelText('Project summary (Markdown)')).toHaveValue('my words');
+
+    // …Discard closes for real.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]); // corner ✕ and footer Close share the guard
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('an untouched draft closes freely — no confirm (#735)', () => {
+    const onOpenChange = vi.fn();
+    render(
+      <ProjectSummaryDialog open onOpenChange={onOpenChange} title="P" buildSummary={() => '# generated'} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Close' })[0]); // corner ✕ and footer Close share the guard
+    expect(screen.queryByText('Discard your edits?')).not.toBeInTheDocument();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('⌘/Ctrl+Enter with a dirty draft copies it and closes without asking (#735)', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    const onOpenChange = vi.fn();
+    render(
+      <ProjectSummaryDialog open onOpenChange={onOpenChange} title="P" buildSummary={() => '# generated'} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const area = screen.getByLabelText('Project summary (Markdown)');
+    fireEvent.change(area, { target: { value: 'my words' } });
+    fireEvent.keyDown(area, { key: 'Enter', ctrlKey: true });
+    expect(writeText).toHaveBeenCalledWith('my words'); // the copy is what makes it safe
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(screen.queryByText('Discard your edits?')).not.toBeInTheDocument();
+  });
+
   it('⌘/Ctrl+Enter copies and closes (#477)', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });

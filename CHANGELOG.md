@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Review hardenings (independent Claude review).** The prerequisite picker's candidate list now agrees exactly with what its columns can browse — no more dead-end picker (an "Add a prerequisite…" button whose targets were all unreachable), and inbox captures are deliberately out of the candidate set: clarify first, then block. Closing the summary dialog with edited-but-uncopied Markdown now asks before discarding (Regenerate stays the deliberate in-dialog undo; ⌘-Enter copy-&-close never asks — the copy is what makes it safe). Plus a dead locale key swept. Closes #735.
+
 ### Added
 
 - **Bookmark labels grow up.** A bookmark's name is now yours: a pencil in the bookmark menus opens a rename dialog (prefilled; project bookmarks get a one-click "Use project name"; empty names can't save — duplicates are your call). So the third "Next sprint" bookmark can become "Next sprint (NamWeb)", and a tag pair like `economy` + `summer-trip-26` can read "Economy of trip to Japan". Hover a row for the technical truth underneath: the full project path, or the tag list (+ Next only). Closes #732.

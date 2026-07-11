@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import {
+  allOpenableActions,
   allTags,
   applyViewOrder,
   archivedNodeIds,
@@ -617,5 +618,32 @@ describe('applyViewOrder', () => {
 
   it('ignores saved ids that are no longer present', () => {
     expect(ids(applyViewOrder(list, ['gone', 'c', 'a', 'b']))).toEqual(['c', 'a', 'b']);
+  });
+});
+
+describe('allOpenableActions (#735)', () => {
+  it('lists exactly what the browser columns can reach — inbox and nested-under-action excluded', () => {
+    const doc = workspace(
+      [
+        node('p1', { title: 'Home', project: true, childIds: ['a1', 'done1'] }),
+        node('a1', { title: 'Fix door', status: 'NEXT' }),
+        node('done1', { title: 'Painted', status: 'DONE' }),
+        node('free1', { title: 'Call plumber', status: 'NEXT' }),
+        node('cap1', { title: 'Unclarified thought' }),
+        node('sub1', { title: 'Sub-action of an action' }),
+        node('arch', { title: 'Archived', project: true, status: 'ARCHIVED' as NodeStatus, childIds: ['a2'] }),
+        node('a2', { title: 'Buried', status: 'NEXT' }),
+      ],
+      (doc) => {
+        doc.nodes['projects'].childIds = ['p1', 'arch'];
+        doc.nodes['actions'].childIds = ['free1'];
+        doc.nodes['inbox'].childIds = ['cap1'];
+        doc.nodes['a1'].childIds = ['sub1'];
+      },
+    );
+    const ids = allOpenableActions(doc).map((t) => t.id).sort();
+    // In: an open action under a project, and a free action. Out: DONE, the inbox capture
+    // (no Inbox column to reach it), a sub-action of an action (not drilled into), archived.
+    expect(ids).toEqual(['a1', 'free1']);
   });
 });

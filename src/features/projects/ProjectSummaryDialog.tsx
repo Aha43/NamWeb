@@ -11,6 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { NodeStatus } from '@/domain/types';
@@ -56,16 +57,27 @@ export function ProjectSummaryDialog({
 
   const editing = draft !== null;
   const shown = draft ?? markdown;
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+
+  // Escape / overlay / Close with un-copied edits must not silently throw them away (#735):
+  // Regenerate is the deliberate discard — a close asks first. An untouched draft closes freely.
+  function handleOpenChange(next: boolean) {
+    if (!next && draft !== null && draft !== markdown) {
+      setConfirmDiscard(true);
+      return;
+    }
+    onOpenChange(next);
+  }
 
   // ⌘/Ctrl+Enter — the "copy & close" power move (the Copy button alone stays copy-only so you can
-  // keep tweaking the include-filters).
+  // keep tweaking the include-filters). Skips the discard guard: the copy is what makes it safe.
   function copyAndClose() {
     copy(shown);
     onOpenChange(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         onKeyDown={(e) => {
           if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -134,7 +146,7 @@ export function ProjectSummaryDialog({
               </Button>
             </Tooltip>
           )}
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>
             {t('summary.close')}
           </Button>
           <Tooltip label={t('summary.copyTooltip')}>
@@ -144,6 +156,17 @@ export function ProjectSummaryDialog({
             </Button>
           </Tooltip>
         </DialogFooter>
+        <ConfirmDialog
+          open={confirmDiscard}
+          onOpenChange={setConfirmDiscard}
+          title={t('summary.discardTitle')}
+          message={t('summary.discardMessage')}
+          confirmLabel={t('summary.discardConfirm')}
+          onConfirm={() => {
+            setConfirmDiscard(false);
+            onOpenChange(false);
+          }}
+        />
       </DialogContent>
     </Dialog>
   );
