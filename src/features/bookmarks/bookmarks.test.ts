@@ -3,6 +3,7 @@ import { createDefaultWorkspace } from '@/domain/createWorkspace';
 import type { Bookmark, WorkspaceDocument } from '@/domain/types';
 import {
   BOOKMARK_COLORS,
+  bookmarkFocusTarget,
   bookmarkTarget,
   findBookmark,
   isBookmarkStale,
@@ -21,6 +22,14 @@ describe('bookmark helpers', () => {
     expect(bookmarkTarget({ kind: 'tagFilter', tags: ['home', 'errand'], nextOnly: true } as Bookmark)).toBe(
       '/tags?tags=home%2Cerrand&next=1',
     );
+  });
+
+  it('builds the speed-dial focus target for each kind (#738)', () => {
+    expect(bookmarkFocusTarget({ kind: 'project', projectId: 'p1' } as Bookmark)).toBe('/focus?project=p1');
+    expect(bookmarkFocusTarget({ kind: 'tagFilter', tags: ['home', 'errand'], nextOnly: true } as Bookmark)).toBe(
+      '/focus?tags=home%2Cerrand&next=1',
+    );
+    expect(bookmarkFocusTarget({ kind: 'tagFilter', tags: [] } as unknown as Bookmark)).toBe('/focus');
   });
 
   it('finds an existing project bookmark by projectId', () => {

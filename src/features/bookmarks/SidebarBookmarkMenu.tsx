@@ -12,10 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useWorkspaceContext } from '@/store/workspace-context';
-import { allOpenableProjects, projectPath } from '@/domain/lenses';
+import { allOpenableProjects } from '@/domain/lenses';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
 import { ReorderControls } from '@/features/actions/ReorderControls';
 import { RenameBookmarkDialog } from './RenameBookmarkDialog';
+import { bookmarkTooltip } from './bookmarkTooltip';
 import { bookmarksOf, bookmarkTarget, isBookmarkStale, movedBookmarkOrder } from './bookmarks';
 import type { Bookmark } from '@/domain/types';
 
@@ -53,15 +54,7 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
   };
   // The technical truth behind a label (#732): the full project path, or the tag selection —
   // a renamed bookmark stays legible on hover. Stale rows carry their own suffix instead.
-  const tooltipFor = (bookmark: Bookmark): string => {
-    if (isBookmarkStale(document, bookmark)) return '';
-    if (bookmark.kind === 'project' && bookmark.projectId) {
-      const node = document.nodes[bookmark.projectId];
-      return [...projectPath(document, node.id), node.title].join(' › ');
-    }
-    const tags = (bookmark.tags ?? []).join(', ');
-    return bookmark.nextOnly ? t('bookmarks.tagsTooltipNext', { tags }) : tags;
-  };
+  const tooltipFor = (bookmark: Bookmark): string => bookmarkTooltip(document, bookmark, t);
   return (
     <>
       <DropdownMenu>
