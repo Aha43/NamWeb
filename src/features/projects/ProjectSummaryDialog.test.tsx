@@ -38,6 +38,49 @@ describe('ProjectSummaryDialog', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: /Copied/ })).toBeInTheDocument());
   });
 
+  it('Edit makes the text a draft — filters lock, Copy copies the edits, Regenerate undoes (#729)', () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    const buildSummary = vi.fn(
+      (o: { statuses?: string[]; includeSubProjects?: boolean }) =>
+        `# P (${(o.statuses ?? []).join(',')})${o.includeSubProjects ? ' +subs' : ''}`,
+    );
+
+    render(<ProjectSummaryDialog open onOpenChange={vi.fn()} title="P" buildSummary={buildSummary} />);
+
+    const area = screen.getByLabelText('Project summary (Markdown)');
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(area).not.toHaveAttribute('readonly');
+    // The filters describe the generated text — locked while a draft exists.
+    expect(screen.getByLabelText('Done')).toBeDisabled();
+    expect(screen.getByLabelText('Include sub-projects')).toBeDisabled();
+
+    fireEvent.change(area, { target: { value: '# P (NEXT,BACKLOG) +subs\n\nOne extra remark.' } });
+    fireEvent.click(screen.getByRole('button', { name: /Copy/ }));
+    expect(writeText).toHaveBeenCalledWith('# P (NEXT,BACKLOG) +subs\n\nOne extra remark.');
+
+    // Regenerate discards the draft: generated text is back, filters live again.
+    fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
+    expect(area).toHaveValue('# P (NEXT,BACKLOG) +subs');
+    expect(area).toHaveAttribute('readonly');
+    expect(screen.getByLabelText('Done')).toBeEnabled();
+  });
+
+  it('a reopened dialog starts from the generated view, not a stale draft (#729)', () => {
+    const buildSummary = () => '# generated';
+    const { rerender } = render(
+      <ProjectSummaryDialog open onOpenChange={vi.fn()} title="P" buildSummary={buildSummary} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    fireEvent.change(screen.getByLabelText('Project summary (Markdown)'), { target: { value: 'scribbles' } });
+
+    // The dialog stays mounted across opens (the workbench renders it controlled).
+    rerender(<ProjectSummaryDialog open={false} onOpenChange={vi.fn()} title="P" buildSummary={buildSummary} />);
+    rerender(<ProjectSummaryDialog open onOpenChange={vi.fn()} title="P" buildSummary={buildSummary} />);
+    expect(screen.getByLabelText('Project summary (Markdown)')).toHaveValue('# generated');
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+  });
+
   it('⌘/Ctrl+Enter copies and closes (#477)', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
