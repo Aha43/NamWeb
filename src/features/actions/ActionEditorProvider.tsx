@@ -3,7 +3,7 @@ import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
-import { allTags, archivedProjectIds, canAddPrerequisite, effectiveTags, projectPath, structuralNodeIds, subtreeIds, unblocks } from '@/domain/lenses';
+import { allOpenableActions, allTags, archivedProjectIds, canAddPrerequisite, effectiveTags, projectPath, subtreeIds, unblocks } from '@/domain/lenses';
 import { useDeleteNode } from './useDeleteNode';
 import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { newId, nowIso } from '@/lib/local';
@@ -74,15 +74,11 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
   }, [node, document]);
 
   const blockerCandidates = useMemo<MoveTarget[]>(() => {
+    // Built on the browser's own set (#735): the picker can reach every candidate, and the
+    // "Add a prerequisite…" gate (candidates.length > 0) is truthful — no dead-end picker.
+    // Inbox items are deliberately out: clarify a capture first, then block on the action.
     if (!node || !document) return [];
-    const structural = structuralNodeIds(document);
-    const targets: MoveTarget[] = [];
-    for (const candidate of Object.values(document.nodes)) {
-      if (candidate.project || structural.has(candidate.id)) continue;
-      if (!canAddPrerequisite(document, node.id, candidate.id)) continue;
-      targets.push({ id: candidate.id, label: candidate.title });
-    }
-    return targets;
+    return allOpenableActions(document).filter((c) => canAddPrerequisite(document, node.id, c.id));
   }, [node, document]);
 
   const wouldUnblock = useMemo(() => {
