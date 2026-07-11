@@ -1,9 +1,9 @@
-import { Bookmark as BookmarkIcon, X } from 'lucide-react';
+import { Bookmark as BookmarkIcon, Target, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { ReorderControls } from '@/features/actions/ReorderControls';
-import { bookmarksOf, bookmarkTarget, isBookmarkStale, movedBookmarkOrder } from './bookmarks';
+import { bookmarkFocusTarget, bookmarksOf, bookmarkTarget, isBookmarkStale, movedBookmarkOrder } from './bookmarks';
 
 /**
  * The phone More-sheet bookmark list: vertical rows with **visible labels** (tooltips don't fire on
@@ -57,6 +57,18 @@ export function BookmarkBar({ onNavigate }: { onNavigate?: () => void }) {
                 {stale && <span className="text-muted-foreground">{t('bookmarks.staleSuffix')}</span>}
               </span>
             </button>
+            {/* The phone half of the Focus speed dial (#739): tap the label to view (above),
+                tap the target to deal the deck — the couch is where the ritual happens. */}
+            {!stale && (
+              <button
+                type="button"
+                aria-label={t('bookmarks.focusRowAria', { label: bookmark.label })}
+                onClick={() => go(bookmarkFocusTarget(bookmark))}
+                className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                <Target className="h-4 w-4 focus-glow" />
+              </button>
+            )}
             <button
               type="button"
               aria-label={t('bookmarks.removeAria', { label: bookmark.label })}

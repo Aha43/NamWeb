@@ -64,6 +64,21 @@ describe('BookmarkBar', () => {
     expect(screen.getByTestId('path').textContent).toBe('/tags?tags=home');
   });
 
+  it('the focus glyph deals the deck scoped to the bookmark (#739)', () => {
+    const workspace = ws([
+      { id: 'b2', label: 'After work', kind: 'tagFilter', tags: ['daily'], nextOnly: true, color: '#10b981' },
+    ]);
+    renderWithWs(<BookmarkBar />, workspace);
+    fireEvent.click(screen.getByRole('button', { name: 'Focus: After work' }));
+    expect(screen.getByTestId('path').textContent).toBe('/focus?tags=daily&next=1');
+  });
+
+  it('a stale bookmark offers no focus glyph (#739)', () => {
+    const workspace = ws([{ ...projectBm, projectId: 'gone' }]);
+    renderWithWs(<BookmarkBar />, workspace);
+    expect(screen.queryByRole('button', { name: 'Focus: Vacation' })).not.toBeInTheDocument();
+  });
+
   it('removes a bookmark via its × control', () => {
     const workspace = ws([projectBm], { nodes: { p1: { id: 'p1', title: 'Vacation', project: true } as never } });
     renderWithWs(<BookmarkBar />, workspace);

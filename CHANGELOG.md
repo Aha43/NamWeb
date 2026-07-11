@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **The speed dial reaches the couch.** On the phone, each More-sheet bookmark row carries a small target glyph beside its label: tap the label to open the view (as always), tap the target to deal the Focus deck scoped to that bookmark — the sheet closes and the first card is up. Closes #739.
+
 ## [1.4.0] - 2026-07-11
 
 **Small dials, daily surfaces.** Three one-and-two-issue sprints straight from holiday

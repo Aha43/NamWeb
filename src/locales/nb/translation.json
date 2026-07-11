@@ -83,6 +83,8 @@
   "blocked.openBlockerAria": "Åpne blokkering {title}",
   "bookmarks.browseFromAria": "Bla fra {label}",
   "bookmarks.contextMenuAria": "Kontekstbokmerker",
+  "bookmarks.focusMenuAria": "Fokus-bokmerker",
+  "bookmarks.focusRowAria": "Fokus: {label}",
   "bookmarks.goToAria": "Gå til bokmerke: {label}",
   "bookmarks.nameLabel": "Navn",
   "bookmarks.projectMenuAria": "Prosjektbokmerker",
