@@ -28,6 +28,39 @@ function setup(over: Partial<React.ComponentProps<typeof TagFilterPanel>> = {}) 
 }
 
 describe('TagFilterPanel', () => {
+  it('bookmark view (#745): title leads, selection collapses to the dense truth, expandable', () => {
+    setup({
+      title: 'After work',
+      collapseSelection: true,
+      selected: ['home', 'errand'],
+      nextOnly: true,
+      rows: [row('a', 'Water plants')],
+    });
+    expect(screen.getByRole('heading', { name: 'After work' })).toBeInTheDocument();
+    // Chips tucked away behind the dense line; the actions lead.
+    expect(screen.queryByRole('button', { name: 'urgent' })).not.toBeInTheDocument();
+    expect(screen.getByText('Water plants')).toBeInTheDocument();
+
+    const expander = screen.getByRole('button', { name: 'Adjust tag selection' });
+    expect(expander).toHaveTextContent('home, errand');
+    // Next-only lives OUTSIDE the collapse — the doing-lever is always at hand.
+    expect(screen.getByRole('checkbox')).toBeChecked();
+
+    fireEvent.click(expander);
+    expect(screen.getByRole('button', { name: 'urgent' })).toBeInTheDocument(); // chips back for tweaking
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1); // and no duplicate toggle inside
+    fireEvent.click(expander); // and away again
+    expect(screen.queryByRole('button', { name: 'urgent' })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeInTheDocument(); // still at hand
+  });
+
+  it('the plain view is untouched: no title, chips visible, no expander (#745)', () => {
+    setup({ selected: ['home'], rows: [] });
+    expect(screen.queryByRole('heading')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'urgent' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Adjust tag selection' })).not.toBeInTheDocument();
+  });
+
   it('shows the empty state with no tags', () => {
     setup({ allTags: [] });
     expect(screen.getByText('No tags yet')).toBeInTheDocument();

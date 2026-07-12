@@ -61,7 +61,7 @@ describe('BookmarkBar', () => {
     const workspace = ws([{ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' }]);
     renderWithWs(<BookmarkBar />, workspace);
     fireEvent.click(screen.getByRole('button', { name: 'Go to bookmark: #home' }));
-    expect(screen.getByTestId('path').textContent).toBe('/tags?tags=home');
+    expect(screen.getByTestId('path').textContent).toBe('/tags?tags=home&bm=b2');
   });
 
   it('the focus glyph deals the deck scoped to the bookmark (#739)', () => {
@@ -111,7 +111,7 @@ describe('BookmarkBar', () => {
     // The label is visible text (not just a tooltip) for touch.
     expect(screen.getByText('#home')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Go to bookmark: #home' }));
-    expect(screen.getByTestId('path').textContent).toBe('/tags?tags=home');
+    expect(screen.getByTestId('path').textContent).toBe('/tags?tags=home&bm=b2');
     expect(onNavigate).toHaveBeenCalled();
   });
 });
