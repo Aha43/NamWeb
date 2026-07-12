@@ -43,19 +43,34 @@ export function RenameBookmarkDialog({
     if (open && bookmark) setLabel(bookmark.label);
   }, [open, bookmark]);
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    // Radix portals keep React-tree bubbling — never submit a hosting form (#720/#724).
-    event.stopPropagation();
+  // The commit shared by the form submit and ⌘/Ctrl+Enter (#746). Guards intact: empty refuses.
+  function commit() {
     const trimmed = label.trim();
     if (!trimmed) return;
     onRename(trimmed);
     onOpenChange(false);
   }
 
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    // Radix portals keep React-tree bubbling — never submit a hosting form (#720/#724).
+    event.stopPropagation();
+    commit();
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        // ⌘/Ctrl+Enter = the app-wide "commit this dialog" gesture (#746).
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            commit();
+          }
+        }}
+      >
         <form onSubmit={submit} className="space-y-4">
           <DialogHeader className="text-left">
             <DialogTitle>{t('bookmarks.renameTitle')}</DialogTitle>
