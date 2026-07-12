@@ -19,6 +19,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **A context bookmark lands on its own view, not the Tags workshop.** Opening a bookmarked context now leads with what you came for — the actions — under the bookmark's (custom) name as the title. Tag management and saved views stay in the plain Tags view; the tag selection collapses to one dense line that expands when you want to tweak what belongs in the ritual. Next-only sits outside the collapse — the doing-lever stays at hand — and lands **checked** by default (unchecking sticks for the visit). Tweaks are session-local — the bookmark itself is never silently rewritten. Closes #745.
 
+### Fixed
+
+- **⌘/Ctrl+Enter commits every Save dialog.** The app-wide "commit this dialog" gesture (action editor, summary copy-&-close, picker pick) now also works in the two dialogs that missed it: bookmark rename and resource create/edit. Guards intact — an empty name or value still refuses. Closes #746.
+
 ## [1.4.0] - 2026-07-11
 
 **Small dials, daily surfaces.** Three one-and-two-issue sprints straight from holiday

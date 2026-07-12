@@ -159,6 +159,23 @@ describe('SidebarBookmarkMenu (#588)', () => {
     expect(screen.queryByLabelText('Name')).not.toBeInTheDocument(); // dialog closed
   });
 
+  it('⌘/Ctrl+Enter commits the rename dialog like Save (#746)', () => {
+    const dispatch = vi.fn();
+    render(
+      <MemoryRouter>
+        <WorkspaceContext.Provider value={{ document: doc([projectBm]), dispatch } as unknown as UseWorkspace}>
+          <SidebarBookmarkMenu kind="project" />
+        </WorkspaceContext.Provider>
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Rename bookmark: Vacation' }));
+    const input = screen.getByLabelText('Name');
+    fireEvent.change(input, { target: { value: 'Vacation (Japan)' } });
+    fireEvent.keyDown(input, { key: 'Enter', metaKey: true });
+    expect(dispatch).toHaveBeenCalledWith({ type: 'renameBookmark', id: 'b1', label: 'Vacation (Japan)' });
+    expect(screen.queryByLabelText('Name')).not.toBeInTheDocument(); // closed
+  });
+
   it('a context bookmark renames too, but has no "Use project name" (#732)', () => {
     const dispatch = vi.fn();
     render(

@@ -38,11 +38,8 @@ export function ResourceDialog({
   const [value, setValue] = useState(initial?.value ?? '');
   const [name, setName] = useState(initial?.description ?? '');
 
-  function submit(event: FormEvent) {
-    event.preventDefault();
-    // Radix portals keep REACT-tree bubbling: without this, the nested form's submit reaches the
-    // hosting ActionDialog's form and saves/closes the whole editor (#720).
-    event.stopPropagation();
+  // The commit shared by the form submit and ⌘/Ctrl+Enter (#746). Guards intact: empty refuses.
+  function commit() {
     const trimmed = value.trim();
     if (!trimmed) return;
     onSubmit({
@@ -56,9 +53,28 @@ export function ResourceDialog({
     onOpenChange(false);
   }
 
+  function submit(event: FormEvent) {
+    event.preventDefault();
+    // Radix portals keep REACT-tree bubbling: without this, the nested form's submit reaches the
+    // hosting ActionDialog's form and saves/closes the whole editor (#720).
+    event.stopPropagation();
+    commit();
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        // ⌘/Ctrl+Enter = the app-wide "commit this dialog" gesture (#746). stopPropagation: the
+        // hosting editor listens on the document and must not also see it.
+        onKeyDown={(e) => {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            commit();
+          }
+        }}
+      >
         <form onSubmit={submit} className="space-y-4">
           <DialogHeader className="text-left">
             <DialogTitle>{initial ? t('editor.editResourceTitle') : t('editor.addResourceTitle')}</DialogTitle>

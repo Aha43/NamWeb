@@ -211,6 +211,22 @@ describe('ResourcesEditor dialogs (#720)', () => {
     ]);
   });
 
+  it('⌘/Ctrl+Enter commits the resource dialog like Save — empty still refuses (#746)', () => {
+    const onChange = vi.fn();
+    render(<ResourcesEditor resources={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    const value = screen.getByLabelText('Resource value');
+
+    // Empty: the gesture refuses, dialog stays.
+    fireEvent.keyDown(value, { key: 'Enter', ctrlKey: true });
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.change(value, { target: { value: 'https://example.com' } });
+    fireEvent.keyDown(value, { key: 'Enter', ctrlKey: true });
+    expect(onChange).toHaveBeenCalledWith([{ type: 'URI', value: 'https://example.com', description: null }]);
+    expect(screen.queryByLabelText('Resource value')).not.toBeInTheDocument(); // closed
+  });
+
   it('the commit button disables on an empty value; cancel discards', () => {
     const onChange = vi.fn();
     render(<ResourcesEditor resources={[]} onChange={onChange} />);
