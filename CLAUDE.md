@@ -6,31 +6,33 @@ Always present a plan and wait for explicit approval before editing any files or
 
 ## What this repo is
 
-NamWeb is the **web companion** to [NamDesktop](https://github.com/Aha43/NamDesktop) — a
-lightweight capture + triage surface you reach for when you are away from your main machine:
-add a thought, check what is next, tick something done. The desktop app remains the primary,
-rich interaction surface (workbench, drag ordering, Mission Control, templates); NamWeb is
-deliberately smaller in scope.
+NamWeb **is NAM** — the primary (and only active) surface of a GTD-inspired capture, triage,
+and focus system: full workbench, projects, tags/contexts, calendar, Focus decks, bookmarks,
+sync. It started life as the web companion to
+[NamDesktop](https://github.com/Aha43/NamDesktop) and has long since outgrown that role.
 
-See `docs/features/web-app/design.md` for the product direction, open questions, and the
-dependency chain that led here.
+See `docs/features/web-app/design.md` for the product direction and the dependency chain that
+led here. The next epic: **project sharing** (projects rendered as guest-friendly web sites via
+secret URLs — guests never become users) is the road to **2.0.0**.
 
-## Relationship to NamDesktop and the backend
+## NamDesktop (parked) and the backend
 
-- NamWeb and NamDesktop are **separate repos** that share **only the Supabase backend HTTP
-  contract** — not application code. They evolve on independent cadences.
-- The **Supabase migrations are the single source of truth** and live in the **NamDesktop**
-  repo (`supabase/`) for now. Do not duplicate schema here. If/when NamWeb starts co-driving
-  the schema, we promote the migrations to a dedicated backend repo — not before.
-- NamWeb is a **client** of the same Supabase project the desktop cloud-sync feature uses.
+- **NamDesktop is parked** (since 2026-07-12) — the valuable phase one (it proved the
+  chat→"make it in NAM"→execute MCP flow). It is not being caught up; a future desktop app
+  will be *redone* using NamDesktop and the-then-NamWeb as inspiration and specification.
+- The **Supabase config + migrations live in this repo** (`supabase/`, the single source of
+  truth) — `npm run db:start` runs the local stack (Docker Desktop required).
+- The **workspace document format** (one JSONB doc per workspace) is no longer a two-client
+  contract, but it remains a **spec-in-progress** for the future desktop redo: keep the
+  additive-only / absent-key-means-off discipline, and write contract-relevant changes down.
 
 ## Tech stack
 
 Decided in the first planning session (see `docs/features/web-app/design.md`):
 
 - **React + TypeScript** on **Vite** (mobile-first responsive SPA, online-only for the MVP).
-- **`@supabase/supabase-js`** — talks **directly** to the same Supabase project as NamDesktop
-  cloud sync. No web API of our own; the web-API + relational schema is a deferred future epic.
+- **`@supabase/supabase-js`** — talks **directly** to Supabase. No web API of our own; the
+  web-API + relational schema is a deferred future epic.
 - **TanStack Query** — server state, optimistic updates, the sync conflict-retry.
 - **Tailwind CSS** — styling.
 - **Vitest** + Testing Library — unit/component tests. **ESLint** (flat config) — lint.
@@ -47,9 +49,8 @@ npm run typecheck # tsc --noEmit
 ```
 
 Copy `.env.example` to `.env` to configure the Supabase URL + publishable key. The defaults
-target the local Supabase stack run from NamDesktop (`make supabase-start`).
-
-`npm run test` is this repo's equivalent of NamDesktop's `make test`; `npm run dev` of `make run`.
+target the local Supabase stack run from this repo (`npm run db:start`; `db:stop` / `db:status`
+/ `db:reset` also exist).
 
 ## Environment & data
 
@@ -164,6 +165,6 @@ A feature issue is complete when:
 ## Process notes
 
 - **Design happens in the planning chat.** Major features get a `docs/features/<name>/design.md`
-  handoff doc before implementation begins, mirroring the NamDesktop practice. This repo's
+  handoff doc before implementation begins. This repo's
   first epics (web API, web app) come out of a planning session that promotes the brewing
   design doc to "ready for implementation."
