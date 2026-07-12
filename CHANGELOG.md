@@ -10,8 +10,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Undo answers ⌘/Ctrl+Z.** While an Undo toast is up, the universal undo key fires it — no mouse travel to a small button at the bottom of the screen. Text fields keep their own undo, modals keep their keys, and the toast's button now shows the key hint so the shortcut teaches itself. Closes #744.
+
 - **The Focus speed dial.** The command bar's Focus entry became a split-button like its neighbors: the ▾ chevron lists all your bookmarks, and clicking one deals the deck scoped to it — a project bookmark focuses its open actions (the workbench Focus, minus the walk), a context bookmark focuses its tag filter. Your rituals, one click from anywhere: tune a context once, name it ("After work"), speed-dial into it daily. The plain Focus click keeps meaning what it always did. Closes #738.
 - **The speed dial reaches the couch.** On the phone, each More-sheet bookmark row carries a small target glyph beside its label: tap the label to open the view (as always), tap the target to deal the Focus deck scoped to that bookmark — the sheet closes and the first card is up. Closes #739.
+
+### Changed
+
+- **A context bookmark lands on its own view, not the Tags workshop.** Opening a bookmarked context now leads with what you came for — the actions — under the bookmark's (custom) name as the title. Tag management and saved views stay in the plain Tags view; the tag selection collapses to one dense line that expands when you want to tweak what belongs in the ritual. Next-only sits outside the collapse — the doing-lever stays at hand — and lands **checked** by default (unchecking sticks for the visit). Tweaks are session-local — the bookmark itself is never silently rewritten. Closes #745.
 
 ### Fixed
 
