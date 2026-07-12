@@ -13,6 +13,11 @@ import type { ActionRowData } from '../actions/rows';
 import type { NodeStatus, SavedView } from '../../domain/types';
 
 export interface TagFilterPanelProps {
+  /** Bookmark-view title (#745): set when the page landed via a context bookmark. */
+  title?: string;
+  /** Start with the tag-chip selection collapsed to a dense line (#745) — tweaking stays a
+   *  click away, but the view leads with the actions. */
+  collapseSelection?: boolean;
   allTags: string[];
   selected: string[];
   nextOnly: boolean;
@@ -46,6 +51,8 @@ export interface TagFilterPanelProps {
 
 /** Filter active actions by tags (AND), with saved views. Session-only selection. Presentational. */
 export function TagFilterPanel({
+  title,
+  collapseSelection = false,
   allTags,
   selected,
   nextOnly,
@@ -73,6 +80,8 @@ export function TagFilterPanel({
   const [newTag, setNewTag] = useState('');
   // Manage (create / rename / delete) is collapsed by default so it's out of the way when filtering.
   const [manageOpen, setManageOpen] = useState(false);
+  // The bookmark view leads with the actions; the chips open on demand (#745).
+  const [selectionOpen, setSelectionOpen] = useState(!collapseSelection);
 
   function submitAddTag(event: FormEvent) {
     event.preventDefault();
@@ -84,6 +93,7 @@ export function TagFilterPanel({
 
   return (
     <section className="space-y-4">
+      {title && <h2 className="truncate px-1 text-lg font-semibold tracking-tight">{title}</h2>}
       {(onAddTag || onRenameTag || onDeleteTag) && (
         <div className="space-y-2">
           <button
@@ -203,32 +213,50 @@ export function TagFilterPanel({
         <EmptyState hint={t('tags.emptyHint')}>{t('tags.emptyTitle')}</EmptyState>
       ) : (
         <>
-          <div className="flex flex-wrap gap-1.5">
-            {allTags.map((tag) => {
-              const on = selectedSet.has(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => onToggleTag(tag)}
-                  className={cn(
-                    'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                    on
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-input text-muted-foreground hover:bg-accent hover:text-foreground',
-                  )}
-                >
-                  <span className={cn(isSystemTag(tag) && 'font-bold')}>{tag}</span>
-                </button>
-              );
-            })}
-          </div>
+          {collapseSelection && (
+            /* The dense truth of the selection doubles as the expander (#745): the tags (+ Next
+               only) you came for are readable at a glance, adjustable one click deeper. */
+            <button
+              type="button"
+              aria-expanded={selectionOpen}
+              aria-label={t('tags.adjustSelectionAria')}
+              onClick={() => setSelectionOpen((o) => !o)}
+              className="flex items-center gap-1 px-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+            >
+              {selectionOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+              {nextOnly ? t('bookmarks.tagsTooltipNext', { tags: selected.join(', ') }) : selected.join(', ')}
+            </button>
+          )}
+          {selectionOpen && (
+            <>
+              <div className="flex flex-wrap gap-1.5">
+                {allTags.map((tag) => {
+                  const on = selectedSet.has(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => onToggleTag(tag)}
+                      className={cn(
+                        'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                        on
+                          ? 'border-primary bg-primary text-primary-foreground'
+                          : 'border-input text-muted-foreground hover:bg-accent hover:text-foreground',
+                      )}
+                    >
+                      <span className={cn(isSystemTag(tag) && 'font-bold')}>{tag}</span>
+                    </button>
+                  );
+                })}
+              </div>
 
-          <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
-            <input type="checkbox" checked={nextOnly} onChange={onToggleNextOnly} />
-            {t('tags.nextOnly')}
-          </label>
+              <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+                <input type="checkbox" checked={nextOnly} onChange={onToggleNextOnly} />
+                {t('tags.nextOnly')}
+              </label>
+            </>
+          )}
 
           {selected.length === 0 ? (
             <p className="px-1 text-xs text-muted-foreground">

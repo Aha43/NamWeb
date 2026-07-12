@@ -178,7 +178,7 @@ describe('SidebarBookmarkMenu (#588)', () => {
   it('a context bookmark navigates with tags + nextOnly encoded', () => {
     renderMenu('tagFilter', [projectBm, contextBm]);
     fireEvent.click(screen.getByRole('menuitem', { name: '#home' }));
-    expect(navigate).toHaveBeenCalledWith('/tags?tags=home&next=1');
+    expect(navigate).toHaveBeenCalledWith('/tags?tags=home&next=1&bm=b3');
   });
 
   it('a row\'s "…" opens the picker already at that project — Open navigates (#595)', () => {

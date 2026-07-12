@@ -53,15 +53,28 @@ test.describe('with bookmarks', () => {
     await expect(page.getByRole('button', { name: 'Project bookmarks' })).toHaveCount(0);
   });
 
-  test('the Contexts chevron jumps to the bookmarked tag filter', async ({ page }) => {
+  test('the Contexts chevron lands on the bookmark view — actions first, workshop tucked away (#745)', async ({ page }) => {
     await page.goto('/inbox');
 
     await page.getByRole('button', { name: 'Context bookmarks' }).click();
     await page.getByRole('menu').getByText('#home').click();
 
-    await expect(page).toHaveURL(/\/tags\?tags=home&next=1$/);
-    // The filter is applied: the tagged action shows in the filtered list.
+    await expect(page).toHaveURL(/\/tags\?tags=home&next=1&bm=bm3$/);
+    // The bookmark's label is the view title; the filtered actions lead.
+    await expect(page.getByRole('heading', { name: '#home' })).toBeVisible();
     await expect(page.getByText('Water plants')).toBeVisible();
+    // The workshop chrome is gone: no tag management, no chips until asked.
+    await expect(page.getByRole('button', { name: 'Manage tags' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'home', exact: true })).toHaveCount(0);
+
+    // Tweaking is one click deeper — the dense line expands to the chips.
+    await page.getByRole('button', { name: 'Adjust tag selection' }).click();
+    await expect(page.getByRole('button', { name: 'home', exact: true })).toBeVisible();
+  });
+
+  test('the plain Tags view keeps its full workshop (#745)', async ({ page }) => {
+    await page.goto('/tags');
+    await expect(page.getByRole('button', { name: 'Manage tags' })).toBeVisible();
   });
 });
 

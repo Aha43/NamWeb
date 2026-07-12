@@ -19,8 +19,8 @@ describe('bookmark helpers', () => {
 
   it('builds the navigation target for each kind', () => {
     expect(bookmarkTarget({ kind: 'project', projectId: 'p1' } as Bookmark)).toBe('/projects/p1');
-    expect(bookmarkTarget({ kind: 'tagFilter', tags: ['home', 'errand'], nextOnly: true } as Bookmark)).toBe(
-      '/tags?tags=home%2Cerrand&next=1',
+    expect(bookmarkTarget({ id: 'b7', kind: 'tagFilter', tags: ['home', 'errand'], nextOnly: true } as Bookmark)).toBe(
+      '/tags?tags=home%2Cerrand&next=1&bm=b7', // bm → the Tags route lands on the bookmark view (#745)
     );
   });
 

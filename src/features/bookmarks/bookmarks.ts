@@ -64,11 +64,14 @@ export function findBookmark(bookmarks: Bookmark[], draft: BookmarkDraft): Bookm
   });
 }
 
-/** The in-app route a bookmark jumps to. */
+/** The in-app route a bookmark jumps to. A tagFilter bookmark carries its id (`bm`) so the
+ *  Tags route can land on the bookmark view — its label as the title, the workshop chrome
+ *  tucked away (#745) — instead of the full Tags workshop. */
 export function bookmarkTarget(bookmark: Bookmark): string {
   if (bookmark.kind === 'project') return `/projects/${bookmark.projectId}`;
-  const params = tagFilterParams(bookmark.tags ?? [], Boolean(bookmark.nextOnly)).toString();
-  return params ? `/tags?${params}` : '/tags';
+  const params = tagFilterParams(bookmark.tags ?? [], Boolean(bookmark.nextOnly));
+  params.set('bm', bookmark.id);
+  return `/tags?${params.toString()}`;
 }
 
 /** The speed-dial route (#738): focus scoped to the bookmark — the deck, not the view. Both

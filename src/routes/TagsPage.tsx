@@ -10,6 +10,7 @@ import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useSetStatus } from '@/features/actions/useSetStatus';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { bookmarksOf } from '@/features/bookmarks/bookmarks';
 
 export function TagsPage() {
   const { document, dispatch } = useWorkspaceContext();
@@ -20,8 +21,19 @@ export function TagsPage() {
   // The filter lives in the URL so it survives the round-trip into Focus and back.
   const [params, setParams] = useSearchParams();
   const { selected, nextOnly } = useMemo(() => parseTagFilter(params), [params]);
-  const setFilter = (nextSelected: string[], nextNextOnly: boolean) =>
-    setParams(tagFilterParams(nextSelected, nextNextOnly), { replace: true });
+  // Arrived via a context bookmark (#745): its id rides the URL (`bm`), and the page renders the
+  // bookmark view — the label as title, the workshop chrome (manage/saved views) tucked away,
+  // the selection collapsed. Tweaks stay session-local (the URL); the bookmark isn't rewritten.
+  const bmId = params.get('bm');
+  const bookmark = useMemo(() => {
+    if (!bmId || !document) return undefined;
+    return bookmarksOf(document).find((b) => b.id === bmId && b.kind === 'tagFilter');
+  }, [bmId, document]);
+  const setFilter = (nextSelected: string[], nextNextOnly: boolean) => {
+    const next = tagFilterParams(nextSelected, nextNextOnly);
+    if (bookmark) next.set('bm', bookmark.id); // a tweak stays inside the bookmark view
+    setParams(next, { replace: true });
+  };
 
   const tags = document ? allTags(document) : [];
   const tagCounts: Record<string, number> = {};
@@ -44,20 +56,22 @@ export function TagsPage() {
       selected={selected}
       nextOnly={nextOnly}
       rows={rows}
-      savedViews={document?.savedViews ?? []}
+      savedViews={bookmark ? [] : (document?.savedViews ?? [])}
       onToggleTag={(tag) =>
         setFilter(selected.includes(tag) ? selected.filter((t) => t !== tag) : [...selected, tag], nextOnly)
       }
-      onAddTag={(tag) => dispatch({ type: 'registerTag', tag })}
+      title={bookmark?.label}
+      collapseSelection={Boolean(bookmark)}
+      onAddTag={bookmark ? undefined : (tag) => dispatch({ type: 'registerTag', tag })}
       tagCounts={tagCounts}
-      onRenameTag={(tag, newName) => {
+      onRenameTag={bookmark ? undefined : (tag, newName) => {
         const norm = newName.trim().toLowerCase();
         if (norm && norm !== tag) {
           dispatch({ type: 'renameTag', from: tag, to: norm });
           setFilter(selected.map((t) => (t === tag ? norm : t)), nextOnly);
         }
       }}
-      onDeleteTag={(tag) => {
+      onDeleteTag={bookmark ? undefined : (tag) => {
         dispatch({ type: 'deleteTag', tag });
         setFilter(selected.filter((t) => t !== tag), nextOnly);
       }}
@@ -69,7 +83,7 @@ export function TagsPage() {
         const node = document?.nodes[id];
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
       }}
-      onSaveView={(name) => dispatch({ type: 'createSavedView', name, tags: selected, nextOnly })}
+      onSaveView={bookmark ? undefined : (name) => dispatch({ type: 'createSavedView', name, tags: selected, nextOnly })}
       onFocus={() =>
         navigate({ pathname: '/focus', search: tagFilterParams(selected, nextOnly).toString() })
       }

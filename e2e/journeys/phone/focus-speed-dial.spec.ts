@@ -26,5 +26,5 @@ test('tap a bookmark row\'s target glyph — straight into the scoped deck', asy
   await page.getByRole('button', { name: 'Exit focus' }).click();
   await page.getByRole('button', { name: 'More' }).click();
   await page.getByRole('button', { name: 'Go to bookmark: After work' }).click();
-  await expect(page).toHaveURL(/\/tags\?tags=daily&next=1$/);
+  await expect(page).toHaveURL(/\/tags\?tags=daily&next=1&bm=bm1$/); // lands on the bookmark view (#745)
 });
