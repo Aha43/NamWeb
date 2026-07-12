@@ -11,6 +11,29 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.5.0 — 2026-07-12
+
+*(one day; 7 PRs, 1 release)* The cut where bookmarks stopped being shortcuts and became the
+app's **control surface** — and it started as a design conversation, not a plan: "focus speed
+dial. Good idea? If so ideas on how to do?" The answer discovered the foundation already built
+(focus scopes had been URL-addressable since the scoped-focus work — the planned three-issue
+sprint shrank to two on contact with the code), and the dial shipped as a pure projection of
+bookmarks: Focus ▾ on the desktop (#740), a target glyph per More-sheet row on the phone
+(#741), zero new data model. The user's "now I get it" moment — *my bookmark appears there,
+and Focus enters it as the deck* — validated the two-verbs-one-bookmark grammar (menus view,
+dial deals). Dogfooding immediately sharpened it: a bookmarked context shouldn't land in the
+Tags *workshop* (#748 — the bookmark view: your name as the title, chrome tucked away,
+Next-only forced on because you came to do), and the keyboard caught up around it (#747 ⌘Z
+fires the waiting Undo toast; #749 ⌘Enter commits every Save dialog). The review round earned
+its keep on the seams that speed built: six findings, five of them the same lesson from
+different angles — **a state derivation is only as good as its round-trips** (chip toggles,
+the Focus exit, the bookmark star, and the dial itself all leaked the forced Next-only until
+#751 sealed them, with the F4 design call made explicitly: both doors to a bookmark now deal
+the same deck). Codex: third consecutive clean pass — the lifecycle lens keeps coming back
+dry while the logic-flow lens keeps finding real ones. Verdict: **converged** — the bookmark
+ecosystem (name it, view it, deal it, from either device) feels complete; next up, per the
+user: "serious development ideas" awaiting discussion.
+
 ## v1.4.0 — 2026-07-11
 
 *(one day; 6 PRs, 1 release)* The first release cut mid-dogfooding-holiday, and it reads like
