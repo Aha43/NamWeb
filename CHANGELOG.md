@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-07-12
+
+**Rituals, one click away.** Bookmarks grew from shortcuts into the app's control surface: a
+Focus ▾ speed dial deals any bookmark as a deck (on the phone too — the couch is where rituals
+happen), and opening a context bookmark now lands on its own view — your name on it, the
+workshop tucked away, Next-only on because you came to do. Around it, the keyboard caught up:
+⌘Z fires the waiting Undo toast, ⌘Enter commits every Save dialog. Hardened by the dual-review
+dance — six Claude findings closed the view's round-trip seams and made the dial and the view
+mean the same thing; Codex's third consecutive clean pass.
+
 ### Fixed
 
 - **Review hardenings (independent Claude review).** The bookmark view's forced Next-only now survives everything a visit does: tag-chip toggles no longer silently release it, the Focus round-trip comes home to the bookmark view instead of the Tags workshop, and the bookmark star stays filled inside the bookmark's own view (no accidental near-duplicates). The speed dial follows the view's rule — a context bookmark's deck deals Next-only and its exit lands back in the bookmark view. Plus: ⌘Z can't fire an undo invisibly under an open menu, the new ⌘-Enter handlers respect IME composition, and the tag chips can't get stuck hidden if a bookmark vanishes mid-visit. Closes #750.
@@ -1434,7 +1444,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/Aha43/NamWeb/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Aha43/NamWeb/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Aha43/NamWeb/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Aha43/NamWeb/compare/v1.1.0...v1.2.0
