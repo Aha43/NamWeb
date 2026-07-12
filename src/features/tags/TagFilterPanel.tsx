@@ -214,18 +214,25 @@ export function TagFilterPanel({
       ) : (
         <>
           {collapseSelection && (
-            /* The dense truth of the selection doubles as the expander (#745): the tags (+ Next
-               only) you came for are readable at a glance, adjustable one click deeper. */
-            <button
-              type="button"
-              aria-expanded={selectionOpen}
-              aria-label={t('tags.adjustSelectionAria')}
-              onClick={() => setSelectionOpen((o) => !o)}
-              className="flex items-center gap-1 px-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-            >
-              {selectionOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-              {nextOnly ? t('bookmarks.tagsTooltipNext', { tags: selected.join(', ') }) : selected.join(', ')}
-            </button>
+            /* The dense truth of the selection doubles as the expander (#745): the tags you
+               came for readable at a glance, adjustable one click deeper. Next-only sits
+               OUTSIDE the collapse — it's a doing-lever, not a tag tweak — beside the line. */
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <button
+                type="button"
+                aria-expanded={selectionOpen}
+                aria-label={t('tags.adjustSelectionAria')}
+                onClick={() => setSelectionOpen((o) => !o)}
+                className="flex items-center gap-1 px-1 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                {selectionOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                {selected.join(', ')}
+              </button>
+              <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+                <input type="checkbox" checked={nextOnly} onChange={onToggleNextOnly} />
+                {t('tags.nextOnly')}
+              </label>
+            </div>
           )}
           {selectionOpen && (
             <>
@@ -251,10 +258,12 @@ export function TagFilterPanel({
                 })}
               </div>
 
-              <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
-                <input type="checkbox" checked={nextOnly} onChange={onToggleNextOnly} />
-                {t('tags.nextOnly')}
-              </label>
+              {!collapseSelection && (
+                <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={nextOnly} onChange={onToggleNextOnly} />
+                  {t('tags.nextOnly')}
+                </label>
+              )}
             </>
           )}
 

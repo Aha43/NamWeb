@@ -15,7 +15,7 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
-- **A context bookmark lands on its own view, not the Tags workshop.** Opening a bookmarked context now leads with what you came for — the actions — under the bookmark's (custom) name as the title. Tag management and saved views stay in the plain Tags view; the tag selection collapses to one dense line (`home, errand · Next only`) that expands when you want to tweak what belongs in the ritual. Tweaks are session-local — the bookmark itself is never silently rewritten. Closes #745.
+- **A context bookmark lands on its own view, not the Tags workshop.** Opening a bookmarked context now leads with what you came for — the actions — under the bookmark's (custom) name as the title. Tag management and saved views stay in the plain Tags view; the tag selection collapses to one dense line that expands when you want to tweak what belongs in the ritual. Next-only sits outside the collapse — the doing-lever stays at hand — and lands **checked** by default (unchecking sticks for the visit). Tweaks are session-local — the bookmark itself is never silently rewritten. Closes #745.
 
 ## [1.4.0] - 2026-07-11
 

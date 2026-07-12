@@ -67,7 +67,17 @@ test.describe('with bookmarks', () => {
     await expect(page.getByRole('button', { name: 'Manage tags' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'home', exact: true })).toHaveCount(0);
 
-    // Tweaking is one click deeper — the dense line expands to the chips.
+    // Next-only is the always-at-hand doing-lever: outside the collapse, checked on landing,
+    // and a session uncheck sticks in the URL without leaving the bookmark view.
+    const nextOnly = page.getByRole('checkbox');
+    await expect(nextOnly).toBeChecked();
+    // click, not uncheck(): the control is URL-driven — the state flips on the router re-render.
+    await nextOnly.click();
+    await expect(nextOnly).not.toBeChecked();
+    await expect(page).toHaveURL(/next=0.*bm=bm3|bm=bm3.*next=0/);
+    await expect(page.getByRole('heading', { name: '#home' })).toBeVisible(); // still the bookmark view
+
+    // Tweaking tags is one click deeper — the dense line expands to the chips.
     await page.getByRole('button', { name: 'Adjust tag selection' }).click();
     await expect(page.getByRole('button', { name: 'home', exact: true })).toBeVisible();
   });

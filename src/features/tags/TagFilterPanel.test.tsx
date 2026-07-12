@@ -42,12 +42,16 @@ describe('TagFilterPanel', () => {
     expect(screen.getByText('Water plants')).toBeInTheDocument();
 
     const expander = screen.getByRole('button', { name: 'Adjust tag selection' });
-    expect(expander).toHaveTextContent('home, errand · Next only');
+    expect(expander).toHaveTextContent('home, errand');
+    // Next-only lives OUTSIDE the collapse — the doing-lever is always at hand.
+    expect(screen.getByRole('checkbox')).toBeChecked();
+
     fireEvent.click(expander);
     expect(screen.getByRole('button', { name: 'urgent' })).toBeInTheDocument(); // chips back for tweaking
-    expect(screen.getByRole('checkbox')).toBeInTheDocument(); // the Next-only toggle is back too
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1); // and no duplicate toggle inside
     fireEvent.click(expander); // and away again
     expect(screen.queryByRole('button', { name: 'urgent' })).not.toBeInTheDocument();
+    expect(screen.getByRole('checkbox')).toBeInTheDocument(); // still at hand
   });
 
   it('the plain view is untouched: no title, chips visible, no expander (#745)', () => {
