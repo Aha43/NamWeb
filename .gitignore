@@ -51,3 +51,7 @@ pnpm-debug.log*
 
 # === Keep ===
 !.gitignore
+
+# Supabase CLI local runtime state (created by db:start)
+supabase/.branches/
+supabase/.temp/

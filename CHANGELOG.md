@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **The Supabase setup moved home.** Config and the full migration history now live in this repo (`supabase/`), with `npm run db:start/stop/status/reset` wrappers — the first stone on the road to 2.0's sharing schema, and a consequence of parking NamDesktop. Migration files are verbatim (prod history parity); the real-Supabase smoke spec was de-drifted and runs green against the stack from its new home. Closes #753.
+
 ## [1.5.0] - 2026-07-12
 
 **Rituals, one click away.** Bookmarks grew from shortcuts into the app's control surface: a
