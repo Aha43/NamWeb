@@ -21,3 +21,16 @@ test('deleting an inbox item shows Undo, and Undo restores it', async ({ page, d
   await expect(page.getByRole('button', { name: 'Delete Buy tiles' })).toBeVisible();
   await expect.poll(() => doc.current().nodes[doc.current().inboxNodeId].childIds).toContain('i1');
 });
+
+// #744 — the same Undo without the mouse travel: ⌘/Ctrl+Z fires the toast's action.
+test('Ctrl+Z undoes straight from the keyboard while the toast is up', async ({ page, doc }) => {
+  await page.goto('/inbox');
+
+  await page.getByRole('button', { name: 'Delete Email Sam' }).click();
+  await expect(page.getByText(/Deleted "Email Sam"/)).toBeVisible();
+  await expect.poll(() => doc.current().nodes['i2']).toBeFalsy();
+
+  await page.keyboard.press('Control+z');
+  await expect(page.getByRole('button', { name: 'Delete Email Sam' })).toBeVisible();
+  await expect(page.getByText(/Deleted "Email Sam"/)).toHaveCount(0); // toast dismissed, like a click
+});
