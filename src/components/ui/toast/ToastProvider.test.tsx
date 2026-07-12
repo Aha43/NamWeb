@@ -54,6 +54,26 @@ describe('ToastProvider — the Undo shortcut (#744)', () => {
     expect(screen.getByText('Marked done')).toBeInTheDocument();
   });
 
+  it('an open dropdown menu holds the key — no invisible undo under it (#750)', () => {
+    const onAction = vi.fn();
+    render(
+      <ToastProvider>
+        <Harness onAction={onAction} />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByText('fire'));
+    const menu = document.createElement('div');
+    menu.setAttribute('role', 'menu');
+    menu.setAttribute('data-state', 'open');
+    document.body.appendChild(menu);
+    try {
+      fireEvent.keyDown(document, { key: 'z', ctrlKey: true });
+      expect(onAction).not.toHaveBeenCalled();
+    } finally {
+      menu.remove();
+    }
+  });
+
   it('the action button teaches the shortcut with a key hint', () => {
     render(
       <ToastProvider>

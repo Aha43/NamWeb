@@ -24,12 +24,15 @@ describe('bookmark helpers', () => {
     );
   });
 
-  it('builds the speed-dial focus target for each kind (#738)', () => {
+  it('builds the speed-dial focus target for each kind — context decks follow the view: Next-only, exit comes home (#738, #750)', () => {
     expect(bookmarkFocusTarget({ kind: 'project', projectId: 'p1' } as Bookmark)).toBe('/focus?project=p1');
-    expect(bookmarkFocusTarget({ kind: 'tagFilter', tags: ['home', 'errand'], nextOnly: true } as Bookmark)).toBe(
-      '/focus?tags=home%2Cerrand&next=1',
+    expect(bookmarkFocusTarget({ id: 'b7', kind: 'tagFilter', tags: ['home', 'errand'], nextOnly: true } as Bookmark)).toBe(
+      '/focus?tags=home%2Cerrand&next=1&bm=b7',
     );
-    expect(bookmarkFocusTarget({ kind: 'tagFilter', tags: [] } as unknown as Bookmark)).toBe('/focus');
+    // Stored-false too: the deck is about doing (the stored flag stays for the bookmark itself).
+    expect(bookmarkFocusTarget({ id: 'b8', kind: 'tagFilter', tags: ['home'] } as Bookmark)).toBe(
+      '/focus?tags=home&next=1&bm=b8',
+    );
   });
 
   it('finds an existing project bookmark by projectId', () => {

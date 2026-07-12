@@ -80,7 +80,7 @@ export function ProjectSummaryDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.nativeEvent.isComposing) {
             e.preventDefault();
             copyAndClose();
           }

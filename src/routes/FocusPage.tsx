@@ -74,8 +74,14 @@ export function FocusPage() {
   const cards = useMemo(() => (document ? focusCards(document, source) : []), [document, source]);
   const exit = () => {
     if (projectId) navigate(`/projects/${projectId}`);
-    // Return to Tags with the same selection/Next-only that launched Focus, not a bare /tags.
-    else if (isTag) navigate({ pathname: '/tags', search: tagFilterParams(tags, nextOnly).toString() });
+    // Return to Tags with the same selection/Next-only that launched Focus, not a bare /tags —
+    // and if a bookmark id rode along, land back in its view, not the workshop (#750/F2).
+    else if (isTag) {
+      const search = tagFilterParams(tags, nextOnly);
+      const bm = params.get('bm');
+      if (bm) search.set('bm', bm);
+      navigate({ pathname: '/tags', search: search.toString() });
+    }
     else if (isDue) navigate('/due');
     else if (isDone) navigate('/done');
     else navigate(sourceParam === 'backlog' ? '/backlog' : '/next');

@@ -68,7 +68,7 @@ export function ResourceDialog({
         // ⌘/Ctrl+Enter = the app-wide "commit this dialog" gesture (#746). stopPropagation: the
         // hosting editor listens on the document and must not also see it.
         onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.nativeEvent.isComposing) {
             e.preventDefault();
             e.stopPropagation();
             commit();

@@ -85,7 +85,7 @@ describe('FocusBookmarkMenu (#738)', () => {
     fireEvent.click(screen.getByRole('menuitem', { name: 'Focus: Vacation' }));
     expect(navigate).toHaveBeenCalledWith('/focus?project=p1');
     fireEvent.click(screen.getByRole('menuitem', { name: 'Focus: After work' }));
-    expect(navigate).toHaveBeenCalledWith('/focus?tags=daily&next=1');
+    expect(navigate).toHaveBeenCalledWith('/focus?tags=daily&next=1&bm=b3');
   });
 
   it('a stale project bookmark is greyed and not dealable', () => {

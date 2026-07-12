@@ -41,8 +41,12 @@ export function isTypingTarget(target: EventTarget | null): boolean {
  * dialog's own keys (Escape, Cmd/Ctrl+Enter) are handled by the dialog, not here. (#486)
  */
 export function isModalOpen(): boolean {
+  // Open Radix dropdown menus are modal too (they aria-hide the page, toasts included) — the
+  // ⌘Z undo must not fire invisibly under one (#750/F5).
   return Boolean(
-    document.querySelector('[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]'),
+    document.querySelector(
+      '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"], [role="menu"][data-state="open"]',
+    ),
   );
 }
 

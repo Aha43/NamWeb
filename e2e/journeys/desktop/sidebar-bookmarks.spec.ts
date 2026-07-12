@@ -173,6 +173,50 @@ test.describe('bookmark labels grow up (#732)', () => {
   });
 });
 
+test.describe('stored-false bookmark round-trips (#750)', () => {
+  // The review's blind spot: every earlier test used a stored-TRUE bookmark, so the forced
+  // Next-only landing was never exercised. This bookmark was saved with nextOnly OFF.
+  const seed = new DocBuilder()
+    .action('a1', 'Water plants', { tags: ['daily'], status: 'NEXT' })
+    .action('a2', 'Sort receipts', { tags: ['daily'], status: 'BACKLOG' })
+    .action('a3', 'Old idea', { tags: ['someday'], status: 'BACKLOG' })
+    .build();
+  seed.bookmarks = [
+    { id: 'bmF', label: 'Daily', kind: 'tagFilter' as const, tags: ['daily'], nextOnly: false, color: '#10b981' },
+  ];
+  test.use({ seedDoc: seed });
+
+  test('forced Next-only survives chip toggles and the Focus round-trip; the star stays honest', async ({ page }) => {
+    await page.goto('/inbox');
+    await page.getByRole('button', { name: 'Context bookmarks' }).click();
+    await page.getByRole('menu').getByText('Daily').click();
+
+    // Lands checked (forced), Next rows only — despite the stored nextOnly: false.
+    await expect(page.getByRole('heading', { name: 'Daily' })).toBeVisible();
+    await expect(page.getByRole('checkbox')).toBeChecked();
+    await expect(page.getByText('Water plants')).toBeVisible();
+    await expect(page.getByText('Sort receipts')).toHaveCount(0);
+
+    // F3: standing in the bookmark's own view, the star is filled (remove, not re-add).
+    await expect(page.getByRole('button', { name: 'Remove bookmark' })).toBeVisible();
+
+    // F1: a tag-chip toggle must not release the forced Next-only.
+    await page.getByRole('button', { name: 'Adjust tag selection' }).click();
+    await page.getByRole('button', { name: 'someday', exact: true }).click(); // on…
+    await expect(page.getByRole('checkbox')).toBeChecked();
+    await page.getByRole('button', { name: 'someday', exact: true }).click(); // …and off
+    await expect(page.getByRole('checkbox')).toBeChecked();
+    await expect(page.getByText('Water plants')).toBeVisible();
+
+    // F2: deal the deck and X out — home to the bookmark view, not the workshop.
+    await page.getByRole('button', { name: 'Focus', exact: true }).click();
+    await expect(page).toHaveURL(/\/focus\?.*bm=bmF/);
+    await page.getByRole('button', { name: 'Exit focus' }).click();
+    await expect(page.getByRole('heading', { name: 'Daily' })).toBeVisible();
+    await expect(page.getByRole('checkbox')).toBeChecked();
+  });
+});
+
 test.describe('without bookmarks', () => {
   test.use({ seedDoc: new DocBuilder().project('vac', 'Vacation').build() });
 

@@ -1,4 +1,4 @@
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, Pencil, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
@@ -82,6 +82,11 @@ export function TagFilterPanel({
   const [manageOpen, setManageOpen] = useState(false);
   // The bookmark view leads with the actions; the chips open on demand (#745).
   const [selectionOpen, setSelectionOpen] = useState(!collapseSelection);
+  // If the collapse mode leaves mid-session (the bookmark deleted remotely → workshop mode),
+  // the expander disappears — the chips must not stay hidden with no way back (#750).
+  useEffect(() => {
+    if (!collapseSelection) setSelectionOpen(true);
+  }, [collapseSelection]);
 
   function submitAddTag(event: FormEvent) {
     event.preventDefault();
