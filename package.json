@@ -19,6 +19,10 @@
     "e2e:ui": "playwright test --ui",
     "i18n:check": "node scripts/check-i18n.mjs",
     "i18n:export-domain": "node scripts/export-domain-vocab.mjs",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:status": "supabase status",
+    "db:reset": "supabase db reset",
     "mcp": "tsx --env-file=.env mcp/server.ts"
   },
   "dependencies": {
