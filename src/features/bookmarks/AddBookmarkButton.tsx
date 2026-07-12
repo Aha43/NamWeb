@@ -14,12 +14,20 @@ import {
  * target is already bookmarked (click removes it); outline otherwise (click adds it, assigning the
  * next palette color). Self-contained — drives the synced workspace document directly.
  */
-export function AddBookmarkButton({ draft }: { draft: BookmarkDraft }) {
+export function AddBookmarkButton({
+  draft,
+  existingId,
+}: {
+  draft: BookmarkDraft;
+  /** Pin the toggle to this bookmark id (the bookmark view, #750/F3) — the star must reflect
+   *  the bookmark you're standing in, not a draft-shape match the forced Next-only can break. */
+  existingId?: string;
+}) {
   const { document, dispatch } = useWorkspaceContext();
   if (!document) return null;
 
   const bookmarks = bookmarksOf(document);
-  const existing = findBookmark(bookmarks, draft);
+  const existing = (existingId ? bookmarks.find((b) => b.id === existingId) : undefined) ?? findBookmark(bookmarks, draft);
   const label = existing ? 'Remove bookmark' : 'Bookmark this';
 
   const toggle = () => {

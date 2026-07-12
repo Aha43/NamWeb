@@ -70,7 +70,7 @@ describe('BookmarkBar', () => {
     ]);
     renderWithWs(<BookmarkBar />, workspace);
     fireEvent.click(screen.getByRole('button', { name: 'Focus: After work' }));
-    expect(screen.getByTestId('path').textContent).toBe('/focus?tags=daily&next=1');
+    expect(screen.getByTestId('path').textContent).toBe('/focus?tags=daily&next=1&bm=b2');
   });
 
   it('a stale bookmark offers no focus glyph (#739)', () => {

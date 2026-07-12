@@ -75,11 +75,15 @@ export function bookmarkTarget(bookmark: Bookmark): string {
 }
 
 /** The speed-dial route (#738): focus scoped to the bookmark — the deck, not the view. Both
- *  scopes are long-standing FocusPage URLs (project = the workbench Focus semantics). */
+ *  scopes are long-standing FocusPage URLs (project = the workbench Focus semantics). A context
+ *  bookmark's deck follows the bookmark VIEW's rule (#750/F4): about doing, so Next-only —
+ *  regardless of the stored flag — and it carries `bm` so the deck's exit lands back in the
+ *  bookmark view. (Backlog-inclusive decks can return via a switcher in tag-scoped Focus.) */
 export function bookmarkFocusTarget(bookmark: Bookmark): string {
   if (bookmark.kind === 'project') return `/focus?project=${bookmark.projectId}`;
-  const params = tagFilterParams(bookmark.tags ?? [], Boolean(bookmark.nextOnly)).toString();
-  return params ? `/focus?${params}` : '/focus';
+  const params = tagFilterParams(bookmark.tags ?? [], true);
+  params.set('bm', bookmark.id);
+  return `/focus?${params.toString()}`;
 }
 
 /** A project bookmark whose project no longer exists (or is no longer a project) is stale. */

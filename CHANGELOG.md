@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Review hardenings (independent Claude review).** The bookmark view's forced Next-only now survives everything a visit does: tag-chip toggles no longer silently release it, the Focus round-trip comes home to the bookmark view instead of the Tags workshop, and the bookmark star stays filled inside the bookmark's own view (no accidental near-duplicates). The speed dial follows the view's rule — a context bookmark's deck deals Next-only and its exit lands back in the bookmark view. Plus: ⌘Z can't fire an undo invisibly under an open menu, the new ⌘-Enter handlers respect IME composition, and the tag chips can't get stuck hidden if a bookmark vanishes mid-visit. Closes #750.
+
 ### Added
 
 - **Undo answers ⌘/Ctrl+Z.** While an Undo toast is up, the universal undo key fires it — no mouse travel to a small button at the bottom of the screen. Text fields keep their own undo, modals keep their keys, and the toast's button now shows the key hint so the shortcut teaches itself. Closes #744.

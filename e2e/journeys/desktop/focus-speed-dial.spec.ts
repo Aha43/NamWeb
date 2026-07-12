@@ -23,13 +23,14 @@ test('speed-dial a context bookmark straight into its deck, exit back to the vie
   await page.getByRole('menuitem', { name: 'Focus: After work' }).click();
 
   // Straight into the scoped deck — no stop at the Contexts view.
-  await expect(page).toHaveURL(/\/focus\?tags=daily&next=1$/);
+  await expect(page).toHaveURL(/\/focus\?tags=daily&next=1&bm=bm2$/);
   await expect(page.getByText('Focus: daily')).toBeVisible(); // scoped header
   await expect(page.getByText('Water plants')).toBeVisible(); // the card
 
-  // Exit lands on the matching tag-filter view, selection intact.
+  // Exit comes home to the bookmark view, selection intact (#750/F2).
   await page.getByRole('button', { name: 'Exit focus' }).click();
-  await expect(page).toHaveURL(/\/tags\?tags=daily&next=1$/);
+  await expect(page).toHaveURL(/\/tags\?tags=daily&next=1&bm=bm2$/);
+  await expect(page.getByRole('heading', { name: 'After work' })).toBeVisible();
 });
 
 test('speed-dial a project bookmark — the workbench Focus semantics, one click', async ({ page }) => {

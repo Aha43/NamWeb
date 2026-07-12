@@ -64,7 +64,7 @@ export function RenameBookmarkDialog({
         className="max-w-md"
         // ⌘/Ctrl+Enter = the app-wide "commit this dialog" gesture (#746).
         onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.nativeEvent.isComposing) {
             e.preventDefault();
             e.stopPropagation();
             commit();

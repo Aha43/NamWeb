@@ -65,7 +65,9 @@ export function TagsPage() {
       rows={rows}
       savedViews={bookmark ? [] : (document?.savedViews ?? [])}
       onToggleTag={(tag) =>
-        setFilter(selected.includes(tag) ? selected.filter((t) => t !== tag) : [...selected, tag], nextOnly)
+        // effectiveNextOnly, not the raw parse (#750/F1): in the bookmark view a chip toggle
+        // must not silently release the forced Next-only.
+        setFilter(selected.includes(tag) ? selected.filter((t) => t !== tag) : [...selected, tag], effectiveNextOnly)
       }
       title={bookmark?.label}
       collapseSelection={Boolean(bookmark)}
@@ -91,9 +93,11 @@ export function TagsPage() {
         if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
       }}
       onSaveView={bookmark ? undefined : (name) => dispatch({ type: 'createSavedView', name, tags: selected, nextOnly: effectiveNextOnly })}
-      onFocus={() =>
-        navigate({ pathname: '/focus', search: tagFilterParams(selected, effectiveNextOnly).toString() })
-      }
+      onFocus={() => {
+        const search = tagFilterParams(selected, effectiveNextOnly);
+        if (bookmark) search.set('bm', bookmark.id); // the deck's exit comes home to the bookmark view (#750/F2)
+        navigate({ pathname: '/focus', search: search.toString() });
+      }}
       onOpenView={(view) => setFilter(view.tags, view.nextOnly)}
       onRenameView={(oldName, newName) => {
         if (newName !== oldName) dispatch({ type: 'renameSavedView', oldName, newName });
@@ -103,6 +107,9 @@ export function TagsPage() {
         selected.length > 0 ? (
           <AddBookmarkButton
             draft={{ kind: 'tagFilter', tags: selected, nextOnly: effectiveNextOnly, label: `#${selected.join(' #')}` }}
+            // Standing inside a bookmark's own view, the star is that bookmark (#750/F3) — the
+            // forced Next-only must not make it read "not bookmarked" and mint near-duplicates.
+            existingId={bookmark?.id}
           />
         ) : undefined
       }

@@ -18,7 +18,7 @@ test('tap a bookmark row\'s target glyph — straight into the scoped deck', asy
   await page.getByRole('button', { name: 'Focus: After work' }).click();
 
   // Straight into the deck, sheet closed behind us.
-  await expect(page).toHaveURL(/\/focus\?tags=daily&next=1$/);
+  await expect(page).toHaveURL(/\/focus\?tags=daily&next=1&bm=bm1$/);
   await expect(page.getByText('Water plants')).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'More' })).toBeHidden();
 
