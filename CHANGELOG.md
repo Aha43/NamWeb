@@ -10,6 +10,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+### Changed
+
+- **The Supabase setup moved home.** Config and the full migration history now live in this repo (`supabase/`), with `npm run db:start/stop/status/reset` wrappers — the first stone on the road to 2.0's sharing schema, and a consequence of parking NamDesktop. Migration files are verbatim (prod history parity); the real-Supabase smoke spec was de-drifted and runs green against the stack from its new home. Closes #753.
 - **The docs tell the truth: NamWeb is NAM.** CLAUDE.md and the README no longer describe this repo as the "web companion" — NamWeb is the primary (and only active) surface; NamDesktop is parked as the valuable phase one, with a future desktop to be redone from both codebases' lessons. The workspace document format stays a spec-in-progress (additive-only discipline kept). Closes #754.
 
 ## [1.5.0] - 2026-07-12

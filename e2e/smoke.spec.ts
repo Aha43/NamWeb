@@ -21,7 +21,7 @@ test('capture → process → next → done', async ({ page }) => {
   // Capture: quick-add into the inbox.
   await page.goto('/inbox');
   await page.getByLabel('Quick add').fill(title);
-  await page.getByRole('button', { name: 'Add' }).click();
+  await page.getByRole('button', { name: 'Add', exact: true }).click(); // 'Add the Learn NAM…' + the add-position toggle also match loosely
   await expect(page.getByText(title)).toBeVisible();
 
   // Process: it's one action → do it next.
@@ -40,7 +40,8 @@ test('capture → process → next → done', async ({ page }) => {
   await page.getByRole('button', { name: new RegExp(`Status of ${title}`) }).click();
   await page.getByRole('menuitem', { name: 'Done' }).click();
 
-  // Done: it has landed on the completed surface.
+  // Done: it has landed on the completed surface. (The "Marked … as Done" toast may still be
+  // up, so a bare getByText is ambiguous — anchor on the row's edit affordance.)
   await page.getByRole('link', { name: 'Done', exact: true }).click();
-  await expect(page.getByText(title)).toBeVisible();
+  await expect(page.getByRole('button', { name: `Edit ${title}` })).toBeVisible();
 });
