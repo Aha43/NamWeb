@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **The inbox cue reaches the phone.** The bottom-bar Inbox glows red with a count while captures wait, green when you're clear — same signal as the desktop sidebar, now where the couch question actually gets asked. Closes #778.
+
 ## [1.6.0] - 2026-07-13
 
 **Standing alone, sharing quietly.** The cut where NamWeb became self-contained — Supabase
