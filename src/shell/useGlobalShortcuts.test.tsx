@@ -56,6 +56,8 @@ describe('useGlobalShortcuts', () => {
       addToBottomDefault: false,
       setAddToBottomDefault: vi.fn(),
     labs: false,
+    compactRows: false,
+    setCompactRows: vi.fn(),
     setLabs: vi.fn(),
     };
     render(

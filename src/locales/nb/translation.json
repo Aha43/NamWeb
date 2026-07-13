@@ -638,5 +638,7 @@
   "guest.goneTitle": "Denne lenken er ikke lenger aktiv",
   "guest.loading": "Laster…",
   "guest.retry": "Prøv igjen",
-  "guest.sharedFrom": "Delt fra"
+  "guest.sharedFrom": "Delt fra",
+  "rows.comfortable": "Komfortable rader",
+  "rows.compact": "Kompakte rader"
 }

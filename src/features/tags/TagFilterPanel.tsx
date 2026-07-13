@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Pencil, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
+import { CompactRowsToggle } from '../actions/CompactRowsToggle';
 import { Button } from '@/components/ui/button';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { PromptButton } from '@/components/ui/prompt-button';
@@ -282,6 +283,7 @@ export function TagFilterPanel({
             <div className="flex items-center justify-between px-1 text-xs text-muted-foreground">
               <span>{t('tags.matchCount', { count: rows.length })}</span>
               <div className="flex items-center gap-1.5">
+                <CompactRowsToggle />
                 {bookmarkSlot}
                 {onFocus && rows.length > 0 && (
                   <button

@@ -11,6 +11,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
 import { DueHintLabel } from './DueHintLabel';
+import { useSettings } from '@/components/settings/settings-context';
 import { STATUS_TEXT_TONE } from './status';
 import { ProjectPathLinks } from './ProjectPathLinks';
 import { TOUCH_TARGET } from '@/lib/touch';
@@ -103,7 +104,11 @@ export function ActionRow({
       titleEl
     );
 
-  const hasMeta = row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || !!row.dueAt || !!age || !!row.hasResources;
+  // Compact rows (#765): name + controls only — the meta line and path go, padding tightens.
+  const { compactRows } = useSettings();
+  const hasMeta =
+    !compactRows &&
+    (row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || !!row.dueAt || !!age || !!row.hasResources);
   const metaNode = hasMeta ? (
     <div className="mt-0.5 flex flex-wrap items-center gap-1">
       {row.hasResources && (
@@ -209,11 +214,16 @@ export function ActionRow({
     <li
       ref={dragRef}
       style={dragStyle}
-      className="flex items-center gap-2 px-3 py-2 transition-colors even:bg-muted/40 hover:bg-accent/40"
+      className={cn(
+        'flex items-center gap-2 px-3 transition-colors even:bg-muted/40 hover:bg-accent/40',
+        compactRows ? 'py-0.5' : 'py-2',
+      )}
     >
       {checkbox}
       <div className="min-w-0 flex-1">
-        {showPath && <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />}
+        {showPath && !compactRows && (
+          <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />
+        )}
         {titleNode}
         {metaNode}
       </div>
