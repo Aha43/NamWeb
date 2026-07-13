@@ -11,6 +11,29 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.6.0 — 2026-07-13
+
+*(one day; 12 PRs, 1 release — the densest day in the repo's history)* The cut where the
+project grew up twice at once. **Structurally**: NamDesktop parked, `supabase/` moved home,
+the docs stopped saying "companion" — NamWeb simply is NAM now, and the migrations guard
+proved itself immediately (a June grant fix turned out to live in prod's schema but not its
+history; backfilled cleanly). **Ambitiously**: the 2.0.0 epic went from ratified design doc to
+two shipped stages in a day — the sanitizer, the RPC-only security model (hardened mid-push
+when a prod probe caught hosted default-privileges quietly undoing "no anon grants"), and the
+guest page itself: a secret link now renders a real itinerary for a sister who will never hear
+the word "server". All dark behind Labs; the trip project can be published today. In between,
+a "boring" dogfooding sprint that wasn't: the inbox now glows red until processed, rows
+compact on one flip (found missing from the workbench by the user within minutes — dogfooding
+glasses beat audits), status boxes gave every list one mental model (the reviewer's favorite
+verdict: "premise rejected, in the feature's favor — there is no add-vs-subtract split"). The
+review dance ran its fullest round: six Claude findings — one a real constructible
+private-date leak through derived spans, one a production-only bug (jsonb key reordering made
+the freshness hint permanently dirty) that unit mocks *structurally cannot see* — then a
+Codex P2 that killed the republish-resurrection path entirely. Process scars worth the
+keeping: three CI burns from pipe-masked exit codes in one day ended that habit; hooks-before-
+early-returns bit and was caught by journeys. Verdict: **converging hard** — the epic is two
+stages from its unveiling, and the next arc is already named: the phone.
+
 ## v1.5.0 — 2026-07-12
 
 *(one day; 7 PRs, 1 release)* The cut where bookmarks stopped being shortcuts and became the
