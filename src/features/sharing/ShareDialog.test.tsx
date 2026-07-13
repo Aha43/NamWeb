@@ -143,6 +143,19 @@ describe('ShareDialog', () => {
     expect(screen.queryByText(/changed since the last publish/)).not.toBeInTheDocument();
   });
 
+  it('republish after an unpublish-elsewhere honors the revocation — no silent re-mint (#774)', async () => {
+    service.fetchShare.mockResolvedValue({ token: 'tok123', project_id: 'trip', content: { version: 1, title: 'Old', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
+    service.publishShare.mockResolvedValue(null); // the row vanished under us
+    renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Republish' }));
+    await waitFor(() => expect(screen.getByText(/unpublished on another device/)).toBeInTheDocument());
+    expect(screen.getByText(/Not published/)).toBeInTheDocument(); // dropped to unpublished, honestly
+    expect(service.publishShare).toHaveBeenCalledTimes(1); // and no second, fresh-token insert
+  });
+
   it('a stale snapshot shows the republish hint', async () => {
     // Stored content deliberately differs from what the sanitizer produces now.
     service.fetchShare.mockResolvedValue({ token: 'tok123', project_id: 'trip', content: { version: 1, title: 'Old title', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
