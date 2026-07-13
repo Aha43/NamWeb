@@ -16,15 +16,15 @@ async function ownerClient() {
   return { client, userId: data.user.id };
 }
 
-test('guests read exactly one enabled share via the RPC — and nothing else', async ({ browserName: _browserName }, testInfo) => {
-  const TOKEN = `e2e-smoke-share-${testInfo.project.name}`;
+test('guests read exactly one enabled share via the RPC — and nothing else', async ({ browserName }) => {
+  const TOKEN = `e2e-smoke-share-${browserName}`;
   const { client: owner, userId } = await ownerClient();
   const anon = createClient(E2E.supabaseUrl, E2E.supabaseKey);
 
   // Owner publishes (upsert like the app does).
   const content = { version: 1, title: 'Smoke trip', publishedAt: 'x', items: [], sections: [] };
   const up = await owner.from('project_shares').upsert(
-    { token: TOKEN, owner_user_id: userId, project_id: `e2e-smoke-project-${testInfo.project.name}`, content, enabled: true },
+    { token: TOKEN, owner_user_id: userId, project_id: `e2e-smoke-project-${browserName}`, content, enabled: true },
     { onConflict: 'owner_user_id,project_id' },
   );
   expect(up.error).toBeNull();
