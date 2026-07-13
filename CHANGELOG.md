@@ -8,7 +8,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
-### Changed
+### Added
+
+- **Project sharing has a design doc.** The 2.0.0 epic — projects published as guest-friendly web sites via secret links, guests never becoming users — is written up in `docs/features/project-sharing/design.md`: the snapshot architecture, the `private`-tag visibility grammar, capture-not-edit guest input, the staged (dark) rollout, and the open questions each stage must settle. Closes #757.
 
 ### Changed
 
