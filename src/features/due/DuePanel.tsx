@@ -1,4 +1,5 @@
 import { CompactRowsToggle } from '../actions/CompactRowsToggle';
+import { ListHeaderControls } from '../actions/ListHeaderControls';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
@@ -51,11 +52,7 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focu
       {/* Pin the Focus entry point so it stays reachable while the groups scroll under. */}
       {(focusSlot || statusSlot) && (
         <div className="sticky top-0 z-10 bg-background pt-1">
-          <div className="mb-2 flex items-center justify-end gap-1">
-            {statusSlot && <div className="mr-auto">{statusSlot}</div>}
-            <CompactRowsToggle />
-            {focusSlot}
-          </div>
+          <ListHeaderControls statusSlot={statusSlot} rowsToggle={<CompactRowsToggle />} focusSlot={focusSlot} />
         </div>
       )}
       {SECTIONS.map((section) => {

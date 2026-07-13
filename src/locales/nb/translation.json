@@ -435,6 +435,7 @@
   "inbox.skip": "Hopp over",
   "inbox.topLevel": "Toppnivå",
   "list.exitSelect": "Avslutt valg",
+  "list.filters": "Filter",
   "list.moveDown": "Flytt ned",
   "list.moveDownAria": "Flytt {title} ned",
   "list.moveUp": "Flytt opp",

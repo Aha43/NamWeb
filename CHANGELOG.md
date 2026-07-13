@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Phone list headers grew up.** The desktop furniture — status boxes, the rows toggle, Sort — no longer crams and wraps at phone width: one quiet **Filter** chip discloses it all, stacked and thumb-sized, while Focus stays out beside the chip where a primary action belongs. Desktop headers unchanged. Closes #777.
+
 ## [1.6.0] - 2026-07-13
 
 **Standing alone, sharing quietly.** The cut where NamWeb became self-contained — Supabase
