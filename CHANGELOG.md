@@ -8,6 +8,18 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-07-13
+
+**Standing alone, sharing quietly.** The cut where NamWeb became self-contained — Supabase
+config and migrations moved home, the docs stopped calling this the companion — and the 2.0.0
+engine came aboard dark: projects can publish to secret guest web pages (Labs), the sanitizer
+adversarially reviewed, the security model proven against production. Around it, a dogfooding
+sprint made the everyday lists sharper: the inbox glows red until you process it, rows go
+compact on one flip, status boxes turn every list into exactly the view you need, and the
+calendar stopped living twice. Hardened by the fullest review dance yet — seven findings
+across two rounds, including a real private-date leak and a dirty-hint bug only the production
+database could reveal.
+
 ### Fixed
 
 - **Review hardenings (independent Claude review).** The sharing sanitizer no longer lets a private child's dates shape a derived section span (the one construction that got through — min/max of one item is that item's value); the Share dialog's changes-since-publish hint now sees through Postgres's key reordering instead of being permanently on; a stale republish can no longer resurrect a rotated (revoked-for-security) link, and a raced rotation fails loudly instead of showing a link that never existed; the Contexts status boxes forget their session tweaks when a saved view or bookmark re-click lands a fresh visit; corrupt documents publish what they can instead of crashing; and a future share format tells guests they need a newer link rather than rendering wrong. Closes #772.
@@ -1463,7 +1475,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.6.0...HEAD
+[1.6.0]: https://github.com/Aha43/NamWeb/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Aha43/NamWeb/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Aha43/NamWeb/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/Aha43/NamWeb/compare/v1.2.0...v1.3.0
