@@ -26,6 +26,7 @@ import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRo
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
 import { ProjectSummaryDialog } from './ProjectSummaryDialog';
 import { ShareButton } from '@/features/sharing/ShareButton';
+import { CompactRowsToggle } from '@/features/actions/CompactRowsToggle';
 import { ProjectDetailsPanel } from './ProjectDetailsPanel';
 import type { ActionEdits } from '../actions/ActionDialog';
 import { descriptionTooltip, type ActionRowData } from '../actions/rows';
@@ -553,6 +554,7 @@ export function ProjectWorkbench({
                     shortcutKey="y"
                   />
                 </div>
+                {!sectionCollapsed('actions') && actions.length > 0 && <CompactRowsToggle />}
                 {actions.length > 0 && onDeleteAction && (
                   <Tooltip label={selectMode ? t('list.exitSelect') : t('done.selectActions')}>
                     <button

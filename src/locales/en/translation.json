@@ -639,5 +639,9 @@
   "guest.goneTitle": "This link is no longer active",
   "guest.loading": "Loading…",
   "guest.retry": "Try again",
-  "guest.sharedFrom": "Shared from"
+  "guest.sharedFrom": "Shared from",
+  "rows.comfortable": "Comfortable rows",
+  "rows.compact": "Compact rows",
+  "rows.stateComfortable": "Cozy",
+  "rows.stateCompact": "Compact"
 }
