@@ -16,7 +16,7 @@ async function ownerClient() {
   return { client, userId: data.user.id };
 }
 
-test('guests read exactly one enabled share via the RPC — and nothing else', async ({}, testInfo) => {
+test('guests read exactly one enabled share via the RPC — and nothing else', async ({ browserName: _browserName }, testInfo) => {
   const TOKEN = `e2e-smoke-share-${testInfo.project.name}`;
   const { client: owner, userId } = await ownerClient();
   const anon = createClient(E2E.supabaseUrl, E2E.supabaseKey);
