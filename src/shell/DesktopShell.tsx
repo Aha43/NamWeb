@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Folders, ListTodo, PanelLeftClose, PanelLeftOpen, Plus, Search, Tag, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,8 @@ import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
 import { SIDEBAR_GROUPS, focus, next, projects, tags, calendar } from './nav';
+import { useWorkspaceContext } from '@/store/workspace-context';
+import { backlogItems, doneItems, dueGroups, inboxItems } from '@/domain/lenses';
 import { TOOLBAR_SEARCH_ID } from './useGlobalShortcuts';
 import { ShellContent } from './ShellContent';
 import { SyncNotice } from './SyncNotice';
@@ -39,6 +41,21 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   const { openCapture } = useCapture();
   const { dense } = useSettings();
   const { width, collapsed, setWidth, toggleCollapsed } = useSidebarLayout();
+  // Sidebar counts (#764): the inbox count is the in-your-face cue (badge + red/green glow);
+  // backlog/due/done keep theirs in the tooltip — inspectable without stealing the light.
+  const { document: workspaceDoc } = useWorkspaceContext(); // renamed: the DOM global is used below
+  const counts = useMemo(() => {
+    if (!workspaceDoc) return { inbox: 0, tips: {} as Record<string, number> };
+    const due = dueGroups(workspaceDoc);
+    return {
+      inbox: inboxItems(workspaceDoc).length,
+      tips: {
+        '/backlog': backlogItems(workspaceDoc).length,
+        '/due': due.overdue.length + due.today.length,
+        '/done': doneItems(workspaceDoc).length,
+      } as Record<string, number>,
+    };
+  }, [workspaceDoc]);
   // The right settings panel (#599): which tab it opened on, or null = closed. Session state —
   // it reopens fresh from the AccountMenu, never on reload.
   const [settingsTab, setSettingsTab] = useState<SettingsTab | null>(null);
@@ -186,25 +203,42 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                         {t(group.label)}
                       </span>
                     )}
-                    {group.items.map(({ to, label, icon: Icon, hint }) => (
+                    {group.items.map(({ to, label, icon: Icon, hint }) => {
+                      const isInbox = to === '/inbox';
+                      const tipCount = counts.tips[to];
                       /* Dense: the tooltip must NAME the surface (the label is gone); rich hints
-                         wait for labelled mode. */
-                      <Tooltip key={to} label={dense ? t(label) : hint ? t(hint) : ''}>
-                        {/* Static (string) className + aria-current for the active state — a render-prop
-                            className breaks when the Tooltip's asChild Slot clones the NavLink. */}
-                        <NavLink
-                          to={to}
-                          aria-label={t(label)}
-                          className={cn(
-                            'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
-                            'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
-                          )}
-                        >
-                          <Icon className="h-4 w-4" />
-                          {!dense && t(label)}
-                        </NavLink>
-                      </Tooltip>
-                    ))}
+                         wait for labelled mode. Counted views append their count either way. */
+                      const base = dense ? t(label) : hint ? t(hint) : '';
+                      const tip =
+                        tipCount !== undefined || (isInbox && dense)
+                          ? `${base} · ${isInbox ? counts.inbox : tipCount}`
+                          : base;
+                      return (
+                        <Tooltip key={to} label={tip}>
+                          {/* Static (string) className + aria-current for the active state — a render-prop
+                              className breaks when the Tooltip's asChild Slot clones the NavLink. */}
+                          <NavLink
+                            to={to}
+                            aria-label={t(label)}
+                            className={cn(
+                              'flex items-center gap-3 rounded-md px-2 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground',
+                              'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
+                            )}
+                          >
+                            <Icon className={cn('h-4 w-4', isInbox && (counts.inbox > 0 ? 'inbox-glow-attention' : 'inbox-glow-clear'))} />
+                            {!dense && t(label)}
+                            {isInbox && counts.inbox > 0 && !dense && (
+                              <span
+                                aria-label={t('nav.inboxCountAria', { count: counts.inbox })}
+                                className="ml-auto rounded-full bg-red-500/15 px-2 py-0.5 text-xs font-semibold text-red-600 dark:text-red-400"
+                              >
+                                {counts.inbox}
+                              </span>
+                            )}
+                          </NavLink>
+                        </Tooltip>
+                      );
+                    })}
                   </div>
                 ))}
               </nav>

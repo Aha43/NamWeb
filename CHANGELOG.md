@@ -14,6 +14,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **The inbox is in your face now.** The sidebar Inbox entry glows red with a count badge while anything sits unprocessed — and a happy green when you're clear. Backlog, Due, and Done carry their counts quietly in their tooltips (and in dense mode the inbox count joins its tooltip too), easy to inspect without stealing the inbox's light. Closes #764.
+
+### Added
+
 - **Project sharing, stage 2: the guest page.** The secret link now renders — a clean, mobile-first itinerary page with the project as the masthead (dates and notes included per the share's toggles), sub-projects as sections, and items with friendly dates in the guest's own language. No sign-in wall, no app chrome, no NAM concepts — just the trip, with a quiet "Shared from NAM" footer. Unknown, revoked, and failed all land on the same gentle "no longer active" page (no way to probe for links), and search engines are told to stay out twice over. Closes #761.
 - **Project sharing, stage 1 (dark, Labs).** The 2.0.0 epic's foundation is in: a `project_shares` table whose only guest read path is a locked-down RPC (no way to enumerate links), a pure allowlist sanitizer that snapshots a project for guests — `private`-tagged subtrees stay home, cancelled/archived never travel, field toggles choose dates/progress/notes, and guest ids reveal nothing — and a Share dialog on the workbench (behind the new **Labs** settings toggle, real accounts only): publish mints the secret link, republish refreshes it, unpublish/new-link kill the old one. The guest page itself is stage 2 — the link 404s for now. Closes #759.
 
