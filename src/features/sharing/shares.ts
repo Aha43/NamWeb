@@ -70,6 +70,14 @@ export async function rotateShareToken(oldToken: string): Promise<string> {
   return token;
 }
 
+/** The guest read path (#761): the RPC, and only the RPC — the table is dark to anon.
+ *  Unknown and revoked tokens are the same null (no oracle). */
+export async function fetchGuestShare(token: string): Promise<ShareContent | null> {
+  const { data, error } = await supabase.rpc('get_project_share', { share_token: token });
+  if (error) throw new Error(error.message);
+  return (data as ShareContent | null) ?? null;
+}
+
 /** The guest URL for a token — path-based (`/p/<token>`), served by the SPA (stage 2). */
 export function shareUrl(token: string): string {
   return `${window.location.origin}/p/${token}`;

@@ -633,5 +633,10 @@
   "share.unpublish": "Unpublish",
   "share.unpublishAria": "Unpublish this project",
   "share.unpublishConfirm": "Unpublish? The link stops working immediately.",
-  "share.urlAria": "Secret share link"
+  "share.urlAria": "Secret share link",
+  "guest.goneBody": "The page may have been unpublished or the link replaced. Ask the person who shared it for a fresh one.",
+  "guest.goneTitle": "This link is no longer active",
+  "guest.loading": "Loading…",
+  "guest.retry": "Try again",
+  "guest.sharedFrom": "Shared from"
 }

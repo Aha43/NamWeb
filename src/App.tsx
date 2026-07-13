@@ -3,10 +3,22 @@ import { AuthedApp } from './AuthedApp';
 import { AuthScreen } from './auth/AuthScreen';
 import { useSession } from './auth/useSession';
 import { DemoApp } from './demo/DemoApp';
+import { GuestSharePage } from './features/sharing/GuestSharePage';
+
+/** The guest page (#761) sits fully outside the auth gate: no session, no providers, no app.
+ *  The token rides the path (/p/<token>); the page is the share's whole world. */
+function guestToken(): string | null {
+  const m = window.location.pathname.match(/^\/p\/([A-Za-z0-9-]+)\/?$/);
+  return m ? m[1] : null;
+}
 
 /** Auth gate: shows the auth screen until there is a session, then the app — or the no-account demo. */
 export default function App() {
+  // Checked before anything session-related: a guest with a share link never sees a sign-in
+  // wall, a loading app, or a NAM concept. (Before useSession's effects, but hooks still run.)
+  const [token] = useState(guestToken);
   const { session, loading, recovery, clearRecovery } = useSession();
+  if (token) return <GuestSharePage token={token} />;
   // Demo mode: entered via "Try the demo" or a direct /demo link. Replace /demo with / so the app's
   // own routes take over once mounted.
   const [demo, setDemo] = useState(() => window.location.pathname === '/demo');
