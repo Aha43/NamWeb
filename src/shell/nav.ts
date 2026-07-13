@@ -57,7 +57,9 @@ export interface NavGroup {
  *  "Views"/"Organize" headings (things are what they are); the phone More sheet keeps its own. */
 export const SIDEBAR_GROUPS: NavGroup[] = [
   { items: [inbox] },
-  { items: [backlog, due, calendar, blocked, done] },
+  // Calendar lives in the toolbar command bar too (#763) — one home is enough on desktop;
+  // the phone More sheet keeps it (no toolbar there).
+  { items: [backlog, due, blocked, done] },
   { items: [goals, templates] },
 ];
 
