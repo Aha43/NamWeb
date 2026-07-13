@@ -33,7 +33,10 @@ export interface TagFilterPanelProps {
   onRenameTag?: (tag: string, newName: string) => void;
   /** Delete a tag (from the list and every item using it). */
   onDeleteTag?: (tag: string) => void;
-  onToggleNextOnly: () => void;
+  /** Superseded by statusBoxesSlot (#766); kept optional for compat. */
+  onToggleNextOnly?: () => void;
+  /** The status include-boxes (#766) — rendered where the old Next-only checkbox sat. */
+  statusBoxesSlot?: ReactNode;
   onSetStatus: (id: string, status: NodeStatus) => void;
   onEdit?: (id: string) => void;
   /** Inline delete (with confirm) for a result action row. */
@@ -64,7 +67,7 @@ export function TagFilterPanel({
   tagCounts,
   onRenameTag,
   onDeleteTag,
-  onToggleNextOnly,
+  statusBoxesSlot,
   onSetStatus,
   onEdit,
   onDeleteAction,
@@ -234,10 +237,7 @@ export function TagFilterPanel({
                 {selectionOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                 {selected.join(', ')}
               </button>
-              <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
-                <input type="checkbox" checked={nextOnly} onChange={onToggleNextOnly} />
-                {t('tags.nextOnly')}
-              </label>
+              {statusBoxesSlot}
             </div>
           )}
           {selectionOpen && (
@@ -264,12 +264,7 @@ export function TagFilterPanel({
                 })}
               </div>
 
-              {!collapseSelection && (
-                <label className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
-                  <input type="checkbox" checked={nextOnly} onChange={onToggleNextOnly} />
-                  {t('tags.nextOnly')}
-                </label>
-              )}
+              {!collapseSelection && statusBoxesSlot}
             </>
           )}
 

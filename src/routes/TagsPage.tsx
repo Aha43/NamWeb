@@ -1,10 +1,12 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { allTags, contextItems, effectiveTags } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
 import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
+import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { type StatusBoxes } from '@/features/actions/statusBoxes';
 import { tagFilterParams, parseTagFilter } from '@/features/tags/tagFilterParams';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
@@ -33,6 +35,28 @@ export function TagsPage() {
   // how the bookmark was saved. Unchecking is a session tweak: it must survive the URL
   // round-trip, so the bookmark view writes `next` explicitly (1/0) instead of omit-means-off.
   const effectiveNextOnly = bookmark && !params.has('next') ? true : nextOnly;
+  // The status boxes (#766): NEXT/BACKLOG defaults derive from the URL's nextOnly semantics
+  // (so bookmarks/saved views/Focus keep their contract); DONE — and combos the URL can't
+  // express (Backlog alone) — are session overrides, reset when the visit identity changes.
+  const [boxOverride, setBoxOverride] = useState<Partial<StatusBoxes>>({});
+  useEffect(() => {
+    setBoxOverride({});
+  }, [bmId]);
+  const boxes: StatusBoxes = {
+    NEXT: boxOverride.NEXT ?? true,
+    BACKLOG: boxOverride.BACKLOG ?? !effectiveNextOnly,
+    DONE: boxOverride.DONE ?? false,
+  };
+  const toggleBox = (k: keyof StatusBoxes) => {
+    const next = { ...boxes, [k]: !boxes[k] };
+    setBoxOverride((o) => ({ ...o, [k]: next[k] }));
+    // Keep the URL's nextOnly truthful when the combo is representable — {Next} ↔ next=1,
+    // {Next, Backlog} ↔ next=0 — so the star/save/Focus round-trips stay honest.
+    if (k !== 'DONE') {
+      if (next.NEXT && !next.BACKLOG) setFilter(selected, true);
+      else if (next.NEXT && next.BACKLOG) setFilter(selected, false);
+    }
+  };
   const setFilter = (nextSelected: string[], nextNextOnly: boolean) => {
     const next = tagFilterParams(nextSelected, nextNextOnly);
     if (bookmark) {
@@ -54,7 +78,9 @@ export function TagsPage() {
   // Only filter once at least one tag is chosen — an empty selection matches everything.
   const rows =
     document && selected.length > 0
-      ? contextItems(document, selected, effectiveNextOnly).map((n) => toActionRow(document, n))
+      ? contextItems(document, selected, false, boxes.DONE)
+          .filter((n) => (n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE' ? boxes[n.status] : true))
+          .map((n) => toActionRow(document, n))
       : [];
 
   return (
@@ -84,7 +110,7 @@ export function TagsPage() {
         dispatch({ type: 'deleteTag', tag });
         setFilter(selected.filter((t) => t !== tag), effectiveNextOnly);
       }}
-      onToggleNextOnly={() => setFilter(selected, !effectiveNextOnly)}
+      statusBoxesSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
       onSetStatus={setStatus}
       onEdit={openEditor}
       onDeleteAction={deleteNode}

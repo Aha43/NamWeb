@@ -32,6 +32,7 @@ describe('TagFilterPanel', () => {
     setup({
       title: 'After work',
       collapseSelection: true,
+      statusBoxesSlot: <div data-testid="boxes" />,
       selected: ['home', 'errand'],
       nextOnly: true,
       rows: [row('a', 'Water plants')],
@@ -43,15 +44,15 @@ describe('TagFilterPanel', () => {
 
     const expander = screen.getByRole('button', { name: 'Adjust tag selection' });
     expect(expander).toHaveTextContent('home, errand');
-    // Next-only lives OUTSIDE the collapse — the doing-lever is always at hand.
-    expect(screen.getByRole('checkbox')).toBeChecked();
+    // The status boxes live OUTSIDE the collapse — the doing-levers are always at hand (#766).
+    expect(screen.getByTestId('boxes')).toBeInTheDocument();
 
     fireEvent.click(expander);
     expect(screen.getByRole('button', { name: 'urgent' })).toBeInTheDocument(); // chips back for tweaking
-    expect(screen.getAllByRole('checkbox')).toHaveLength(1); // and no duplicate toggle inside
+    expect(screen.getAllByTestId('boxes')).toHaveLength(1); // no duplicate inside
     fireEvent.click(expander); // and away again
     expect(screen.queryByRole('button', { name: 'urgent' })).not.toBeInTheDocument();
-    expect(screen.getByRole('checkbox')).toBeInTheDocument(); // still at hand
+    expect(screen.getByTestId('boxes')).toBeInTheDocument(); // still at hand
   });
 
   it('the plain view is untouched: no title, chips visible, no expander (#745)', () => {

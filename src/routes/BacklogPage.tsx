@@ -1,10 +1,12 @@
-import { actionMoveTargets, actionMoveTargetsAll, applyViewOrder, backlogItems } from '@/domain/lenses';
+import { actionMoveTargets, actionMoveTargetsAll, applyViewOrder, actionsWithStatuses } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
 import { BacklogPanel } from '@/features/backlog/BacklogPanel';
 import { FocusButton } from '@/features/focus/FocusButton';
+import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { checkedStatuses, useStatusBoxes } from '@/features/actions/statusBoxes';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useSetStatus } from '@/features/actions/useSetStatus';
@@ -24,7 +26,9 @@ export function BacklogPage() {
   const isDesktop = useIsDesktop();
 
   // In "Unsorted" mode the saved manual order applies; oldest/newest are computed.
-  const base = document ? backlogItems(document) : [];
+  // Status include-boxes (#766): default = this view exactly as it always was (Backlog only).
+  const [boxes, toggleBox] = useStatusBoxes({ BACKLOG: true });
+  const base = document ? actionsWithStatuses(document, checkedStatuses(boxes)) : [];
   const ordered =
     sortMode === 'none' ? applyViewOrder(base, document?.viewOrders[VIEW]) : sortNodes(base, sortMode);
 
@@ -42,6 +46,7 @@ export function BacklogPage() {
       <BacklogPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
       focusSlot={ordered.length > 0 ? <FocusButton to="/focus?source=backlog" label="Focus your Backlog" /> : undefined}
+      statusSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
       sortMode={sortMode}
       onCycleSort={cycleSort}
       reorderable={sortMode === 'none'}

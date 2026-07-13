@@ -43,6 +43,8 @@ export interface BacklogPanelProps {
   dndEnabled?: boolean;
   /** The Focus entry point (a FocusButton) — pinned in the sticky header so it stays reachable. */
   focusSlot?: ReactNode;
+  /** The status include-boxes (#766), pinned with Focus/Sort. */
+  statusSlot?: ReactNode;
 }
 
 /** Backlog: the list with an inline status switch + manual reorder (buttons + desktop drag).
@@ -65,6 +67,7 @@ export function BacklogPanel({
   onReorder,
   dndEnabled,
   focusSlot,
+  statusSlot,
 }: BacklogPanelProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
@@ -94,8 +97,9 @@ export function BacklogPanel({
             <Button type="submit">{t('common.add')}</Button>
           </form>
         )}
-        {(focusSlot || (sortMode && onCycleSort && rows.length > 0)) && (
+        {(focusSlot || statusSlot || (sortMode && onCycleSort && rows.length > 0)) && (
           <div className="mb-2 flex items-center justify-end gap-1">
+            {statusSlot && <div className="mr-auto">{statusSlot}</div>}
             {rows.length > 0 && <CompactRowsToggle />}
             {focusSlot}
             {sortMode && onCycleSort && rows.length > 0 && <SortButton mode={sortMode} onCycle={onCycleSort} />}

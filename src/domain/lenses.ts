@@ -6,7 +6,7 @@
 // Structural nodes (root/inbox/projects/nextActions) are containers and never
 // appear in action lists.
 
-import type { NamNode, WorkspaceDocument } from './types';
+import type { NodeStatus, NamNode, WorkspaceDocument } from './types';
 import { SYSTEM_TAGS, canonicalTag } from './systemTags';
 
 /** The container node ids that should never show up as actions. */
@@ -158,6 +158,16 @@ function childrenByKind(doc: WorkspaceDocument, projectId: string, wantProject: 
 /** A project's direct actions (non-project children), in `childIds` order. */
 export function projectActions(doc: WorkspaceDocument, projectId: string): NamNode[] {
   return childrenByKind(doc, projectId, false);
+}
+
+/** The status-box union (#766): the checked statuses' items, each status keeping its own
+ *  view's semantics (backlog still excludes inbox children, etc.). Order: next, backlog, done. */
+export function actionsWithStatuses(doc: WorkspaceDocument, statuses: readonly NodeStatus[]): NamNode[] {
+  const parts: NamNode[][] = [];
+  if (statuses.includes('NEXT')) parts.push(nextActions(doc));
+  if (statuses.includes('BACKLOG')) parts.push(backlogItems(doc));
+  if (statuses.includes('DONE')) parts.push(doneItems(doc));
+  return parts.flat();
 }
 
 /** A project's direct sub-projects, in `childIds` order. */
@@ -433,13 +443,14 @@ export interface DueGroups {
  * overdue / today / within a week / later. Mirrors NamDesktop's DueLens; agrees with the
  * calendar's notion of "open" (#694).
  */
-export function dueGroups(doc: WorkspaceDocument, now: Date = new Date()): DueGroups {
+export function dueGroups(doc: WorkspaceDocument, now: Date = new Date(), includeDone = false): DueGroups {
   const today0 = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const groups: DueGroups = { overdue: [], today: [], thisWeek: [], later: [] };
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   for (const node of Object.values(doc.nodes)) {
-    if (node.project || node.status === 'DONE' || node.status === 'CANCELLED' || structural.has(node.id) || archived.has(node.id) || !node.dueAt) continue;
+    if (node.project || node.status === 'CANCELLED' || structural.has(node.id) || archived.has(node.id) || !node.dueAt) continue;
+    if (node.status === 'DONE' && !includeDone) continue;
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueAt);
     if (!match) continue;
     const due0 = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime();
@@ -470,11 +481,13 @@ export function contextItems(
   doc: WorkspaceDocument,
   requiredTags: string[],
   nextOnly = false,
+  includeDone = false,
 ): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter((n) => {
-    if (n.project || n.status === 'DONE' || structural.has(n.id) || archived.has(n.id)) return false;
+    if (n.project || structural.has(n.id) || archived.has(n.id)) return false;
+    if (n.status === 'DONE' && !includeDone) return false; // done joins only when the box asks (#766)
     if (nextOnly && n.status !== 'NEXT') return false;
     if (requiredTags.length === 0) return true;
     // Case-insensitive match: the web normalizes tags to lowercase, but NamDesktop-written

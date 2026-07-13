@@ -67,13 +67,16 @@ test.describe('with bookmarks', () => {
     await expect(page.getByRole('button', { name: 'Manage tags' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'home', exact: true })).toHaveCount(0);
 
-    // Next-only is the always-at-hand doing-lever: outside the collapse, checked on landing,
-    // and a session uncheck sticks in the URL without leaving the bookmark view.
-    const nextOnly = page.getByRole('checkbox');
-    await expect(nextOnly).toBeChecked();
-    // click, not uncheck(): the control is URL-driven — the state flips on the router re-render.
-    await nextOnly.click();
-    await expect(nextOnly).not.toBeChecked();
+    // The status boxes (#766) are the always-at-hand doing-levers: outside the collapse,
+    // Next-only semantics on landing (Next ✓, Backlog ✗), and ticking Backlog writes the URL's
+    // nextOnly=0 without leaving the bookmark view.
+    const nextBox = page.getByRole('checkbox', { name: 'Next' });
+    const backlogBox = page.getByRole('checkbox', { name: 'Backlog' });
+    await expect(nextBox).toBeChecked();
+    await expect(backlogBox).not.toBeChecked();
+    // click, not check(): the control is URL-driven — the state flips on the router re-render.
+    await backlogBox.click();
+    await expect(backlogBox).toBeChecked();
     await expect(page).toHaveURL(/next=0.*bm=bm3|bm=bm3.*next=0/);
     await expect(page.getByRole('heading', { name: '#home' })).toBeVisible(); // still the bookmark view
 
@@ -191,9 +194,10 @@ test.describe('stored-false bookmark round-trips (#750)', () => {
     await page.getByRole('button', { name: 'Context bookmarks' }).click();
     await page.getByRole('menu').getByText('Daily').click();
 
-    // Lands checked (forced), Next rows only — despite the stored nextOnly: false.
+    // Lands with Next-only semantics (forced) — despite the stored nextOnly: false.
     await expect(page.getByRole('heading', { name: 'Daily' })).toBeVisible();
-    await expect(page.getByRole('checkbox')).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: 'Next' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: 'Backlog' })).not.toBeChecked();
     await expect(page.getByText('Water plants')).toBeVisible();
     await expect(page.getByText('Sort receipts')).toHaveCount(0);
 
@@ -203,9 +207,10 @@ test.describe('stored-false bookmark round-trips (#750)', () => {
     // F1: a tag-chip toggle must not release the forced Next-only.
     await page.getByRole('button', { name: 'Adjust tag selection' }).click();
     await page.getByRole('button', { name: 'someday', exact: true }).click(); // on…
-    await expect(page.getByRole('checkbox')).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: 'Next' })).toBeChecked();
     await page.getByRole('button', { name: 'someday', exact: true }).click(); // …and off
-    await expect(page.getByRole('checkbox')).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: 'Next' })).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: 'Backlog' })).not.toBeChecked();
     await expect(page.getByText('Water plants')).toBeVisible();
 
     // F2: deal the deck and X out — home to the bookmark view, not the workshop.
@@ -213,7 +218,7 @@ test.describe('stored-false bookmark round-trips (#750)', () => {
     await expect(page).toHaveURL(/\/focus\?.*bm=bmF/);
     await page.getByRole('button', { name: 'Exit focus' }).click();
     await expect(page.getByRole('heading', { name: 'Daily' })).toBeVisible();
-    await expect(page.getByRole('checkbox')).toBeChecked();
+    await expect(page.getByRole('checkbox', { name: 'Next' })).toBeChecked();
   });
 });
 
