@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Calendar lives in the toolbar only.** The left sidebar's duplicate entry is gone on desktop — the command-bar icon is the one home (the phone More sheet keeps its entry; there's no toolbar there). Closes #763.
+
 ### Added
 
 - **Project sharing, stage 2: the guest page.** The secret link now renders — a clean, mobile-first itinerary page with the project as the masthead (dates and notes included per the share's toggles), sub-projects as sections, and items with friendly dates in the guest's own language. No sign-in wall, no app chrome, no NAM concepts — just the trip, with a quiet "Shared from NAM" footer. Unknown, revoked, and failed all land on the same gentle "no longer active" page (no way to probe for links), and search engines are told to stay out twice over. Closes #761.
