@@ -94,7 +94,10 @@ create table project_shares (
 
 create table share_suggestions (
   id            bigint generated always as identity primary key,
-  token         text not null references project_shares (token) on delete cascade,
+  -- NOT the token (#772/F6): rotate UPDATEs the token PK in place, which would orphan
+  -- suggestions or fail the FK. Stage 4 adds a stable `share_id uuid` to project_shares
+  -- and hangs suggestions off that.
+  share_id      uuid not null, -- references project_shares (share_id) on delete cascade
   guest_name    text,                      -- free text, optional ("Anna")
   body          text not null check (char_length(body) <= 2000),
   node_id       text,                      -- optional: which item the suggestion is about
@@ -115,11 +118,12 @@ A **pure domain function**: `shareContent(doc, projectId, options) → ShareCont
 - Walks the project subtree only; **copies** enabled data into a fresh structure (allowlist,
   not blocklist — fields are *included* by name, so new document fields default to private).
 - Excludes any node carrying the `private` system tag (subtree-inclusive: a private node's
-  children are gone too).
+  children are gone too — **including their dates**: derived section spans are computed over
+  the pruned subtree, #772/F1).
 - Honors `options`: include due dates / statuses / notes (per-share toggles).
 - Strips everything structural/nerdy: ids are re-minted (guest-side ids must not leak
   workspace node ids — see Open questions), tags are dropped (except possibly a curated
-  "label" story later), resources included only when explicitly enabled (URLs may be private).
+  "label" story later), resources are never included in v1 (a per-share toggle is a possible later stage; URLs may be private).
 - Output envelope: `{ version: 1, title, publishedAt, sections: [...] }` — the guest
   renderer's whole world.
 
@@ -197,8 +201,9 @@ driven by trip dogfooding.
    is a `shared`-only-opt-in mode ever needed (paranoid mode)?
 6. **Realtime on the guest page** — none in v1 (refresh is fine for monthly-cadence
    planning); revisit with auto-republish.
-7. **Republish dirty-detection fidelity** — subtree `updatedAt` scan vs hash of the sanitized
-   output (hash is exact and cheap at publish scale; lean: hash).
+7. **Republish dirty-detection fidelity** — resolved as canonical structural comparison
+   (#772/F2: jsonb reorders keys, so both a naive hash and a naive stringify would lie —
+   canonicalize first).
 8. **The Labs toggle mechanics** — settings-panel switch (device-level) is the lean.
 9. **i18n of the guest page** — owner's locale? guest browser locale? (Both en/nb exist.)
    Lean: guest browser locale, it's their page.

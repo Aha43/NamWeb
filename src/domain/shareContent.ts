@@ -94,10 +94,10 @@ function itemDue(node: NamNode): ShareDue | undefined {
 }
 
 /** Project spans honor derive-from-contents (#706) — derived time is the trip page's best
- *  trick. Note: effectiveDue reads the FULL document (a private child's dates still shape a
- *  derived span — dates are aggregates, not content; revisit only if dogfooding objects). */
+ *  trick. Spans are computed over the PRUNED subtree (#772/F1): a private child's dates must
+ *  not shape a derived span — min/max of one item IS that item's value. */
 function sectionDue(doc: WorkspaceDocument, id: string): ShareDue | undefined {
-  const eff = effectiveDue(doc, id);
+  const eff = effectiveDue(doc, id, isExcluded);
   if (!eff.dueAt) return undefined;
   const due: ShareDue = { start: eff.dueAt };
   if (eff.dueEndAt) due.end = eff.dueEndAt;
@@ -129,12 +129,17 @@ export function shareContent(
     return item;
   }
 
+  // Corrupt (cyclic) documents crash Publish rather than loop (#772/F5) — owner-side only,
+  // same guard derivedDue carries.
+  const visited = new Set<string>([projectId]);
+
   function buildChildren(node: NamNode): { items: ShareItem[]; sections: ShareSection[] } {
     const items: ShareItem[] = [];
     const sections: ShareSection[] = [];
     for (const childId of node.childIds) {
       const child = doc.nodes[childId];
-      if (!child || isExcluded(child)) continue;
+      if (!child || isExcluded(child) || visited.has(child.id)) continue;
+      visited.add(child.id);
       if (child.project) sections.push(buildSection(child));
       else items.push(buildItem(child));
     }

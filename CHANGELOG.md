@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Review hardenings (independent Claude review).** The sharing sanitizer no longer lets a private child's dates shape a derived section span (the one construction that got through — min/max of one item is that item's value); the Share dialog's changes-since-publish hint now sees through Postgres's key reordering instead of being permanently on; a stale republish can no longer resurrect a rotated (revoked-for-security) link, and a raced rotation fails loudly instead of showing a link that never existed; the Contexts status boxes forget their session tweaks when a saved view or bookmark re-click lands a fresh visit; corrupt documents publish what they can instead of crashing; and a future share format tells guests they need a newer link rather than rendering wrong. Closes #772.
+
 ### Added
 
 - **The inbox is in your face now.** The sidebar Inbox entry glows red with a count badge while anything sits unprocessed — and a happy green when you're clear. Backlog, Due, and Done carry their counts quietly in their tooltips (and in dense mode the inbox count joins its tooltip too), easy to inspect without stealing the inbox's light. Closes #764.

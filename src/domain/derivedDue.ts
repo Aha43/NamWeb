@@ -47,12 +47,20 @@ function union(a: Span | null, b: Span | null): Span | null {
  * so deriving sub-projects compose upward. `memo` caches per traversal; documents are trees
  * (the pre-seed just guards a corrupt one against infinite recursion).
  */
-function effectiveSpan(doc: WorkspaceDocument, n: NamNode, memo: Map<string, Span | null>): Span | null {
+function effectiveSpan(
+  doc: WorkspaceDocument,
+  n: NamNode,
+  memo: Map<string, Span | null>,
+  exclude?: (node: NamNode) => boolean,
+): Span | null {
   const cached = memo.get(n.id);
   if (cached !== undefined) return cached;
   memo.set(n.id, null);
 
   if (n.status === 'CANCELLED' || n.status === 'ARCHIVED') return null;
+  // Caller-scoped exclusion (#772/F1): the sharing sanitizer prunes private subtrees — their
+  // DATES must not shape a derived span any more than their titles may appear.
+  if (exclude?.(n)) return null;
 
   const explicitStart = explicitStartOf(n);
   const explicitEnd = explicitEndOf(n);
@@ -62,7 +70,7 @@ function effectiveSpan(doc: WorkspaceDocument, n: NamNode, memo: Map<string, Spa
     let derived: Span | null = null;
     for (const cid of n.childIds) {
       const child = doc.nodes[cid];
-      if (child) derived = union(derived, effectiveSpan(doc, child, memo));
+      if (child) derived = union(derived, effectiveSpan(doc, child, memo, exclude));
     }
     if (derived) {
       // Explicit wins per edge; derived fills the gaps. A derived edge never inverts the range.
@@ -80,7 +88,7 @@ function effectiveSpan(doc: WorkspaceDocument, n: NamNode, memo: Map<string, Spa
  * A node's effective due fields. Non-projects and projects with `deriveDue` off report their
  * explicit fields unchanged (both derived flags false) — bit-for-bit today's behaviour.
  */
-export function effectiveDue(doc: WorkspaceDocument, id: string): EffectiveDue {
+export function effectiveDue(doc: WorkspaceDocument, id: string, exclude?: (node: NamNode) => boolean): EffectiveDue {
   const n = doc.nodes[id];
   const explicit: EffectiveDue = {
     dueAt: n?.dueAt ?? null,
@@ -92,7 +100,7 @@ export function effectiveDue(doc: WorkspaceDocument, id: string): EffectiveDue {
   };
   if (!n || !n.project || !n.deriveDue) return explicit;
 
-  const span = effectiveSpan(doc, n, new Map());
+  const span = effectiveSpan(doc, n, new Map(), exclude);
   if (!span) return { ...explicit, dueAt: explicitStartOf(n), dueEndAt: explicitEndOf(n) };
 
   const explicitStart = explicitStartOf(n);

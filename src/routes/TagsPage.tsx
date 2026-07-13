@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { allTags, contextItems, effectiveTags } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
@@ -39,9 +39,16 @@ export function TagsPage() {
   // (so bookmarks/saved views/Focus keep their contract); DONE — and combos the URL can't
   // express (Backlog alone) — are session overrides, reset when the visit identity changes.
   const [boxOverride, setBoxOverride] = useState<Partial<StatusBoxes>>({});
+  // Overrides die with the visit they belonged to (#772/F4): any URL change this page did not
+  // itself write — a saved view, a bookmark re-click, a Focus exit — is a fresh landing and
+  // must not inherit a previous session's box state. setFilter records what it writes; the
+  // effect resets on anything else.
+  const selfWroteRef = useRef<string | null>(null);
   useEffect(() => {
-    setBoxOverride({});
-  }, [bmId]);
+    const now = params.toString();
+    if (selfWroteRef.current !== now) setBoxOverride({});
+    selfWroteRef.current = null;
+  }, [params]);
   const boxes: StatusBoxes = {
     NEXT: boxOverride.NEXT ?? true,
     BACKLOG: boxOverride.BACKLOG ?? !effectiveNextOnly,
@@ -63,6 +70,7 @@ export function TagsPage() {
       next.set('bm', bookmark.id); // a tweak stays inside the bookmark view
       next.set('next', nextNextOnly ? '1' : '0');
     }
+    selfWroteRef.current = next.toString(); // our own write — overrides survive it (#772/F4)
     setParams(next, { replace: true });
   };
 
@@ -124,7 +132,10 @@ export function TagsPage() {
         if (bookmark) search.set('bm', bookmark.id); // the deck's exit comes home to the bookmark view (#750/F2)
         navigate({ pathname: '/focus', search: search.toString() });
       }}
-      onOpenView={(view) => setFilter(view.tags, view.nextOnly)}
+      onOpenView={(view) => {
+        setBoxOverride({}); // a saved view is a fresh landing — its nextOnly must win (#772/F4)
+        setFilter(view.tags, view.nextOnly);
+      }}
       onRenameView={(oldName, newName) => {
         if (newName !== oldName) dispatch({ type: 'renameSavedView', oldName, newName });
       }}

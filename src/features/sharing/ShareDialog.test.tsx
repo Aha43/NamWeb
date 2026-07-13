@@ -124,6 +124,25 @@ describe('ShareDialog', () => {
     await waitFor(() => expect(screen.getByText(/Not published/)).toBeInTheDocument());
   });
 
+  it('a jsonb-reordered (but identical) snapshot is NOT dirty (#772/F2)', async () => {
+    // Simulate the Postgres round-trip: identical content, every object's keys re-ordered
+    // (jsonb sorts by length then bytewise — any deterministic reorder proves the point).
+    const { shareContent } = await import('@/domain/shareContent');
+    const now = shareContent(doc, 'trip', { includeDue: true, includeStatus: false, includeNotes: true, salt: 'tok123', publishedAt: 'later' })!;
+    const reorder = (v: unknown): unknown =>
+      Array.isArray(v)
+        ? v.map(reorder)
+        : v && typeof v === 'object'
+          ? Object.fromEntries(Object.keys(v as object).reverse().map((k) => [k, reorder((v as Record<string, unknown>)[k])]))
+          : v;
+    const reordered = reorder(now);
+    service.fetchShare.mockResolvedValue({ token: 'tok123', project_id: 'trip', content: reordered, enabled: true, updated_at: 'x' });
+    renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());
+    expect(screen.queryByText(/changed since the last publish/)).not.toBeInTheDocument();
+  });
+
   it('a stale snapshot shows the republish hint', async () => {
     // Stored content deliberately differs from what the sanitizer produces now.
     service.fetchShare.mockResolvedValue({ token: 'tok123', project_id: 'trip', content: { version: 1, title: 'Old title', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
