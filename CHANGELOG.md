@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Phone rows breathe.** On the phone, the seven-icon control strip no longer squats on every row — a single "…" reveals it on its own full-width line when you need it, and titles get their width back (no more "Refill medicati…"). The tag/date line follows onto one line. Desktop rows are untouched. Closes #776.
+
 ## [1.6.0] - 2026-07-13
 
 **Standing alone, sharing quietly.** The cut where NamWeb became self-contained — Supabase
