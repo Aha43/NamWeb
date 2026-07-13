@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Project sharing, stage 1 (dark, Labs).** The 2.0.0 epic's foundation is in: a `project_shares` table whose only guest read path is a locked-down RPC (no way to enumerate links), a pure allowlist sanitizer that snapshots a project for guests — `private`-tagged subtrees stay home, cancelled/archived never travel, field toggles choose dates/progress/notes, and guest ids reveal nothing — and a Share dialog on the workbench (behind the new **Labs** settings toggle, real accounts only): publish mints the secret link, republish refreshes it, unpublish/new-link kill the old one. The guest page itself is stage 2 — the link 404s for now. Closes #759.
+
 - **Project sharing has a design doc.** The 2.0.0 epic — projects published as guest-friendly web sites via secret links, guests never becoming users — is written up in `docs/features/project-sharing/design.md`: the snapshot architecture, the `private`-tag visibility grammar, capture-not-edit guest input, the staged (dark) rollout, and the open questions each stage must settle. Closes #757.
 
 ### Changed

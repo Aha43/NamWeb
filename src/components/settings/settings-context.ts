@@ -18,6 +18,10 @@ export interface SettingsContextValue {
   /** The persisted default new-item position (set in Settings). New sessions start here. */
   addToBottomDefault: boolean;
   setAddToBottomDefault: (value: boolean) => void;
+  /** Labs (device-level): surfaces features still being built dark — currently project
+   *  sharing (#759). Off = those controls simply don't render. */
+  labs: boolean;
+  setLabs: (labs: boolean) => void;
 }
 
 export const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -40,6 +44,8 @@ export function useSettings(): SettingsContextValue {
       setAddToBottom: () => {},
       addToBottomDefault: false,
       setAddToBottomDefault: () => {},
+      labs: false,
+      setLabs: () => {},
     }
   );
 }
@@ -52,5 +58,6 @@ export { LANGUAGE_STORAGE_KEY } from '@/lib/i18n';
 // 'namweb.settings.bookmark-style' existed for the toolbar strip (#560 → removed by #593);
 // stale localStorage entries are harmless orphans.
 export const DENSE_STORAGE_KEY = 'namweb.settings.dense';
+export const LABS_STORAGE_KEY = 'namweb.settings.labs';
 // 'namweb.settings.capture-recent-limit' existed briefly (#617 → removed by #622, never in a
 // release); stale localStorage entries are harmless orphans.

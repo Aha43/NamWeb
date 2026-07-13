@@ -1,0 +1,140 @@
+import { describe, expect, it } from 'vitest';
+import type { NamNode, WorkspaceDocument } from './types';
+import { shareContent, type ShareOptions } from './shareContent';
+
+// The sanitizer is the sharing epic's security boundary — this suite is deliberately the
+// heaviest in the epic. When adding document fields, the allowlist test below is the one
+// that must keep you honest.
+
+function node(id: string, p: Partial<NamNode> = {}): NamNode {
+  return {
+    id, title: id, description: null, status: 'BACKLOG', project: false,
+    childIds: [], tags: [], blockedBy: [], resources: [],
+    createdAt: null, updatedAt: null, statusChangedAt: null, dueAt: null, ...p,
+  };
+}
+
+function workspace(extra: NamNode[], wire: Record<string, string[]> = {}): WorkspaceDocument {
+  const nodes: Record<string, NamNode> = {
+    root: node('root', { childIds: ['inbox', 'projects', 'actions'] }),
+    inbox: node('inbox'),
+    projects: node('projects', { childIds: ['trip'] }),
+    actions: node('actions'),
+  };
+  for (const n of extra) nodes[n.id] = n;
+  for (const [id, childIds] of Object.entries(wire)) nodes[id].childIds = childIds;
+  return {
+    formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects', nextActionsNodeId: 'actions',
+    nodes, registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
+  };
+}
+
+const OPTS: ShareOptions = {
+  includeDue: true,
+  includeStatus: false,
+  includeNotes: true,
+  salt: 'token-abc',
+  publishedAt: '2026-07-13T12:00:00.000Z',
+};
+
+const trip = () =>
+  workspace(
+    [
+      node('trip', { title: 'Asia round trip', project: true, description: 'The big one', childIds: ['legs', 'a1', 'secret', 'cancelled'] }),
+      node('legs', { title: 'Japan leg', project: true, childIds: ['a2'] }),
+      node('a1', { title: 'Book flights', status: 'NEXT', dueAt: '2027-06-01', description: 'via Doha?' }),
+      node('a2', { title: 'Ryokan night', status: 'NEXT', dueAt: '2027-06-10', dueEndAt: '2027-06-11', dueTime: '15:00', dueEndTime: '11:00' }),
+      node('secret', { title: 'Budget ceiling', tags: ['private'], childIds: ['leak'] }),
+      node('leak', { title: 'Absolutely not public' }),
+      node('cancelled', { title: 'Skipped idea', status: 'CANCELLED' }),
+    ],
+  );
+
+describe('shareContent — the sanitizer', () => {
+  it('builds the envelope: title, note, items, sections, publishedAt, version', () => {
+    const c = shareContent(trip(), 'trip', OPTS)!;
+    expect(c.version).toBe(1);
+    expect(c.title).toBe('Asia round trip');
+    expect(c.note).toBe('The big one');
+    expect(c.publishedAt).toBe('2026-07-13T12:00:00.000Z');
+    expect(c.items.map((i) => i.title)).toEqual(['Book flights']);
+    expect(c.sections.map((s) => s.title)).toEqual(['Japan leg']);
+    expect(c.sections[0].items[0]).toMatchObject({
+      title: 'Ryokan night',
+      due: { start: '2027-06-10', end: '2027-06-11', startTime: '15:00', endTime: '11:00' },
+    });
+  });
+
+  it('a private node takes its whole subtree with it — and a private root publishes nothing', () => {
+    const c = shareContent(trip(), 'trip', OPTS)!;
+    const json = JSON.stringify(c);
+    expect(json).not.toContain('Budget ceiling');
+    expect(json).not.toContain('Absolutely not public');
+    // Case variants too (canonicalTag collapses system tags).
+    const doc = trip();
+    doc.nodes['secret'].tags = ['Private'];
+    expect(JSON.stringify(shareContent(doc, 'trip', OPTS))).not.toContain('Budget ceiling');
+    // Private root: nothing to publish.
+    doc.nodes['trip'].tags = ['private'];
+    expect(shareContent(doc, 'trip', OPTS)).toBeNull();
+  });
+
+  it('cancelled and archived subtrees are always out; done stays (progress is a feature)', () => {
+    const doc = trip();
+    doc.nodes['a1'].status = 'DONE';
+    doc.nodes['legs'].status = 'ARCHIVED';
+    const c = shareContent(doc, 'trip', OPTS)!;
+    expect(JSON.stringify(c)).not.toContain('Skipped idea');
+    expect(JSON.stringify(c)).not.toContain('Japan leg'); // archived section gone, subtree included
+    expect(c.items.map((i) => i.title)).toEqual(['Book flights']); // done, still visible…
+    expect(c.items[0].done).toBeUndefined(); // …but statuses are off in these options
+  });
+
+  it('field toggles: statuses mark done; dropping notes/dates drops them everywhere', () => {
+    const doc = trip();
+    doc.nodes['a1'].status = 'DONE';
+    const withStatus = shareContent(doc, 'trip', { ...OPTS, includeStatus: true })!;
+    expect(withStatus.items[0].done).toBe(true);
+
+    const bare = shareContent(doc, 'trip', { ...OPTS, includeDue: false, includeNotes: false })!;
+    const json = JSON.stringify(bare);
+    expect(json).not.toContain('due');
+    expect(json).not.toContain('via Doha?');
+    expect(json).not.toContain('The big one');
+  });
+
+  it('ALLOWLIST: no workspace node id, tag, resource, or unknown field ever leaks', () => {
+    const doc = trip();
+    doc.nodes['a1'].tags = ['economy', 'summer-trip-27'];
+    doc.nodes['a1'].resources = [{ type: 'URI', value: 'https://secret.example/booking', description: 'Booking' }];
+    doc.nodes['a1'].blockedBy = ['a2'];
+    // A field the sanitizer has never heard of — must not survive the copy.
+    (doc.nodes['a1'] as NamNode & { futureSecretField?: string }).futureSecretField = 'leak me';
+    const json = JSON.stringify(shareContent(doc, 'trip', { ...OPTS, includeStatus: true }));
+    for (const forbidden of ['"a1"', '"a2"', '"trip"', 'economy', 'summer-trip-27', 'secret.example', 'Booking', 'blockedBy', 'futureSecretField', 'childIds', 'status']) {
+      expect(json).not.toContain(forbidden);
+    }
+  });
+
+  it('pseudonymous ids: stable for the same salt, different across salts, never the node id', () => {
+    const a = shareContent(trip(), 'trip', OPTS)!;
+    const b = shareContent(trip(), 'trip', OPTS)!;
+    const c = shareContent(trip(), 'trip', { ...OPTS, salt: 'other-token' })!;
+    expect(a.items[0].id).toBe(b.items[0].id); // stable across republishes
+    expect(a.items[0].id).not.toBe(c.items[0].id); // rotation re-minted
+    expect(a.items[0].id).not.toBe('a1');
+    expect(a.items[0].id).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it('a deriving project section carries its effective span (#706 on the guest page)', () => {
+    const doc = trip();
+    doc.nodes['legs'].deriveDue = true; // derives from Ryokan night
+    const c = shareContent(doc, 'trip', OPTS)!;
+    expect(c.sections[0].due).toMatchObject({ start: '2027-06-10', end: '2027-06-11' });
+  });
+
+  it('non-project or missing roots return null', () => {
+    expect(shareContent(trip(), 'a1', OPTS)).toBeNull();
+    expect(shareContent(trip(), 'ghost', OPTS)).toBeNull();
+  });
+});

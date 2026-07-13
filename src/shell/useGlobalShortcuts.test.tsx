@@ -55,6 +55,8 @@ describe('useGlobalShortcuts', () => {
       setAddToBottom,
       addToBottomDefault: false,
       setAddToBottomDefault: vi.fn(),
+    labs: false,
+    setLabs: vi.fn(),
     };
     render(
       <SettingsContext.Provider value={settings}>

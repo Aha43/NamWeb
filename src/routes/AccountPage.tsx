@@ -356,6 +356,8 @@ function PreferencesTab() {
     setLanguage,
     dense,
     setDense,
+    labs,
+    setLabs,
     addToBottomDefault,
     setAddToBottomDefault,
   } = useSettings();
@@ -410,6 +412,19 @@ function PreferencesTab() {
           <span>{t('settings.denseMode')}</span>
         </label>
         <p className="text-xs text-muted-foreground">{t('settings.denseModeHelp')}</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="flex items-start gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={labs}
+            onChange={(e) => setLabs(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>{t('settings.labs')}</span>
+        </label>
+        <p className="text-xs text-muted-foreground">{t('settings.labsHelp')}</p>
       </div>
 
       <div className="space-y-1.5">
