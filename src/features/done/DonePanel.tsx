@@ -1,3 +1,4 @@
+import { CompactRowsToggle } from '../actions/CompactRowsToggle';
 import { useState, type ReactNode } from 'react';
 import { CheckSquare } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -70,6 +71,7 @@ export function DonePanel({ rows, onRestore, onBacklog, onDelete, onDeleteMany, 
       {/* Pin the Focus entry + select toggle (and the bulk bar) while the list scrolls under. */}
       <div className="sticky top-0 z-10 space-y-2 bg-background pt-1">
       <div className="flex items-center justify-end gap-1">
+        <CompactRowsToggle />
         {focusSlot}
         <Tooltip label={selectMode ? t('list.exitSelect') : t('done.selectActions')}>
           <button

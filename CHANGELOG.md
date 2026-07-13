@@ -8,6 +8,18 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Calendar lives in the toolbar only.** The left sidebar's duplicate entry is gone on desktop — the command-bar icon is the one home (the phone More sheet keeps its entry; there's no toolbar there). Closes #763.
+
+### Added
+
+- **The inbox is in your face now.** The sidebar Inbox entry glows red with a count badge while anything sits unprocessed — and a happy green when you're clear. Backlog, Due, and Done carry their counts quietly in their tooltips (and in dense mode the inbox count joins its tooltip too), easy to inspect without stealing the inbox's light. Closes #764.
+
+### Added
+
+- **Compact rows, one flip away.** Action lists keep today's rich look by default, but a small toggle in every list header (beside Focus/Sort) switches to compact rows — name and controls only, tighter padding, real height back on long lists. Device-level: flip it once, every list follows; flip it back when you want the tags and dates under each action again. Closes #765.
+
 ### Added
 
 - **Status boxes on every list.** Next, Backlog, Due, the Contexts views, and the project workbench's action list each carry three include-checkboxes — Next / Backlog / Done — so any list can show more (tick Done on Next to see finished work inline; tick Done on Due for the satisfying what-was-due-and-got-done view) or less (untick Done on a workbench). Defaults keep every view exactly as it was; the choice is session-local — nothing about bookmarks or saved views changes shape. The Done view deliberately sits this one out: its row controls are done-specific, and "done alongside" is what the other views' Done box is for. Closes #766.

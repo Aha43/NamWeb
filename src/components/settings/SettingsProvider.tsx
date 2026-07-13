@@ -5,6 +5,7 @@ import {
   ADD_TO_BOTTOM_STORAGE_KEY,
   DATE_FORMAT_STORAGE_KEY,
   DENSE_STORAGE_KEY,
+  COMPACT_ROWS_STORAGE_KEY,
   LABS_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   SettingsContext,
@@ -45,6 +46,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [language, setLanguage] = useState<Locale>(detectInitialLocale);
   const [dense, setDense] = useState<boolean>(initialDense);
   const [labs, setLabs] = useState<boolean>(() => localStorage.getItem(LABS_STORAGE_KEY) === '1');
+  const [compactRows, setCompactRows] = useState<boolean>(() => localStorage.getItem(COMPACT_ROWS_STORAGE_KEY) === '1');
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
   const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
@@ -81,6 +83,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // Private-mode storage failures are non-fatal.
     }
   }, [labs]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(COMPACT_ROWS_STORAGE_KEY, compactRows ? '1' : '0');
+    } catch {
+      // Private-mode storage failures are non-fatal.
+    }
+  }, [compactRows]);
 
   // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
   useEffect(() => {
@@ -107,6 +116,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         dense,
         labs,
         setLabs,
+        compactRows,
+        setCompactRows,
         setDense,
         addToBottom,
         setAddToBottom,

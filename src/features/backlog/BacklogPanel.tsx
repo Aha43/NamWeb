@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
+import { CompactRowsToggle } from '../actions/CompactRowsToggle';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
 import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
@@ -99,6 +100,7 @@ export function BacklogPanel({
         {(focusSlot || statusSlot || (sortMode && onCycleSort && rows.length > 0)) && (
           <div className="mb-2 flex items-center justify-end gap-1">
             {statusSlot && <div className="mr-auto">{statusSlot}</div>}
+            {rows.length > 0 && <CompactRowsToggle />}
             {focusSlot}
             {sortMode && onCycleSort && rows.length > 0 && <SortButton mode={sortMode} onCycle={onCycleSort} />}
           </div>

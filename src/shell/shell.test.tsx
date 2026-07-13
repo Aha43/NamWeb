@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { NamNode, WorkspaceDocument } from '@/domain/types';
@@ -37,13 +37,15 @@ function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   };
 }
 
-function workspace(): UseWorkspace {
+function workspace(inboxChildren: string[] = []): UseWorkspace {
   const document: WorkspaceDocument = {
     formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox',
     projectsNodeId: 'projects', nextActionsNodeId: 'actions',
     nodes: {
       root: node('root', { childIds: ['inbox', 'projects', 'actions'] }),
-      inbox: node('inbox'), projects: node('projects'), actions: node('actions'),
+      inbox: node('inbox', { childIds: inboxChildren }),
+      projects: node('projects'), actions: node('actions'),
+      ...Object.fromEntries(inboxChildren.map((id) => [id, node(id)])),
     },
     registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
   };
@@ -54,12 +56,12 @@ function workspace(): UseWorkspace {
   };
 }
 
-function renderShell(isDesktop: boolean) {
+function renderShell(isDesktop: boolean, inboxChildren: string[] = []) {
   setViewport(isDesktop);
   render(
     <WithAuthUser>
       <ThemeProvider>
-        <WorkspaceContext.Provider value={workspace()}>
+        <WorkspaceContext.Provider value={workspace(inboxChildren)}>
           <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <CaptureProvider>
               <ActionEditorProvider>
@@ -136,5 +138,17 @@ describe('adaptive shell', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }));
     expect(screen.getByRole('navigation', { name: 'Sidebar' })).toBeInTheDocument();
+  });
+
+  it('desktop: the inbox cue — red glow + badge when unprocessed, green glow when clear (#764)', () => {
+    renderShell(true, ['c1', 'c2']);
+    expect(screen.getByLabelText('2 unprocessed')).toBeInTheDocument(); // the badge
+    const link = screen.getByRole('link', { name: 'Inbox' });
+    expect(link.querySelector('.inbox-glow-attention')).not.toBeNull();
+
+    cleanup();
+    renderShell(true, []);
+    expect(screen.queryByLabelText(/unprocessed/)).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Inbox' }).querySelector('.inbox-glow-clear')).not.toBeNull();
   });
 });

@@ -16,6 +16,17 @@
   filter: drop-shadow(0 0 5px rgb(34 197 94 / 0.55));
 }
 
+/* The inbox cue (#764): unprocessed captures glow red — in the operator's face — while an
+ * empty inbox glows a happy green. The sidebar's one other splash of colour, on purpose. */
+@utility inbox-glow-attention {
+  color: rgb(239 68 68); /* red-500 */
+  filter: drop-shadow(0 0 5px rgb(239 68 68 / 0.55));
+}
+@utility inbox-glow-clear {
+  color: rgb(34 197 94); /* green-500 */
+  filter: drop-shadow(0 0 4px rgb(34 197 94 / 0.45));
+}
+
 @theme {
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));

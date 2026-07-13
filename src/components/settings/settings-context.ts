@@ -22,6 +22,10 @@ export interface SettingsContextValue {
    *  sharing (#759). Off = those controls simply don't render. */
   labs: boolean;
   setLabs: (labs: boolean) => void;
+  /** Compact rows (device-level, #765): action lists drop the tag/time meta line and tighten
+   *  padding — for when you're really relating to a long list. Default off (the richer look). */
+  compactRows: boolean;
+  setCompactRows: (compact: boolean) => void;
 }
 
 export const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -46,6 +50,8 @@ export function useSettings(): SettingsContextValue {
       setAddToBottomDefault: () => {},
       labs: false,
       setLabs: () => {},
+      compactRows: false,
+      setCompactRows: () => {},
     }
   );
 }
@@ -59,5 +65,6 @@ export { LANGUAGE_STORAGE_KEY } from '@/lib/i18n';
 // stale localStorage entries are harmless orphans.
 export const DENSE_STORAGE_KEY = 'namweb.settings.dense';
 export const LABS_STORAGE_KEY = 'namweb.settings.labs';
+export const COMPACT_ROWS_STORAGE_KEY = 'namweb.settings.compact-rows';
 // 'namweb.settings.capture-recent-limit' existed briefly (#617 → removed by #622, never in a
 // release); stale localStorage entries are harmless orphans.

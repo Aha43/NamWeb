@@ -1,3 +1,4 @@
+import { CompactRowsToggle } from '../actions/CompactRowsToggle';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
@@ -52,6 +53,7 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focu
         <div className="sticky top-0 z-10 bg-background pt-1">
           <div className="mb-2 flex items-center justify-end gap-1">
             {statusSlot && <div className="mr-auto">{statusSlot}</div>}
+            <CompactRowsToggle />
             {focusSlot}
           </div>
         </div>

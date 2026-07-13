@@ -1,11 +1,40 @@
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
 import { ActionRow } from './ActionRow';
 import type { ActionRowData } from './rows';
+import { SettingsContext, type SettingsContextValue } from '@/components/settings/settings-context';
 
 function row(over: Partial<ActionRowData> = {}): ActionRowData {
   return { id: 'a', title: 'Buy tiles', description: null, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null, ...over };
 }
+
+describe('ActionRow — compact rows (#765)', () => {
+  const row: ActionRowData = {
+    id: 'a', title: 'Book flights', description: null, status: 'NEXT',
+    path: [{ id: 'p1', title: 'Trip' }], tags: ['economy'], dueAt: '2027-06-01', touchedAt: null,
+  };
+
+  it('compact drops the meta line and the path — name and controls only', () => {
+    render(
+      <MemoryRouter>
+        <SettingsContext.Provider value={{ compactRows: true } as unknown as SettingsContextValue}>
+          <ul><ActionRow row={row} actions={null} showPath /></ul>
+        </SettingsContext.Provider>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText('Book flights')).toBeInTheDocument();
+    expect(screen.queryByText('economy')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Due/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Trip')).not.toBeInTheDocument();
+  });
+
+  it('comfortable (default) keeps tags and due hints', () => {
+    render(<MemoryRouter><ul><ActionRow row={row} actions={null} showPath /></ul></MemoryRouter>);
+    expect(screen.getByText('economy')).toBeInTheDocument();
+    expect(screen.getByText(/Due/)).toBeInTheDocument();
+  });
+});
 
 describe('ActionRow', () => {
   it('opens the editor by clicking the title (no separate slider/edit icon)', () => {
