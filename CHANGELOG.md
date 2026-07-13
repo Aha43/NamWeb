@@ -8,31 +8,18 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
-### Changed
-
-- **Calendar lives in the toolbar only.** The left sidebar's duplicate entry is gone on desktop — the command-bar icon is the one home (the phone More sheet keeps its entry; there's no toolbar there). Closes #763.
-
 ### Added
 
 - **The inbox is in your face now.** The sidebar Inbox entry glows red with a count badge while anything sits unprocessed — and a happy green when you're clear. Backlog, Due, and Done carry their counts quietly in their tooltips (and in dense mode the inbox count joins its tooltip too), easy to inspect without stealing the inbox's light. Closes #764.
-
-### Added
-
 - **Compact rows, one flip away.** Action lists keep today's rich look by default, but a small toggle in every list header (beside Focus/Sort) switches to compact rows — name and controls only, tighter padding, real height back on long lists. Device-level: flip it once, every list follows; flip it back when you want the tags and dates under each action again. Closes #765.
-
-### Added
-
 - **Status boxes on every list.** Next, Backlog, Due, the Contexts views, and the project workbench's action list each carry three include-checkboxes — Next / Backlog / Done — so any list can show more (tick Done on Next to see finished work inline; tick Done on Due for the satisfying what-was-due-and-got-done view) or less (untick Done on a workbench). Defaults keep every view exactly as it was; the choice is session-local — nothing about bookmarks or saved views changes shape. The Done view deliberately sits this one out: its row controls are done-specific, and "done alongside" is what the other views' Done box is for. Closes #766.
-
-### Added
-
 - **Project sharing, stage 2: the guest page.** The secret link now renders — a clean, mobile-first itinerary page with the project as the masthead (dates and notes included per the share's toggles), sub-projects as sections, and items with friendly dates in the guest's own language. No sign-in wall, no app chrome, no NAM concepts — just the trip, with a quiet "Shared from NAM" footer. Unknown, revoked, and failed all land on the same gentle "no longer active" page (no way to probe for links), and search engines are told to stay out twice over. Closes #761.
 - **Project sharing, stage 1 (dark, Labs).** The 2.0.0 epic's foundation is in: a `project_shares` table whose only guest read path is a locked-down RPC (no way to enumerate links), a pure allowlist sanitizer that snapshots a project for guests — `private`-tagged subtrees stay home, cancelled/archived never travel, field toggles choose dates/progress/notes, and guest ids reveal nothing — and a Share dialog on the workbench (behind the new **Labs** settings toggle, real accounts only): publish mints the secret link, republish refreshes it, unpublish/new-link kill the old one. The guest page itself is stage 2 — the link 404s for now. Closes #759.
-
 - **Project sharing has a design doc.** The 2.0.0 epic — projects published as guest-friendly web sites via secret links, guests never becoming users — is written up in `docs/features/project-sharing/design.md`: the snapshot architecture, the `private`-tag visibility grammar, capture-not-edit guest input, the staged (dark) rollout, and the open questions each stage must settle. Closes #757.
 
 ### Changed
 
+- **Calendar lives in the toolbar only.** The left sidebar's duplicate entry is gone on desktop — the command-bar icon is the one home (the phone More sheet keeps its entry; there's no toolbar there). Closes #763.
 - **The Supabase setup moved home.** Config and the full migration history now live in this repo (`supabase/`), with `npm run db:start/stop/status/reset` wrappers — the first stone on the road to 2.0's sharing schema, and a consequence of parking NamDesktop. Migration files are verbatim (prod history parity); the real-Supabase smoke spec was de-drifted and runs green against the stack from its new home. Closes #753.
 - **The docs tell the truth: NamWeb is NAM.** CLAUDE.md and the README no longer describe this repo as the "web companion" — NamWeb is the primary (and only active) surface; NamDesktop is parked as the valuable phase one, with a future desktop to be redone from both codebases' lessons. The workspace document format stays a spec-in-progress (additive-only discipline kept). Closes #754.
 
