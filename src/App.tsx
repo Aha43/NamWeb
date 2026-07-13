@@ -14,11 +14,10 @@ function guestToken(): string | null {
 
 /** Auth gate: shows the auth screen until there is a session, then the app — or the no-account demo. */
 export default function App() {
-  // Checked before anything session-related: a guest with a share link never sees a sign-in
-  // wall, a loading app, or a NAM concept. (Before useSession's effects, but hooks still run.)
+  // A guest with a share link never sees a sign-in wall, a loading app, or a NAM concept.
+  // All hooks run unconditionally (rules of hooks); the guest return comes after them.
   const [token] = useState(guestToken);
   const { session, loading, recovery, clearRecovery } = useSession();
-  if (token) return <GuestSharePage token={token} />;
   // Demo mode: entered via "Try the demo" or a direct /demo link. Replace /demo with / so the app's
   // own routes take over once mounted.
   const [demo, setDemo] = useState(() => window.location.pathname === '/demo');
@@ -26,6 +25,8 @@ export default function App() {
   useEffect(() => {
     if (window.location.pathname === '/demo') window.history.replaceState(null, '', '/');
   }, []);
+
+  if (token) return <GuestSharePage token={token} />;
 
   if (loading) {
     return (
