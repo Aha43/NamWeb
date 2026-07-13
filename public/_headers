@@ -1,0 +1,4 @@
+# Guest share pages (#761): the URL's secrecy is the access control — search engines must
+# never learn a link. The page also carries a robots meta; this is the belt to that suspender.
+/p/*
+  X-Robots-Tag: noindex, nofollow

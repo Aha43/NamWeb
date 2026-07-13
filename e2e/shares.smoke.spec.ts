@@ -16,6 +16,34 @@ async function ownerClient() {
   return { client, userId: data.user.id };
 }
 
+test('the guest page renders a real share end to end', async ({ page, browserName }) => {
+  const TOKEN = `e2e-smoke-page-${browserName}`;
+  const { client: owner, userId } = await ownerClient();
+  const content = {
+    version: 1, title: 'Smoke expedition', note: 'Real stack, real RLS.',
+    publishedAt: 'x',
+    items: [{ id: 'it1', title: 'Cross the bridge' }],
+    sections: [],
+  };
+  const up = await owner.from('project_shares').upsert(
+    { token: TOKEN, owner_user_id: userId, project_id: `e2e-smoke-page-${browserName}`, content, enabled: true },
+    { onConflict: 'owner_user_id,project_id' },
+  );
+  expect(up.error).toBeNull();
+  try {
+    await page.goto(`/p/${TOKEN}`);
+    await expect(page.getByRole('heading', { name: 'Smoke expedition' })).toBeVisible();
+    await expect(page.getByText('Cross the bridge')).toBeVisible();
+
+    // Revoke → the same link is a quiet dead end.
+    await owner.from('project_shares').update({ enabled: false }).eq('token', TOKEN);
+    await page.reload();
+    await expect(page.getByText('This link is no longer active')).toBeVisible();
+  } finally {
+    await owner.from('project_shares').delete().eq('token', TOKEN);
+  }
+});
+
 test('guests read exactly one enabled share via the RPC — and nothing else', async ({ browserName }) => {
   const TOKEN = `e2e-smoke-share-${browserName}`;
   const { client: owner, userId } = await ownerClient();

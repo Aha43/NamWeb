@@ -633,5 +633,10 @@
   "share.unpublish": "Avpubliser",
   "share.unpublishAria": "Avpubliser prosjektet",
   "share.unpublishConfirm": "Avpublisere? Lenken slutter å virke umiddelbart.",
-  "share.urlAria": "Hemmelig delingslenke"
+  "share.urlAria": "Hemmelig delingslenke",
+  "guest.goneBody": "Siden kan være avpublisert, eller lenken byttet ut. Spør den som delte den om en ny.",
+  "guest.goneTitle": "Denne lenken er ikke lenger aktiv",
+  "guest.loading": "Laster…",
+  "guest.retry": "Prøv igjen",
+  "guest.sharedFrom": "Delt fra"
 }
