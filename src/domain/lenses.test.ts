@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import {
+  actionsWithStatuses,
   allOpenableActions,
   allTags,
   applyViewOrder,
@@ -645,5 +646,37 @@ describe('allOpenableActions (#735)', () => {
     // In: an open action under a project, and a free action. Out: DONE, the inbox capture
     // (no Inbox column to reach it), a sub-action of an action (not drilled into), archived.
     expect(ids).toEqual(['a1', 'free1']);
+  });
+});
+
+describe('status-box lenses (#766)', () => {
+  it('actionsWithStatuses unions per-status semantics; dueGroups/contextItems admit done on request', () => {
+    const doc = workspace(
+      [
+        node('p1', { title: 'Home', project: true, childIds: ['n1', 'd1'] }),
+        node('n1', { status: 'NEXT', tags: ['home'], dueAt: '2020-01-01' }),
+        node('d1', { status: 'DONE', tags: ['home'], dueAt: '2020-01-01' }),
+        node('b1', { status: 'BACKLOG' }),
+        node('cap', {}), // inbox capture: BACKLOG status but NOT backlog-view material
+      ],
+      (doc) => {
+        doc.nodes['projects'].childIds = ['p1'];
+        doc.nodes['actions'].childIds = ['b1'];
+        doc.nodes['inbox'].childIds = ['cap'];
+      },
+    );
+    expect(actionsWithStatuses(doc, ['NEXT']).map((n) => n.id)).toEqual(['n1']);
+    expect(actionsWithStatuses(doc, ['NEXT', 'BACKLOG']).map((n) => n.id).sort()).toEqual(['b1', 'n1']);
+    expect(actionsWithStatuses(doc, ['NEXT', 'BACKLOG', 'DONE']).map((n) => n.id).sort()).toEqual(['b1', 'd1', 'n1']);
+    // Each status keeps its own view's rules: the inbox capture never leaks into Backlog.
+    expect(actionsWithStatuses(doc, ['BACKLOG']).map((n) => n.id)).toEqual(['b1']);
+
+    // Due: done items join only when asked.
+    expect(dueGroups(doc).overdue.map((n) => n.id)).toEqual(['n1']);
+    expect(dueGroups(doc, new Date(), true).overdue.map((n) => n.id).sort()).toEqual(['d1', 'n1']);
+
+    // Contexts: same opt-in.
+    expect(contextItems(doc, ['home']).map((n) => n.id)).toEqual(['n1']);
+    expect(contextItems(doc, ['home'], false, true).map((n) => n.id).sort()).toEqual(['d1', 'n1']);
   });
 });

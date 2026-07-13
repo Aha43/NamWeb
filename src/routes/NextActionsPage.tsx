@@ -1,10 +1,12 @@
-import { actionMoveTargets, actionMoveTargetsAll, applyViewOrder, nextActions } from '@/domain/lenses';
+import { actionMoveTargets, actionMoveTargetsAll, actionsWithStatuses, applyViewOrder } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
 import { NextActionsPanel } from '@/features/next-actions/NextActionsPanel';
 import { FocusButton } from '@/features/focus/FocusButton';
+import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { checkedStatuses, useStatusBoxes } from '@/features/actions/statusBoxes';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useSetStatus } from '@/features/actions/useSetStatus';
@@ -24,7 +26,9 @@ export function NextActionsPage() {
   const isDesktop = useIsDesktop();
 
   // In "Unsorted" mode the saved manual order applies; oldest/newest are computed.
-  const base = document ? nextActions(document) : [];
+  // Status include-boxes (#766): default = this view exactly as it always was (Next only).
+  const [boxes, toggleBox] = useStatusBoxes({ NEXT: true });
+  const base = document ? actionsWithStatuses(document, checkedStatuses(boxes)) : [];
   const ordered =
     sortMode === 'none' ? applyViewOrder(base, document?.viewOrders[VIEW]) : sortNodes(base, sortMode);
 
@@ -42,6 +46,7 @@ export function NextActionsPage() {
       <NextActionsPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
       focusSlot={ordered.length > 0 ? <FocusButton to="/focus" label="Focus your Next actions" /> : undefined}
+      statusSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
       onAdd={
         document
           ? (title) => {

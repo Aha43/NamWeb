@@ -10,6 +10,8 @@ import type { TemplateNode } from '@/domain/types';
 import type { ActionEdits } from '@/features/actions/ActionDialog';
 import type { DueFields } from '@/features/actions/DueFieldset';
 import { toActionRow, type ActionRowData } from '@/features/actions/rows';
+import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { useStatusBoxes } from '@/features/actions/statusBoxes';
 import { sortByDue } from '@/features/actions/sort';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
 import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
@@ -56,12 +58,18 @@ export function ProjectWorkbenchPage() {
   // exists) so the "project gone" guard below can redirect there deterministically — an imperative
   // navigate raced that guard and flaked. Defaults to the Projects list.
   const postDeleteNavRef = useRef<string | null>(null);
+  // Status include-boxes (#766): the workbench naturally shows every status, so its boxes
+  // SUBTRACT — all three checked is exactly today's list (other statuses pass through).
+  // Declared before the early returns (rules of hooks — the delete/convert redirects fire them).
+  const [boxes, toggleBox] = useStatusBoxes({ NEXT: true, BACKLOG: true, DONE: true });
 
   if (!document) return null;
   const project = document.nodes[id];
   if (!project || !project.project) return <Navigate to={postDeleteNavRef.current ?? '/projects'} replace />;
 
-  const actionNodes = projectActions(document, id);
+  const actionNodes = projectActions(document, id).filter((n) =>
+    n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE' ? boxes[n.status] : true,
+  );
   const subProjectNodes = subProjects(document, id);
   // When the "by due" toggle is on, order action rows soonest-due first (undated last) instead of the
   // manual childIds order — for the list, and within each Kanban column (#437). Manual reorder is
@@ -191,6 +199,7 @@ export function ProjectWorkbenchPage() {
 
   return (
     <ProjectWorkbench
+      actionsStatusSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
       project={project}
       bookmarkSlot={<AddBookmarkButton draft={{ kind: 'project', projectId: id, label: project.title }} />}
       breadcrumb={buildPath(document, id)}

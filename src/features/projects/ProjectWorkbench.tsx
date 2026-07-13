@@ -47,6 +47,8 @@ export interface ProjectWorkbenchProps {
   project: NamNode;
   /** Optional header control (e.g. the bookmark toggle), shown beside Summary. */
   bookmarkSlot?: ReactNode;
+  /** The status include-boxes for the Actions section (#766). */
+  actionsStatusSlot?: ReactNode;
   /** Ancestor projects, top-most first (excludes the current project). */
   breadcrumb: NamNode[];
   actions: ActionRowData[];
@@ -161,6 +163,7 @@ export interface ProjectWorkbenchProps {
 export function ProjectWorkbench({
   project,
   bookmarkSlot,
+  actionsStatusSlot,
   breadcrumb,
   actions,
   subProjects,
@@ -553,6 +556,7 @@ export function ProjectWorkbench({
                     shortcutKey="y"
                   />
                 </div>
+                {!sectionCollapsed('actions') && actionsStatusSlot}
                 {actions.length > 0 && onDeleteAction && (
                   <Tooltip label={selectMode ? t('list.exitSelect') : t('done.selectActions')}>
                     <button

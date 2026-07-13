@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Status boxes on every list.** Next, Backlog, Due, the Contexts views, and the project workbench's action list each carry three include-checkboxes — Next / Backlog / Done — so any list can show more (tick Done on Next to see finished work inline; tick Done on Due for the satisfying what-was-due-and-got-done view) or less (untick Done on a workbench). Defaults keep every view exactly as it was; the choice is session-local — nothing about bookmarks or saved views changes shape. The Done view deliberately sits this one out: its row controls are done-specific, and "done alongside" is what the other views' Done box is for. Closes #766.
+
+### Added
+
 - **Project sharing, stage 2: the guest page.** The secret link now renders — a clean, mobile-first itinerary page with the project as the masthead (dates and notes included per the share's toggles), sub-projects as sections, and items with friendly dates in the guest's own language. No sign-in wall, no app chrome, no NAM concepts — just the trip, with a quiet "Shared from NAM" footer. Unknown, revoked, and failed all land on the same gentle "no longer active" page (no way to probe for links), and search engines are told to stay out twice over. Closes #761.
 - **Project sharing, stage 1 (dark, Labs).** The 2.0.0 epic's foundation is in: a `project_shares` table whose only guest read path is a locked-down RPC (no way to enumerate links), a pure allowlist sanitizer that snapshots a project for guests — `private`-tagged subtrees stay home, cancelled/archived never travel, field toggles choose dates/progress/notes, and guest ids reveal nothing — and a Share dialog on the workbench (behind the new **Labs** settings toggle, real accounts only): publish mints the secret link, republish refreshes it, unpublish/new-link kill the old one. The guest page itself is stage 2 — the link 404s for now. Closes #759.
 
