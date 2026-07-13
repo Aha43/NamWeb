@@ -1,9 +1,10 @@
 # Project sharing — design
 
-> Status: **Draft for review (2026-07-12).** The 2.0.0 epic. Distilled from two planning
-> sessions (the idea emerged from an expedition-planner brainstorm that converged on
-> "NAM + projects as web pages"); becomes "ready for implementation" when the open questions
-> below are settled and the staging is agreed.
+> Status: **Ready for implementation (2026-07-13).** The 2.0.0 epic. Distilled from two
+> planning sessions (the idea emerged from an expedition-planner brainstorm that converged on
+> "NAM + projects as web pages"). Reviewed and approved as drafted — the open questions below
+> are **resolved to their stated leans**; each stage re-opens its own questions only if
+> implementation contradicts a lean.
 
 ## Why this exists
 
@@ -180,7 +181,7 @@ driven by trip dogfooding.
 - **Long-lived 2.0 branch** — rejected (2026-07-12 discussion): trunk-based dark rollout
   through the normal review/cut machinery; 2.0.0 is a cut, not a codebase.
 
-## Open questions (to settle before/while cutting issues)
+## Open questions — resolved to the leans (2026-07-13)
 
 1. **Token format & entropy** — proposal: 22+ chars base62 from `crypto.getRandomValues`
    (~128 bits). Also: URL shape `/p/<token>` vs `/s/<token>`; token in path vs fragment.
