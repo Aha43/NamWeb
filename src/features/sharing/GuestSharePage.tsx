@@ -19,8 +19,10 @@ export function GuestSharePage({ token }: { token: string }) {
     setState('loading');
     fetchGuestShare(token)
       .then((c) => {
-        setContent(c);
-        setState(c ? 'ready' : 'gone');
+        // A future envelope version renders as "needs a newer link", never wrong (#772).
+        const usable = c && c.version === 1 ? c : null;
+        setContent(usable);
+        setState(usable ? 'ready' : 'gone');
       })
       // Network trouble folds into the same quiet state (retry below) — and unknown vs
       // revoked are indistinguishable by design (no oracle for token guessing).

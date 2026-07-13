@@ -19,6 +19,7 @@ import { shareContent, SHARE_DEFAULT_OPTIONS } from '@/domain/shareContent';
 import { canonicalTag, PRIVATE_TAG } from '@/domain/systemTags';
 import { subtreeIds } from '@/domain/lenses';
 import {
+  canonicalSnapshot,
   fetchShare,
   publishShare,
   rotateShareToken,
@@ -104,13 +105,13 @@ export function ShareDialog({
   );
 
   // The changes-since-publish hint: recompute the snapshot with the stored share's own salt
-  // and compare (publishedAt aside) — exact, cheap at publish scale (design Q7's hash lean,
-  // realized as structural comparison).
+  // and compare (publishedAt aside) — CANONICALIZED (#772/F2): jsonb reorders keys, so a
+  // stringify of insertion order was permanently "dirty" against any round-tripped row.
   const dirty = useMemo(() => {
     if (!share) return false;
     const now = buildContent(share.token);
     if (!now) return true;
-    const strip = (c: object) => JSON.stringify({ ...c, publishedAt: null });
+    const strip = (c: object) => canonicalSnapshot({ ...c, publishedAt: null });
     return strip(now) !== strip(share.content);
   }, [share, buildContent]);
 
@@ -132,11 +133,11 @@ export function ShareDialog({
       if (!content || !user) return;
       // First publish mints the token, then the content is rebuilt with it as the
       // pseudonymization salt so guest ids are stable across republishes.
-      const next = await publishShare(user.id, projectId, content, share?.token);
+      const next = await publishShare(user.id, projectId, content, Boolean(share));
       if (!share) {
         const salted = buildContent(next.token);
         if (salted) {
-          setShare(await publishShare(user.id, projectId, salted, next.token));
+          setShare(await publishShare(user.id, projectId, salted, true));
           return;
         }
       }
@@ -157,7 +158,7 @@ export function ShareDialog({
       // Re-mint guest ids under the new salt — the old link (and its ids) are dead anyway.
       const content = buildContent(token);
       if (content) {
-        setShare(await publishShare(user.id, projectId, content, token));
+        setShare(await publishShare(user.id, projectId, content, true));
       } else {
         setShare({ ...share, token });
       }

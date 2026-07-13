@@ -44,6 +44,41 @@ test('the guest page renders a real share end to end', async ({ page, browserNam
   }
 });
 
+test('the real jsonb round-trip is canonically clean, and rotation cannot be undone by a stale republish (#772)', async ({ browserName }) => {
+  const { canonicalSnapshot } = await import('../src/lib/canonicalJson.js');
+  const TOKEN = `e2e-smoke-lifecycle-${browserName}`;
+  const { client: owner, userId } = await ownerClient();
+  const content = { version: 1, title: 'Lifecycle', publishedAt: 'x', note: 'zed', items: [{ id: 'a1', title: 'One', due: { start: '2027-01-02' } }], sections: [] };
+  const projectId = `e2e-smoke-lifecycle-${browserName}`;
+  await owner.from('project_shares').delete().eq('project_id', projectId);
+  const up = await owner.from('project_shares').insert({ token: TOKEN, owner_user_id: userId, project_id: projectId, content, enabled: true }).select().single();
+  expect(up.error).toBeNull();
+  try {
+    // F2: what comes back from Postgres compares canonically equal to what went in —
+    // even though jsonb reorders keys (stringify equality would fail here).
+    const back = await owner.from('project_shares').select('content').eq('token', TOKEN).single();
+    expect(JSON.stringify(back.data!.content)).not.toBe(JSON.stringify(content)); // jsonb DID reorder
+    expect(canonicalSnapshot(back.data!.content)).toBe(canonicalSnapshot(content)); // and we see through it
+
+    // F3: rotate, then a stale republish (content-only update by owner+project) keeps the NEW token.
+    const t2 = 'e2e-rotated-' + TOKEN;
+    await owner.from('project_shares').update({ token: t2 }).eq('token', TOKEN);
+    const repub = await owner
+      .from('project_shares')
+      .update({ content, updated_at: new Date().toISOString() })
+      .eq('owner_user_id', userId)
+      .eq('project_id', projectId)
+      .select('token')
+      .single();
+    expect(repub.data!.token).toBe(t2); // the rotation survived the stale republish
+    // And a rotate keyed on the DEAD token matches zero rows — the raced-rotate guard's premise.
+    const raced = await owner.from('project_shares').update({ token: 'never' }).eq('token', TOKEN).select('token');
+    expect(raced.data).toEqual([]);
+  } finally {
+    await owner.from('project_shares').delete().eq('project_id', projectId);
+  }
+});
+
 test('guests read exactly one enabled share via the RPC — and nothing else', async ({ browserName }) => {
   const TOKEN = `e2e-smoke-share-${browserName}`;
   const { client: owner, userId } = await ownerClient();

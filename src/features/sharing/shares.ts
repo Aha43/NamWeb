@@ -4,6 +4,7 @@
 
 import { supabase } from '@/lib/supabase';
 import { newShareToken } from '@/lib/shareToken';
+export { canonicalSnapshot } from '@/lib/canonicalJson';
 import type { ShareContent } from '@/domain/shareContent';
 
 export interface ProjectShare {
@@ -25,28 +26,38 @@ export async function fetchShare(projectId: string): Promise<ProjectShare | null
   return (data as ProjectShare | null) ?? null;
 }
 
-/** Publish (insert) or republish (update content) — the upsert rides the (owner, project)
- *  uniqueness; the token is minted once at first publish and survives republishes. */
+/** First publish inserts with a fresh token; republish updates CONTENT only, keyed by
+ *  (owner, project) — never the token (#772/F3: a stale dialog's republish must not write an
+ *  old token back over a rotation performed for security). The row's CURRENT token comes back
+ *  either way, so a stale caller heals. */
 export async function publishShare(
   ownerUserId: string,
   projectId: string,
   content: ShareContent,
-  existingToken?: string,
+  republish = false,
 ): Promise<ProjectShare> {
-  const token = existingToken ?? newShareToken();
+  if (republish) {
+    const { data, error } = await supabase
+      .from('project_shares')
+      .update({ content, enabled: true, updated_at: new Date().toISOString() })
+      .eq('owner_user_id', ownerUserId)
+      .eq('project_id', projectId)
+      .select('token, project_id, content, enabled, updated_at')
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data) return data as ProjectShare;
+    // The share vanished under us (unpublished elsewhere) — fall through to a fresh publish.
+  }
   const { data, error } = await supabase
     .from('project_shares')
-    .upsert(
-      {
-        token,
-        owner_user_id: ownerUserId,
-        project_id: projectId,
-        content,
-        enabled: true,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'owner_user_id,project_id' },
-    )
+    .insert({
+      token: newShareToken(),
+      owner_user_id: ownerUserId,
+      project_id: projectId,
+      content,
+      enabled: true,
+      updated_at: new Date().toISOString(),
+    })
     .select('token, project_id, content, enabled, updated_at')
     .single();
   if (error) throw new Error(error.message);
@@ -59,16 +70,21 @@ export async function unpublishShare(token: string): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
-/** Rotate: a new secret replaces the old in place — the old link dies, content survives. */
+/** Rotate: a new secret replaces the old in place — the old link dies, content survives.
+ *  Verified by row count (#772/F3): a raced rotate (someone else rotated first) must fail
+ *  loudly, not show a link that was never written. */
 export async function rotateShareToken(oldToken: string): Promise<string> {
   const token = newShareToken();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('project_shares')
     .update({ token, updated_at: new Date().toISOString() })
-    .eq('token', oldToken);
+    .eq('token', oldToken)
+    .select('token');
   if (error) throw new Error(error.message);
+  if (!data || data.length === 0) throw new Error('share changed elsewhere — reopen the dialog');
   return token;
 }
+
 
 /** The guest read path (#761): the RPC, and only the RPC — the table is dark to anon.
  *  Unknown and revoked tokens are the same null (no oracle). */

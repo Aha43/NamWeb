@@ -133,6 +133,29 @@ describe('shareContent — the sanitizer', () => {
     expect(c.sections[0].due).toMatchObject({ start: '2027-06-10', end: '2027-06-11' });
   });
 
+  it("a derived span never carries a private child's dates — min/max of one item IS that item (#772/F1)", () => {
+    const doc = trip();
+    // The section's ONLY dated child is private: the span must not exist at all.
+    doc.nodes['legs'].deriveDue = true;
+    doc.nodes['a2'].tags = ['private'];
+    const c = shareContent(doc, 'trip', OPTS)!;
+    expect(c.sections[0].due).toBeUndefined();
+    // And a private sibling must not stretch a span derived from public children.
+    const doc2 = trip();
+    doc2.nodes['legs'].deriveDue = true;
+    doc2.nodes['legs'].childIds = ['a2', 'secretTrip'];
+    doc2.nodes['secretTrip'] = { ...doc2.nodes['a2'], id: 'secretTrip', title: 'Divorce lawyer', tags: ['private'], dueAt: '2027-09-01', dueEndAt: '2027-09-30' };
+    const c2 = shareContent(doc2, 'trip', OPTS)!;
+    expect(c2.sections[0].due).toMatchObject({ start: '2027-06-10', end: '2027-06-11' });
+  });
+
+  it('a corrupt cyclic document publishes what it can instead of blowing the stack (#772/F5)', () => {
+    const doc = trip();
+    doc.nodes['legs'].childIds = ['a2', 'trip']; // cycle back to the root
+    const c = shareContent(doc, 'trip', OPTS)!;
+    expect(c.sections[0].items.map((i) => i.title)).toEqual(['Ryokan night']);
+  });
+
   it('non-project or missing roots return null', () => {
     expect(shareContent(trip(), 'a1', OPTS)).toBeNull();
     expect(shareContent(trip(), 'ghost', OPTS)).toBeNull();
