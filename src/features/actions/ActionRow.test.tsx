@@ -12,14 +12,14 @@ function row(over: Partial<ActionRowData> = {}): ActionRowData {
 describe('ActionRow — compact rows (#765)', () => {
   const row: ActionRowData = {
     id: 'a', title: 'Book flights', description: null, status: 'NEXT',
-    path: ['Trip'], tags: ['economy'], dueAt: '2027-06-01', touchedAt: null,
+    path: [{ id: 'p1', title: 'Trip' }], tags: ['economy'], dueAt: '2027-06-01', touchedAt: null,
   };
 
   it('compact drops the meta line and the path — name and controls only', () => {
     render(
       <MemoryRouter>
         <SettingsContext.Provider value={{ compactRows: true } as unknown as SettingsContextValue}>
-          <ul><ActionRow row={row} onSetStatus={vi.fn()} /></ul>
+          <ul><ActionRow row={row} actions={null} showPath /></ul>
         </SettingsContext.Provider>
       </MemoryRouter>,
     );
@@ -30,7 +30,7 @@ describe('ActionRow — compact rows (#765)', () => {
   });
 
   it('comfortable (default) keeps tags and due hints', () => {
-    render(<MemoryRouter><ul><ActionRow row={row} onSetStatus={vi.fn()} /></ul></MemoryRouter>);
+    render(<MemoryRouter><ul><ActionRow row={row} actions={null} showPath /></ul></MemoryRouter>);
     expect(screen.getByText('economy')).toBeInTheDocument();
     expect(screen.getByText(/Due/)).toBeInTheDocument();
   });
