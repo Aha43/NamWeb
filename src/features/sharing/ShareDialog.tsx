@@ -1,0 +1,264 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Check, Copy, RefreshCw } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ConfirmButton } from '@/components/ui/confirm-button';
+import { Tooltip } from '@/components/ui/tooltip';
+import { useCopyToClipboard } from '@/lib/useCopyToClipboard';
+import { useWorkspaceContext } from '@/store/workspace-context';
+import { useAuthUser } from '@/auth/auth-context';
+import { shareContent, SHARE_DEFAULT_OPTIONS } from '@/domain/shareContent';
+import { canonicalTag, PRIVATE_TAG } from '@/domain/systemTags';
+import { subtreeIds } from '@/domain/lenses';
+import {
+  fetchShare,
+  publishShare,
+  rotateShareToken,
+  shareUrl,
+  unpublishShare,
+  type ProjectShare,
+} from './shares';
+
+/**
+ * The owner's Share dialog (#759, stage 1 of the sharing epic). Publish mints the secret
+ * link; republish refreshes the snapshot; unpublish/rotate kill the old link (confirmed).
+ * The dialog is where the snapshot's shape is chosen (field toggles) and where exclusions
+ * are made visible (the private-tag count). Labs-gated by the caller.
+ */
+export function ShareDialog({
+  projectId,
+  open,
+  onOpenChange,
+}: {
+  projectId: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const { document } = useWorkspaceContext();
+  const user = useAuthUser();
+  const { copied, copy } = useCopyToClipboard();
+
+  const [share, setShare] = useState<ProjectShare | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [includeDue, setIncludeDue] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeDue);
+  const [includeStatus, setIncludeStatus] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeStatus);
+  const [includeNotes, setIncludeNotes] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeNotes);
+
+  // Load the existing share on open; reset transient state so a previous project's share
+  // never greets this one (the dialog stays mounted, driven by open).
+  useEffect(() => {
+    if (!open) return;
+    setShare(null);
+    setError(null);
+    setLoading(true);
+    let cancelled = false;
+    fetchShare(projectId)
+      .then((s) => {
+        if (cancelled) return;
+        setShare(s);
+      })
+      .catch((e: Error) => {
+        if (!cancelled) setError(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, projectId]);
+
+  const privateCount = useMemo(() => {
+    if (!document || !open) return 0;
+    let count = 0;
+    for (const id of subtreeIds(document, projectId)) {
+      const node = document.nodes[id];
+      if (node && node.tags.some((tag) => canonicalTag(tag) === PRIVATE_TAG)) count++;
+    }
+    return count;
+  }, [document, projectId, open]);
+
+  const buildContent = useCallback(
+    (salt: string) =>
+      document
+        ? shareContent(document, projectId, {
+            includeDue,
+            includeStatus,
+            includeNotes,
+            salt,
+            publishedAt: new Date().toISOString(),
+          })
+        : null,
+    [document, projectId, includeDue, includeStatus, includeNotes],
+  );
+
+  // The changes-since-publish hint: recompute the snapshot with the stored share's own salt
+  // and compare (publishedAt aside) — exact, cheap at publish scale (design Q7's hash lean,
+  // realized as structural comparison).
+  const dirty = useMemo(() => {
+    if (!share) return false;
+    const now = buildContent(share.token);
+    if (!now) return true;
+    const strip = (c: object) => JSON.stringify({ ...c, publishedAt: null });
+    return strip(now) !== strip(share.content);
+  }, [share, buildContent]);
+
+  async function run(action: () => Promise<void>) {
+    setBusy(true);
+    setError(null);
+    try {
+      await action();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const publish = () =>
+    run(async () => {
+      const content = buildContent(share?.token ?? 'unpublished');
+      if (!content || !user) return;
+      // First publish mints the token, then the content is rebuilt with it as the
+      // pseudonymization salt so guest ids are stable across republishes.
+      const next = await publishShare(user.id, projectId, content, share?.token);
+      if (!share) {
+        const salted = buildContent(next.token);
+        if (salted) {
+          setShare(await publishShare(user.id, projectId, salted, next.token));
+          return;
+        }
+      }
+      setShare(next);
+    });
+
+  const unpublish = () =>
+    run(async () => {
+      if (!share) return;
+      await unpublishShare(share.token);
+      setShare(null);
+    });
+
+  const rotate = () =>
+    run(async () => {
+      if (!share || !user) return;
+      const token = await rotateShareToken(share.token);
+      // Re-mint guest ids under the new salt — the old link (and its ids) are dead anyway.
+      const content = buildContent(token);
+      if (content) {
+        setShare(await publishShare(user.id, projectId, content, token));
+      } else {
+        setShare({ ...share, token });
+      }
+    });
+
+  const projectGone = !document?.nodes[projectId]?.project;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader className="text-left">
+          <DialogTitle>{t('share.title')}</DialogTitle>
+          <DialogDescription>{t('share.description')}</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          <span className="text-muted-foreground">{t('share.include')}</span>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={includeDue} onChange={(e) => setIncludeDue(e.target.checked)} />
+            {t('share.includeDates')}
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={includeStatus} onChange={(e) => setIncludeStatus(e.target.checked)} />
+            {t('share.includeStatus')}
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={includeNotes} onChange={(e) => setIncludeNotes(e.target.checked)} />
+            {t('share.includeNotes')}
+          </label>
+        </div>
+
+        {privateCount > 0 && (
+          <p className="text-xs text-muted-foreground">{t('share.privateCount', { count: privateCount })}</p>
+        )}
+
+        {loading ? (
+          <p className="text-sm text-muted-foreground">{t('share.loading')}</p>
+        ) : share ? (
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                readOnly
+                aria-label={t('share.urlAria')}
+                value={shareUrl(share.token)}
+                onFocus={(e) => e.currentTarget.select()}
+                className="min-w-0 flex-1 rounded-md border border-input bg-muted/30 px-2 py-1.5 font-mono text-xs text-foreground outline-hidden focus:border-ring"
+              />
+              <Tooltip label={t('share.copyTooltip')}>
+                <Button type="button" size="sm" variant="outline" onClick={() => copy(shareUrl(share.token))} className="gap-1.5">
+                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? t('summary.copied') : t('summary.copy')}
+                </Button>
+              </Tooltip>
+            </div>
+            {dirty && <p className="text-xs text-muted-foreground">{t('share.dirtyHint')}</p>}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">{t('share.notPublished')}</p>
+        )}
+
+        {error && (
+          <p role="alert" className="text-xs text-destructive">
+            {error}
+          </p>
+        )}
+
+        <DialogFooter className="flex-wrap gap-2">
+          {share && (
+            <>
+              <ConfirmButton
+                aria-label={t('share.unpublishAria')}
+                message={t('share.unpublishConfirm')}
+                confirmLabel={t('share.unpublish')}
+                onConfirm={unpublish}
+                className="rounded-md border border-input px-3 py-1.5 text-sm font-medium text-destructive hover:bg-accent sm:mr-auto"
+              >
+                {t('share.unpublish')}
+              </ConfirmButton>
+              <ConfirmButton
+                aria-label={t('share.rotateAria')}
+                message={t('share.rotateConfirm')}
+                confirmLabel={t('share.rotate')}
+                destructive={false}
+                onConfirm={rotate}
+                className="rounded-md border border-input px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent"
+              >
+                <span className="flex items-center gap-1.5">
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  {t('share.rotate')}
+                </span>
+              </ConfirmButton>
+            </>
+          )}
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            {t('summary.close')}
+          </Button>
+          <Button type="button" disabled={busy || loading || projectGone} onClick={publish}>
+            {share ? t('share.republish') : t('share.publish')}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

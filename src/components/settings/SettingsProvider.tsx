@@ -5,6 +5,7 @@ import {
   ADD_TO_BOTTOM_STORAGE_KEY,
   DATE_FORMAT_STORAGE_KEY,
   DENSE_STORAGE_KEY,
+  LABS_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   SettingsContext,
 } from './settings-context';
@@ -43,6 +44,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // #579); this state just mirrors it for the Settings UI and drives later changes.
   const [language, setLanguage] = useState<Locale>(detectInitialLocale);
   const [dense, setDense] = useState<boolean>(initialDense);
+  const [labs, setLabs] = useState<boolean>(() => localStorage.getItem(LABS_STORAGE_KEY) === '1');
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
   const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
@@ -72,6 +74,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // best-effort persistence
     }
   }, [dense]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(LABS_STORAGE_KEY, labs ? '1' : '0');
+    } catch {
+      // Private-mode storage failures are non-fatal.
+    }
+  }, [labs]);
 
   // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
   useEffect(() => {
@@ -96,6 +105,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         language,
         setLanguage,
         dense,
+        labs,
+        setLabs,
         setDense,
         addToBottom,
         setAddToBottom,

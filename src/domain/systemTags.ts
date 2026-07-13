@@ -7,7 +7,12 @@
  *  started but are waiting on is legitimately both). */
 export const IN_PROGRESS_TAG = 'in progress';
 
-export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG];
+/** Keeps a node (and its whole subtree) OUT of a published project share (#759) — the
+ *  opt-out half of the sharing visibility grammar: publishing is opt-in per project, this
+ *  tag hides "budget ceiling" / "surprise for mum" nodes within it. */
+export const PRIVATE_TAG = 'private';
+
+export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG, PRIVATE_TAG];
 
 export function isSystemTag(tag: string): boolean {
   return SYSTEM_TAGS.includes(tag.trim().toLowerCase());
