@@ -635,6 +635,7 @@
   "share.unpublishAria": "Unpublish this project",
   "share.unpublishConfirm": "Unpublish? The link stops working immediately.",
   "share.urlAria": "Secret share link",
+  "share.vanished": "This share was unpublished on another device — the link is gone. Publish again if you want a new one.",
   "guest.goneBody": "The page may have been unpublished or the link replaced. Ask the person who shared it for a fresh one.",
   "guest.goneTitle": "This link is no longer active",
   "guest.loading": "Loading…",

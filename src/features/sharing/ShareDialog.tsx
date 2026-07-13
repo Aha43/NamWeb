@@ -134,10 +134,18 @@ export function ShareDialog({
       // First publish mints the token, then the content is rebuilt with it as the
       // pseudonymization salt so guest ids are stable across republishes.
       const next = await publishShare(user.id, projectId, content, Boolean(share));
+      if (!next) {
+        // Unpublished elsewhere mid-dialog (#774): honor the revocation — never silently mint
+        // a fresh link. The dialog drops to "Not published"; publishing again is one click,
+        // but it's the USER'S click.
+        setShare(null);
+        setError(t('share.vanished'));
+        return;
+      }
       if (!share) {
         const salted = buildContent(next.token);
         if (salted) {
-          setShare(await publishShare(user.id, projectId, salted, true));
+          setShare((await publishShare(user.id, projectId, salted, true)) ?? next);
           return;
         }
       }
@@ -158,7 +166,7 @@ export function ShareDialog({
       // Re-mint guest ids under the new salt — the old link (and its ids) are dead anyway.
       const content = buildContent(token);
       if (content) {
-        setShare(await publishShare(user.id, projectId, content, true));
+        setShare((await publishShare(user.id, projectId, content, true)) ?? { ...share, token });
       } else {
         setShare({ ...share, token });
       }

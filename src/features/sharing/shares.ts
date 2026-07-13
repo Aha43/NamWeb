@@ -28,14 +28,16 @@ export async function fetchShare(projectId: string): Promise<ProjectShare | null
 
 /** First publish inserts with a fresh token; republish updates CONTENT only, keyed by
  *  (owner, project) — never the token (#772/F3: a stale dialog's republish must not write an
- *  old token back over a rotation performed for security). The row's CURRENT token comes back
- *  either way, so a stale caller heals. */
+ *  old token back over a rotation performed for security). The row's CURRENT token comes back,
+ *  so a stale caller heals. A republish that matches NO row returns null (#774): the share was
+ *  unpublished elsewhere — deliberately revoked — and silently minting a fresh link against
+ *  that intent is the F3 bug in different clothes. The caller decides what to tell the user. */
 export async function publishShare(
   ownerUserId: string,
   projectId: string,
   content: ShareContent,
   republish = false,
-): Promise<ProjectShare> {
+): Promise<ProjectShare | null> {
   if (republish) {
     const { data, error } = await supabase
       .from('project_shares')
@@ -45,8 +47,7 @@ export async function publishShare(
       .select('token, project_id, content, enabled, updated_at')
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (data) return data as ProjectShare;
-    // The share vanished under us (unpublished elsewhere) — fall through to a fresh publish.
+    return (data as ProjectShare | null) ?? null;
   }
   const { data, error } = await supabase
     .from('project_shares')
