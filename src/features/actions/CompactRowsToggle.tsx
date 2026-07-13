@@ -10,17 +10,21 @@ import { useSettings } from '@/components/settings/settings-context';
 export function CompactRowsToggle() {
   const { t } = useTranslation();
   const { compactRows, setCompactRows } = useSettings();
-  const label = compactRows ? t('rows.comfortable') : t('rows.compact');
+  // Like its SortButton neighbor: the VISIBLE word is the current state (findability — an
+  // unlabeled icon between Focus and Sort was invisible in practice); the tooltip says what
+  // clicking switches to.
+  const switchTo = compactRows ? t('rows.comfortable') : t('rows.compact');
   return (
-    <Tooltip label={label}>
+    <Tooltip label={switchTo}>
       <button
         type="button"
-        aria-label={label}
+        aria-label={switchTo}
         aria-pressed={compactRows}
         onClick={() => setCompactRows(!compactRows)}
         className="flex items-center gap-1 rounded-md border border-input px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent"
       >
-        {compactRows ? <Rows2 className="h-3.5 w-3.5" /> : <Rows4 className="h-3.5 w-3.5" />}
+        {compactRows ? <Rows4 className="h-3.5 w-3.5" /> : <Rows2 className="h-3.5 w-3.5" />}
+        {compactRows ? t('rows.stateCompact') : t('rows.stateComfortable')}
       </button>
     </Tooltip>
   );

@@ -640,5 +640,7 @@
   "guest.retry": "Prøv igjen",
   "guest.sharedFrom": "Delt fra",
   "rows.comfortable": "Komfortable rader",
-  "rows.compact": "Kompakte rader"
+  "rows.compact": "Kompakte rader",
+  "rows.stateComfortable": "Luftig",
+  "rows.stateCompact": "Kompakt"
 }
