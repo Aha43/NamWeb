@@ -15,6 +15,7 @@ minor = features (breaking changes allowed), patch = fixes.
 ### Changed
 
 - **Phone rows breathe.** On the phone, the seven-icon control strip no longer squats on every row — a single "…" reveals it on its own full-width line when you need it, and titles get their width back (no more "Refill medicati…"). The tag/date line follows onto one line. Desktop rows are untouched. Closes #776.
+- **Phone list headers grew up.** The desktop furniture — status boxes, the rows toggle, Sort — no longer crams and wraps at phone width: one quiet **Filter** chip discloses it all, stacked and thumb-sized, while Focus stays out beside the chip where a primary action belongs. Desktop headers unchanged. Closes #777.
 
 ## [1.6.0] - 2026-07-13
 

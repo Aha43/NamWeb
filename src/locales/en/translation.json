@@ -435,6 +435,7 @@
   "inbox.skip": "Skip",
   "inbox.topLevel": "Top level",
   "list.exitSelect": "Exit select",
+  "list.filters": "Filter",
   "list.moveDown": "Move down",
   "list.moveDownAria": "Move {title} down",
   "list.moveUp": "Move up",

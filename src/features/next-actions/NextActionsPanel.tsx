@@ -5,6 +5,7 @@ import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
 import { CompactRowsToggle } from '../actions/CompactRowsToggle';
+import { ListHeaderControls } from '../actions/ListHeaderControls';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
 import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
@@ -98,12 +99,12 @@ export function NextActionsPanel({
           </form>
         )}
         {(focusSlot || statusSlot || (sortMode && onCycleSort && rows.length > 0)) && (
-          <div className="mb-2 flex items-center justify-end gap-1">
-            {statusSlot && <div className="mr-auto">{statusSlot}</div>}
-            {rows.length > 0 && <CompactRowsToggle />}
-            {focusSlot}
-            {sortMode && onCycleSort && rows.length > 0 && <SortButton mode={sortMode} onCycle={onCycleSort} />}
-          </div>
+          <ListHeaderControls
+            statusSlot={statusSlot}
+            rowsToggle={rows.length > 0 ? <CompactRowsToggle /> : undefined}
+            focusSlot={focusSlot}
+            sortSlot={sortMode && onCycleSort && rows.length > 0 ? <SortButton mode={sortMode} onCycle={onCycleSort} /> : undefined}
+          />
         )}
       </div>
       {rows.length === 0 ? (
