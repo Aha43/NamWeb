@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, MapPin } from 'lucide-react';
+import { Check, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
 import type { ShareContent, ShareDue, ShareItem, ShareSection } from '@/domain/shareContent';
 import { fetchGuestShare } from './shares';
 
@@ -14,6 +14,58 @@ export function GuestSharePage({ token }: { token: string }) {
   const { t, i18n } = useTranslation();
   const [content, setContent] = useState<ShareContent | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'gone'>('loading');
+  // Collapsible sections (#794): default EXPANDED — the page reads exactly as before until a
+  // guest chooses focus. Collapse hides details, never existence (headers keep dates + count).
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  // id → parent-section id for every section AND item — anchor navigation (TOC taps, #hash
+  // deep links, stage 4's per-item suggestions) must expand ancestors before scrolling.
+  const parentOf = useMemo(() => {
+    const map = new Map<string, string | null>();
+    const walk = (sections: readonly { id: string; items: readonly { id: string }[]; sections: readonly never[] | ShareContent['sections'] }[], parent: string | null) => {
+      for (const sec of sections) {
+        map.set(sec.id, parent);
+        for (const item of sec.items) map.set(item.id, sec.id);
+        walk(sec.sections as ShareContent['sections'], sec.id);
+      }
+    };
+    if (content) {
+      for (const item of content.items) map.set(item.id, null);
+      walk(content.sections, null);
+    }
+    return map;
+  }, [content]);
+
+  const toggleSection = (id: string) =>
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  /** Expand every collapsed ancestor of `id`, then scroll to it (next frame — the target may
+   *  be hidden right now). */
+  const revealAnchor = useCallback(
+    (id: string) => {
+      setCollapsedIds((prev) => {
+        const next = new Set(prev);
+        let cursor: string | null | undefined = id;
+        while (cursor) {
+          next.delete(cursor);
+          cursor = parentOf.get(cursor) ?? null;
+        }
+        return next;
+      });
+      requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: 'start' }));
+    },
+    [parentOf],
+  );
+
+  // A #hash on arrival (a shared deep link) reveals its target once the content is in.
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (content && hash && parentOf.has(hash)) revealAnchor(hash);
+  }, [content, parentOf, revealAnchor]);
 
   const load = useCallback(() => {
     setState('loading');
@@ -99,21 +151,43 @@ export function GuestSharePage({ token }: { token: string }) {
     </li>
   );
 
-  const renderSection = (section: ShareSection, depth: number) => (
-    <section key={section.id} id={section.id} className={depth === 0 ? 'mt-10' : 'mt-6'}>
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        {depth === 0 ? (
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">{section.title}</h2>
-        ) : (
-          <h3 className="text-base font-semibold text-foreground">{section.title}</h3>
-        )}
-        {section.due && <span className="text-xs text-muted-foreground">{formatDue(section.due)}</span>}
-      </div>
-      {section.note && <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{section.note}</p>}
-      {section.items.length > 0 && <ul className="mt-2 divide-y divide-border/60">{section.items.map(renderItem)}</ul>}
-      {section.sections.map((s) => renderSection(s, depth + 1))}
-    </section>
-  );
+  const renderSection = (section: ShareSection, depth: number) => {
+    const isCollapsed = collapsedIds.has(section.id);
+    const count = section.items.length + section.sections.length;
+    const Heading = depth === 0 ? 'h2' : 'h3';
+    return (
+      <section key={section.id} id={section.id} className={depth === 0 ? 'mt-10' : 'mt-6'}>
+        {/* The heading IS the disclosure (#794) — chevron, aria-expanded/controls (the house
+            pattern). Collapsed headers stay honest: date span + a count, so collapsing hides
+            details, never existence. */}
+        <Heading className={depth === 0 ? 'text-xl font-semibold tracking-tight text-foreground' : 'text-base font-semibold text-foreground'}>
+          <button
+            type="button"
+            aria-expanded={!isCollapsed}
+            aria-controls={`guest-section-${section.id}`}
+            onClick={() => toggleSection(section.id)}
+            className="flex w-full flex-wrap items-baseline gap-x-3 gap-y-0.5 text-left"
+          >
+            {isCollapsed ? (
+              <ChevronRight aria-hidden className="h-4 w-4 shrink-0 self-center text-muted-foreground" />
+            ) : (
+              <ChevronDown aria-hidden className="h-4 w-4 shrink-0 self-center text-muted-foreground" />
+            )}
+            <span>{section.title}</span>
+            {section.due && <span className="text-xs font-normal text-muted-foreground">{formatDue(section.due)}</span>}
+            {isCollapsed && count > 0 && (
+              <span className="text-xs font-normal text-muted-foreground">{t('guest.sectionCount', { count })}</span>
+            )}
+          </button>
+        </Heading>
+        <div id={`guest-section-${section.id}`} className={isCollapsed ? 'hidden' : undefined}>
+          {section.note && <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{section.note}</p>}
+          {section.items.length > 0 && <ul className="mt-2 divide-y divide-border/60">{section.items.map(renderItem)}</ul>}
+          {section.sections.map((s) => renderSection(s, depth + 1))}
+        </div>
+      </section>
+    );
+  };
 
   return (
     <div className="min-h-dvh bg-background">
@@ -136,7 +210,17 @@ export function GuestSharePage({ token }: { token: string }) {
             <ul className="mt-2 space-y-1">
               {content.sections.map((section) => (
                 <li key={section.id}>
-                  <a href={`#${section.id}`} className="group flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                  <a
+                    href={`#${section.id}`}
+                    onClick={(e) => {
+                      // Anchor-aware (#794): expand first, scroll next frame — a collapsed
+                      // target must never dead-end a TOC tap.
+                      e.preventDefault();
+                      window.history.replaceState(null, '', `#${section.id}`);
+                      revealAnchor(section.id);
+                    }}
+                    className="group flex flex-wrap items-baseline gap-x-3 gap-y-0.5"
+                  >
                     <span className="font-medium text-foreground group-hover:underline">{section.title}</span>
                     {section.due && <span className="text-xs text-muted-foreground">{formatDue(section.due)}</span>}
                   </a>

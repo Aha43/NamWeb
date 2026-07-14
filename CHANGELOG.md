@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Guest page sections fold.** Every section heading on a shared page is now a disclosure — tap to collapse, tap to reopen — defaulting fully expanded so the page reads exactly as before until a guest chooses focus. Collapsed headers stay honest (date span + "N inside"), and anchors see through the folds: a Contents tap or a deep link expands whatever hides its target. Existing links upgrade on deploy, as always with renderer iterations. Closes #794.
+
+### Added
+
 - **Guest pages lead with a table of contents.** A shared project with sections now opens with a small Contents block — section titles and their date spans, each a jump link — so a guest lands oriented instead of scrolling blind. Always on (it's small and familiar); collapsible sections are the next lab iteration. Every already-published link gets it without a republish. Closes #792.
 
 ### Fixed
