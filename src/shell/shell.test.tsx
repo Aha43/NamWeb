@@ -164,4 +164,10 @@ describe('adaptive shell', () => {
     expect(screen.queryByLabelText(/unprocessed/)).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Inbox' }).querySelector('.inbox-glow-clear')).not.toBeNull();
   });
+
+  it('phone: the More sheet carries the version + build stamp (#790)', () => {
+    renderShell(false);
+    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByText(/^v\d+\.\d+\.\d+$/)).toBeInTheDocument();
+  });
 });
