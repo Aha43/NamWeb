@@ -15,6 +15,7 @@ import { LogoMark } from '@/components/brand/LogoMark';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { BookmarkBar } from '@/features/bookmarks/BookmarkBar';
+import { VersionBadge } from '@/components/VersionBadge';
 import { bookmarksOf } from '@/features/bookmarks/bookmarks';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { inboxItems } from '@/domain/lenses';
@@ -179,6 +180,7 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
             <HelpCircle className="h-4 w-4" />
             {t('nav.help')}
           </NavLink>
+          <VersionBadge className="mt-2 px-2 pb-1" />
 
           <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
             <ThemeToggle />

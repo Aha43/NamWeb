@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The version found a home on the phone.** The version + build stamp lived in a hover tooltip (touch has no hover) and the Help page footer (found by nobody) — it now sits in the More sheet's footer, where mobile users actually look. Closes #790.
+
 ## [1.7.0] - 2026-07-14
 
 **NAM learns to live in your hand.** The phone arc: an audit found rows spending half their
