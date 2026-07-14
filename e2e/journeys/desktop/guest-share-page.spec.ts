@@ -26,6 +26,9 @@ test('a share link renders the itinerary — no sign-in wall, no NAM chrome', as
   await page.goto('/p/tok12345678901234567890');
 
   await expect(page.getByRole('heading', { name: 'Asia round trip' })).toBeVisible();
+  // The TOC (#792): a Contents nav anchoring to the sections.
+  const toc = page.getByRole('navigation', { name: 'Contents' });
+  await expect(toc.getByRole('link', { name: /Japan leg/ })).toHaveAttribute('href', '#cc33');
   await expect(page.getByText('Book flights')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Japan leg' })).toBeVisible();
   await expect(page.getByText('Shared from')).toBeVisible();

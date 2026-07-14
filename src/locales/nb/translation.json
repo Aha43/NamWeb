@@ -642,6 +642,7 @@
   "share.unpublishConfirm": "Avpublisere? Lenken slutter å virke umiddelbart.",
   "share.urlAria": "Hemmelig delingslenke",
   "share.vanished": "Delingen ble avpublisert på en annen enhet — lenken er borte. Publiser på nytt om du vil ha en ny.",
+  "guest.contents": "Innhold",
   "guest.goneBody": "Siden kan være avpublisert, eller lenken byttet ut. Spør den som delte den om en ny.",
   "guest.goneTitle": "Denne lenken er ikke lenger aktiv",
   "guest.loading": "Laster…",

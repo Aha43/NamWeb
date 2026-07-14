@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Guest pages lead with a table of contents.** A shared project with sections now opens with a small Contents block — section titles and their date spans, each a jump link — so a guest lands oriented instead of scrolling blind. Always on (it's small and familiar); collapsible sections are the next lab iteration. Every already-published link gets it without a republish. Closes #792.
+
 ### Fixed
 
 - **The version found a home on the phone.** The version + build stamp lived in a hover tooltip (touch has no hover) and the Help page footer (found by nobody) — it now sits in the More sheet's footer, where mobile users actually look. Closes #790.

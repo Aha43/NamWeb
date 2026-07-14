@@ -127,6 +127,25 @@ export function GuestSharePage({ token }: { token: string }) {
           {content.note && <p className="mt-3 whitespace-pre-wrap text-base text-muted-foreground">{content.note}</p>}
         </header>
 
+        {content.sections.length > 0 && (
+          /* The TOC (#792): always on when sections exist — small, familiar, and the trip
+             page's front door. Anchors ride the stage-1 pseudonymous ids. Renderer-only:
+             every existing link gets it without a republish. */
+          <nav aria-label={t('guest.contents')} className="mt-8 rounded-lg border border-border bg-card/50 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t('guest.contents')}</p>
+            <ul className="mt-2 space-y-1">
+              {content.sections.map((section) => (
+                <li key={section.id}>
+                  <a href={`#${section.id}`} className="group flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                    <span className="font-medium text-foreground group-hover:underline">{section.title}</span>
+                    {section.due && <span className="text-xs text-muted-foreground">{formatDue(section.due)}</span>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+
         {content.items.length > 0 && <ul className="mt-8 divide-y divide-border/60">{content.items.map(renderItem)}</ul>}
         {content.sections.map((s) => renderSection(s, 0))}
 
