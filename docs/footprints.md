@@ -11,6 +11,28 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.7.0 — 2026-07-14
+
+*(two days; 8 PRs, 1 release)* The arc nobody planned and everybody needed: **the phone**,
+which had silently absorbed a year of desktop decisions. It opened with an audit — headless
+390px screenshots that showed rows spending half their width on seven always-on icons, titles
+truncating at fifteen characters — and the audit built the first three PRs (the "…" row
+reclaim, the Filter-chip headers, the bottom-bar inbox cue). Then the user's first real
+thumb-driven day did what audits can't: it found the bugs that only exist in the hand. His
+keyboard's action key is a ✓ that blurs without ever firing Enter — which meant every inline
+edit silently vanished (cancel-on-blur, inverted to commit) and the big + capture button was a
+literal dead end (#626's buttonless purism, right on desktop, wrong on phones). Two hotfixes
+and a standing audit rule later ("every phone form needs a visible submit or blur-commit"),
+the review dance delivered its most self-reflective round yet: the HIGH finding was in the
+suite itself — a phone e2e green only by losing a race, probing a control that was never in
+the strip — alongside a blur-reflow dead tap on the exact gesture that ends an edit, and a
+Filter chip whose silence compounded into an empty state that affirmatively lied ("all
+clear!" over twelve hidden items). Codex added one P3 (aria-controls, fixed while the pattern
+is young) and a phone-only advisory no headless browser can settle. Verdict: **the phone is
+usable again and the pattern language is set** (primary verb out, secondaries behind "…";
+disclosures that tell the truth) — M2 waits on the next pain list; the lab (sharing stages
+3–4) waits on the operator.
+
 ## v1.6.0 — 2026-07-13
 
 *(one day; 12 PRs, 1 release — the densest day in the repo's history)* The cut where the

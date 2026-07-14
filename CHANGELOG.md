@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-07-14
+
+**NAM learns to live in your hand.** The phone arc: an audit found rows spending half their
+width on desktop furniture, and a real day of thumb-driven dogfooding found the rest — titles
+now read in full behind a quiet per-row "…", list headers fold into a Filter chip that never
+lies about what it hides, the inbox glows red from the bottom bar until you process it, the
+keyboard's checkmark finally saves your edits, and the big + capture button actually captures.
+Hardened by both reviewers: a coin-toss e2e caught red-handed, a blur-reflow dead tap frozen
+solid, and an empty state that had learned to lie taught honesty.
+
 ### Fixed
 
 - **The phone disclosures introduce themselves properly.** The row "…", the inbox "…", and the Filter chip now carry `aria-controls` linking each trigger to the strip it opens (Codex review P3) — fixed while the pattern is young and before it gets copied further. Closes #788-round (rides #786's hardening arc).
@@ -1500,7 +1510,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.6.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.7.0...HEAD
+[1.7.0]: https://github.com/Aha43/NamWeb/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/Aha43/NamWeb/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Aha43/NamWeb/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/Aha43/NamWeb/compare/v1.3.0...v1.4.0
