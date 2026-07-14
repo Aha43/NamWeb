@@ -85,19 +85,70 @@ describe('InboxPanel', () => {
     expect(screen.getByText('0 selected')).toBeInTheDocument();
   });
 
-  it('row action icons carry hover tooltips (#543)', async () => {
+  it('row action icons carry hover tooltips on desktop (#543; phone hides them behind "…", #782)', async () => {
+    // Tooltips are a hover concern — force the desktop branch (jsdom defaults to phone).
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) =>
+      ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} })
+    ) as unknown as typeof window.matchMedia;
+    try {
+      render(
+        <InboxPanel
+          items={[item('a', 'Buy milk')]}
+          onAdd={vi.fn()}
+          onProcess={vi.fn()}
+          onDelete={vi.fn()}
+          onRename={vi.fn()}
+          onBulkResolve={vi.fn()}
+        />,
+      );
+      fireEvent.focus(screen.getByRole('button', { name: 'Delete Buy milk' }));
+      expect(await screen.findByRole('tooltip')).toHaveTextContent('Delete Buy milk');
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+
+  it('phone: copy/rename/delete hide behind the per-row "…"; Process stays out (#782)', () => {
+    const onDelete = vi.fn();
+    render(
+      <InboxPanel
+        items={[item('a', 'Buy milk')]}
+        onAdd={vi.fn()}
+        onProcess={vi.fn()}
+        onDelete={onDelete}
+        onRename={vi.fn()}
+        onBulkResolve={vi.fn()}
+      />,
+    );
+    // Process is the primary verb — always visible.
+    expect(screen.getByRole('button', { name: 'Process Buy milk' })).toBeInTheDocument();
+    // The secondary strip is hidden until revealed.
+    expect(screen.getByRole('button', { name: 'Delete Buy milk' }).parentElement).toHaveClass('hidden');
+    fireEvent.click(screen.getByRole('button', { name: 'Show actions for Buy milk' }));
+    expect(screen.getByRole('button', { name: 'Delete Buy milk' }).parentElement).not.toHaveClass('hidden');
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Buy milk' }));
+    expect(onDelete).toHaveBeenCalledWith('a');
+  });
+
+  it('the mobile checkmark (blur) SAVES an inline edit (#782)', () => {
+    const onRename = vi.fn();
     render(
       <InboxPanel
         items={[item('a', 'Buy milk')]}
         onAdd={vi.fn()}
         onProcess={vi.fn()}
         onDelete={vi.fn()}
-        onRename={vi.fn()}
+        onRename={onRename}
         onBulkResolve={vi.fn()}
       />,
     );
-    fireEvent.focus(screen.getByRole('button', { name: 'Delete Buy milk' }));
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Delete Buy milk');
+    fireEvent.click(screen.getByRole('button', { name: 'Show actions for Buy milk' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Buy milk' }));
+    const input = screen.getByRole('textbox', { name: 'Rename Buy milk' }); // the pencil shares the label, hidden in the collapsed strip
+    fireEvent.change(input, { target: { value: 'Buy oat milk' } });
+    fireEvent.blur(input); // what the phone keyboard's ✓ actually does
+    expect(onRename).toHaveBeenCalledWith('a', 'Buy oat milk');
   });
 
   it('Process button scopes to the selection and exits select mode (#648)', () => {

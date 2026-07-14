@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { CheckSquare, Pencil, Target, Trash2 } from 'lucide-react';
+import { MoreHorizontal, CheckSquare, Pencil, Target, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { formatAge } from '@/lib/dates';
 import { InlineRename } from '../actions/InlineRename';
+import { useIsDesktop } from '@/shell/useIsDesktop';
 import { ProcessWizard } from './ProcessWizard';
 import type { ProcessResolution, ProjectTarget } from './InboxProcessDialog';
 import type { NamNode } from '../../domain/types';
@@ -50,6 +51,10 @@ export function InboxPanel({
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
   const [renamingId, setRenamingId] = useState<string | null>(null);
+  // Phone rows follow the #776 pattern (#782): Process stays out (the inbox's primary verb),
+  // copy/rename/delete hide behind a per-row "…". Single-open keeps the list calm.
+  const isDesktop = useIsDesktop();
+  const [controlsFor, setControlsFor] = useState<string | null>(null);
   // Bulk select: triage several items with one shared decision (#458). Additive — per-item Process
   // and the Process-all deck are untouched.
   const [selectMode, setSelectMode] = useState(false);
@@ -224,7 +229,8 @@ export function InboxPanel({
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
           {items.map((item) => (
-            <li key={item.id} className="flex items-center gap-2 px-3 py-2 transition-colors even:bg-muted/40 hover:bg-accent/40">
+            <li key={item.id} className="px-3 py-2 transition-colors even:bg-muted/40 hover:bg-accent/40">
+            <div className="flex items-center gap-2">
               {selectMode && (
                 <input
                   type="checkbox"
@@ -263,10 +269,10 @@ export function InboxPanel({
                   </span>
                 ) : null;
               })()}
-              {!selectMode && renamingId !== item.id && (
+              {isDesktop && !selectMode && renamingId !== item.id && (
                 <CopyButton value={item.title} label={t('copy.name', { title: item.title })} className="p-1.5" tooltip />
               )}
-              {!selectMode && onRename && renamingId !== item.id && (
+              {isDesktop && !selectMode && onRename && renamingId !== item.id && (
                 <Tooltip label={t('inbox.renameAria', { title: item.title })}>
                   <button
                     type="button"
@@ -290,7 +296,7 @@ export function InboxPanel({
                   </button>
                 </Tooltip>
               )}
-              {!selectMode && (
+              {isDesktop && !selectMode && (
                 <Tooltip label={t('inbox.deleteAria', { title: item.title })}>
                   <button
                     type="button"
@@ -302,6 +308,47 @@ export function InboxPanel({
                   </button>
                 </Tooltip>
               )}
+              {!isDesktop && !selectMode && renamingId !== item.id && (
+                <button
+                  type="button"
+                  aria-label={t('list.rowControlsAria', { title: item.title })}
+                  aria-expanded={controlsFor === item.id}
+                  onClick={() => setControlsFor((c) => (c === item.id ? null : item.id))}
+                  className={cn(
+                    'shrink-0 rounded-md p-2 hover:text-foreground',
+                    controlsFor === item.id ? 'text-foreground' : 'text-muted-foreground',
+                  )}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            {!isDesktop && !selectMode && (
+              <div className={cn('flex items-center justify-end gap-1 pt-1', controlsFor !== item.id && 'hidden')}>
+                <CopyButton value={item.title} label={t('copy.name', { title: item.title })} className="p-2" tooltip />
+                {onRename && (
+                  <button
+                    type="button"
+                    aria-label={t('inbox.renameAria', { title: item.title })}
+                    onClick={() => {
+                      setRenamingId(item.id);
+                      setControlsFor(null);
+                    }}
+                    className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  aria-label={t('inbox.deleteAria', { title: item.title })}
+                  onClick={() => onDelete(item.id)}
+                  className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive', TOUCH_TARGET)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
             </li>
           ))}
         </ul>

@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The phone keyboard's checkmark now saves an inline edit.** Renaming an inbox item (or anything using the inline editor) committed on Enter but *cancelled* on blur — and the mobile keyboard's ✓ dismisses the keyboard, which blurs: every phone edit silently vanished. Blur now commits; Escape remains the deliberate cancel. The inbox rows also join the phone "…" pattern — title, age, and **Process** stay out; copy/rename/delete reveal on demand. Closes #782.
+
 ### Added
 
 - **The inbox cue reaches the phone.** The bottom-bar Inbox glows red with a count while captures wait, green when you're clear — same signal as the desktop sidebar, now where the couch question actually gets asked. Closes #778.
