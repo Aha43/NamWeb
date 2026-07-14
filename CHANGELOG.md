@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **The inbox cue reaches the phone.** The bottom-bar Inbox glows red with a count while captures wait, green when you're clear — same signal as the desktop sidebar, now where the couch question actually gets asked. Closes #778.
+
 ### Changed
 
 - **Phone rows breathe.** On the phone, the seven-icon control strip no longer squats on every row — a single "…" reveals it on its own full-width line when you need it, and titles get their width back (no more "Refill medicati…"). The tag/date line follows onto one line. Desktop rows are untouched. Closes #776.

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { HelpCircle, Inbox, ListTodo, MoreHorizontal, Plus, Settings, Target, User, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +17,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { BookmarkBar } from '@/features/bookmarks/BookmarkBar';
 import { bookmarksOf } from '@/features/bookmarks/bookmarks';
 import { useWorkspaceContext } from '@/store/workspace-context';
+import { inboxItems } from '@/domain/lenses';
 import { cn } from '@/lib/utils';
 import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
 import { MORE_GROUPS } from './nav';
@@ -29,6 +30,10 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const openedAtRef = useRef(0);
   const { openCapture } = useCapture();
+  // The inbox cue reaches the phone (#778): count + red/green glow on the bottom-bar item —
+  // the couch is where "anything in the inbox?" gets asked.
+  const { document: workspaceDoc } = useWorkspaceContext();
+  const inboxCount = useMemo(() => (workspaceDoc ? inboxItems(workspaceDoc).length : 0), [workspaceDoc]);
 
   return (
     <div className="flex h-dvh flex-col bg-background text-foreground">
@@ -51,7 +56,13 @@ export function PhoneShell({ onSignOut }: { onSignOut: () => void }) {
         aria-label={t('nav.primaryLandmark')}
         className="sticky bottom-0 grid grid-cols-5 items-end border-t border-border bg-background pb-[env(safe-area-inset-bottom)]"
       >
-        <BottomLink to="/inbox" label={t('domain.inbox')} icon={Inbox} />
+        <BottomLink
+          to="/inbox"
+          label={t('domain.inbox')}
+          icon={Inbox}
+          iconClassName={inboxCount > 0 ? 'inbox-glow-attention' : 'inbox-glow-clear'}
+          badge={inboxCount}
+        />
         <BottomLink to="/next" label={t('domain.status.next')} icon={ListTodo} />
 
         {/* Capture — the headline action, front and center. */}
@@ -201,23 +212,36 @@ function BottomLink({
   label,
   icon: Icon,
   iconClassName,
+  badge,
 }: {
   to: string;
   label: string;
   icon: LucideIcon;
   iconClassName?: string;
+  /** Attention count rendered on the icon (the inbox cue, #778). */
+  badge?: number;
 }) {
   return (
     <NavLink
       to={to}
       className={({ isActive }) =>
         cn(
-          'flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors',
+          'relative flex flex-col items-center gap-0.5 py-2 text-xs font-medium transition-colors',
           isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
         )
       }
     >
-      <Icon className={cn('h-5 w-5', iconClassName)} />
+      <span className="relative">
+        <Icon className={cn('h-5 w-5', iconClassName)} />
+        {badge !== undefined && badge > 0 && (
+          <span
+            aria-hidden
+            className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-red-500/15 px-1 text-center text-[10px] font-semibold leading-4 text-red-500"
+          >
+            {badge}
+          </span>
+        )}
+      </span>
       {label}
     </NavLink>
   );
