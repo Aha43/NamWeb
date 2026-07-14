@@ -27,7 +27,7 @@ export function NextActionsPage() {
 
   // In "Unsorted" mode the saved manual order applies; oldest/newest are computed.
   // Status include-boxes (#766): default = this view exactly as it always was (Next only).
-  const [boxes, toggleBox] = useStatusBoxes({ NEXT: true });
+  const [boxes, toggleBox, boxesDefault] = useStatusBoxes({ NEXT: true });
   const base = document ? actionsWithStatuses(document, checkedStatuses(boxes)) : [];
   const ordered =
     sortMode === 'none' ? applyViewOrder(base, document?.viewOrders[VIEW]) : sortNodes(base, sortMode);
@@ -47,6 +47,8 @@ export function NextActionsPage() {
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
       focusSlot={ordered.length > 0 ? <FocusButton to="/focus" label="Focus your Next actions" /> : undefined}
       statusSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
+      boxesDefault={boxesDefault}
+      hiddenByFilter={boxesDefault || !document ? 0 : actionsWithStatuses(document, ['NEXT']).length}
       onAdd={
         document
           ? (title) => {

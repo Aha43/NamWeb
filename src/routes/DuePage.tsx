@@ -20,7 +20,7 @@ export function DuePage() {
 
   // Status include-boxes (#766): due's natural set is open work (Next + Backlog); ticking
   // Done shows what was due AND got done — the satisfying view.
-  const [boxes, toggleBox] = useStatusBoxes({ NEXT: true, BACKLOG: true });
+  const [boxes, toggleBox, boxesDefault] = useStatusBoxes({ NEXT: true, BACKLOG: true });
   let groups = EMPTY;
   if (document) {
     const g = dueGroups(document, new Date(), boxes.DONE);
@@ -39,6 +39,7 @@ export function DuePage() {
       groups={groups}
       focusSlot={hasDueNow ? <FocusButton to="/focus?source=due" label="Focus what's due now" /> : undefined}
       statusSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
+      boxesDefault={boxesDefault}
       onSetStatus={setStatus}
       onEdit={openEditor}
       onDelete={deleteNode}

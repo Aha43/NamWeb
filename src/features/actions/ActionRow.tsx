@@ -157,13 +157,19 @@ export function ActionRow({
     <>
       <InProgressToggle id={row.id} title={row.title} />
       <CopyButton value={row.title} label={t('copy.name', { title: row.title })} className="p-2" tooltip />
-      {onRename && !renaming && (
+      {onRename && (
+        /* Stays RENDERED (disabled) while renaming (#786/F2): hiding it reflowed the strip at
+           the exact blur-commit moment, and the tap that ended the edit died on shifted ground. */
         <Tooltip label={t('actions.renameAria', { title: row.title })}>
           <button
             type="button"
             aria-label={t('actions.renameAria', { title: row.title })}
+            disabled={renaming}
             onClick={() => setRenaming(true)}
-            className={cn('rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground', TOUCH_TARGET)}
+            className={cn(
+              'rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40',
+              TOUCH_TARGET,
+            )}
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>

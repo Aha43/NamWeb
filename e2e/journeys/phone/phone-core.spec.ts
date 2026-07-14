@@ -23,12 +23,18 @@ test.describe('phone shell core loop', () => {
 
   test('row controls hide behind the per-row reveal — titles get the width (#776)', async ({ page }) => {
     await page.goto('/next');
-    // The control strip is invisible until asked…
-    await expect(page.getByRole('button', { name: 'Edit Call the plumber' })).toBeHidden();
+    // Await the ROW first: a zero-element locator makes toBeHidden pass vacuously — this spec
+    // was green by losing a race until #786 (it probed 'Edit {title}', the always-visible
+    // title button, not a strip control). Playwright's getByRole excludes display:none nodes
+    // from the a11y tree, so hidden-strip assertions must name controls that live IN the strip.
+    const reveal = page.getByRole('button', { name: 'Show actions for Call the plumber' });
+    await expect(reveal).toBeVisible();
+    // The strip is invisible until asked…
+    await expect(page.getByRole('button', { name: 'Rename Call the plumber' })).toBeHidden();
     // …the reveal shows it, full-width on its own line…
-    await page.getByRole('button', { name: 'Show actions for Call the plumber' }).click();
-    await expect(page.getByRole('button', { name: 'Edit Call the plumber' })).toBeVisible();
-    // …and the controls actually work from there.
+    await reveal.click();
+    await expect(page.getByRole('button', { name: 'Rename Call the plumber' })).toBeVisible();
+    // …and the controls actually work from there (the title-tap Edit stays outside the strip).
     await page.getByRole('button', { name: 'Edit Call the plumber' }).click();
     await expect(page.getByRole('dialog').getByText('Edit action')).toBeVisible();
   });

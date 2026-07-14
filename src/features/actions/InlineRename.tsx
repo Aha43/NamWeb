@@ -45,6 +45,11 @@ export function InlineRename({
   return (
     <input
       autoFocus
+      // Re-arming on focus makes the fresh-mount-per-edit contract non-load-bearing (#786):
+      // a future host that keeps the editor mounted gets a working second edit, not a dead one.
+      onFocus={() => {
+        settledRef.current = false;
+      }}
       aria-label={t('actions.renameAria', { title })}
       value={draft}
       onChange={(e) => setDraft(e.target.value)}

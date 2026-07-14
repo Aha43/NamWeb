@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **Review hardenings (independent Claude review).** The phone reveal e2e was green only by losing a race (it probed the always-visible Edit button) — it now awaits the row and probes a real strip control; the pencil and inbox "…" stay rendered (disabled) during a rename so the tap that ends an edit can't die on shifted ground; the phone Filter chip wears a dot when the boxes differ from the view's defaults, and an all-filtered list now says "N hidden by the status filter" instead of a cheerful (lying) all-clear; the capture input refocuses after a phone Add-button tap so rapid capture keeps its rhythm; an open "…" strip no longer survives into select mode; and the inline editor re-arms on focus so its fresh-mount contract is no longer load-bearing. Closes #786.
+
+### Fixed
+
 - **The big + saves again on the phone.** The capture sheet had no submit button (removed in #626, trusting Enter/Go) — but some phone keyboards show a ✓ that never fires Enter, making capture a dead end. The phone gets its Add button back (desktop stays buttonless — Enter is a real key there), and the input now asks the keyboard for a Go key. Closes #784.
 
 ### Fixed

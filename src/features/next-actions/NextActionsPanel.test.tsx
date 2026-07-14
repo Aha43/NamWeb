@@ -15,6 +15,26 @@ function setup(rows: ActionRowData[]) {
   return handlers;
 }
 
+describe('the filter honesty pair (#786/F3)', () => {
+  it('an all-filtered list says N hidden, not "all clear" — and the chip wears a dot', () => {
+    render(
+      <NextActionsPanel
+        rows={[]}
+        onAdd={vi.fn()}
+        onSetStatus={vi.fn()}
+        onEdit={vi.fn()}
+        boxesDefault={false}
+        hiddenByFilter={12}
+        statusSlot={<div />}
+      />,
+    );
+    expect(screen.getByText('12 item(s) hidden by the status filter')).toBeInTheDocument();
+    expect(screen.queryByText('No next actions')).not.toBeInTheDocument();
+    // The chip is present on the phone and announces its non-default state.
+    expect(screen.getByRole('button', { name: 'Filter (active)' })).toBeInTheDocument();
+  });
+});
+
 describe('NextActionsPanel', () => {
   it('shows the empty state with no rows', () => {
     setup([]);
@@ -124,7 +144,7 @@ describe('NextActionsPanel', () => {
   it('renames inline via the rename button + Enter', () => {
     const { onRename } = setup([row({ id: 'x', title: 'Buy milk' })]);
     fireEvent.click(screen.getByRole('button', { name: 'Rename Buy milk' }));
-    const input = screen.getByLabelText('Rename Buy milk');
+    const input = screen.getByRole('textbox', { name: 'Rename Buy milk' }); // the pencil stays (disabled) during renames, #786/F2
     fireEvent.change(input, { target: { value: 'Buy oat milk' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     expect(onRename).toHaveBeenCalledWith('x', 'Buy oat milk');

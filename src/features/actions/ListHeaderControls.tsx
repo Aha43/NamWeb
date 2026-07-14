@@ -16,11 +16,15 @@ export function ListHeaderControls({
   rowsToggle,
   focusSlot,
   sortSlot,
+  filtered = false,
 }: {
   statusSlot?: ReactNode;
   rowsToggle?: ReactNode;
   focusSlot?: ReactNode;
   sortSlot?: ReactNode;
+  /** Non-default box state (#786/F3): the closed chip must not hide that the list is narrower
+   *  than reality — it wears a dot. */
+  filtered?: boolean;
 }) {
   const { t } = useTranslation();
   const isDesktop = useIsDesktop();
@@ -45,6 +49,7 @@ export function ListHeaderControls({
           <button
             type="button"
             aria-expanded={open}
+            aria-label={filtered ? t('list.filtersActiveAria') : t('list.filters')}
             onClick={() => setOpen((o) => !o)}
             className={cn(
               'flex items-center gap-1 rounded-md border border-input px-2.5 py-1 text-xs font-medium hover:bg-accent',
@@ -53,6 +58,7 @@ export function ListHeaderControls({
           >
             <SlidersHorizontal className="h-3.5 w-3.5" />
             {t('list.filters')}
+            {filtered && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-primary" />}
           </button>
         )}
         {focusSlot}

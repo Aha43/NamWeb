@@ -46,6 +46,11 @@ export interface NextActionsPanelProps {
   focusSlot?: ReactNode;
   /** The status include-boxes (#766), pinned with Focus/Sort. */
   statusSlot?: ReactNode;
+  /** Whether the boxes match the view's defaults (#786/F3) — false puts a dot on the chip. */
+  boxesDefault?: boolean;
+  /** How many items the view's DEFAULT lens holds when the current boxes hide them all —
+   *  the empty state must not claim "all clear" over a filtered-out list (#786/F3). */
+  hiddenByFilter?: number;
 }
 
 /** Next Actions: the list with an inline status switch + manual reorder (buttons + desktop drag).
@@ -69,6 +74,8 @@ export function NextActionsPanel({
   dndEnabled,
   focusSlot,
   statusSlot,
+  boxesDefault = true,
+  hiddenByFilter = 0,
 }: NextActionsPanelProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
@@ -100,6 +107,7 @@ export function NextActionsPanel({
         )}
         {(focusSlot || statusSlot || (sortMode && onCycleSort && rows.length > 0)) && (
           <ListHeaderControls
+            filtered={!boxesDefault}
             statusSlot={statusSlot}
             rowsToggle={rows.length > 0 ? <CompactRowsToggle /> : undefined}
             focusSlot={focusSlot}
@@ -108,7 +116,11 @@ export function NextActionsPanel({
         )}
       </div>
       {rows.length === 0 ? (
-        <EmptyState hint={t('next.emptyHint')}>{t('next.empty')}</EmptyState>
+        hiddenByFilter > 0 ? (
+          <EmptyState hint={t('list.filteredEmptyHint')}>{t('list.filteredEmpty', { count: hiddenByFilter })}</EmptyState>
+        ) : (
+          <EmptyState hint={t('next.emptyHint')}>{t('next.empty')}</EmptyState>
+        )
       ) : (
         <ReorderableActionList
           rows={rows}
