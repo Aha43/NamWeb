@@ -9,6 +9,30 @@ function row(over: Partial<ActionRowData> = {}): ActionRowData {
   return { id: 'a', title: 'Buy tiles', description: null, status: 'NEXT', path: [], tags: [], dueAt: null, touchedAt: null, ...over };
 }
 
+describe('ActionRow — the phone "…" reveal (#776)', () => {
+  const row: ActionRowData = {
+    id: 'a', title: 'Book flights', description: null, status: 'NEXT',
+    path: [], tags: [], dueAt: null, touchedAt: null,
+  };
+
+  it('controls sit hidden behind the per-row reveal; tapping toggles them (jsdom = phone)', () => {
+    render(
+      <MemoryRouter>
+        <ul><ActionRow row={row} actions={<button>Edit it</button>} /></ul>
+      </MemoryRouter>,
+    );
+    const reveal = screen.getByRole('button', { name: 'Show actions for Book flights' });
+    expect(reveal).toHaveAttribute('aria-expanded', 'false');
+    expect(screen.getByText('Edit it').parentElement).toHaveClass('hidden'); // present, not shown
+
+    fireEvent.click(reveal);
+    expect(reveal).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Edit it').parentElement).not.toHaveClass('hidden');
+    fireEvent.click(reveal);
+    expect(screen.getByText('Edit it').parentElement).toHaveClass('hidden');
+  });
+});
+
 describe('ActionRow — compact rows (#765)', () => {
   const row: ActionRowData = {
     id: 'a', title: 'Book flights', description: null, status: 'NEXT',

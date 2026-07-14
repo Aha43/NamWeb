@@ -1,5 +1,5 @@
 import { useState, type CSSProperties, type ReactNode } from 'react';
-import { Paperclip, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Paperclip, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { formatAge } from '@/lib/dates';
@@ -12,6 +12,7 @@ import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
 import { DueHintLabel } from './DueHintLabel';
 import { useSettings } from '@/components/settings/settings-context';
+import { useIsDesktop } from '@/shell/useIsDesktop';
 import { STATUS_TEXT_TONE } from './status';
 import { ProjectPathLinks } from './ProjectPathLinks';
 import { TOUCH_TARGET } from '@/lib/touch';
@@ -106,6 +107,10 @@ export function ActionRow({
 
   // Compact rows (#765): name + controls only — the meta line and path go, padding tightens.
   const { compactRows } = useSettings();
+  // Phone rows reclaim their width (#776): the control strip hides behind a per-row "…" —
+  // seven always-on icons were eating half of 390px and truncating every title.
+  const isDesktop = useIsDesktop();
+  const [controlsOpen, setControlsOpen] = useState(false);
   const hasMeta =
     !compactRows &&
     (row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || !!row.dueAt || !!age || !!row.hasResources);
@@ -204,6 +209,44 @@ export function ActionRow({
           </div>
         </div>
         <div className="pointer-events-none absolute bottom-1 right-1 flex items-center gap-0.5 rounded-md bg-card/95 opacity-0 shadow-sm transition-opacity focus-within:pointer-events-auto focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+          {actionsNode}
+        </div>
+      </li>
+    );
+  }
+
+  if (!isDesktop) {
+    // The controls stay in the DOM (display:none) so focus/queries behave; the "…" reveals
+    // them on their own full-width line, then collapses again.
+    return (
+      <li
+        ref={dragRef}
+        style={dragStyle}
+        className={cn('px-3 transition-colors even:bg-muted/40', compactRows ? 'py-0.5' : 'py-2')}
+      >
+        <div className="flex items-center gap-2">
+          {checkbox}
+          <div className="min-w-0 flex-1">
+            {showPath && !compactRows && (
+              <ProjectPathLinks path={row.path} className="truncate text-xs text-muted-foreground" />
+            )}
+            {titleNode}
+            {metaNode}
+          </div>
+          <button
+            type="button"
+            aria-label={t('list.rowControlsAria', { title: row.title })}
+            aria-expanded={controlsOpen}
+            onClick={() => setControlsOpen((o) => !o)}
+            className={cn(
+              'shrink-0 rounded-md p-2 hover:text-foreground',
+              controlsOpen ? 'text-foreground' : 'text-muted-foreground',
+            )}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </div>
+        <div className={cn('flex flex-wrap items-center justify-end gap-1 pb-1', !controlsOpen && 'hidden')}>
           {actionsNode}
         </div>
       </li>

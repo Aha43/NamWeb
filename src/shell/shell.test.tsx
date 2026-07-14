@@ -140,6 +140,19 @@ describe('adaptive shell', () => {
     expect(screen.getByRole('navigation', { name: 'Sidebar' })).toBeInTheDocument();
   });
 
+  it('phone: the bottom-bar inbox cue — badge + red glow when unprocessed, green when clear (#778)', () => {
+    renderShell(false, ['c1', 'c2', 'c3']);
+    const link = screen.getByRole('link', { name: 'Inbox' });
+    expect(link).toHaveTextContent('3'); // the badge
+    expect(link.querySelector('.inbox-glow-attention')).not.toBeNull();
+
+    cleanup();
+    renderShell(false, []);
+    const clear = screen.getByRole('link', { name: 'Inbox' });
+    expect(clear).not.toHaveTextContent('0'); // no zero badge
+    expect(clear.querySelector('.inbox-glow-clear')).not.toBeNull();
+  });
+
   it('desktop: the inbox cue — red glow + badge when unprocessed, green glow when clear (#764)', () => {
     renderShell(true, ['c1', 'c2']);
     expect(screen.getByLabelText('2 unprocessed')).toBeInTheDocument(); // the badge

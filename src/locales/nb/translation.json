@@ -440,6 +440,7 @@
   "list.moveDownAria": "Flytt {title} ned",
   "list.moveUp": "Flytt opp",
   "list.moveUpAria": "Flytt {title} opp",
+  "list.rowControlsAria": "Vis handlinger for {title}",
   "list.sortAria": "Sortering: {label}. Klikk for å endre.",
   "list.statusAria": "Status for {title}: {status}. Endre status.",
   "list.statusTooltip": "Status: {status} — endre",
