@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SlidersHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -29,6 +29,7 @@ export function ListHeaderControls({
   const { t } = useTranslation();
   const isDesktop = useIsDesktop();
   const [open, setOpen] = useState(false);
+  const stripId = useId();
 
   if (isDesktop) {
     return (
@@ -49,6 +50,7 @@ export function ListHeaderControls({
           <button
             type="button"
             aria-expanded={open}
+            aria-controls={stripId}
             aria-label={filtered ? t('list.filtersActiveAria') : t('list.filters')}
             onClick={() => setOpen((o) => !o)}
             className={cn(
@@ -63,7 +65,7 @@ export function ListHeaderControls({
         )}
         {focusSlot}
       </div>
-      <div className={cn('space-y-2 rounded-md border border-border bg-card p-2', !open && 'hidden')}>
+      <div id={stripId} className={cn('space-y-2 rounded-md border border-border bg-card p-2', !open && 'hidden')}>
         {statusSlot}
         {(rowsToggle || sortSlot) && (
           <div className="flex items-center gap-1">

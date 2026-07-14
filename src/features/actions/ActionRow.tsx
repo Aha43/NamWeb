@@ -243,6 +243,7 @@ export function ActionRow({
             type="button"
             aria-label={t('list.rowControlsAria', { title: row.title })}
             aria-expanded={controlsOpen}
+            aria-controls={`row-controls-${row.id}`}
             onClick={() => setControlsOpen((o) => !o)}
             className={cn(
               'shrink-0 rounded-md p-2 hover:text-foreground',
@@ -252,7 +253,10 @@ export function ActionRow({
             <MoreHorizontal className="h-4 w-4" />
           </button>
         </div>
-        <div className={cn('flex flex-wrap items-center justify-end gap-1 pb-1', !controlsOpen && 'hidden')}>
+        <div
+          id={`row-controls-${row.id}`}
+          className={cn('flex flex-wrap items-center justify-end gap-1 pb-1', !controlsOpen && 'hidden')}
+        >
           {actionsNode}
         </div>
       </li>

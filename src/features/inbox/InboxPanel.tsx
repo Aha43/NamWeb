@@ -321,6 +321,7 @@ export function InboxPanel({
                   type="button"
                   aria-label={t('list.rowControlsAria', { title: item.title })}
                   aria-expanded={controlsFor === item.id}
+                  aria-controls={`inbox-controls-${item.id}`}
                   disabled={renamingId === item.id}
                   onClick={() => setControlsFor((c) => (c === item.id ? null : item.id))}
                   className={cn(
@@ -333,7 +334,10 @@ export function InboxPanel({
               )}
             </div>
             {!isDesktop && !selectMode && (
-              <div className={cn('flex items-center justify-end gap-1 pt-1', controlsFor !== item.id && 'hidden')}>
+              <div
+                id={`inbox-controls-${item.id}`}
+                className={cn('flex items-center justify-end gap-1 pt-1', controlsFor !== item.id && 'hidden')}
+              >
                 <CopyButton value={item.title} label={t('copy.name', { title: item.title })} className="p-2" tooltip />
                 {onRename && (
                   <button

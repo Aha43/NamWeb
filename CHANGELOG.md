@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **The phone disclosures introduce themselves properly.** The row "…", the inbox "…", and the Filter chip now carry `aria-controls` linking each trigger to the strip it opens (Codex review P3) — fixed while the pattern is young and before it gets copied further. Closes #788-round (rides #786's hardening arc).
+
+### Fixed
+
 - **Review hardenings (independent Claude review).** The phone reveal e2e was green only by losing a race (it probed the always-visible Edit button) — it now awaits the row and probes a real strip control; the pencil and inbox "…" stay rendered (disabled) during a rename so the tap that ends an edit can't die on shifted ground; the phone Filter chip wears a dot when the boxes differ from the view's defaults, and an all-filtered list now says "N hidden by the status filter" instead of a cheerful (lying) all-clear; the capture input refocuses after a phone Add-button tap so rapid capture keeps its rhythm; an open "…" strip no longer survives into select mode; and the inline editor re-arms on focus so its fresh-mount contract is no longer load-bearing. Closes #786.
 
 ### Fixed
