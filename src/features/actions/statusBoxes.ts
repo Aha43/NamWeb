@@ -5,16 +5,17 @@ import type { NodeStatus } from '@/domain/types';
 export type StatusBoxes = { NEXT: boolean; BACKLOG: boolean; DONE: boolean };
 export const STATUS_BOX_KEYS = ['NEXT', 'BACKLOG', 'DONE'] as const;
 
-/** Session state for a view's boxes; defaults preserve the view exactly as it was. */
-export function useStatusBoxes(defaults: Partial<StatusBoxes>): [StatusBoxes, (s: keyof StatusBoxes) => void] {
-  const [boxes, setBoxes] = useState<StatusBoxes>({
-    NEXT: false,
-    BACKLOG: false,
-    DONE: false,
-    ...defaults,
-  });
+/** Session state for a view's boxes; defaults preserve the view exactly as it was. The third
+ *  element says whether the boxes still MATCH those defaults — the phone Filter chip wears a
+ *  dot when they don't (#786/F3: a silently-narrower list must carry a tell). */
+export function useStatusBoxes(
+  defaults: Partial<StatusBoxes>,
+): [StatusBoxes, (s: keyof StatusBoxes) => void, boolean] {
+  const resolved: StatusBoxes = { NEXT: false, BACKLOG: false, DONE: false, ...defaults };
+  const [boxes, setBoxes] = useState<StatusBoxes>(resolved);
   const toggle = (status: keyof StatusBoxes) => setBoxes((b) => ({ ...b, [status]: !b[status] }));
-  return [boxes, toggle];
+  const isDefault = STATUS_BOX_KEYS.every((k) => boxes[k] === resolved[k]);
+  return [boxes, toggle, isDefault];
 }
 
 /** The checked statuses as a list (for the lens unions). */

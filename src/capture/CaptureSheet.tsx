@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent, useRef } from 'react';
 import { Check, CheckSquare, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -81,6 +81,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   const deleteNodes = useDeleteNodes();
   const isDesktop = useIsDesktop();
   const [title, setTitle] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
   // Ids captured during this open; newest first. Cleared when the dialog closes (non-persisted).
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -172,6 +173,9 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     dispatch({ type: 'addInboxItem', id, title: trimmed, atTop: !addToBottom, now: nowIso() });
     setRecentIds((prev) => [id, ...prev]);
     setTitle('');
+    // Rapid-capture rhythm (#786/F4): a phone Add-button tap moves focus to the button and
+    // dismisses the keyboard — refocus the input so "keep typing to add several" stays true.
+    inputRef.current?.focus();
   }
 
   function rename(id: string, nextTitle: string) {
@@ -273,6 +277,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
   const form = (
     <form onSubmit={submit} className="mt-4 flex gap-2">
       <input
+        ref={inputRef}
         aria-label={t('capture.inputAria')}
         autoFocus
         enterKeyHint="go"

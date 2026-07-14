@@ -25,6 +25,8 @@ export interface DuePanelProps {
   focusSlot?: ReactNode;
   /** The status include-boxes (#766). */
   statusSlot?: ReactNode;
+  /** False puts the filtered-dot on the phone chip (#786/F3). */
+  boxesDefault?: boolean;
 }
 
 // Labels are i18n keys, translated at render.
@@ -36,7 +38,7 @@ const SECTIONS: { key: keyof DueRowGroups; label: string; tone: string }[] = [
 ];
 
 /** Due actions grouped by urgency; empty sections are hidden. Presentational. */
-export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focusSlot, statusSlot }: DuePanelProps) {
+export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focusSlot, statusSlot, boxesDefault = true }: DuePanelProps) {
   const { t } = useTranslation();
   const total = SECTIONS.reduce((n, s) => n + groups[s.key].length, 0);
   if (total === 0) {
@@ -52,7 +54,7 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focu
       {/* Pin the Focus entry point so it stays reachable while the groups scroll under. */}
       {(focusSlot || statusSlot) && (
         <div className="sticky top-0 z-10 bg-background pt-1">
-          <ListHeaderControls statusSlot={statusSlot} rowsToggle={<CompactRowsToggle />} focusSlot={focusSlot} />
+          <ListHeaderControls filtered={!boxesDefault} statusSlot={statusSlot} rowsToggle={<CompactRowsToggle />} focusSlot={focusSlot} />
         </div>
       )}
       {SECTIONS.map((section) => {

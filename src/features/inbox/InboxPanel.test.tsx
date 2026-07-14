@@ -131,6 +131,42 @@ describe('InboxPanel', () => {
     expect(onDelete).toHaveBeenCalledWith('a');
   });
 
+  it('the "…" stays rendered (disabled) during a rename — layout frozen across blur-commit (#786/F2)', () => {
+    render(
+      <InboxPanel
+        items={[item('a', 'Buy milk')]}
+        onAdd={vi.fn()}
+        onProcess={vi.fn()}
+        onDelete={vi.fn()}
+        onRename={vi.fn()}
+        onBulkResolve={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Show actions for Buy milk' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Buy milk' }));
+    const reveal = screen.getByRole('button', { name: 'Show actions for Buy milk' });
+    expect(reveal).toBeInTheDocument(); // not unmounted — no reflow under the ending tap
+    expect(reveal).toBeDisabled();
+  });
+
+  it('entering select mode closes an open "…" strip (#786/Q5)', () => {
+    render(
+      <InboxPanel
+        items={[item('a', 'Buy milk')]}
+        onAdd={vi.fn()}
+        onProcess={vi.fn()}
+        onDelete={vi.fn()}
+        onRename={vi.fn()}
+        onBulkResolve={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Show actions for Buy milk' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select items' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Exit select' }));
+    // Back out of select mode: the strip did not survive the round-trip.
+    expect(screen.getByRole('button', { name: 'Show actions for Buy milk' })).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('the mobile checkmark (blur) SAVES an inline edit (#782)', () => {
     const onRename = vi.fn();
     render(

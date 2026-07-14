@@ -146,7 +146,13 @@ export function InboxPanel({
                   type="button"
                   aria-label={selectMode ? t('inbox.exitSelect') : t('inbox.selectItems')}
                   aria-pressed={selectMode}
-                  onClick={() => (selectMode ? exitSelect() : setSelectMode(true))}
+                  onClick={() => {
+                    if (selectMode) exitSelect();
+                    else {
+                      setControlsFor(null); // an open "…" strip must not survive into select mode (#786)
+                      setSelectMode(true);
+                    }
+                  }}
                   className={cn(
                     'rounded-md p-1.5 hover:bg-accent hover:text-foreground',
                     TOUCH_TARGET,
@@ -308,11 +314,14 @@ export function InboxPanel({
                   </button>
                 </Tooltip>
               )}
-              {!isDesktop && !selectMode && renamingId !== item.id && (
+              {!isDesktop && !selectMode && (
+                /* Rendered (disabled) during a rename (#786/F2) — layout frozen across the
+                   blur-commit so the tap that ends the edit lands where it aimed. */
                 <button
                   type="button"
                   aria-label={t('list.rowControlsAria', { title: item.title })}
                   aria-expanded={controlsFor === item.id}
+                  disabled={renamingId === item.id}
                   onClick={() => setControlsFor((c) => (c === item.id ? null : item.id))}
                   className={cn(
                     'shrink-0 rounded-md p-2 hover:text-foreground',
