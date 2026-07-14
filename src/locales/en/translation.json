@@ -439,6 +439,7 @@
   "list.moveDownAria": "Move {title} down",
   "list.moveUp": "Move up",
   "list.moveUpAria": "Move {title} up",
+  "list.rowControlsAria": "Show actions for {title}",
   "list.sortAria": "Sort: {label}. Click to change.",
   "list.statusAria": "Status of {title}: {status}. Change status.",
   "list.statusTooltip": "Status: {status} — change",

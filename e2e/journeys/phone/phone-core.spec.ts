@@ -21,6 +21,18 @@ test.describe('phone shell core loop', () => {
     await expect(page.getByText('Buy milk')).toBeVisible();
   });
 
+  test('row controls hide behind the per-row reveal — titles get the width (#776)', async ({ page }) => {
+    await page.goto('/next');
+    // The control strip is invisible until asked…
+    await expect(page.getByRole('button', { name: 'Edit Call the plumber' })).toBeHidden();
+    // …the reveal shows it, full-width on its own line…
+    await page.getByRole('button', { name: 'Show actions for Call the plumber' }).click();
+    await expect(page.getByRole('button', { name: 'Edit Call the plumber' })).toBeVisible();
+    // …and the controls actually work from there.
+    await page.getByRole('button', { name: 'Edit Call the plumber' }).click();
+    await expect(page.getByRole('dialog').getByText('Edit action')).toBeVisible();
+  });
+
   test('focus action and More-sheet navigation', async ({ page }) => {
     await page.goto('/inbox');
 
