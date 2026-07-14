@@ -1,7 +1,7 @@
-import { useState, type KeyboardEvent } from 'react';
+import { useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 
-/** A single-line title editor: Enter commits (if changed & non-empty), Esc/blur cancels. */
+/** A single-line title editor: Enter and blur commit (if changed & non-empty), Esc cancels. */
 export function InlineRename({
   title,
   onCommit,
@@ -13,11 +13,23 @@ export function InlineRename({
 }) {
   const { t } = useTranslation();
   const [draft, setDraft] = useState(title);
+  // Blur COMMITS (#782): the mobile keyboard's checkmark dismisses the keyboard — a blur — and
+  // cancel-on-blur silently ate every phone edit. Escape stays the deliberate cancel; the ref
+  // keeps the trailing blur (after Enter/Escape unmount paths) from double-firing.
+  const settledRef = useRef(false);
 
   function commit() {
+    if (settledRef.current) return;
+    settledRef.current = true;
     const trimmed = draft.trim();
     if (trimmed && trimmed !== title) onCommit(trimmed);
     else onCancel();
+  }
+
+  function cancel() {
+    if (settledRef.current) return;
+    settledRef.current = true;
+    onCancel();
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -26,7 +38,7 @@ export function InlineRename({
       commit();
     } else if (event.key === 'Escape') {
       event.preventDefault();
-      onCancel();
+      cancel();
     }
   }
 
@@ -37,7 +49,7 @@ export function InlineRename({
       value={draft}
       onChange={(e) => setDraft(e.target.value)}
       onKeyDown={onKeyDown}
-      onBlur={onCancel}
+      onBlur={commit}
       className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm outline-hidden focus:border-ring"
     />
   );
