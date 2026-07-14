@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
 import type { ShareContent, ShareDue, ShareItem, ShareSection } from '@/domain/shareContent';
-import { fetchGuestShare } from './shares';
+import { fetchGuestShare, submitSuggestion } from './shares';
 
 /**
  * The guest page (#761): what a secret share link renders. Deliberately un-NAM — no chrome,
@@ -17,6 +17,11 @@ export function GuestSharePage({ token }: { token: string }) {
   // Collapsible sections (#794): default EXPANDED — the page reads exactly as before until a
   // guest chooses focus. Collapse hides details, never existence (headers keep dates + count).
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
+  // The suggestion box (#796): guests capture, the owner clarifies. sent = the thanks state;
+  // failure reads as the same quiet non-acceptance as a dead link (no oracle).
+  const [guestName, setGuestName] = useState('');
+  const [suggestion, setSuggestion] = useState('');
+  const [suggestState, setSuggestState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
   // id → parent-section id for every section AND item — anchor navigation (TOC taps, #hash
   // deep links, stage 4's per-item suggestions) must expand ancestors before scrolling.
   const parentOf = useMemo(() => {
@@ -232,6 +237,71 @@ export function GuestSharePage({ token }: { token: string }) {
 
         {content.items.length > 0 && <ul className="mt-8 divide-y divide-border/60">{content.items.map(renderItem)}</ul>}
         {content.sections.map((s) => renderSection(s, 0))}
+
+        <section className="mt-12 rounded-lg border border-border bg-card/50 p-4">
+          <h2 className="text-base font-semibold text-foreground">{t('guest.suggestTitle')}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{t('guest.suggestHint')}</p>
+          {suggestState === 'sent' ? (
+            <div className="mt-3 flex flex-wrap items-baseline gap-3">
+              <p className="text-sm font-medium text-foreground">{t('guest.suggestThanks')}</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSuggestion('');
+                  setSuggestState('idle');
+                }}
+                className="text-sm text-muted-foreground underline hover:text-foreground"
+              >
+                {t('guest.suggestAnother')}
+              </button>
+            </div>
+          ) : (
+            <form
+              className="mt-3 space-y-2"
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!suggestion.trim()) return;
+                setSuggestState('sending');
+                submitSuggestion(token, suggestion.trim(), guestName.trim() || undefined)
+                  .then((ok) => setSuggestState(ok ? 'sent' : 'failed'))
+                  .catch(() => setSuggestState('failed'));
+              }}
+            >
+              <input
+                aria-label={t('guest.suggestNameAria')}
+                placeholder={t('guest.suggestNamePlaceholder')}
+                value={guestName}
+                maxLength={100}
+                onChange={(e) => setGuestName(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring sm:max-w-xs"
+              />
+              <textarea
+                aria-label={t('guest.suggestBodyAria')}
+                placeholder={t('guest.suggestPlaceholder')}
+                value={suggestion}
+                maxLength={2000}
+                rows={3}
+                onChange={(e) => setSuggestion(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm outline-hidden focus:border-ring"
+              />
+              <div className="flex items-center gap-3">
+                {/* A VISIBLE submit — the phone form rule (#785): guests are on phones. */}
+                <button
+                  type="submit"
+                  disabled={!suggestion.trim() || suggestState === 'sending'}
+                  className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {t('guest.suggestSend')}
+                </button>
+                {suggestState === 'failed' && (
+                  <p role="alert" className="text-xs text-muted-foreground">
+                    {t('guest.suggestFailed')}
+                  </p>
+                )}
+              </div>
+            </form>
+          )}
+        </section>
 
         <footer className="mt-14 border-t border-border pt-4 text-xs text-muted-foreground">
           {t('guest.sharedFrom')}{' '}

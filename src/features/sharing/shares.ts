@@ -9,17 +9,30 @@ import type { ShareContent } from '@/domain/shareContent';
 
 export interface ProjectShare {
   token: string;
+  /** Stable across token rotation (#772/F6) — what suggestions hang off. */
+  share_id: string;
   project_id: string;
   content: ShareContent;
   enabled: boolean;
   updated_at: string;
 }
 
+/** A guest's captured input (#796) — the owner clarifies it, never the guest. */
+export interface ShareSuggestion {
+  id: number;
+  share_id: string;
+  guest_name: string | null;
+  body: string;
+  node_id: string | null;
+  handled: boolean;
+  created_at: string;
+}
+
 /** The owner's share for a project, or null when unpublished. RLS scopes to the caller. */
 export async function fetchShare(projectId: string): Promise<ProjectShare | null> {
   const { data, error } = await supabase
     .from('project_shares')
-    .select('token, project_id, content, enabled, updated_at')
+    .select('token, share_id, project_id, content, enabled, updated_at')
     .eq('project_id', projectId)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -44,7 +57,7 @@ export async function publishShare(
       .update({ content, enabled: true, updated_at: new Date().toISOString() })
       .eq('owner_user_id', ownerUserId)
       .eq('project_id', projectId)
-      .select('token, project_id, content, enabled, updated_at')
+      .select('token, share_id, project_id, content, enabled, updated_at')
       .maybeSingle();
     if (error) throw new Error(error.message);
     return (data as ProjectShare | null) ?? null;
@@ -59,7 +72,7 @@ export async function publishShare(
       enabled: true,
       updated_at: new Date().toISOString(),
     })
-    .select('token, project_id, content, enabled, updated_at')
+    .select('token, share_id, project_id, content, enabled, updated_at')
     .single();
   if (error) throw new Error(error.message);
   return data as ProjectShare;
@@ -93,6 +106,42 @@ export async function fetchGuestShare(token: string): Promise<ShareContent | nul
   const { data, error } = await supabase.rpc('get_project_share', { share_token: token });
   if (error) throw new Error(error.message);
   return (data as ShareContent | null) ?? null;
+}
+
+/** The guest write path (#796): the RPC, boolean out — unknown/disabled/over-cap all read the
+ *  same false (no oracle). */
+export async function submitSuggestion(
+  token: string,
+  suggestion: string,
+  guestName?: string,
+  nodeId?: string,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('add_share_suggestion', {
+    share_token: token,
+    suggestion,
+    guest: guestName ?? null,
+    node: nodeId ?? null,
+  });
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
+/** The owner's unhandled suggestions for a share, oldest first (RLS scopes to the owner). */
+export async function fetchSuggestions(shareId: string): Promise<ShareSuggestion[]> {
+  const { data, error } = await supabase
+    .from('share_suggestions')
+    .select('id, share_id, guest_name, body, node_id, handled, created_at')
+    .eq('share_id', shareId)
+    .eq('handled', false)
+    .order('created_at', { ascending: true });
+  if (error) throw new Error(error.message);
+  return (data as ShareSuggestion[]) ?? [];
+}
+
+/** Resolve a suggestion — adopted into the inbox or dismissed, either way it leaves the tray. */
+export async function resolveSuggestion(id: number): Promise<void> {
+  const { error } = await supabase.from('share_suggestions').update({ handled: true }).eq('id', id);
+  if (error) throw new Error(error.message);
 }
 
 /** The guest URL for a token — path-based (`/p/<token>`), served by the SPA (stage 2). */

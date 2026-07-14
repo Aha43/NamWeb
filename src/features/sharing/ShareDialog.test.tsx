@@ -12,6 +12,8 @@ const service = {
   publishShare: vi.fn(),
   unpublishShare: vi.fn(),
   rotateShareToken: vi.fn(),
+  fetchSuggestions: vi.fn(),
+  resolveSuggestion: vi.fn(),
 };
 vi.mock('./shares', async (orig) => ({
   ...(await orig<typeof import('./shares')>()),
@@ -19,6 +21,8 @@ vi.mock('./shares', async (orig) => ({
   publishShare: (...a: unknown[]) => service.publishShare(...a),
   unpublishShare: (...a: unknown[]) => service.unpublishShare(...a),
   rotateShareToken: (...a: unknown[]) => service.rotateShareToken(...a),
+  fetchSuggestions: (...a: unknown[]) => service.fetchSuggestions(...a),
+  resolveSuggestion: (...a: unknown[]) => service.resolveSuggestion(...a),
 }));
 
 import { ShareButton } from './ShareButton';
@@ -48,20 +52,23 @@ const doc: WorkspaceDocument = {
 const REAL_USER = { id: 'u1', aud: 'authenticated' } as unknown as User;
 const DEMO_USER = { id: 'demo-user', aud: 'demo' } as unknown as User;
 
-function renderButton({ labs = true, user = REAL_USER as User | undefined } = {}) {
-  return render(
+function renderButton({ labs = true, user = REAL_USER as User | undefined, dispatch = vi.fn() } = {}) {
+  render(
     <SettingsContext.Provider value={{ labs, setLabs: vi.fn() } as unknown as SettingsContextValue}>
       <AuthUserContext.Provider value={user}>
-        <WorkspaceContext.Provider value={{ document: doc, dispatch: vi.fn() } as unknown as UseWorkspace}>
+        <WorkspaceContext.Provider value={{ document: doc, dispatch } as unknown as UseWorkspace}>
           <ShareButton projectId="trip" />
         </WorkspaceContext.Provider>
       </AuthUserContext.Provider>
     </SettingsContext.Provider>,
   );
+  return { dispatch };
 }
 
 beforeEach(() => {
   service.fetchShare.mockReset().mockResolvedValue(null);
+  service.fetchSuggestions.mockReset().mockResolvedValue([]);
+  service.resolveSuggestion.mockReset().mockResolvedValue(undefined);
   service.publishShare.mockReset();
   service.unpublishShare.mockReset().mockResolvedValue(undefined);
   service.rotateShareToken.mockReset();
@@ -154,6 +161,30 @@ describe('ShareDialog', () => {
     await waitFor(() => expect(screen.getByText(/unpublished on another device/)).toBeInTheDocument());
     expect(screen.getByText(/Not published/)).toBeInTheDocument(); // dropped to unpublished, honestly
     expect(service.publishShare).toHaveBeenCalledTimes(1); // and no second, fresh-token insert
+  });
+
+  it('the From-guests tray: adoption captures with provenance, dismissal just retires (#796)', async () => {
+    service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: { version: 1, title: 'Asia trip', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
+    service.fetchSuggestions.mockResolvedValue([
+      { id: 1, share_id: 'sid1', guest_name: 'Anna', body: 'Ryokan night in Hakone?', node_id: null, handled: false, created_at: '2026-07-14T10:00:00Z' },
+      { id: 2, share_id: 'sid1', guest_name: null, body: 'Skip Osaka', node_id: null, handled: false, created_at: '2026-07-14T11:00:00Z' },
+    ]);
+    const { dispatch } = renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(screen.getByText('From guests (2)')).toBeInTheDocument());
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'To inbox' })[0]);
+    await waitFor(() => expect(service.resolveSuggestion).toHaveBeenCalledWith(1));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'addInboxItem', title: 'Ryokan night in Hakone?' }),
+    );
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'updateNode', description: expect.stringContaining('Suggested by Anna') }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
+    await waitFor(() => expect(service.resolveSuggestion).toHaveBeenCalledWith(2));
+    expect(screen.queryByText(/From guests/)).not.toBeInTheDocument(); // tray empties away
   });
 
   it('a stale snapshot shows the republish hint', async () => {

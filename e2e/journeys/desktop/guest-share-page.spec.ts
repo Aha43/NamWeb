@@ -51,6 +51,25 @@ test('a share link renders the itinerary — no sign-in wall, no NAM chrome', as
   expect(robots).toContain('noindex');
 });
 
+test('a guest sends a suggestion and gets thanked (#796)', async ({ page }) => {
+  await page.route('**/rest/v1/rpc/get_project_share', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(CONTENT) }),
+  );
+  let captured: unknown = null;
+  await page.route('**/rest/v1/rpc/add_share_suggestion', async (route) => {
+    captured = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: 'application/json', body: 'true' });
+  });
+  await page.goto('/p/tok12345678901234567890');
+  await expect(page.getByRole('heading', { name: 'Asia round trip' })).toBeVisible();
+
+  await page.getByLabel('Your name (optional)').fill('Anna');
+  await page.getByLabel('Your suggestion').fill('Ryokan night in Hakone?');
+  await page.getByRole('button', { name: 'Send suggestion' }).click();
+  await expect(page.getByText('Sent — thank you!')).toBeVisible();
+  expect(captured).toMatchObject({ suggestion: 'Ryokan night in Hakone?', guest: 'Anna' });
+});
+
 test('an unknown or revoked link is one quiet dead end', async ({ page }) => {
   await page.route('**/rest/v1/rpc/get_project_share', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: 'null' }),
