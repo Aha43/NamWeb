@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ShareContent } from '@/domain/shareContent';
 
@@ -60,6 +60,22 @@ describe('GuestSharePage (#761)', () => {
     expect(document.head.querySelector('meta[name="robots"]')?.getAttribute('content')).toContain('noindex');
     // The quiet funnel.
     expect(screen.getByText('Shared from')).toBeInTheDocument();
+  });
+
+  it('a sectioned share leads with a Contents nav anchored to the sections (#792)', async () => {
+    fetchGuestShare.mockResolvedValue(CONTENT);
+    render(<GuestSharePage token="tok123" />);
+    const toc = await screen.findByRole('navigation', { name: 'Contents' });
+    const link = within(toc).getByRole('link', { name: /Japan leg/ });
+    expect(link).toHaveAttribute('href', '#cc33'); // the stage-1 pseudonymous id as anchor
+    expect(document.getElementById('cc33')).not.toBeNull(); // and the target exists
+  });
+
+  it('a section-less share shows no Contents nav (#792)', async () => {
+    fetchGuestShare.mockResolvedValue({ ...CONTENT, sections: [] });
+    render(<GuestSharePage token="tok123" />);
+    await screen.findByRole('heading', { name: 'Asia round trip' });
+    expect(screen.queryByRole('navigation', { name: 'Contents' })).not.toBeInTheDocument();
   });
 
   it('unknown/revoked/failed all land on the same quiet gone state, with retry', async () => {
