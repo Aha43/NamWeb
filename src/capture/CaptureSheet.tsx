@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Check, CheckSquare, Pencil, Trash2 } from 'lucide-react';
+import { Check, CheckSquare, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -265,18 +266,26 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     setSelected(new Set());
   }
 
-  // No Add button (#626): Enter (or the phone keyboard's Go) submits — a visible button is dead
-  // weight and teaches the slow path. A single-input form implicitly submits on Enter.
+  // Desktop stays buttonless (#626): Enter submits, a button teaches the slow path. The PHONE
+  // gets a visible submit back (#784): some mobile keyboards render a ✓/newline action key
+  // that never fires Enter — buttonless was a literal dead end. enterkeyhint asks politely
+  // for a Go key; the button guarantees the exit.
   const form = (
     <form onSubmit={submit} className="mt-4 flex gap-2">
       <input
         aria-label={t('capture.inputAria')}
         autoFocus
+        enterKeyHint="go"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder={t('capture.placeholder')}
         className="min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
       />
+      {!isDesktop && (
+        <Button type="submit" aria-label={t('capture.submitAria')} disabled={!title.trim()}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      )}
     </form>
   );
 

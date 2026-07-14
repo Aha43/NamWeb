@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- **The big + saves again on the phone.** The capture sheet had no submit button (removed in #626, trusting Enter/Go) — but some phone keyboards show a ✓ that never fires Enter, making capture a dead end. The phone gets its Add button back (desktop stays buttonless — Enter is a real key there), and the input now asks the keyboard for a Go key. Closes #784.
+
+### Fixed
+
 - **The phone keyboard's checkmark now saves an inline edit.** Renaming an inbox item (or anything using the inline editor) committed on Enter but *cancelled* on blur — and the mobile keyboard's ✓ dismisses the keyboard, which blurs: every phone edit silently vanished. Blur now commits; Escape remains the deliberate cancel. The inbox rows also join the phone "…" pattern — title, age, and **Process** stay out; copy/rename/delete reveal on demand. Closes #782.
 
 ### Added

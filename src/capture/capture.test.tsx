@@ -51,13 +51,21 @@ describe('CaptureSheet', () => {
     );
     const input = screen.getByLabelText('Capture to inbox');
     fireEvent.change(input, { target: { value: '  Buy milk  ' } });
-    // No Add button (#626) — Enter's implicit form submission is the only submit path.
+    // Enter's implicit form submission still works…
     fireEvent.submit(input);
     expect(ws.dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'addInboxItem', title: 'Buy milk' }),
     );
     expect(input).toHaveValue('');
-    expect(screen.queryByRole('button', { name: 'Add' })).not.toBeInTheDocument();
+    // …and the PHONE has a visible submit again (#784: some keyboards never fire Enter —
+    // the ✓ key just blurs, making buttonless a dead end). enterkeyhint asks for a Go key.
+    expect(input).toHaveAttribute('enterkeyhint', 'go');
+    const add = screen.getByRole('button', { name: 'Add to inbox' });
+    fireEvent.change(input, { target: { value: 'Buy oat milk' } });
+    fireEvent.click(add);
+    expect(ws.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'addInboxItem', title: 'Buy oat milk' }),
+    );
   });
 
   it('renders as a centered modal on desktop and still captures', () => {
