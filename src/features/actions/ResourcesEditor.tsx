@@ -6,6 +6,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import type { Resource } from '@/domain/types';
 import { makeActionLink, parseActionLink } from '@/domain/actionLinks';
+import { formatCount, parseCount } from '@/domain/resourceCount';
 import { allOpenableActions, projectPath } from '@/domain/lenses';
 import { WorkspaceContext } from '@/store/workspace-context';
 import { ActionEditorContext } from './action-editor-context';
@@ -138,6 +139,48 @@ export function ResourcesEditor({
           {resources.map((r, i) => {
             const targetId = doc ? parseActionLink(r) : null;
             if (targetId) return linkRow(r, i, targetId);
+            // COUNT rows (#798): the pill + a buffered +1 (editor semantics — saves on Save;
+            // the in-the-flow immediate tap lives on the action row's pill instead).
+            const count = r.type === 'COUNT' ? parseCount(r.value) : null;
+            if (count) {
+              const label = r.description?.trim() ? r.description : t('editor.resourceCountFallback');
+              const full = count.current >= count.target;
+              return (
+                <li key={i} className="flex items-center gap-2 text-sm">
+                  {editButton(t('editor.editResourceAria', { value: label }), () => setResourceDialog({ editIndex: i }))}
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{t('resourceType.COUNT')}</span>
+                  <span className="min-w-0 flex-1 truncate text-foreground">{label}</span>
+                  <span className={full ? 'rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-600' : 'rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground'}>
+                    {r.value}
+                  </span>
+                  {count.current > 0 && (
+                    <button
+                      type="button"
+                      aria-label={t('editor.resourceCountMinusAria', { label })}
+                      onClick={() =>
+                        onChange(resources.map((res, idx) => (idx === i ? { ...res, value: formatCount(count.current - 1, count.target) } : res)))
+                      }
+                      className="rounded-md border border-input px-2 py-0.5 text-xs font-medium text-foreground hover:bg-accent"
+                    >
+                      −1
+                    </button>
+                  )}
+                  {!full && (
+                    <button
+                      type="button"
+                      aria-label={t('editor.resourceCountPlusAria', { label })}
+                      onClick={() =>
+                        onChange(resources.map((res, idx) => (idx === i ? { ...res, value: formatCount(count.current + 1, count.target) } : res)))
+                      }
+                      className="rounded-md border border-input px-2 py-0.5 text-xs font-medium text-foreground hover:bg-accent"
+                    >
+                      +1
+                    </button>
+                  )}
+                  {removeButton(label, i)}
+                </li>
+              );
+            }
             // http(s) links open the browser (#715); the display name (description) shows when
             // set, the raw value otherwise — hovering always reveals the underlying value.
             const isHttp = r.type === 'URI' && /^https?:\/\//i.test(r.value);

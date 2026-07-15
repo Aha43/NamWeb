@@ -227,6 +227,32 @@ describe('ResourcesEditor dialogs (#720)', () => {
     expect(screen.queryByLabelText('Resource value')).not.toBeInTheDocument(); // closed
   });
 
+  it('creates a counter via the dialog — target in, packed 0/N out (#798)', () => {
+    const onChange = vi.fn();
+    render(<ResourcesEditor resources={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'COUNT' } });
+    fireEvent.change(screen.getByLabelText('Count to'), { target: { value: '12' } });
+    fireEvent.change(screen.getByLabelText('Link name (optional)'), { target: { value: 'boxes to the attic' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onChange).toHaveBeenCalledWith([
+      { type: 'COUNT', value: '0/12', description: 'boxes to the attic' },
+    ]);
+  });
+
+  it('the editor row +1 is buffered — onChange carries the bumped value (#798)', () => {
+    const onChange = vi.fn();
+    render(
+      <ResourcesEditor
+        resources={[{ type: 'COUNT', value: '2/3', description: 'boxes' }]}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText('2/3')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Count one on boxes' }));
+    expect(onChange).toHaveBeenCalledWith([{ type: 'COUNT', value: '3/3', description: 'boxes' }]);
+  });
+
   it('the commit button disables on an empty value; cancel discards', () => {
     const onChange = vi.fn();
     render(<ResourcesEditor resources={[]} onChange={onChange} />);

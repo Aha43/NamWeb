@@ -11,6 +11,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
 import { DueHintLabel } from './DueHintLabel';
+import { CountPill } from './CountPill';
 import { useSettings } from '@/components/settings/settings-context';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { STATUS_TEXT_TONE } from './status';
@@ -113,7 +114,7 @@ export function ActionRow({
   const [controlsOpen, setControlsOpen] = useState(false);
   const hasMeta =
     !compactRows &&
-    (row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || !!row.dueAt || !!age || !!row.hasResources);
+    (row.tags.length > 0 || (row.inheritedTags?.length ?? 0) > 0 || !!row.dueAt || !!age || !!row.hasResources || (row.counts?.length ?? 0) > 0);
   const metaNode = hasMeta ? (
     <div className="mt-0.5 flex flex-wrap items-center gap-1">
       {row.hasResources && (
@@ -140,6 +141,9 @@ export function ActionRow({
         </span>
       ))}
       <DueHintLabel dueAt={row.dueAt} dueEndAt={row.dueEndAt} dueTime={row.dueTime} dueEndTime={row.dueEndTime} />
+      {row.counts?.map((c) => (
+        <CountPill key={c.index} nodeId={row.id} index={c.index} current={c.current} target={c.target} label={c.label} />
+      ))}
       {age && (
         <span
           className={cn(

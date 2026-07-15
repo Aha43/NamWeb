@@ -1,4 +1,5 @@
 import type { NamNode, NodeStatus, WorkspaceDocument } from '../../domain/types';
+import { parseCount } from '@/domain/resourceCount';
 import { buildPath, effectiveTags, subtreeIds } from '../../domain/lenses';
 import type { ProjectPathSegment } from './ProjectPathLinks';
 
@@ -25,6 +26,8 @@ export interface ActionRowData {
   touchedAt: string | null;
   /** True when the node has attached resources (shows a paperclip). */
   hasResources?: boolean;
+  /** COUNT resources (#798): the row shows a tappable progress pill per counter. */
+  counts?: { index: number; current: number; target: number; label: string | null }[];
   /** Descendant count (0 for a leaf) — drives the delete-confirm message. */
   descendantCount?: number;
 }
@@ -52,6 +55,14 @@ export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowDat
     dueEndTime: node.dueEndTime ?? null,
     touchedAt: node.updatedAt ?? node.createdAt,
     hasResources: node.resources.length > 0,
+    counts: node.resources
+      .map((r, index) => ({ r, index }))
+      .filter(({ r }) => r.type === 'COUNT')
+      .map(({ r, index }) => {
+        const c = parseCount(r.value);
+        return c ? { index, current: c.current, target: c.target, label: r.description } : null;
+      })
+      .filter((c): c is NonNullable<typeof c> => c !== null),
     descendantCount: subtreeIds(doc, node.id).size - 1,
   };
 }

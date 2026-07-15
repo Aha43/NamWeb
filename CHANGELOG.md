@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Counter resources.** A new resource type: give an action a counter ("boxes to the attic · 0/12") and tick it right from the list — **both ways**: + counts up toward the target, − counts back down (track a variable stock: use from it, re-supply to it), each edge quietly losing its button. Saves immediately, no editor, no Save; green at the target (it signals; finishing the action stays your call). Behind it, resource types moved onto a small registry — the next type is a one-entry job — and the types finally wear names instead of shouting URI/FILE at you. Closes #798.
+
+### Added
+
 - **Project sharing, stage 4: the suggestion box.** The 2.0.0 loop closes: a shared page now ends with a small "Suggest something" box — optional name, an idea, one visible Send — and suggestions land in the owner's Share dialog as a **From guests** tray, where **To inbox** turns one into a normal capture (provenance in the note: who, when, via the shared page) and Dismiss retires it. Guests capture; you clarify — nobody edits anything of yours. Behind the scenes: suggestions hang off a rotation-proof share id, the table is invisible to guests (write-only through a guarded door: 2000-character ideas, 500 per share, dead links accept nothing), and everything already published grows the box on deploy. Closes #796.
 
 ### Added
