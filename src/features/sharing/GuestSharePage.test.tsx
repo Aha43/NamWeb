@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ShareContent } from '@/domain/shareContent';
 
 const fetchGuestShare = vi.fn();
+const submitSuggestion = vi.fn();
 vi.mock('./shares', async (orig) => ({
   ...(await orig<typeof import('./shares')>()),
   fetchGuestShare: (...a: unknown[]) => fetchGuestShare(...a),
+  submitSuggestion: (...a: unknown[]) => submitSuggestion(...a),
 }));
 
 import { GuestSharePage } from './GuestSharePage';
@@ -131,6 +133,32 @@ describe('GuestSharePage (#761)', () => {
     expect(await screen.findByText('This link is no longer active')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Try again' })); // third time lucky
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Asia round trip' })).toBeInTheDocument());
+  });
+
+  it('the suggestion box captures: name + text → RPC → thanks; failure is quiet (#796)', async () => {
+    fetchGuestShare.mockResolvedValue(CONTENT);
+    submitSuggestion.mockResolvedValueOnce(true);
+    render(<GuestSharePage token="tok123" />);
+    await screen.findByRole('heading', { name: 'Asia round trip' });
+
+    const send = screen.getByRole('button', { name: 'Send suggestion' });
+    expect(send).toBeDisabled(); // empty guard
+    fireEvent.change(screen.getByLabelText('Your name (optional)'), { target: { value: 'Anna' } });
+    fireEvent.change(screen.getByLabelText('Your suggestion'), { target: { value: 'Ryokan night in Hakone?' } });
+    fireEvent.click(send);
+    await waitFor(() => expect(screen.getByText('Sent — thank you!')).toBeInTheDocument());
+    expect(submitSuggestion).toHaveBeenCalledWith('tok123', 'Ryokan night in Hakone?', 'Anna');
+
+    // Send another resets the text, keeps the name.
+    fireEvent.click(screen.getByRole('button', { name: 'Send another' }));
+    expect(screen.getByLabelText('Your suggestion')).toHaveValue('');
+    expect(screen.getByLabelText('Your name (optional)')).toHaveValue('Anna');
+
+    // A rejected capture (revoked link / over cap) reads as a quiet failure.
+    submitSuggestion.mockResolvedValueOnce(false);
+    fireEvent.change(screen.getByLabelText('Your suggestion'), { target: { value: 'Another idea' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send suggestion' }));
+    await waitFor(() => expect(screen.getByText(/Couldn't send right now/)).toBeInTheDocument());
   });
 
   it('shows nothing NAM-flavored while loading', () => {

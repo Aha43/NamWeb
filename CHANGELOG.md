@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Project sharing, stage 4: the suggestion box.** The 2.0.0 loop closes: a shared page now ends with a small "Suggest something" box — optional name, an idea, one visible Send — and suggestions land in the owner's Share dialog as a **From guests** tray, where **To inbox** turns one into a normal capture (provenance in the note: who, when, via the shared page) and Dismiss retires it. Guests capture; you clarify — nobody edits anything of yours. Behind the scenes: suggestions hang off a rotation-proof share id, the table is invisible to guests (write-only through a guarded door: 2000-character ideas, 500 per share, dead links accept nothing), and everything already published grows the box on deploy. Closes #796.
+
+### Added
+
 - **Guest page sections fold.** Every section heading on a shared page is now a disclosure — tap to collapse, tap to reopen — defaulting fully expanded so the page reads exactly as before until a guest chooses focus. Collapsed headers stay honest (date span + "N inside"), and anchors see through the folds: a Contents tap or a deep link expands whatever hides its target. Existing links upgrade on deploy, as always with renderer iterations. Closes #794.
 
 ### Added

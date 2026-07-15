@@ -79,6 +79,44 @@ test('the real jsonb round-trip is canonically clean, and rotation cannot be und
   }
 });
 
+test('the suggestion box: guests capture via the RPC, owners read, the table stays dark (#796)', async ({ browserName }) => {
+  const TOKEN = `e2e-smoke-suggest-${browserName}`;
+  const projectId = `e2e-smoke-suggest-${browserName}`;
+  const { client: owner, userId } = await ownerClient();
+  const anon = createClient(E2E.supabaseUrl, E2E.supabaseKey);
+  await owner.from('project_shares').delete().eq('project_id', projectId);
+  const up = await owner
+    .from('project_shares')
+    .insert({ token: TOKEN, owner_user_id: userId, project_id: projectId, content: { version: 1 }, enabled: true })
+    .select('share_id')
+    .single();
+  expect(up.error).toBeNull();
+  try {
+    // Guest capture path: accepted for an enabled share…
+    const ok = await anon.rpc('add_share_suggestion', { share_token: TOKEN, suggestion: '  Ryokan night  ', guest: 'Anna' });
+    expect(ok.error).toBeNull();
+    expect(ok.data).toBe(true);
+    // …the same quiet false for unknown tokens, empties, and oversized names (no oracle).
+    expect((await anon.rpc('add_share_suggestion', { share_token: 'nope', suggestion: 'x' })).data).toBe(false);
+    expect((await anon.rpc('add_share_suggestion', { share_token: TOKEN, suggestion: '   ' })).data).toBe(false);
+    expect((await anon.rpc('add_share_suggestion', { share_token: TOKEN, suggestion: 'x', guest: 'y'.repeat(101) })).data).toBe(false);
+
+    // The table is dark to anon — capture is write-only, guests never read each other.
+    expect((await anon.from('share_suggestions').select('id')).error).not.toBeNull();
+
+    // The owner reads it, trimmed, and can resolve it.
+    const mine = await owner.from('share_suggestions').select('body, guest_name, handled').eq('share_id', up.data!.share_id);
+    expect(mine.error).toBeNull();
+    expect(mine.data).toEqual([{ body: 'Ryokan night', guest_name: 'Anna', handled: false }]);
+
+    // A disabled share stops accepting immediately.
+    await owner.from('project_shares').update({ enabled: false }).eq('token', TOKEN);
+    expect((await anon.rpc('add_share_suggestion', { share_token: TOKEN, suggestion: 'late idea' })).data).toBe(false);
+  } finally {
+    await owner.from('project_shares').delete().eq('project_id', projectId); // cascades the suggestions
+  }
+});
+
 test('guests read exactly one enabled share via the RPC — and nothing else', async ({ browserName }) => {
   const TOKEN = `e2e-smoke-share-${browserName}`;
   const { client: owner, userId } = await ownerClient();

@@ -18,14 +18,18 @@ import { useAuthUser } from '@/auth/auth-context';
 import { shareContent, SHARE_DEFAULT_OPTIONS } from '@/domain/shareContent';
 import { canonicalTag, PRIVATE_TAG } from '@/domain/systemTags';
 import { subtreeIds } from '@/domain/lenses';
+import { newId, nowIso } from '@/lib/local';
 import {
   canonicalSnapshot,
   fetchShare,
+  fetchSuggestions,
   publishShare,
+  resolveSuggestion,
   rotateShareToken,
   shareUrl,
   unpublishShare,
   type ProjectShare,
+  type ShareSuggestion,
 } from './shares';
 
 /**
@@ -44,7 +48,7 @@ export function ShareDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const { document } = useWorkspaceContext();
+  const { document, dispatch } = useWorkspaceContext();
   const user = useAuthUser();
   const { copied, copy } = useCopyToClipboard();
 
@@ -52,6 +56,7 @@ export function ShareDialog({
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<ShareSuggestion[]>([]);
   const [includeDue, setIncludeDue] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeDue);
   const [includeStatus, setIncludeStatus] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeStatus);
   const [includeNotes, setIncludeNotes] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeNotes);
@@ -65,9 +70,11 @@ export function ShareDialog({
     setLoading(true);
     let cancelled = false;
     fetchShare(projectId)
-      .then((s) => {
+      .then(async (s) => {
         if (cancelled) return;
         setShare(s);
+        // The From-guests tray (#796): unhandled suggestions ride along with the share.
+        setSuggestions(s ? await fetchSuggestions(s.share_id) : []);
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -172,6 +179,30 @@ export function ShareDialog({
       }
     });
 
+  // Guests capture, the owner clarifies (#796): adoption creates an inbox item whose note
+  // carries the provenance (who, when, via the shared page); either path retires the
+  // suggestion from the tray.
+  const adopt = (suggestion: ShareSuggestion) =>
+    run(async () => {
+      const id = newId();
+      const now = nowIso();
+      dispatch({ type: 'addInboxItem', id, title: suggestion.body.slice(0, 200), atTop: true, now });
+      const provenance = t('share.suggestionProvenance', {
+        name: suggestion.guest_name ?? t('share.suggestionAnonymous'),
+        date: new Date(suggestion.created_at).toLocaleDateString(),
+      });
+      const note = suggestion.body.length > 200 ? `${suggestion.body}\n\n${provenance}` : provenance;
+      dispatch({ type: 'updateNode', id, title: suggestion.body.slice(0, 200), description: note, now });
+      await resolveSuggestion(suggestion.id);
+      setSuggestions((prev) => prev.filter((sg) => sg.id !== suggestion.id));
+    });
+
+  const dismiss = (suggestion: ShareSuggestion) =>
+    run(async () => {
+      await resolveSuggestion(suggestion.id);
+      setSuggestions((prev) => prev.filter((sg) => sg.id !== suggestion.id));
+    });
+
   const projectGone = !document?.nodes[projectId]?.project;
 
   return (
@@ -225,6 +256,42 @@ export function ShareDialog({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">{t('share.notPublished')}</p>
+        )}
+
+        {suggestions.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              {t('share.fromGuests', { count: suggestions.length })}
+            </p>
+            <ul className="max-h-48 space-y-2 overflow-y-auto">
+              {suggestions.map((sg) => (
+                <li key={sg.id} className="rounded-md border border-border bg-card/50 p-2">
+                  <p className="whitespace-pre-wrap text-sm text-foreground">{sg.body}</p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className="mr-auto text-xs text-muted-foreground">
+                      {sg.guest_name ?? t('share.suggestionAnonymous')} · {new Date(sg.created_at).toLocaleDateString()}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => adopt(sg)}
+                      disabled={busy}
+                      className="rounded-md border border-input px-2.5 py-1 text-xs font-medium text-foreground hover:bg-accent disabled:opacity-50"
+                    >
+                      {t('share.toInbox')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => dismiss(sg)}
+                      disabled={busy}
+                      className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-destructive disabled:opacity-50"
+                    >
+                      {t('share.dismiss')}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
 
         {error && (
