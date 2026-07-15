@@ -12,8 +12,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import type { Resource, ResourceType } from '@/domain/types';
-
-const RESOURCE_TYPES: ResourceType[] = ['URI', 'EMAIL', 'FILE', 'TEXT'];
+import { RESOURCE_TYPE_DEFS, RESOURCE_TYPES_ORDERED } from './resourceTypes';
+import { newCountValue, parseCount, formatCount } from '@/domain/resourceCount';
 
 /**
  * Create / edit one resource in a small dialog (#720) — rows stay pure display; this is where the
@@ -37,18 +37,33 @@ export function ResourceDialog({
   const [type, setType] = useState<ResourceType>(initial?.type ?? 'URI');
   const [value, setValue] = useState(initial?.value ?? '');
   const [name, setName] = useState(initial?.description ?? '');
+  // COUNT (#798): the dialog asks for the target; the packed "current/target" value is derived.
+  const initialCount = initial?.type === 'COUNT' ? parseCount(initial.value) : null;
+  const [countTarget, setCountTarget] = useState(initialCount ? String(initialCount.target) : '');
+  const [resetCount, setResetCount] = useState(false);
+  const def = RESOURCE_TYPE_DEFS[type];
 
   // The commit shared by the form submit and ⌘/Ctrl+Enter (#746). Guards intact: empty refuses.
   function commit() {
-    const trimmed = value.trim();
-    if (!trimmed) return;
+    let committedValue: string;
+    if (def.valueKind === 'countTarget') {
+      const target = Number(countTarget);
+      if (!Number.isInteger(target) || target < 1) return;
+      // Editing keeps progress (clamped to a shrunken target) unless a reset is asked for.
+      const current = resetCount ? 0 : (initialCount?.current ?? 0);
+      committedValue = resetCount ? newCountValue(target) : formatCount(current, target);
+    } else {
+      const trimmed = value.trim();
+      if (!trimmed) return;
+      committedValue = trimmed;
+    }
     onSubmit({
       type,
-      value: trimmed,
-      // The name field only shows for URI, where an empty entry is a deliberate clear. For other
-      // types, PRESERVE any existing description — it's a shared-contract field the desktop can
-      // populate; a web-side value edit must not silently null it (#724).
-      description: type === 'URI' ? (name.trim() ? name.trim() : null) : (initial?.description ?? null),
+      value: committedValue,
+      // The name field shows only where the def says so; an empty entry there is a deliberate
+      // clear. Elsewhere PRESERVE any existing description — it's a shared-contract field a
+      // desktop-era document can carry; a web-side value edit must not silently null it (#724).
+      description: def.hasNameField ? (name.trim() ? name.trim() : null) : (initial?.description ?? null),
     });
     onOpenChange(false);
   }
@@ -88,24 +103,46 @@ export function ResourceDialog({
               onChange={(e) => setType(e.target.value as ResourceType)}
               className="w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
             >
-              {RESOURCE_TYPES.map((rt) => (
+              {RESOURCE_TYPES_ORDERED.map((rt) => (
                 <option key={rt} value={rt}>
-                  {rt}
+                  {t(RESOURCE_TYPE_DEFS[rt].labelKey)}
                 </option>
               ))}
             </select>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="resource-value">{t('editor.resourceValue')}</Label>
-            <Input
-              id="resource-value"
-              autoFocus
-              placeholder={t('editor.resourcePlaceholder')}
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-            />
-          </div>
-          {type === 'URI' && (
+          {def.valueKind === 'countTarget' ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="resource-count-target">{t('editor.resourceCountTarget')}</Label>
+              <Input
+                id="resource-count-target"
+                autoFocus
+                type="number"
+                min={1}
+                inputMode="numeric"
+                placeholder="10"
+                value={countTarget}
+                onChange={(e) => setCountTarget(e.target.value)}
+              />
+              {initialCount && (
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={resetCount} onChange={(e) => setResetCount(e.target.checked)} />
+                  {t('editor.resourceCountReset', { current: initialCount.current })}
+                </label>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <Label htmlFor="resource-value">{t('editor.resourceValue')}</Label>
+              <Input
+                id="resource-value"
+                autoFocus
+                placeholder={t('editor.resourcePlaceholder')}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+              />
+            </div>
+          )}
+          {def.hasNameField && (
             <div className="space-y-1.5">
               <Label htmlFor="resource-name">{t('editor.resourceName')}</Label>
               <Input
@@ -120,7 +157,10 @@ export function ResourceDialog({
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               {t('common.cancel')}
             </Button>
-            <Button type="submit" disabled={!value.trim()}>
+            <Button
+              type="submit"
+              disabled={def.valueKind === 'countTarget' ? !(Number.isInteger(Number(countTarget)) && Number(countTarget) >= 1) : !value.trim()}
+            >
               {initial ? t('common.save') : t('common.add')}
             </Button>
           </DialogFooter>
