@@ -42,7 +42,7 @@ export type Intent =
   | { type: 'moveNode'; id: string; newParentId: string; now: string }
   | { type: 'convertActionToProject'; id: string; now: string }
   | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
-  | { type: 'incrementCountResource'; id: string; index: number; expectedValue: string; now: string }
+  | { type: 'incrementCountResource'; id: string; index: number; expectedValue: string; delta?: 1 | -1; now: string }
   | { type: 'addPrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'removePrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'createSavedView'; name: string; tags: string[]; nextOnly: boolean }
@@ -524,9 +524,13 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const resource = node.resources[intent.index];
       if (!resource || resource.type !== 'COUNT' || resource.value !== intent.expectedValue) return next;
       const count = parseCount(resource.value);
-      if (!count || count.current >= count.target) return next;
+      if (!count) return next;
+      // Both directions (#798 stock-keeping): +1 stops at the target, −1 stops at zero.
+      const delta = intent.delta ?? 1;
+      if (delta > 0 && count.current >= count.target) return next;
+      if (delta < 0 && count.current <= 0) return next;
       const resources = node.resources.slice();
-      resources[intent.index] = { ...resource, value: formatCount(count.current + 1, count.target) };
+      resources[intent.index] = { ...resource, value: formatCount(count.current + delta, count.target) };
       next.nodes[intent.id] = { ...node, resources, updatedAt: intent.now };
       return next;
     }

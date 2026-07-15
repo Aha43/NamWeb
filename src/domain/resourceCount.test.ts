@@ -45,6 +45,17 @@ describe('count resources (#798)', () => {
     next = applyIntent(doc, { type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '2/3', now: 'T' });
     expect(next.nodes['a1'].resources[0].value).toBe('hi');
 
+    // The decrement (#798 stock-keeping): −1 sticks, and zero is its floor.
+    next = applyIntent(doc, { type: 'incrementCountResource', id: 'a1', index: 1, expectedValue: '2/3', delta: -1, now: 'T' });
+    expect(next.nodes['a1'].resources[1].value).toBe('1/3');
+    const zeroed = { ...doc, nodes: { ...doc.nodes, a1: { ...doc.nodes['a1'], resources: [doc.nodes['a1'].resources[0], { type: 'COUNT' as const, value: '0/3', description: 'boxes' }] } } };
+    next = applyIntent(zeroed, { type: 'incrementCountResource', id: 'a1', index: 1, expectedValue: '0/3', delta: -1, now: 'T' });
+    expect(next.nodes['a1'].resources[1].value).toBe('0/3');
+    // A FULL counter can still step down (stock: use from a full shelf).
+    const fullDoc = { ...doc, nodes: { ...doc.nodes, a1: { ...doc.nodes['a1'], resources: [doc.nodes['a1'].resources[0], { type: 'COUNT' as const, value: '3/3', description: 'boxes' }] } } };
+    next = applyIntent(fullDoc, { type: 'incrementCountResource', id: 'a1', index: 1, expectedValue: '3/3', delta: -1, now: 'T' });
+    expect(next.nodes['a1'].resources[1].value).toBe('2/3');
+
     // Unknown node: tolerated no-op.
     expect(() => applyIntent(doc, { type: 'incrementCountResource', id: 'ghost', index: 0, expectedValue: 'x', now: 'T' })).not.toThrow();
   });

@@ -27,8 +27,9 @@ export function CountPill({
   const { t } = useTranslation();
   const workspace = useContext(WorkspaceContext);
   const full = current >= target;
+  const ariaName = label ?? formatCount(current, target);
   const text = `${label ? `${label} ` : ''}${formatCount(current, target)}`;
-  if (full || !workspace?.dispatch) {
+  if (!workspace?.dispatch) {
     return (
       <span
         className={cn(
@@ -40,23 +41,46 @@ export function CountPill({
       </span>
     );
   }
+  // Both directions (#798 stock-keeping: action = use / re-supply): − steps down to zero,
+  // + steps up to the target; each edge quietly loses its button.
+  const step = (delta: 1 | -1) =>
+    workspace.dispatch({
+      type: 'incrementCountResource',
+      id: nodeId,
+      index,
+      expectedValue: formatCount(current, target),
+      delta,
+      now: nowIso(),
+    });
   return (
-    <button
-      type="button"
-      aria-label={t('actions.countPlusAria', { label: label ?? formatCount(current, target) })}
-      onClick={(e) => {
-        e.stopPropagation(); // the row's own click (edit/select) must not fire
-        workspace.dispatch({
-          type: 'incrementCountResource',
-          id: nodeId,
-          index,
-          expectedValue: formatCount(current, target),
-          now: nowIso(),
-        });
-      }}
-      className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums text-muted-foreground hover:bg-accent hover:text-foreground"
+    <span
+      onClick={(e) => e.stopPropagation()} // the row's own click (edit/select) must not fire
+      className={cn(
+        'inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold tabular-nums',
+        full ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground',
+      )}
     >
-      {text} <span aria-hidden className="font-bold">+</span>
-    </button>
+      {current > 0 && (
+        <button
+          type="button"
+          aria-label={t('actions.countMinusAria', { label: ariaName })}
+          onClick={() => step(-1)}
+          className="rounded-full px-1 font-bold hover:bg-accent hover:text-foreground"
+        >
+          −
+        </button>
+      )}
+      {text}
+      {!full && (
+        <button
+          type="button"
+          aria-label={t('actions.countPlusAria', { label: ariaName })}
+          onClick={() => step(1)}
+          className="rounded-full px-1 font-bold hover:bg-accent hover:text-foreground"
+        >
+          +
+        </button>
+      )}
+    </span>
   );
 }

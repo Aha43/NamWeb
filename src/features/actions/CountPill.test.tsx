@@ -18,7 +18,21 @@ describe('CountPill (#798) — the first interactive resource', () => {
     );
   });
 
-  it('renders read-only when full or without a workspace (guest-page ready)', () => {
+  it('the − steps down with the same guard; edges lose their buttons (#798 stock)', () => {
+    const dispatch = vi.fn();
+    render(
+      <WorkspaceContext.Provider value={{ document: null, dispatch } as unknown as UseWorkspace}>
+        <CountPill nodeId="a1" index={1} current={3} target={3} label="stock" />
+      </WorkspaceContext.Provider>,
+    );
+    expect(screen.queryByRole('button', { name: 'Count one on stock' })).not.toBeInTheDocument(); // full: no +
+    fireEvent.click(screen.getByRole('button', { name: 'Count one off stock' }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'incrementCountResource', delta: -1, expectedValue: '3/3' }),
+    );
+  });
+
+  it('renders read-only without a workspace (guest-page ready)', () => {
     render(<CountPill nodeId="a1" index={0} current={1} target={3} label={null} />);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(screen.getByText(/1\/3/)).toBeInTheDocument();

@@ -153,6 +153,18 @@ export function ResourcesEditor({
                   <span className={full ? 'rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-600' : 'rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground'}>
                     {r.value}
                   </span>
+                  {count.current > 0 && (
+                    <button
+                      type="button"
+                      aria-label={t('editor.resourceCountMinusAria', { label })}
+                      onClick={() =>
+                        onChange(resources.map((res, idx) => (idx === i ? { ...res, value: formatCount(count.current - 1, count.target) } : res)))
+                      }
+                      className="rounded-md border border-input px-2 py-0.5 text-xs font-medium text-foreground hover:bg-accent"
+                    >
+                      −1
+                    </button>
+                  )}
                   {!full && (
                     <button
                       type="button"
