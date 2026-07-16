@@ -68,6 +68,70 @@ describe('count resources (#798)', () => {
     expect(() => applyIntent(doc, { type: 'incrementCountResource', id: 'ghost', index: 0, expectedValue: 'x', now: 'T' })).not.toThrow();
   });
 
+  it('completesAction (#816): ticks across the goal boundary complete and reopen — symmetric', () => {
+    let doc = createDefaultWorkspace();
+    const inbox = doc.nodes[doc.inboxNodeId];
+    doc = {
+      ...doc,
+      nodes: {
+        ...doc.nodes,
+        a1: {
+          ...inbox,
+          id: 'a1',
+          title: 'Buy beans',
+          project: false,
+          status: 'NEXT',
+          childIds: [],
+          tags: ['In progress'],
+          resources: [{ type: 'COUNT', value: '23/24', description: 'boxes', completesAction: true }],
+        },
+      },
+    };
+
+    // The last tick completes — and sheds the in-progress tag like any DONE.
+    let next = applyIntent(doc, { type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '23/24', now: 'T' });
+    expect(next.nodes['a1'].status).toBe('DONE');
+    expect(next.nodes['a1'].statusChangedAt).toBe('T');
+    expect(next.nodes['a1'].tags).toEqual([]);
+
+    // Using stock reopens: below the goal the action is alive again.
+    next = applyIntent(next, { type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '24/24', delta: -1, now: 'T2' });
+    expect(next.nodes['a1'].status).toBe('NEXT');
+    expect(next.nodes['a1'].statusChangedAt).toBe('T2');
+
+    // An UN-flagged counter never transitions (the #799 ruling still holds by default).
+    const plain = { ...doc, nodes: { ...doc.nodes, a1: { ...doc.nodes['a1'], resources: [{ type: 'COUNT' as const, value: '23/24', description: 'boxes' }] } } };
+    next = applyIntent(plain, { type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '23/24', now: 'T' });
+    expect(next.nodes['a1'].status).toBe('NEXT');
+  });
+
+  it('completesAction on an unlimited counter (#816): no flapping within overshoot', () => {
+    let doc = createDefaultWorkspace();
+    const inbox = doc.nodes[doc.inboxNodeId];
+    doc = {
+      ...doc,
+      nodes: {
+        ...doc.nodes,
+        a1: {
+          ...inbox,
+          id: 'a1',
+          title: 'Stock up',
+          project: false,
+          status: 'DONE',
+          childIds: [],
+          resources: [{ type: 'COUNT', value: '14/12+', description: 'jars', completesAction: true }],
+        },
+      },
+    };
+    // Stepping down WITHIN overshoot stays done — only crossing the boundary reopens.
+    let next = applyIntent(doc, { type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '14/12+', delta: -1, now: 'T' });
+    expect(next.nodes['a1'].status).toBe('DONE');
+    next = applyIntent(next, { type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '13/12+', delta: -1, now: 'T2' });
+    expect(next.nodes['a1'].status).toBe('DONE'); // lands exactly ON the goal: still met
+    next = applyIntent(next, { type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '12/12+', delta: -1, now: 'T3' });
+    expect(next.nodes['a1'].status).toBe('NEXT'); // below it: alive again
+  });
+
   it('incrementCountResource on an unlimited counter (#800): +1 keeps counting past the goal', () => {
     let doc = createDefaultWorkspace();
     const inbox = doc.nodes[doc.inboxNodeId];

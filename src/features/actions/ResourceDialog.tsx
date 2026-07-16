@@ -43,6 +43,7 @@ export function ResourceDialog({
   const [resetCount, setResetCount] = useState(false);
   const [unlimited, setUnlimited] = useState(initialCount?.unlimited ?? false);
   const [guestEditable, setGuestEditable] = useState(initial?.guestEditable ?? false);
+  const [completesAction, setCompletesAction] = useState(initial?.completesAction ?? false);
   // #802/F2: un-ticking "goal, not a cap" on an overshot counter clamps real recorded stock
   // (14/12 -> 12/12) — that's data destruction, so it gets a visible tell before Save. The
   // sibling clamp (shrinking the target below current) shows the same line: same loss.
@@ -72,6 +73,7 @@ export function ResourceDialog({
       value: committedValue,
       // Additive, absent-means-off (#809): never write false into the document.
       ...(RESOURCE_TYPE_DEFS[type].interactive && guestEditable ? { guestEditable: true } : {}),
+      ...(RESOURCE_TYPE_DEFS[type].interactive && completesAction ? { completesAction: true } : {}),
       // The name field shows only where the def says so; an empty entry there is a deliberate
       // clear. Elsewhere PRESERVE any existing description — it's a shared-contract field a
       // desktop-era document can carry; a web-side value edit must not silently null it (#724).
@@ -164,10 +166,16 @@ export function ResourceDialog({
             </div>
           )}
           {def.interactive && (
-            <label className="flex items-center gap-2 text-xs text-muted-foreground">
-              <input type="checkbox" checked={guestEditable} onChange={(e) => setGuestEditable(e.target.checked)} />
-              {t('editor.resourceGuestEditable')}
-            </label>
+            <>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={guestEditable} onChange={(e) => setGuestEditable(e.target.checked)} />
+                {t('editor.resourceGuestEditable')}
+              </label>
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={completesAction} onChange={(e) => setCompletesAction(e.target.checked)} />
+                {t('editor.resourceCompletesAction')}
+              </label>
+            </>
           )}
           {def.hasNameField && (
             <div className="space-y-1.5">
