@@ -66,6 +66,7 @@ export function ShareDialog({
   useEffect(() => {
     if (!open) return;
     setShare(null);
+    setSuggestions([]); // a previous project's tray must not greet this one (#804)
     setError(null);
     setLoading(true);
     let cancelled = false;
@@ -74,7 +75,9 @@ export function ShareDialog({
         if (cancelled) return;
         setShare(s);
         // The From-guests tray (#796): unhandled suggestions ride along with the share.
-        setSuggestions(s ? await fetchSuggestions(s.share_id) : []);
+        const tray = s ? await fetchSuggestions(s.share_id) : [];
+        if (cancelled) return; // the await above can outlive a close/project switch (#804)
+        setSuggestions(tray);
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -164,6 +167,7 @@ export function ShareDialog({
       if (!share) return;
       await unpublishShare(share.token);
       setShare(null);
+      setSuggestions([]); // unpublish cascades the rows server-side (#804)
     });
 
   const rotate = () =>

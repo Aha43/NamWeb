@@ -187,6 +187,38 @@ describe('ShareDialog', () => {
     expect(screen.queryByText(/From guests/)).not.toBeInTheDocument(); // tray empties away
   });
 
+  it('a slow tray fetch cannot install stale suggestions after close/reopen (#804 Codex P2)', async () => {
+    service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: { version: 1, title: 'Asia trip', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
+    let resolveSlow: (v: unknown) => void = () => {};
+    service.fetchSuggestions.mockImplementationOnce(() => new Promise((r) => { resolveSlow = r; }));
+    renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(service.fetchSuggestions).toHaveBeenCalledTimes(1));
+    // Close while the tray fetch is in flight…
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByLabelText('Secret share link')).not.toBeInTheDocument());
+    // …reopen (this load's tray is empty), then the OLD request lands late: it must be dropped.
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());
+    resolveSlow([{ id: 9, share_id: 'sid1', guest_name: null, body: 'stale ghost', node_id: null, handled: false, created_at: '2026-07-14T10:00:00Z' }]);
+    await waitFor(() => expect(service.fetchSuggestions).toHaveBeenCalledTimes(2));
+    expect(screen.queryByText(/From guests/)).not.toBeInTheDocument();
+  });
+
+  it('unpublish clears the From-guests tray — the rows cascade server-side (#804)', async () => {
+    service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: { version: 1, title: 'Asia trip', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
+    service.fetchSuggestions.mockResolvedValue([
+      { id: 1, share_id: 'sid1', guest_name: null, body: 'Skip Osaka', node_id: null, handled: false, created_at: '2026-07-14T10:00:00Z' },
+    ]);
+    renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(screen.getByText('From guests (1)')).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Unpublish this project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Unpublish' }));
+    await waitFor(() => expect(screen.getByText(/Not published/)).toBeInTheDocument());
+    expect(screen.queryByText(/From guests/)).not.toBeInTheDocument();
+  });
+
   it('a stale snapshot shows the republish hint', async () => {
     // Stored content deliberately differs from what the sanitizer produces now.
     service.fetchShare.mockResolvedValue({ token: 'tok123', project_id: 'trip', content: { version: 1, title: 'Old title', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });

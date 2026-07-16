@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- The share dialog's From-guests tray resets with the rest of the dialog state — a previous
+  project's suggestions no longer greet a new share while it loads, unpublish empties the
+  tray with the rows it cascades away, and a slow tray fetch can no longer land after the
+  dialog closed. Closes #804.
 - The share suggestion cap no longer counts handled rows — adopting or dismissing frees
   space, so a tended tray never goes permanently deaf (a lifetime backstop still stops true
   abuse), and the owner dialog warns when the tray nears the cap. Closes #802.
