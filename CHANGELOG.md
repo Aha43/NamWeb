@@ -10,6 +10,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- A counter can complete its action: tick "Completes the action at the goal" and the tick
+  that lands the count at the target marks the action done — and the tick that drops it back
+  below reopens it (the stock loop: done while stocked, alive when depleted). Ticks only —
+  hand edits in the dialog never transition — and guest ticks complete at home through the
+  ordinary drain. Closes #816.
+
+### Added
+
 - Guest ticks land in the workspace: the owner's client drains delegated-counter events on
   app open and on opening the share dialog — each tick applies exactly like the owner's own
   tap (same clamping, same guards; two devices draining concurrently split the batch instead

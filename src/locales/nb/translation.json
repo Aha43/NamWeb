@@ -265,6 +265,7 @@
   "editor.pickEndDate": "Velg en sluttdato fra en kalender",
   "editor.removePrereqAria": "Fjern forutsetning {title}",
   "editor.removeResourceAria": "Fjern ressurs {value}",
+  "editor.resourceCompletesAction": "Fullfører handlingen ved målet (gjenåpner under det)",
   "editor.resourceCountClampWarning": "Lagring vil kutte tellingen fra {current} til {target}",
   "editor.resourceCountFallback": "Teller",
   "editor.resourceCountMinusAria": "Trekk én fra {label}",

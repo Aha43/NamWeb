@@ -533,8 +533,24 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (delta > 0 && !count.unlimited && count.current >= count.target) return next;
       if (delta < 0 && count.current <= 0) return next;
       const resources = node.resources.slice();
-      resources[intent.index] = { ...resource, value: formatCount(count.current + delta, count.target, count.unlimited) };
-      next.nodes[intent.id] = { ...node, resources, updatedAt: intent.now };
+      const current = count.current + delta;
+      resources[intent.index] = { ...resource, value: formatCount(current, count.target, count.unlimited) };
+      const updated = { ...node, resources, updatedAt: intent.now };
+      // The symmetric stock loop (#816, opt-in): a TICK crossing the goal boundary completes
+      // the action; a tick dropping back below reopens it. Ticks only — hand edits in the
+      // dialog never transition (editing is curation, ticking is doing). No flapping: an
+      // unlimited counter moving within overshoot stays on its side of the boundary.
+      if (resource.completesAction) {
+        if (current >= count.target && node.status !== 'DONE' && node.status !== 'CANCELLED' && node.status !== 'ARCHIVED') {
+          updated.status = 'DONE';
+          updated.statusChangedAt = intent.now;
+          updated.tags = updated.tags.filter((tag) => canonicalTag(tag) !== IN_PROGRESS_TAG);
+        } else if (current < count.target && node.status === 'DONE') {
+          updated.status = 'NEXT';
+          updated.statusChangedAt = intent.now;
+        }
+      }
+      next.nodes[intent.id] = updated;
       return next;
     }
     case 'addPrerequisite': {
