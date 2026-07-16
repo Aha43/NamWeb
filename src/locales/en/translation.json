@@ -273,6 +273,7 @@
   "editor.resourceCountUnlimited": "Goal, not a cap — keep counting past it",
   "editor.resourceDialogDescription": "A link, note, email, or file reference attached to this item.",
   "editor.resourceName": "Link name (optional)",
+  "editor.resourceNameCount": "Counter name (optional)",
   "editor.resourceNamePlaceholder": "name (optional)",
   "editor.resourcePlaceholder": "https://… or a note",
   "editor.resourceType": "Resource type",

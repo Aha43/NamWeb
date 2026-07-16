@@ -233,7 +233,7 @@ describe('ResourcesEditor dialogs (#720)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
     fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'COUNT' } });
     fireEvent.change(screen.getByLabelText('Count to'), { target: { value: '12' } });
-    fireEvent.change(screen.getByLabelText('Link name (optional)'), { target: { value: 'boxes to the attic' } });
+    fireEvent.change(screen.getByLabelText('Counter name (optional)'), { target: { value: 'boxes to the attic' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add' }));
     expect(onChange).toHaveBeenCalledWith([
       { type: 'COUNT', value: '0/12', description: 'boxes to the attic' },

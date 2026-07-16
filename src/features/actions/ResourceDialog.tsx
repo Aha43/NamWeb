@@ -149,7 +149,7 @@ export function ResourceDialog({
           )}
           {def.hasNameField && (
             <div className="space-y-1.5">
-              <Label htmlFor="resource-name">{t('editor.resourceName')}</Label>
+              <Label htmlFor="resource-name">{t(def.nameLabelKey ?? 'editor.resourceName')}</Label>
               <Input
                 id="resource-name"
                 placeholder={t('editor.resourceNamePlaceholder')}

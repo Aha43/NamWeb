@@ -273,6 +273,7 @@
   "editor.resourceCountUnlimited": "Mål, ikke tak — fortsett å telle forbi",
   "editor.resourceDialogDescription": "En lenke, et notat, en e-post eller en filreferanse knyttet til dette elementet.",
   "editor.resourceName": "Lenkenavn (valgfritt)",
+  "editor.resourceNameCount": "Tellernavn (valgfritt)",
   "editor.resourceNamePlaceholder": "navn (valgfritt)",
   "editor.resourcePlaceholder": "https://… eller et notat",
   "editor.resourceType": "Ressurstype",
