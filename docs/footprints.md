@@ -11,6 +11,24 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.8.0 — 2026-07-16
+
+*(two days; 9 PRs, 1 release)* Two arcs that never touched each other's files, converging on
+the same idea: **NAM starts talking to people who aren't its user.** The sharing lab ran three
+deliberate "lab it, don't design it" iterations — a table of contents (overkill on purpose:
+small, familiar), collapsible sections with anchor-aware unfolding, then the suggestion box
+that closes the guest loop: a guest suggests, the owner adopts into the inbox with provenance,
+and the guest never becomes a user. Meanwhile the resource family got its registry and its
+first interactive member — counters ticked straight from the list, bidirectional for the
+stock-keeping case the user brought mid-sprint, then an unlimited "goal, not a cap" mode two
+days later when dogfooding plans outran the design. That rhythm — ship the small thing, let
+use reshape it within the week — is the converging story. The dual review earned its keep
+again on schedule: Claude's F1 (the suggestion cap counted handled rows — the box would go
+permanently deaf, invisible to both sides, a bug only a real database could show) and Codex's
+lone P2 (a stale tray across share reloads), zero overlap for the sixth straight cycle. Still
+polishing wide; the 2.0.0 unveiling stayed deliberately unpulled — Share ships dark another
+cycle.
+
 ## v1.7.0 — 2026-07-14
 
 *(two days; 8 PRs, 1 release)* The arc nobody planned and everybody needed: **the phone**,

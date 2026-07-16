@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-07-16
+
+**The guest loop closes, and resources learn to count.** Shared projects (still Labs-dark)
+became real guest pages this cycle: a table of contents up front, collapsible sections, and a
+suggestion box — a guest reads, folds, and suggests; the owner adopts straight into the inbox
+with provenance. And the resource family grew its registry plus its first interactive member:
+counters you tick from the list, both directions, with an unlimited "goal, not a cap" mode
+for recording overshoot. A dual review hardened both fronts before this cut.
+
 ### Fixed
 
 - The share dialog's From-guests tray resets with the rest of the dialog state — a previous
@@ -1551,7 +1560,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/Aha43/NamWeb/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/Aha43/NamWeb/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/Aha43/NamWeb/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/Aha43/NamWeb/compare/v1.4.0...v1.5.0
