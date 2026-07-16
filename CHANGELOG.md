@@ -10,6 +10,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- Guest ticks land in the workspace: the owner's client drains delegated-counter events on
+  app open and on opening the share dialog — each tick applies exactly like the owner's own
+  tap (same clamping, same guards; two devices draining concurrently split the batch instead
+  of double-counting), and the share dialog shows a "ticks from guests" provenance line.
+  Closes #811.
 - Delegated counters are live on guest pages: a counter marked "guests can update" renders as
   the interactive pill on the shared page — ticks flow through the event pipe, the page shows
   the published count plus everyone's undrained ticks, and a refused tap quietly doesn't move.

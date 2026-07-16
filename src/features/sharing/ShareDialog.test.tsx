@@ -14,6 +14,9 @@ const service = {
   rotateShareToken: vi.fn(),
   fetchSuggestions: vi.fn(),
   resolveSuggestion: vi.fn(),
+  fetchUndrainedEvents: vi.fn(),
+  claimEvents: vi.fn(),
+  countShareEvents: vi.fn(),
 };
 vi.mock('./shares', async (orig) => ({
   ...(await orig<typeof import('./shares')>()),
@@ -23,6 +26,9 @@ vi.mock('./shares', async (orig) => ({
   rotateShareToken: (...a: unknown[]) => service.rotateShareToken(...a),
   fetchSuggestions: (...a: unknown[]) => service.fetchSuggestions(...a),
   resolveSuggestion: (...a: unknown[]) => service.resolveSuggestion(...a),
+  fetchUndrainedEvents: (...a: unknown[]) => service.fetchUndrainedEvents(...a),
+  claimEvents: (...a: unknown[]) => service.claimEvents(...a),
+  countShareEvents: (...a: unknown[]) => service.countShareEvents(...a),
 }));
 
 import { ShareButton } from './ShareButton';
@@ -72,6 +78,9 @@ beforeEach(() => {
   service.publishShare.mockReset();
   service.unpublishShare.mockReset().mockResolvedValue(undefined);
   service.rotateShareToken.mockReset();
+  service.fetchUndrainedEvents.mockReset().mockResolvedValue([]);
+  service.claimEvents.mockReset().mockImplementation((ids: number[]) => Promise.resolve(ids));
+  service.countShareEvents.mockReset().mockResolvedValue(0);
 });
 
 describe('ShareButton gating (#759 — dark until the 2.0.0 cut)', () => {
@@ -217,6 +226,39 @@ describe('ShareDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Unpublish' }));
     await waitFor(() => expect(screen.getByText(/Not published/)).toBeInTheDocument());
     expect(screen.queryByText(/From guests/)).not.toBeInTheDocument();
+  });
+
+  it('the dialog-open drain (#811): claimed guest ticks land as intents, provenance shows', async () => {
+    const { guestIdMap } = await import('@/domain/shareContent');
+    doc.nodes['a1'].resources = [{ type: 'COUNT', value: '3/12', description: 'jars', guestEditable: true }];
+    try {
+      const pseudoA1 = [...guestIdMap(doc, 'trip', 'tok123').entries()].find(([, r]) => r === 'a1')![0];
+      service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: { version: 1, title: 'Asia trip', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
+      service.fetchUndrainedEvents.mockResolvedValue([
+        { id: 7, node_id: pseudoA1, res_index: 0, delta: 1 },
+        { id: 8, node_id: pseudoA1, res_index: 0, delta: 1 },
+      ]);
+      service.countShareEvents.mockResolvedValue(9);
+      const { dispatch } = renderButton();
+      fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+      await waitFor(() => expect(screen.getByText('Ticks from guests on delegated counters: 9')).toBeInTheDocument());
+      expect(service.claimEvents).toHaveBeenCalledWith([7, 8]);
+      // The folded chain: first guard is the STORED value, the second its successor.
+      expect(dispatch).toHaveBeenNthCalledWith(1, expect.objectContaining({ type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '3/12', delta: 1 }));
+      expect(dispatch).toHaveBeenNthCalledWith(2, expect.objectContaining({ expectedValue: '4/12' }));
+    } finally {
+      doc.nodes['a1'].resources = [];
+    }
+  });
+
+  it('a lost claim race applies nothing (#811 — the other device won)', async () => {
+    service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: { version: 1, title: 'Asia trip', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
+    service.fetchUndrainedEvents.mockResolvedValue([{ id: 7, node_id: 'ffffffff', res_index: 0, delta: 1 }]);
+    service.claimEvents.mockResolvedValue([]); // another device claimed first
+    const { dispatch } = renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it('a stale snapshot shows the republish hint', async () => {

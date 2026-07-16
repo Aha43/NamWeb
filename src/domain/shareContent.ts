@@ -131,6 +131,30 @@ function sectionDue(doc: WorkspaceDocument, id: string): ShareDue | undefined {
 }
 
 /**
+ * The drain's reverse map (#811): pseudonymous guest id → real node id, over the SAME
+ * traversal and exclusions as the sanitizer (the owner holds the token — the salt — so the
+ * mapping is recomputable). Excluded/unknown guest ids simply aren't in the map.
+ */
+export function guestIdMap(doc: WorkspaceDocument, projectId: string, salt: string): Map<string, string> {
+  const map = new Map<string, string>();
+  const root = doc.nodes[projectId];
+  if (!root || !root.project || isExcluded(root)) return map;
+  const visited = new Set<string>([projectId]);
+  map.set(pseudoId(salt, projectId), projectId);
+  const walk = (node: NamNode) => {
+    for (const childId of node.childIds) {
+      const child = doc.nodes[childId];
+      if (!child || isExcluded(child) || visited.has(child.id)) continue;
+      visited.add(child.id);
+      map.set(pseudoId(salt, child.id), child.id);
+      walk(child);
+    }
+  };
+  walk(root);
+  return map;
+}
+
+/**
  * Sanitize one project into its guest-facing snapshot. Returns null when `projectId` is not
  * an existing, non-excluded project — a private root has nothing to publish.
  */

@@ -549,6 +549,7 @@
   "share.dirtyHint": "Prosjektet er endret siden sist publisering — publiser på nytt for å oppdatere siden.",
   "share.dismiss": "Avvis",
   "share.fromGuests": "Fra gjester ({count})",
+  "share.guestTicks": "Klikk fra gjester på delegerte tellere: {count}",
   "share.include": "Ta med:",
   "share.includeDates": "Datoer",
   "share.includeNotes": "Notater",

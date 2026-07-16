@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, Copy, RefreshCw } from 'lucide-react';
 import {
@@ -28,9 +28,11 @@ import {
   rotateShareToken,
   shareUrl,
   unpublishShare,
+  countShareEvents,
   type ProjectShare,
   type ShareSuggestion,
 } from './shares';
+import { drainShare } from './drainShare';
 
 /**
  * The owner's Share dialog (#759, stage 1 of the sharing epic). Publish mints the secret
@@ -57,6 +59,9 @@ export function ShareDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<ShareSuggestion[]>([]);
+  const [guestTicks, setGuestTicks] = useState(0);
+  const drainRef = useRef({ document, dispatch });
+  drainRef.current = { document, dispatch };
   const [includeDue, setIncludeDue] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeDue);
   const [includeStatus, setIncludeStatus] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeStatus);
   const [includeNotes, setIncludeNotes] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeNotes);
@@ -67,6 +72,7 @@ export function ShareDialog({
     if (!open) return;
     setShare(null);
     setSuggestions([]); // a previous project's tray must not greet this one (#804)
+    setGuestTicks(0);
     setError(null);
     setLoading(true);
     let cancelled = false;
@@ -74,10 +80,18 @@ export function ShareDialog({
       .then(async (s) => {
         if (cancelled) return;
         setShare(s);
+        // The dialog-open drain (#811): land any guest ticks before the tray and the
+        // provenance count — a failed drain is quiet (retried on the next trigger). The ref
+        // keeps the load effect's deps honest (document churns every mutation).
+        const drainCtx = drainRef.current;
+        if (s && drainCtx.document) await drainShare(drainCtx.document, drainCtx.dispatch, s).catch(() => {});
         // The From-guests tray (#796): unhandled suggestions ride along with the share.
-        const tray = s ? await fetchSuggestions(s.share_id) : [];
+        const [tray, ticks] = s
+          ? await Promise.all([fetchSuggestions(s.share_id), countShareEvents(s.share_id).catch(() => 0)])
+          : [[], 0];
         if (cancelled) return; // the await above can outlive a close/project switch (#804)
         setSuggestions(tray);
+        setGuestTicks(ticks);
       })
       .catch((e: Error) => {
         if (!cancelled) setError(e.message);
@@ -168,6 +182,7 @@ export function ShareDialog({
       await unpublishShare(share.token);
       setShare(null);
       setSuggestions([]); // unpublish cascades the rows server-side (#804)
+      setGuestTicks(0); // the events cascade with them (#811)
     });
 
   const rotate = () =>
@@ -260,6 +275,10 @@ export function ShareDialog({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">{t('share.notPublished')}</p>
+        )}
+
+        {guestTicks > 0 && (
+          <p className="text-xs text-muted-foreground">{t('share.guestTicks', { count: guestTicks })}</p>
         )}
 
         {suggestions.length > 0 && (
