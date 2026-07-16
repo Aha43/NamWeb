@@ -240,6 +240,25 @@ describe('ResourcesEditor dialogs (#720)', () => {
     ]);
   });
 
+  it('the guest-delegation checkbox writes guestEditable — only when ticked, never false (#809)', () => {
+    const onChange = vi.fn();
+    render(<ResourcesEditor resources={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'COUNT' } });
+    fireEvent.change(screen.getByLabelText('Count to'), { target: { value: '5' } });
+    fireEvent.click(screen.getByLabelText('Guests can update this on shared pages'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onChange).toHaveBeenCalledWith([{ type: 'COUNT', value: '0/5', description: null, guestEditable: true }]);
+    // Unticked: the key is ABSENT (additive, absent-means-off), not false.
+    onChange.mockClear();
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'COUNT' } });
+    fireEvent.change(screen.getByLabelText('Count to'), { target: { value: '5' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    // (The editor is controlled — the un-rerendered second Add still emits a one-element array.)
+    expect(onChange.mock.calls[0][0][0]).toEqual({ type: 'COUNT', value: '0/5', description: null });
+  });
+
   it('the goal-not-a-cap checkbox packs the "+" marker; editing keeps overshoot (#800)', () => {
     const onChange = vi.fn();
     render(<ResourcesEditor resources={[]} onChange={onChange} />);

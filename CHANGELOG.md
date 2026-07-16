@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- Guest-interactive resources, the infrastructure (dark): a counter can be marked "Guests can
+  update this on shared pages" — the flag rides the snapshot, and a new events table + RPC
+  pair (append a tick / read the undrained overlay) lands the pipe's plumbing. Nothing
+  user-visible changes yet; the guest pill and the owner drain follow. Closes #809.
+
 ## [1.8.0] - 2026-07-16
 
 **The guest loop closes, and resources learn to count.** Shared projects (still Labs-dark)
