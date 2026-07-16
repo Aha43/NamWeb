@@ -18,18 +18,42 @@ describe('CountPill (#798) — the first interactive resource', () => {
     );
   });
 
-  it('the − steps down with the same guard; edges lose their buttons (#798 stock)', () => {
+  it('the − steps down with the same guard; edge buttons stay rendered but disabled (#802/F5)', () => {
     const dispatch = vi.fn();
     render(
       <WorkspaceContext.Provider value={{ document: null, dispatch } as unknown as UseWorkspace}>
         <CountPill nodeId="a1" index={1} current={3} target={3} label="stock" />
       </WorkspaceContext.Provider>,
     );
-    expect(screen.queryByRole('button', { name: 'Count one on stock' })).not.toBeInTheDocument(); // full: no +
+    // Full: the + doesn't vanish under a mid-burst finger — it stays, disabled.
+    expect(screen.getByRole('button', { name: 'Count one on stock' })).toBeDisabled();
     fireEvent.click(screen.getByRole('button', { name: 'Count one off stock' }));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'incrementCountResource', delta: -1, expectedValue: '3/3' }),
     );
+  });
+
+  it('at zero the − is disabled, not gone (#802/F5)', () => {
+    render(
+      <WorkspaceContext.Provider value={{ document: null, dispatch: vi.fn() } as unknown as UseWorkspace}>
+        <CountPill nodeId="a1" index={1} current={0} target={3} label="stock" />
+      </WorkspaceContext.Provider>,
+    );
+    expect(screen.getByRole('button', { name: 'Count one off stock' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Count one on stock' })).toBeEnabled();
+  });
+
+  it('dispatches the STORED value as the guard, not a reconstruction (#802/F3)', () => {
+    const dispatch = vi.fn();
+    render(
+      <WorkspaceContext.Provider value={{ document: null, dispatch } as unknown as UseWorkspace}>
+        <CountPill nodeId="a1" index={1} current={3} target={10} rawValue="03/10" label="boxes" />
+      </WorkspaceContext.Provider>,
+    );
+    // A desktop-era/hand-edited "03/10" parses fine but formatCount would emit "3/10" —
+    // a reconstructed guard would no-op forever against the stored string.
+    fireEvent.click(screen.getByRole('button', { name: 'Count one on boxes' }));
+    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ expectedValue: '03/10' }));
   });
 
   it('an unlimited pill (#800) keeps its + past the goal — green, still counting', () => {

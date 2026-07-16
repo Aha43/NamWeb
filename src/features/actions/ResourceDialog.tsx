@@ -42,6 +42,14 @@ export function ResourceDialog({
   const [countTarget, setCountTarget] = useState(initialCount ? String(initialCount.target) : '');
   const [resetCount, setResetCount] = useState(false);
   const [unlimited, setUnlimited] = useState(initialCount?.unlimited ?? false);
+  // #802/F2: un-ticking "goal, not a cap" on an overshot counter clamps real recorded stock
+  // (14/12 -> 12/12) — that's data destruction, so it gets a visible tell before Save. The
+  // sibling clamp (shrinking the target below current) shows the same line: same loss.
+  const parsedTarget = Number(countTarget);
+  const clampWarning =
+    initialCount && !unlimited && !resetCount && Number.isInteger(parsedTarget) && parsedTarget >= 1 && initialCount.current > parsedTarget
+      ? { current: initialCount.current, target: parsedTarget }
+      : null;
   const def = RESOURCE_TYPE_DEFS[type];
 
   // The commit shared by the form submit and ⌘/Ctrl+Enter (#746). Guards intact: empty refuses.
@@ -128,6 +136,11 @@ export function ResourceDialog({
                 <input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} />
                 {t('editor.resourceCountUnlimited')}
               </label>
+              {clampWarning !== null && (
+                <p role="alert" className="text-xs text-amber-600 dark:text-amber-500">
+                  {t('editor.resourceCountClampWarning', { current: clampWarning.current, target: clampWarning.target })}
+                </p>
+              )}
               {initialCount && (
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   <input type="checkbox" checked={resetCount} onChange={(e) => setResetCount(e.target.checked)} />

@@ -263,6 +263,11 @@ export function ShareDialog({
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               {t('share.fromGuests', { count: suggestions.length })}
             </p>
+            {suggestions.length >= 400 && (
+              <p role="alert" className="text-xs text-amber-600 dark:text-amber-500">
+                {t('share.trayNearFull', { count: suggestions.length })}
+              </p>
+            )}
             <ul className="max-h-48 space-y-2 overflow-y-auto">
               {suggestions.map((sg) => (
                 <li key={sg.id} className="rounded-md border border-border bg-card/50 p-2">

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { WorkspaceContext } from '@/store/workspace-context';
 import { formatCount } from '@/domain/resourceCount';
 import { nowIso } from '@/lib/local';
+import { TOUCH_TARGET } from '@/lib/touch';
 import { cn } from '@/lib/utils';
 
 /**
@@ -17,6 +18,7 @@ export function CountPill({
   current,
   target,
   unlimited = false,
+  rawValue,
   label,
 }: {
   nodeId: string;
@@ -25,6 +27,9 @@ export function CountPill({
   target: number;
   /** The target is a goal, not a cap (#800): green at/past it, + keeps counting. */
   unlimited?: boolean;
+  /** The STORED value string, passed through verbatim as the stale guard (#802/F3): a
+   *  reconstructed guard mismatches non-canonical data ("03/10") — a permanently dead pill. */
+  rawValue?: string;
   label: string | null;
 }) {
   const { t } = useTranslation();
@@ -46,16 +51,21 @@ export function CountPill({
     );
   }
   // Both directions (#798 stock-keeping: action = use / re-supply): − steps down to zero,
-  // + steps up to the target; each edge quietly loses its button.
+  // + steps up to the target; at an edge the button stays rendered but disabled (#802/F5 —
+  // a control vanishing under a mid-burst finger is the reflow lesson again).
   const step = (delta: 1 | -1) =>
     workspace.dispatch({
       type: 'incrementCountResource',
       id: nodeId,
       index,
-      expectedValue: formatCount(current, target, unlimited),
+      expectedValue: rawValue ?? formatCount(current, target, unlimited),
       delta,
       now: nowIso(),
     });
+  const buttonClass = cn(
+    'rounded-full px-1 font-bold hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
+    TOUCH_TARGET,
+  );
   return (
     <span
       onClick={(e) => e.stopPropagation()} // the row's own click (edit/select) must not fire
@@ -64,27 +74,25 @@ export function CountPill({
         full ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400' : 'bg-muted text-muted-foreground',
       )}
     >
-      {current > 0 && (
-        <button
-          type="button"
-          aria-label={t('actions.countMinusAria', { label: ariaName })}
-          onClick={() => step(-1)}
-          className="rounded-full px-1 font-bold hover:bg-accent hover:text-foreground"
-        >
-          −
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label={t('actions.countMinusAria', { label: ariaName })}
+        onClick={() => step(-1)}
+        disabled={current <= 0}
+        className={buttonClass}
+      >
+        −
+      </button>
       {text}
-      {(!full || unlimited) && (
-        <button
-          type="button"
-          aria-label={t('actions.countPlusAria', { label: ariaName })}
-          onClick={() => step(1)}
-          className="rounded-full px-1 font-bold hover:bg-accent hover:text-foreground"
-        >
-          +
-        </button>
-      )}
+      <button
+        type="button"
+        aria-label={t('actions.countPlusAria', { label: ariaName })}
+        onClick={() => step(1)}
+        disabled={full && !unlimited}
+        className={buttonClass}
+      >
+        +
+      </button>
     </span>
   );
 }
