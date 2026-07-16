@@ -551,6 +551,7 @@
   "share.dismiss": "Avvis",
   "share.fromGuests": "Fra gjester ({count})",
   "share.guestTicks": "Klikk fra gjester på delegerte tellere: {count}",
+  "share.hideDone": "Skjul fullførte",
   "share.include": "Ta med:",
   "share.includeDates": "Datoer",
   "share.includeNotes": "Notater",

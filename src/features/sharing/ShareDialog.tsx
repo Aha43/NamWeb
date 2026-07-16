@@ -65,6 +65,7 @@ export function ShareDialog({
   const [includeDue, setIncludeDue] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeDue);
   const [includeStatus, setIncludeStatus] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeStatus);
   const [includeNotes, setIncludeNotes] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeNotes);
+  const [includeDone, setIncludeDone] = useState(true);
 
   // Load the existing share on open; reset transient state so a previous project's share
   // never greets this one (the dialog stays mounted, driven by open).
@@ -121,11 +122,12 @@ export function ShareDialog({
             includeDue,
             includeStatus,
             includeNotes,
+            includeDone,
             salt,
             publishedAt: new Date().toISOString(),
           })
         : null,
-    [document, projectId, includeDue, includeStatus, includeNotes],
+    [document, projectId, includeDue, includeStatus, includeNotes, includeDone],
   );
 
   // The changes-since-publish hint: recompute the snapshot with the stored share's own salt
@@ -245,6 +247,10 @@ export function ShareDialog({
           <label className="flex items-center gap-1.5">
             <input type="checkbox" checked={includeNotes} onChange={(e) => setIncludeNotes(e.target.checked)} />
             {t('share.includeNotes')}
+          </label>
+          <label className="flex items-center gap-1.5">
+            <input type="checkbox" checked={!includeDone} onChange={(e) => setIncludeDone(!e.target.checked)} />
+            {t('share.hideDone')}
           </label>
         </div>
 

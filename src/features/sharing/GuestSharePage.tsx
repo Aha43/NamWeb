@@ -196,20 +196,33 @@ export function GuestSharePage({ token }: { token: string }) {
     );
   };
 
-  const renderItem = (item: ShareItem) => (
+  /** Got-it (#817): every delegated counter at/past its goal reads as done in the aisle —
+   *  live via the overlay, no republish needed for the visual. */
+  const countersMet = (nodeId: string, counters: ShareCounter[] | undefined): boolean => {
+    if (!counters?.length) return false;
+    return counters.every((c) => {
+      const parsed = parseCount(c.value);
+      if (!parsed) return false;
+      return parsed.current + (ticks.get(`${nodeId}:${c.index}`) ?? 0) >= parsed.target;
+    });
+  };
+
+  const renderItem = (item: ShareItem) => {
+    const gotIt = item.done || countersMet(item.id, item.counters);
+    return (
     <li key={item.id} id={item.id} className="flex gap-3 py-2">
       <span
         aria-hidden
         className={
-          item.done
+          gotIt
             ? 'mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-600'
             : 'mt-1.5 h-2 w-2 shrink-0 translate-x-1 rounded-full bg-primary/40'
         }
       >
-        {item.done && <Check className="h-3 w-3" />}
+        {gotIt && <Check className="h-3 w-3" />}
       </span>
       <div className="min-w-0">
-        <p className={item.done ? 'text-foreground/70 line-through decoration-foreground/30' : 'text-foreground'}>
+        <p className={gotIt ? 'text-foreground/70 line-through decoration-foreground/30' : 'text-foreground'}>
           {item.title}
         </p>
         {item.due && <p className="text-xs text-muted-foreground">{formatDue(item.due)}</p>}
@@ -217,7 +230,8 @@ export function GuestSharePage({ token }: { token: string }) {
         {renderCounters(item.id, item.counters)}
       </div>
     </li>
-  );
+    );
+  };
 
   const renderSection = (section: ShareSection, depth: number) => {
     const isCollapsed = collapsedIds.has(section.id);

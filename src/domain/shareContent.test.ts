@@ -134,6 +134,24 @@ describe('shareContent — the sanitizer', () => {
     expect(json).not.toContain('secret.example');
   });
 
+  it('hide completed (#817): DONE subtrees stay home when the share says so — default keeps them', () => {
+    const doc = trip();
+    doc.nodes['a1'].status = 'DONE';
+    doc.nodes['legs'].status = 'DONE'; // a done SECTION takes its subtree with it
+    // Default (absent includeDone): unchanged behavior, done items still published.
+    const kept = shareContent(doc, 'trip', OPTS)!;
+    expect(kept.items.map((i) => i.title)).toEqual(['Book flights']);
+    expect(kept.sections.map((sec) => sec.title)).toEqual(['Japan leg']);
+    // Hidden: both gone, and the derived root span no longer sees their dates.
+    const hidden = shareContent(doc, 'trip', { ...OPTS, includeDone: false })!;
+    expect(hidden.items).toEqual([]);
+    expect(hidden.sections).toEqual([]);
+    expect(hidden.due).toBeUndefined(); // a1 + a2 carried all the dates
+    // A fully-done root publishes nothing under the toggle.
+    doc.nodes['trip'].status = 'DONE';
+    expect(shareContent(doc, 'trip', { ...OPTS, includeDone: false })).toBeNull();
+  });
+
   it('pseudonymous ids: stable for the same salt, different across salts, never the node id', () => {
     const a = shareContent(trip(), 'trip', OPTS)!;
     const b = shareContent(trip(), 'trip', OPTS)!;

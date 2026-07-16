@@ -112,9 +112,9 @@ describe('ShareDialog', () => {
     renderButton();
     fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
     await waitFor(() => expect(screen.getByText(/Not published/)).toBeInTheDocument());
-    // Defaults per the design doc: dates on, progress off, notes on.
+    // Defaults per the design doc: dates on, progress off, notes on — and completed shown (#817).
     const boxes = screen.getAllByRole('checkbox');
-    expect(boxes.map((b) => (b as HTMLInputElement).checked)).toEqual([true, false, true]);
+    expect(boxes.map((b) => (b as HTMLInputElement).checked)).toEqual([true, false, true, false]);
     // The private sub-project is surfaced, not silent.
     expect(screen.getByText(/1 item\(s\) tagged private/)).toBeInTheDocument();
 

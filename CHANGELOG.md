@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- A "Hide completed" toggle on shares: the trip page keeps showing progress, the shopping
+  list drops what you've got enough of — per share, defaulting to today's behavior. And on
+  the guest page, an item whose delegated counters have all met their goals reads as done in
+  the aisle, live via the overlay — no republish needed. Closes #817.
 - A counter can complete its action: tick "Completes the action at the goal" and the tick
   that lands the count at the target marks the action done — and the tick that drops it back
   below reopens it (the stock loop: done while stocked, alive when depleted). Ticks only —

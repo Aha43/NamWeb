@@ -188,6 +188,20 @@ describe('GuestSharePage (#761)', () => {
     expect(screen.getByText(/jars 5\/12/)).toBeInTheDocument();
   });
 
+  it('got-it (#817): an item reads done in the aisle once its counters meet their goals', async () => {
+    fetchGuestShare.mockResolvedValue({
+      ...CONTENT,
+      items: [{ id: 'aa11', title: 'Buy beans', counters: [{ index: 0, value: '1/2', label: 'boxes' }] }],
+    });
+    render(<GuestSharePage token="tok123" />);
+    expect(await screen.findByText('Buy beans')).not.toHaveClass('line-through');
+    fireEvent.click(screen.getByRole('button', { name: 'Count one on boxes' }));
+    await waitFor(() => expect(screen.getByText('Buy beans')).toHaveClass('line-through'));
+    // And stepping back down un-does the aisle read — live, no republish.
+    fireEvent.click(screen.getByRole('button', { name: 'Count one off boxes' }));
+    await waitFor(() => expect(screen.getByText('Buy beans')).not.toHaveClass('line-through'));
+  });
+
   it('an undelegated page never fetches the overlay (#810)', async () => {
     fetchGuestShare.mockResolvedValue(CONTENT);
     render(<GuestSharePage token="tok123" />);
