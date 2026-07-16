@@ -19,6 +19,7 @@ export function CountPill({
   target,
   unlimited = false,
   rawValue,
+  onStep,
   label,
 }: {
   nodeId: string;
@@ -30,6 +31,9 @@ export function CountPill({
   /** The STORED value string, passed through verbatim as the stale guard (#802/F3): a
    *  reconstructed guard mismatches non-canonical data ("03/10") — a permanently dead pill. */
   rawValue?: string;
+  /** Hosts with their own write path (#810 — the guest page's event RPC) supply the step;
+   *  the workspace dispatch is skipped entirely. */
+  onStep?: (delta: 1 | -1) => void;
   label: string | null;
 }) {
   const { t } = useTranslation();
@@ -38,7 +42,7 @@ export function CountPill({
   const display = `${current}/${target}`; // the machine marker ("+") stays off the page
   const ariaName = label ?? display;
   const text = `${label ? `${label} ` : ''}${display}`;
-  if (!workspace?.dispatch) {
+  if (!workspace?.dispatch && !onStep) {
     return (
       <span
         className={cn(
@@ -53,15 +57,17 @@ export function CountPill({
   // Both directions (#798 stock-keeping: action = use / re-supply): − steps down to zero,
   // + steps up to the target; at an edge the button stays rendered but disabled (#802/F5 —
   // a control vanishing under a mid-burst finger is the reflow lesson again).
-  const step = (delta: 1 | -1) =>
-    workspace.dispatch({
-      type: 'incrementCountResource',
-      id: nodeId,
-      index,
-      expectedValue: rawValue ?? formatCount(current, target, unlimited),
-      delta,
-      now: nowIso(),
-    });
+  const step =
+    onStep ??
+    ((delta: 1 | -1) =>
+      workspace?.dispatch({
+        type: 'incrementCountResource',
+        id: nodeId,
+        index,
+        expectedValue: rawValue ?? formatCount(current, target, unlimited),
+        delta,
+        now: nowIso(),
+      }));
   const buttonClass = cn(
     'rounded-full px-1 font-bold hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40',
     TOUCH_TARGET,

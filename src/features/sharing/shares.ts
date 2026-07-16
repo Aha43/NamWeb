@@ -126,6 +126,38 @@ export async function submitSuggestion(
   return data === true;
 }
 
+/** A guest tick on a delegated resource (#810): the RPC, boolean out — unknown/disabled/
+ *  malformed/over-cap all read the same false (no oracle; a refused tap just doesn't move). */
+export async function submitResourceEvent(
+  token: string,
+  nodeId: string,
+  resIndex: number,
+  delta: 1 | -1,
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('add_share_resource_event', {
+    share_token: token,
+    node: nodeId,
+    res_index: resIndex,
+    delta,
+  });
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
+export interface ShareResourceEvent {
+  node_id: string;
+  res_index: number;
+  delta: number;
+}
+
+/** The guest overlay read (#810): undrained events for an enabled share, oldest first.
+ *  Unknown and disabled tokens read as an empty list. */
+export async function fetchShareResourceEvents(token: string): Promise<ShareResourceEvent[]> {
+  const { data, error } = await supabase.rpc('get_share_resource_events', { share_token: token });
+  if (error) throw new Error(error.message);
+  return (data as ShareResourceEvent[] | null) ?? [];
+}
+
 /** The owner's unhandled suggestions for a share, oldest first (RLS scopes to the owner). */
 export async function fetchSuggestions(shareId: string): Promise<ShareSuggestion[]> {
   const { data, error } = await supabase

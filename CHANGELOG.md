@@ -10,6 +10,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- Delegated counters are live on guest pages: a counter marked "guests can update" renders as
+  the interactive pill on the shared page — ticks flow through the event pipe, the page shows
+  the published count plus everyone's undrained ticks, and a refused tap quietly doesn't move.
+  Closes #810.
 - Guest-interactive resources, the infrastructure (dark): a counter can be marked "Guests can
   update this on shared pages" — the flag rides the snapshot, and a new events table + RPC
   pair (append a tick / read the undrained overlay) lands the pipe's plumbing. Nothing

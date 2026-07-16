@@ -75,4 +75,13 @@ describe('CountPill (#798) — the first interactive resource', () => {
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(screen.getByText(/1\/3/)).toBeInTheDocument();
   });
+
+  it('onStep mode (#810): interactive without a workspace, stepping through the host', () => {
+    const onStep = vi.fn();
+    render(<CountPill nodeId="aa11" index={1} current={2} target={3} onStep={onStep} label="jars" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Count one on jars' }));
+    expect(onStep).toHaveBeenCalledWith(1);
+    fireEvent.click(screen.getByRole('button', { name: 'Count one off jars' }));
+    expect(onStep).toHaveBeenCalledWith(-1);
+  });
 });
