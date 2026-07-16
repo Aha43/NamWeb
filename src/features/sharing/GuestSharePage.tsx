@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
-import type { ShareContent, ShareDue, ShareItem, ShareSection } from '@/domain/shareContent';
-import { fetchGuestShare, submitSuggestion } from './shares';
+import type { ShareContent, ShareCounter, ShareDue, ShareItem, ShareSection } from '@/domain/shareContent';
+import { parseCount } from '@/domain/resourceCount';
+import { CountPill } from '@/features/actions/CountPill';
+import { fetchGuestShare, fetchShareResourceEvents, submitResourceEvent, submitSuggestion } from './shares';
 
 /**
  * The guest page (#761): what a secret share link renders. Deliberately un-NAM — no chrome,
@@ -10,6 +12,12 @@ import { fetchGuestShare, submitSuggestion } from './shares';
  * browser locale is its language (the i18n runtime auto-detects); Intl formats the dates.
  * Guest ids become DOM anchors (stage 4's per-item suggestions will address them).
  */
+function hasCounters(content: ShareContent): boolean {
+  const inSections = (sections: ShareSection[]): boolean =>
+    sections.some((s) => (s.counters?.length ?? 0) > 0 || s.items.some((i) => (i.counters?.length ?? 0) > 0) || inSections(s.sections));
+  return content.items.some((i) => (i.counters?.length ?? 0) > 0) || inSections(content.sections);
+}
+
 export function GuestSharePage({ token }: { token: string }) {
   const { t, i18n } = useTranslation();
   const [content, setContent] = useState<ShareContent | null>(null);
@@ -22,6 +30,9 @@ export function GuestSharePage({ token }: { token: string }) {
   const [guestName, setGuestName] = useState('');
   const [suggestion, setSuggestion] = useState('');
   const [suggestState, setSuggestState] = useState<'idle' | 'sending' | 'sent' | 'failed'>('idle');
+  // Delegated counters (#810): the page shows snapshot + Σ undrained events, so a guest's own
+  // ticks land instantly and a stale published count never confuses. Keyed `${nodeId}:${index}`.
+  const [ticks, setTicks] = useState<Map<string, number>>(new Map());
   // id → parent-section id for every section AND item — anchor navigation (TOC taps, #hash
   // deep links, stage 4's per-item suggestions) must expand ancestors before scrolling.
   const parentOf = useMemo(() => {
@@ -75,9 +86,19 @@ export function GuestSharePage({ token }: { token: string }) {
   const load = useCallback(() => {
     setState('loading');
     fetchGuestShare(token)
-      .then((c) => {
+      .then(async (c) => {
         // A future envelope version renders as "needs a newer link", never wrong (#772).
         const usable = c && c.version === 1 ? c : null;
+        if (usable && hasCounters(usable)) {
+          // Overlay failures degrade to the bare snapshot — the page still renders.
+          const events = await fetchShareResourceEvents(token).catch(() => []);
+          const sums = new Map<string, number>();
+          for (const e of events) {
+            const key = `${e.node_id}:${e.res_index}`;
+            sums.set(key, (sums.get(key) ?? 0) + e.delta);
+          }
+          setTicks(sums);
+        }
         setContent(usable);
         setState(usable ? 'ready' : 'gone');
       })
@@ -134,6 +155,47 @@ export function GuestSharePage({ token }: { token: string }) {
     );
   }
 
+  /** A guest tick: quiet failure by design — a refused tap simply doesn't move. */
+  const tick = (nodeId: string, index: number, delta: 1 | -1) =>
+    submitResourceEvent(token, nodeId, index, delta)
+      .then((ok) => {
+        if (!ok) return;
+        setTicks((prev) => {
+          const next = new Map(prev);
+          const key = `${nodeId}:${index}`;
+          next.set(key, (next.get(key) ?? 0) + delta);
+          return next;
+        });
+      })
+      .catch(() => {});
+
+  const renderCounters = (nodeId: string, counters: ShareCounter[] | undefined) => {
+    if (!counters?.length) return null;
+    return (
+      <div className="mt-1 flex flex-wrap gap-1.5">
+        {counters.map((c) => {
+          const parsed = parseCount(c.value);
+          if (!parsed) return null; // malformed degrades to nothing, never crashes the page
+          const overlaid = parsed.current + (ticks.get(`${nodeId}:${c.index}`) ?? 0);
+          // The same display clamp the owner's pill lives by.
+          const current = parsed.unlimited ? Math.max(0, overlaid) : Math.max(0, Math.min(overlaid, parsed.target));
+          return (
+            <CountPill
+              key={c.index}
+              nodeId={nodeId}
+              index={c.index}
+              current={current}
+              target={parsed.target}
+              unlimited={parsed.unlimited}
+              onStep={(delta) => void tick(nodeId, c.index, delta)}
+              label={c.label ?? null}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderItem = (item: ShareItem) => (
     <li key={item.id} id={item.id} className="flex gap-3 py-2">
       <span
@@ -152,6 +214,7 @@ export function GuestSharePage({ token }: { token: string }) {
         </p>
         {item.due && <p className="text-xs text-muted-foreground">{formatDue(item.due)}</p>}
         {item.note && <p className="mt-0.5 whitespace-pre-wrap text-sm text-muted-foreground">{item.note}</p>}
+        {renderCounters(item.id, item.counters)}
       </div>
     </li>
   );
@@ -187,6 +250,7 @@ export function GuestSharePage({ token }: { token: string }) {
         </Heading>
         <div id={`guest-section-${section.id}`} className={isCollapsed ? 'hidden' : undefined}>
           {section.note && <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{section.note}</p>}
+          {renderCounters(section.id, section.counters)}
           {section.items.length > 0 && <ul className="mt-2 divide-y divide-border/60">{section.items.map(renderItem)}</ul>}
           {section.sections.map((s) => renderSection(s, depth + 1))}
         </div>

@@ -4,10 +4,14 @@ import type { ShareContent } from '@/domain/shareContent';
 
 const fetchGuestShare = vi.fn();
 const submitSuggestion = vi.fn();
+const fetchShareResourceEvents = vi.fn();
+const submitResourceEvent = vi.fn();
 vi.mock('./shares', async (orig) => ({
   ...(await orig<typeof import('./shares')>()),
   fetchGuestShare: (...a: unknown[]) => fetchGuestShare(...a),
   submitSuggestion: (...a: unknown[]) => submitSuggestion(...a),
+  fetchShareResourceEvents: (...a: unknown[]) => fetchShareResourceEvents(...a),
+  submitResourceEvent: (...a: unknown[]) => submitResourceEvent(...a),
 }));
 
 import { GuestSharePage } from './GuestSharePage';
@@ -37,6 +41,8 @@ beforeEach(() => {
   // Braces matter: a function RETURNED from beforeEach is a vitest teardown callback — the
   // bare arrow returned the mock itself, which vitest then called and awaited (10s timeout).
   fetchGuestShare.mockReset();
+  fetchShareResourceEvents.mockReset().mockResolvedValue([]);
+  submitResourceEvent.mockReset().mockResolvedValue(true);
 });
 
 describe('GuestSharePage (#761)', () => {
@@ -159,6 +165,34 @@ describe('GuestSharePage (#761)', () => {
     fireEvent.change(screen.getByLabelText('Your suggestion'), { target: { value: 'Another idea' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send suggestion' }));
     await waitFor(() => expect(screen.getByText(/Couldn't send right now/)).toBeInTheDocument());
+  });
+
+  it('delegated counters (#810): overlaid pill, ticks through the RPC, quiet refusal', async () => {
+    fetchGuestShare.mockResolvedValue({
+      ...CONTENT,
+      items: [{ id: 'aa11', title: 'Keep jars stocked', counters: [{ index: 1, value: '3/12', label: 'jars' }] }],
+    });
+    // One undrained event already queued by another guest: the overlay adds it.
+    fetchShareResourceEvents.mockResolvedValue([{ node_id: 'aa11', res_index: 1, delta: 1 }]);
+    render(<GuestSharePage token="tok123" />);
+
+    expect(await screen.findByText(/jars 4\/12/)).toBeInTheDocument(); // 3 snapshot + 1 event
+    fireEvent.click(screen.getByRole('button', { name: 'Count one on jars' }));
+    await waitFor(() => expect(submitResourceEvent).toHaveBeenCalledWith('tok123', 'aa11', 1, 1));
+    expect(await screen.findByText(/jars 5\/12/)).toBeInTheDocument(); // the accepted tick lands
+
+    // A refused tick (revoked link / over cap) quietly doesn't move.
+    submitResourceEvent.mockResolvedValueOnce(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Count one on jars' }));
+    await waitFor(() => expect(submitResourceEvent).toHaveBeenCalledTimes(2));
+    expect(screen.getByText(/jars 5\/12/)).toBeInTheDocument();
+  });
+
+  it('an undelegated page never fetches the overlay (#810)', async () => {
+    fetchGuestShare.mockResolvedValue(CONTENT);
+    render(<GuestSharePage token="tok123" />);
+    await screen.findByRole('heading', { name: 'Asia round trip', level: 1 });
+    expect(fetchShareResourceEvents).not.toHaveBeenCalled();
   });
 
   it('shows nothing NAM-flavored while loading', () => {
