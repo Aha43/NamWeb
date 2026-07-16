@@ -15,6 +15,9 @@ export interface Resource {
    *  docs/features/project-sharing/guest-interactive-resources.md). Additive,
    *  absent-means-off; only meaningful on interactive types (COUNT). */
   guestEditable?: boolean;
+  /** A tick landing this counter at/past its goal marks the action DONE; a tick dropping it
+   *  below reopens it (#816 — the symmetric stock loop). Additive, absent-means-off. */
+  completesAction?: boolean;
 }
 
 export interface NamNode {
