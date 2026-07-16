@@ -16,6 +16,9 @@ export interface ResourceTypeDef {
   nameLabelKey?: string;
   /** The dialog's value entry: free text, or the COUNT target (a number ≥ 1). */
   valueKind: 'text' | 'countTarget';
+  /** The type has registry-defined legal moves a guest could exercise (#809) — gates the
+   *  per-resource guestEditable checkbox. */
+  interactive?: boolean;
 }
 
 export const RESOURCE_TYPE_DEFS: Record<ResourceType, ResourceTypeDef> = {
@@ -23,7 +26,7 @@ export const RESOURCE_TYPE_DEFS: Record<ResourceType, ResourceTypeDef> = {
   EMAIL: { type: 'EMAIL', icon: Mail, labelKey: 'resourceType.EMAIL', hasNameField: false, valueKind: 'text' },
   FILE: { type: 'FILE', icon: FileText, labelKey: 'resourceType.FILE', hasNameField: false, valueKind: 'text' },
   TEXT: { type: 'TEXT', icon: StickyNote, labelKey: 'resourceType.TEXT', hasNameField: false, valueKind: 'text' },
-  COUNT: { type: 'COUNT', icon: Hash, labelKey: 'resourceType.COUNT', hasNameField: true, nameLabelKey: 'editor.resourceNameCount', valueKind: 'countTarget' },
+  COUNT: { type: 'COUNT', icon: Hash, labelKey: 'resourceType.COUNT', hasNameField: true, nameLabelKey: 'editor.resourceNameCount', valueKind: 'countTarget', interactive: true },
 };
 
 export const RESOURCE_TYPES_ORDERED: ResourceType[] = ['URI', 'EMAIL', 'FILE', 'TEXT', 'COUNT'];

@@ -117,6 +117,55 @@ test('the suggestion box: guests capture via the RPC, owners read, the table sta
   }
 });
 
+test('resource events (#809): guests append, owners drain, the table stays dark', async ({ browserName }) => {
+  const TOKEN = `e2e-smoke-events-${browserName}`;
+  const projectId = `e2e-smoke-events-${browserName}`;
+  const { client: owner, userId } = await ownerClient();
+  const anon = createClient(E2E.supabaseUrl, E2E.supabaseKey);
+  await owner.from('project_shares').delete().eq('project_id', projectId);
+  const up = await owner
+    .from('project_shares')
+    .insert({ token: TOKEN, owner_user_id: userId, project_id: projectId, content: { version: 1 }, enabled: true })
+    .select('share_id')
+    .single();
+  expect(up.error).toBeNull();
+  try {
+    // Guest ticks: accepted for an enabled share; the overlay read returns them oldest-first.
+    expect((await anon.rpc('add_share_resource_event', { share_token: TOKEN, node: 'abcd1234', res_index: 1, delta: 1 })).data).toBe(true);
+    expect((await anon.rpc('add_share_resource_event', { share_token: TOKEN, node: 'abcd1234', res_index: 1, delta: -1 })).data).toBe(true);
+    const overlay = await anon.rpc('get_share_resource_events', { share_token: TOKEN });
+    expect(overlay.error).toBeNull();
+    expect(overlay.data).toEqual([
+      { node_id: 'abcd1234', res_index: 1, delta: 1 },
+      { node_id: 'abcd1234', res_index: 1, delta: -1 },
+    ]);
+
+    // The same quiet false for unknown tokens and malformed shapes (no oracle).
+    expect((await anon.rpc('add_share_resource_event', { share_token: 'nope', node: 'x', res_index: 0, delta: 1 })).data).toBe(false);
+    expect((await anon.rpc('add_share_resource_event', { share_token: TOKEN, node: 'x', res_index: 0, delta: 2 })).data).toBe(false);
+    expect((await anon.rpc('add_share_resource_event', { share_token: TOKEN, node: '', res_index: 0, delta: 1 })).data).toBe(false);
+    expect((await anon.rpc('add_share_resource_event', { share_token: TOKEN, node: 'x', res_index: -1, delta: 1 })).data).toBe(false);
+
+    // The table is dark to anon — events flow only through the two RPCs.
+    expect((await anon.from('share_resource_events').select('id')).error).not.toBeNull();
+
+    // The owner drains: reads via RLS, marks drained — and the guest overlay empties.
+    const mine = await owner.from('share_resource_events').select('id, node_id, res_index, delta').eq('share_id', up.data!.share_id);
+    expect(mine.error).toBeNull();
+    expect(mine.data).toHaveLength(2);
+    const drained = await owner.from('share_resource_events').update({ drained: true }).eq('share_id', up.data!.share_id);
+    expect(drained.error).toBeNull();
+    expect((await anon.rpc('get_share_resource_events', { share_token: TOKEN })).data).toEqual([]);
+
+    // A disabled share goes silent in BOTH directions.
+    await owner.from('project_shares').update({ enabled: false }).eq('token', TOKEN);
+    expect((await anon.rpc('add_share_resource_event', { share_token: TOKEN, node: 'abcd1234', res_index: 1, delta: 1 })).data).toBe(false);
+    expect((await anon.rpc('get_share_resource_events', { share_token: TOKEN })).data).toEqual([]);
+  } finally {
+    await owner.from('project_shares').delete().eq('project_id', projectId); // cascades the events
+  }
+});
+
 test('guests read exactly one enabled share via the RPC — and nothing else', async ({ browserName }) => {
   const TOKEN = `e2e-smoke-share-${browserName}`;
   const { client: owner, userId } = await ownerClient();

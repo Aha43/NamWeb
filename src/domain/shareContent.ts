@@ -30,6 +30,16 @@ export interface ShareDue {
   endTime?: string;
 }
 
+/** A delegated counter on the guest page (#809): only guestEditable counters are copied —
+ *  un-flagged ones are not merely read-only, they are ABSENT (absent-means-not-even-visible).
+ *  `index` is the resource's position in the owner-side node, the event round-trip key. */
+export interface ShareCounter {
+  index: number;
+  /** The packed machine value ("3/10", unlimited "14/12+") — the guest pill parses it. */
+  value: string;
+  label?: string;
+}
+
 /** One doable thing on the guest page. */
 export interface ShareItem {
   id: string;
@@ -38,6 +48,7 @@ export interface ShareItem {
   due?: ShareDue;
   /** Present (true) only when the share includes statuses and the item is done. */
   done?: boolean;
+  counters?: ShareCounter[];
 }
 
 /** A sub-project rendered as a section. */
@@ -46,6 +57,7 @@ export interface ShareSection {
   title: string;
   note?: string;
   due?: ShareDue;
+  counters?: ShareCounter[];
   items: ShareItem[];
   sections: ShareSection[];
 }
@@ -82,6 +94,18 @@ function isPrivate(node: NamNode): boolean {
  *  (a trip page showing progress is a feature); statuses only *render* when enabled. */
 function isExcluded(node: NamNode): boolean {
   return isPrivate(node) || node.status === 'CANCELLED' || node.status === 'ARCHIVED';
+}
+
+/** The delegated counters of a node — empty for everything not explicitly handed over. */
+function nodeCounters(node: NamNode): ShareCounter[] {
+  const counters: ShareCounter[] = [];
+  node.resources.forEach((r, index) => {
+    if (r.type !== 'COUNT' || !r.guestEditable) return;
+    const counter: ShareCounter = { index, value: r.value };
+    if (r.description) counter.label = r.description;
+    counters.push(counter);
+  });
+  return counters;
 }
 
 function itemDue(node: NamNode): ShareDue | undefined {
@@ -126,6 +150,8 @@ export function shareContent(
       if (due) item.due = due;
     }
     if (options.includeStatus && node.status === 'DONE') item.done = true;
+    const counters = nodeCounters(node);
+    if (counters.length > 0) item.counters = counters;
     return item;
   }
 
@@ -157,6 +183,8 @@ export function shareContent(
       const due = sectionDue(doc, node.id);
       if (due) section.due = due;
     }
+    const counters = nodeCounters(node);
+    if (counters.length > 0) section.counters = counters;
     return section;
   }
 

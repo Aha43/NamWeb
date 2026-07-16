@@ -116,6 +116,24 @@ describe('shareContent — the sanitizer', () => {
     }
   });
 
+  it('delegated counters (#809): guestEditable COUNTs are copied, everything else stays home', () => {
+    const doc = trip();
+    doc.nodes['a1'].resources = [
+      { type: 'URI', value: 'https://secret.example', description: 'not shared' },
+      { type: 'COUNT', value: '3/12', description: 'jars', guestEditable: true },
+      { type: 'COUNT', value: '1/5', description: 'private count' }, // un-flagged: ABSENT
+    ];
+    doc.nodes['legs'].resources = [{ type: 'COUNT', value: '2/4+', description: null, guestEditable: true }];
+    const c = shareContent(doc, 'trip', OPTS)!;
+    // The index is the OWNER-side resource position — the event round-trip key.
+    expect(c.items[0].counters).toEqual([{ index: 1, value: '3/12', label: 'jars' }]);
+    expect(c.sections[0].counters).toEqual([{ index: 0, value: '2/4+' }]);
+    const json = JSON.stringify(c);
+    expect(json).not.toContain('private count');
+    expect(json).not.toContain('1/5');
+    expect(json).not.toContain('secret.example');
+  });
+
   it('pseudonymous ids: stable for the same salt, different across salts, never the node id', () => {
     const a = shareContent(trip(), 'trip', OPTS)!;
     const b = shareContent(trip(), 'trip', OPTS)!;

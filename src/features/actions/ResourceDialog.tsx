@@ -42,6 +42,7 @@ export function ResourceDialog({
   const [countTarget, setCountTarget] = useState(initialCount ? String(initialCount.target) : '');
   const [resetCount, setResetCount] = useState(false);
   const [unlimited, setUnlimited] = useState(initialCount?.unlimited ?? false);
+  const [guestEditable, setGuestEditable] = useState(initial?.guestEditable ?? false);
   // #802/F2: un-ticking "goal, not a cap" on an overshot counter clamps real recorded stock
   // (14/12 -> 12/12) — that's data destruction, so it gets a visible tell before Save. The
   // sibling clamp (shrinking the target below current) shows the same line: same loss.
@@ -69,6 +70,8 @@ export function ResourceDialog({
     onSubmit({
       type,
       value: committedValue,
+      // Additive, absent-means-off (#809): never write false into the document.
+      ...(RESOURCE_TYPE_DEFS[type].interactive && guestEditable ? { guestEditable: true } : {}),
       // The name field shows only where the def says so; an empty entry there is a deliberate
       // clear. Elsewhere PRESERVE any existing description — it's a shared-contract field a
       // desktop-era document can carry; a web-side value edit must not silently null it (#724).
@@ -159,6 +162,12 @@ export function ResourceDialog({
                 onChange={(e) => setValue(e.target.value)}
               />
             </div>
+          )}
+          {def.interactive && (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground">
+              <input type="checkbox" checked={guestEditable} onChange={(e) => setGuestEditable(e.target.checked)} />
+              {t('editor.resourceGuestEditable')}
+            </label>
           )}
           {def.hasNameField && (
             <div className="space-y-1.5">

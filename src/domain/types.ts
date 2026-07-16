@@ -11,6 +11,10 @@ export interface Resource {
   type: ResourceType;
   value: string;
   description: string | null;
+  /** Guests may exercise this resource's legal moves on shared pages (#809 — see
+   *  docs/features/project-sharing/guest-interactive-resources.md). Additive,
+   *  absent-means-off; only meaningful on interactive types (COUNT). */
+  guestEditable?: boolean;
 }
 
 export interface NamNode {
