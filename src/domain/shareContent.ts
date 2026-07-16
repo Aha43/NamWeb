@@ -13,6 +13,10 @@ export interface ShareOptions {
   includeDue: boolean;
   includeStatus: boolean;
   includeNotes: boolean;
+  /** The fourth toggle (#817): when false, DONE subtrees stay home — a shopping list wants
+   *  got-enough = gone; a trip page wants progress shown. Optional, absent means true (every
+   *  share published before the toggle existed keeps its behavior). */
+  includeDone?: boolean;
   /** Pseudonymization salt (the share token): guest-side ids are stable across republishes
    *  of the same share but reveal nothing about workspace node ids. */
   salt: string;
@@ -120,8 +124,8 @@ function itemDue(node: NamNode): ShareDue | undefined {
 /** Project spans honor derive-from-contents (#706) — derived time is the trip page's best
  *  trick. Spans are computed over the PRUNED subtree (#772/F1): a private child's dates must
  *  not shape a derived span — min/max of one item IS that item's value. */
-function sectionDue(doc: WorkspaceDocument, id: string): ShareDue | undefined {
-  const eff = effectiveDue(doc, id, isExcluded);
+function sectionDue(doc: WorkspaceDocument, id: string, excluded: (node: NamNode) => boolean): ShareDue | undefined {
+  const eff = effectiveDue(doc, id, excluded);
   if (!eff.dueAt) return undefined;
   const due: ShareDue = { start: eff.dueAt };
   if (eff.dueEndAt) due.end = eff.dueEndAt;
@@ -144,6 +148,8 @@ export function guestIdMap(doc: WorkspaceDocument, projectId: string, salt: stri
   const walk = (node: NamNode) => {
     for (const childId of node.childIds) {
       const child = doc.nodes[childId];
+      // Base exclusions only — deliberately NOT the per-share hideDone filter: an item hidden
+      // as done still legitimately receives a late guest tick, and the drain must land it.
       if (!child || isExcluded(child) || visited.has(child.id)) continue;
       visited.add(child.id);
       map.set(pseudoId(salt, child.id), child.id);
@@ -163,8 +169,10 @@ export function shareContent(
   projectId: string,
   options: ShareOptions,
 ): ShareContent | null {
+  const hideDone = options.includeDone === false;
+  const excluded = (node: NamNode) => isExcluded(node) || (hideDone && node.status === 'DONE');
   const root = doc.nodes[projectId];
-  if (!root || !root.project || isExcluded(root)) return null;
+  if (!root || !root.project || excluded(root)) return null;
 
   function buildItem(node: NamNode): ShareItem {
     const item: ShareItem = { id: pseudoId(options.salt, node.id), title: node.title };
@@ -188,7 +196,7 @@ export function shareContent(
     const sections: ShareSection[] = [];
     for (const childId of node.childIds) {
       const child = doc.nodes[childId];
-      if (!child || isExcluded(child) || visited.has(child.id)) continue;
+      if (!child || excluded(child) || visited.has(child.id)) continue;
       visited.add(child.id);
       if (child.project) sections.push(buildSection(child));
       else items.push(buildItem(child));
@@ -204,7 +212,7 @@ export function shareContent(
     };
     if (options.includeNotes && node.description) section.note = node.description;
     if (options.includeDue) {
-      const due = sectionDue(doc, node.id);
+      const due = sectionDue(doc, node.id, excluded);
       if (due) section.due = due;
     }
     const counters = nodeCounters(node);
@@ -220,7 +228,7 @@ export function shareContent(
   };
   if (options.includeNotes && root.description) content.note = root.description;
   if (options.includeDue) {
-    const due = sectionDue(doc, projectId);
+    const due = sectionDue(doc, projectId, excluded);
     if (due) content.due = due;
   }
   return content;

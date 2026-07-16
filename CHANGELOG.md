@@ -10,6 +10,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- A "Hide completed" toggle on shares: the trip page keeps showing progress, the shopping
+  list drops what you've got enough of — per share, defaulting to today's behavior. And on
+  the guest page, an item whose delegated counters have all met their goals reads as done in
+  the aisle, live via the overlay — no republish needed. Closes #817.
+
+### Added
+
 - Guest ticks land in the workspace: the owner's client drains delegated-counter events on
   app open and on opening the share dialog — each tick applies exactly like the owner's own
   tap (same clamping, same guards; two devices draining concurrently split the batch instead

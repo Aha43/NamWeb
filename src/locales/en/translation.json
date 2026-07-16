@@ -550,6 +550,7 @@
   "share.dismiss": "Dismiss",
   "share.fromGuests": "From guests ({count})",
   "share.guestTicks": "Ticks from guests on delegated counters: {count}",
+  "share.hideDone": "Hide completed",
   "share.include": "Include:",
   "share.includeDates": "Dates",
   "share.includeNotes": "Notes",
