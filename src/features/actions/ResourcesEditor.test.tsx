@@ -240,6 +240,30 @@ describe('ResourcesEditor dialogs (#720)', () => {
     ]);
   });
 
+  it('the goal-not-a-cap checkbox packs the "+" marker; editing keeps overshoot (#800)', () => {
+    const onChange = vi.fn();
+    render(<ResourcesEditor resources={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'COUNT' } });
+    fireEvent.change(screen.getByLabelText('Count to'), { target: { value: '12' } });
+    fireEvent.click(screen.getByLabelText('Goal, not a cap — keep counting past it'));
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onChange).toHaveBeenCalledWith([{ type: 'COUNT', value: '0/12+', description: null }]);
+  });
+
+  it('an unlimited editor row keeps its +1 past the goal and shows the bare count (#800)', () => {
+    const onChange = vi.fn();
+    render(
+      <ResourcesEditor
+        resources={[{ type: 'COUNT', value: '12/12+', description: 'jars' }]}
+        onChange={onChange}
+      />,
+    );
+    expect(screen.getByText('12/12')).toBeInTheDocument(); // marker stays off the page
+    fireEvent.click(screen.getByRole('button', { name: 'Count one on jars' }));
+    expect(onChange).toHaveBeenCalledWith([{ type: 'COUNT', value: '13/12+', description: 'jars' }]);
+  });
+
   it('the editor row +1 is buffered — onChange carries the bumped value (#798)', () => {
     const onChange = vi.fn();
     render(

@@ -16,19 +16,23 @@ export function CountPill({
   index,
   current,
   target,
+  unlimited = false,
   label,
 }: {
   nodeId: string;
   index: number;
   current: number;
   target: number;
+  /** The target is a goal, not a cap (#800): green at/past it, + keeps counting. */
+  unlimited?: boolean;
   label: string | null;
 }) {
   const { t } = useTranslation();
   const workspace = useContext(WorkspaceContext);
   const full = current >= target;
-  const ariaName = label ?? formatCount(current, target);
-  const text = `${label ? `${label} ` : ''}${formatCount(current, target)}`;
+  const display = `${current}/${target}`; // the machine marker ("+") stays off the page
+  const ariaName = label ?? display;
+  const text = `${label ? `${label} ` : ''}${display}`;
   if (!workspace?.dispatch) {
     return (
       <span
@@ -48,7 +52,7 @@ export function CountPill({
       type: 'incrementCountResource',
       id: nodeId,
       index,
-      expectedValue: formatCount(current, target),
+      expectedValue: formatCount(current, target, unlimited),
       delta,
       now: nowIso(),
     });
@@ -71,7 +75,7 @@ export function CountPill({
         </button>
       )}
       {text}
-      {!full && (
+      {(!full || unlimited) && (
         <button
           type="button"
           aria-label={t('actions.countPlusAria', { label: ariaName })}

@@ -6,7 +6,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import type { Resource } from '@/domain/types';
 import { makeActionLink, parseActionLink } from '@/domain/actionLinks';
-import { formatCount, parseCount } from '@/domain/resourceCount';
+import { formatCount, displayCount, parseCount } from '@/domain/resourceCount';
 import { allOpenableActions, projectPath } from '@/domain/lenses';
 import { WorkspaceContext } from '@/store/workspace-context';
 import { ActionEditorContext } from './action-editor-context';
@@ -151,26 +151,26 @@ export function ResourcesEditor({
                   <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{t('resourceType.COUNT')}</span>
                   <span className="min-w-0 flex-1 truncate text-foreground">{label}</span>
                   <span className={full ? 'rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold tabular-nums text-emerald-600' : 'rounded-full bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground'}>
-                    {r.value}
+                    {displayCount(count)}
                   </span>
                   {count.current > 0 && (
                     <button
                       type="button"
                       aria-label={t('editor.resourceCountMinusAria', { label })}
                       onClick={() =>
-                        onChange(resources.map((res, idx) => (idx === i ? { ...res, value: formatCount(count.current - 1, count.target) } : res)))
+                        onChange(resources.map((res, idx) => (idx === i ? { ...res, value: formatCount(count.current - 1, count.target, count.unlimited) } : res)))
                       }
                       className="rounded-md border border-input px-2 py-0.5 text-xs font-medium text-foreground hover:bg-accent"
                     >
                       −1
                     </button>
                   )}
-                  {!full && (
+                  {(!full || count.unlimited) && (
                     <button
                       type="button"
                       aria-label={t('editor.resourceCountPlusAria', { label })}
                       onClick={() =>
-                        onChange(resources.map((res, idx) => (idx === i ? { ...res, value: formatCount(count.current + 1, count.target) } : res)))
+                        onChange(resources.map((res, idx) => (idx === i ? { ...res, value: formatCount(count.current + 1, count.target, count.unlimited) } : res)))
                       }
                       className="rounded-md border border-input px-2 py-0.5 text-xs font-medium text-foreground hover:bg-accent"
                     >

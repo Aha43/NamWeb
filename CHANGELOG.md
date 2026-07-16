@@ -10,6 +10,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- Counters can be marked "Goal, not a cap" (unlimited): the target stays a goal — the pill
+  still turns green at it — but + keeps counting past it, recording overshoot ("14/12").
+  Packed as a trailing `+` on the machine value, so old readers stay legible and existing
+  counters are untouched. Closes #800.
+
 - **Counter resources.** A new resource type: give an action a counter ("boxes to the attic · 0/12") and tick it right from the list — **both ways**: + counts up toward the target, − counts back down (track a variable stock: use from it, re-supply to it), each edge quietly losing its button. Saves immediately, no editor, no Save; green at the target (it signals; finishing the action stays your call). Behind it, resource types moved onto a small registry — the next type is a one-entry job — and the types finally wear names instead of shouting URI/FILE at you. Closes #798.
 
 ### Added

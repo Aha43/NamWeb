@@ -41,6 +41,7 @@ export function ResourceDialog({
   const initialCount = initial?.type === 'COUNT' ? parseCount(initial.value) : null;
   const [countTarget, setCountTarget] = useState(initialCount ? String(initialCount.target) : '');
   const [resetCount, setResetCount] = useState(false);
+  const [unlimited, setUnlimited] = useState(initialCount?.unlimited ?? false);
   const def = RESOURCE_TYPE_DEFS[type];
 
   // The commit shared by the form submit and ⌘/Ctrl+Enter (#746). Guards intact: empty refuses.
@@ -49,9 +50,9 @@ export function ResourceDialog({
     if (def.valueKind === 'countTarget') {
       const target = Number(countTarget);
       if (!Number.isInteger(target) || target < 1) return;
-      // Editing keeps progress (clamped to a shrunken target) unless a reset is asked for.
+      // Editing keeps progress (clamped to a shrunken cap) unless a reset is asked for.
       const current = resetCount ? 0 : (initialCount?.current ?? 0);
-      committedValue = resetCount ? newCountValue(target) : formatCount(current, target);
+      committedValue = resetCount ? newCountValue(target, unlimited) : formatCount(current, target, unlimited);
     } else {
       const trimmed = value.trim();
       if (!trimmed) return;
@@ -123,6 +124,10 @@ export function ResourceDialog({
                 value={countTarget}
                 onChange={(e) => setCountTarget(e.target.value)}
               />
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <input type="checkbox" checked={unlimited} onChange={(e) => setUnlimited(e.target.checked)} />
+                {t('editor.resourceCountUnlimited')}
+              </label>
               {initialCount && (
                 <label className="flex items-center gap-2 text-xs text-muted-foreground">
                   <input type="checkbox" checked={resetCount} onChange={(e) => setResetCount(e.target.checked)} />

@@ -527,10 +527,10 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!count) return next;
       // Both directions (#798 stock-keeping): +1 stops at the target, −1 stops at zero.
       const delta = intent.delta ?? 1;
-      if (delta > 0 && count.current >= count.target) return next;
+      if (delta > 0 && !count.unlimited && count.current >= count.target) return next;
       if (delta < 0 && count.current <= 0) return next;
       const resources = node.resources.slice();
-      resources[intent.index] = { ...resource, value: formatCount(count.current + delta, count.target) };
+      resources[intent.index] = { ...resource, value: formatCount(count.current + delta, count.target, count.unlimited) };
       next.nodes[intent.id] = { ...node, resources, updatedAt: intent.now };
       return next;
     }
