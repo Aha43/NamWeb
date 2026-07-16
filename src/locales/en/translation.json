@@ -549,6 +549,7 @@
   "share.dirtyHint": "The project changed since the last publish — republish to update the page.",
   "share.dismiss": "Dismiss",
   "share.fromGuests": "From guests ({count})",
+  "share.guestTicks": "Ticks from guests on delegated counters: {count}",
   "share.include": "Include:",
   "share.includeDates": "Dates",
   "share.includeNotes": "Notes",

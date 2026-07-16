@@ -158,6 +158,52 @@ export async function fetchShareResourceEvents(token: string): Promise<ShareReso
   return (data as ShareResourceEvent[] | null) ?? [];
 }
 
+/** The owner's shares (RLS scopes to the owner) — the drain's work list (#811). */
+export async function fetchOwnerShares(): Promise<Pick<ProjectShare, 'token' | 'share_id' | 'project_id'>[]> {
+  const { data, error } = await supabase.from('project_shares').select('token, share_id, project_id');
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/** A share's undrained events, oldest first (owner RLS) (#811). */
+export async function fetchUndrainedEvents(
+  shareId: string,
+): Promise<{ id: number; node_id: string; res_index: number; delta: number }[]> {
+  const { data, error } = await supabase
+    .from('share_resource_events')
+    .select('id, node_id, res_index, delta')
+    .eq('share_id', shareId)
+    .eq('drained', false)
+    .order('id');
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+/** Claim events before applying (#811): the atomic `drained = false` filter means two devices
+ *  draining concurrently split the batch — every event is applied by exactly one of them.
+ *  Returns the ids THIS caller won. */
+export async function claimEvents(ids: number[]): Promise<number[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('share_resource_events')
+    .update({ drained: true })
+    .in('id', ids)
+    .eq('drained', false)
+    .select('id');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => r.id);
+}
+
+/** Lifetime guest ticks on a share — the provenance line (#811). */
+export async function countShareEvents(shareId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('share_resource_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('share_id', shareId);
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
 /** The owner's unhandled suggestions for a share, oldest first (RLS scopes to the owner). */
 export async function fetchSuggestions(shareId: string): Promise<ShareSuggestion[]> {
   const { data, error } = await supabase
