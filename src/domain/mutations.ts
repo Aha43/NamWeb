@@ -526,6 +526,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const count = parseCount(resource.value);
       if (!count) return next;
       // Both directions (#798 stock-keeping): +1 stops at the target, −1 stops at zero.
+      // Known gap (#802/F4): two counters sharing a value ("0/10" twice) defeat the shift
+      // guard — a concurrent structural edit could bump the wrong one on replay. Accepted:
+      // true per-resource identity needs ids, a doc-format change not worth it for this.
       const delta = intent.delta ?? 1;
       if (delta > 0 && !count.unlimited && count.current >= count.target) return next;
       if (delta < 0 && count.current <= 0) return next;

@@ -8,6 +8,18 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- The share suggestion cap no longer counts handled rows — adopting or dismissing frees
+  space, so a tended tray never goes permanently deaf (a lifetime backstop still stops true
+  abuse), and the owner dialog warns when the tray nears the cap. Closes #802.
+- Un-ticking "goal, not a cap" on an overshot counter now warns before Save clamps the
+  recorded count, instead of silently destroying overshoot. Closes #802.
+- Counter pills dispatch the stored value as their stale guard instead of reconstructing it —
+  a non-canonical value ("03/10") from an import or hand edit no longer makes a permanently
+  dead pill — and the pill's −/+ get touch-target padding, staying rendered (disabled) at the
+  edges instead of vanishing under a mid-burst finger. Closes #802.
+
 ### Added
 
 - Counters can be marked "Goal, not a cap" (unlimited): the target stays a goal — the pill

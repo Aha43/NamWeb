@@ -142,7 +142,7 @@ export function ActionRow({
       ))}
       <DueHintLabel dueAt={row.dueAt} dueEndAt={row.dueEndAt} dueTime={row.dueTime} dueEndTime={row.dueEndTime} />
       {row.counts?.map((c) => (
-        <CountPill key={c.index} nodeId={row.id} index={c.index} current={c.current} target={c.target} unlimited={c.unlimited} label={c.label} />
+        <CountPill key={c.index} nodeId={row.id} index={c.index} current={c.current} target={c.target} unlimited={c.unlimited} rawValue={c.raw} label={c.label} />
       ))}
       {age && (
         <span

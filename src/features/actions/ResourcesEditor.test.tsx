@@ -251,6 +251,22 @@ describe('ResourcesEditor dialogs (#720)', () => {
     expect(onChange).toHaveBeenCalledWith([{ type: 'COUNT', value: '0/12+', description: null }]);
   });
 
+  it('un-ticking "goal, not a cap" on an overshot counter warns before clamping (#802/F2)', () => {
+    render(
+      <ResourcesEditor
+        resources={[{ type: 'COUNT', value: '14/12+', description: 'jars' }]}
+        onChange={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit resource jars' }));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText('Goal, not a cap — keep counting past it'));
+    expect(screen.getByRole('alert')).toHaveTextContent('Saving will clamp the count from 14 to 12');
+    // Raising the target past the overshoot dissolves the warning.
+    fireEvent.change(screen.getByLabelText('Count to'), { target: { value: '14' } });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('an unlimited editor row keeps its +1 past the goal and shows the bare count (#800)', () => {
     const onChange = vi.fn();
     render(
