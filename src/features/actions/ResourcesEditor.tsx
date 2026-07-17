@@ -7,6 +7,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import type { Resource } from '@/domain/types';
 import { makeActionLink, parseActionLink } from '@/domain/actionLinks';
 import { formatCount, displayCount, parseCount } from '@/domain/resourceCount';
+import { formatQuestion, parseQuestion } from '@/domain/resourceQuestion';
 import { allOpenableActions, projectPath } from '@/domain/lenses';
 import { WorkspaceContext } from '@/store/workspace-context';
 import { ActionEditorContext } from './action-editor-context';
@@ -178,6 +179,36 @@ export function ResourcesEditor({
                     </button>
                   )}
                   {removeButton(label, i)}
+                </li>
+              );
+            }
+            // QUESTION rows (#827): the pill's Yes/No, buffered (editor semantics — saves on
+            // Save). Tap the active answer to clear.
+            const question = r.type === 'QUESTION' ? parseQuestion(r.value) : null;
+            if (question && r.description?.trim()) {
+              const q = r.description;
+              const setAnswer = (desired: 'yes' | 'no' | 'clear') =>
+                onChange(resources.map((res, idx) => (idx === i ? { ...res, value: formatQuestion(desired === 'clear' ? null : desired) } : res)));
+              return (
+                <li key={i} className="flex items-center gap-2 text-sm">
+                  {editButton(t('editor.editResourceAria', { value: q }), () => setResourceDialog({ editIndex: i }))}
+                  <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{t('resourceType.QUESTION')}</span>
+                  <span className="min-w-0 flex-1 truncate text-foreground">{q}</span>
+                  {(['yes', 'no'] as const).map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      aria-label={a === 'yes' ? t('actions.questionYesAria', { label: q }) : t('actions.questionNoAria', { label: q })}
+                      aria-pressed={question.answer === a}
+                      onClick={() => setAnswer(question.answer === a ? 'clear' : a)}
+                      className={question.answer === a
+                        ? 'rounded-md border border-emerald-500/40 bg-emerald-500/15 px-2 py-0.5 text-xs font-medium text-emerald-600 dark:text-emerald-400'
+                        : 'rounded-md border border-input px-2 py-0.5 text-xs font-medium text-foreground hover:bg-accent'}
+                    >
+                      {a === 'yes' ? t('actions.answerYes') : t('actions.answerNo')}
+                    </button>
+                  ))}
+                  {removeButton(q, i)}
                 </li>
               );
             }

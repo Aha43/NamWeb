@@ -6,12 +6,14 @@ const fetchGuestShare = vi.fn();
 const submitSuggestion = vi.fn();
 const fetchShareResourceEvents = vi.fn();
 const submitResourceEvent = vi.fn();
+const submitAnswerEvent = vi.fn();
 vi.mock('./shares', async (orig) => ({
   ...(await orig<typeof import('./shares')>()),
   fetchGuestShare: (...a: unknown[]) => fetchGuestShare(...a),
   submitSuggestion: (...a: unknown[]) => submitSuggestion(...a),
   fetchShareResourceEvents: (...a: unknown[]) => fetchShareResourceEvents(...a),
   submitResourceEvent: (...a: unknown[]) => submitResourceEvent(...a),
+  submitAnswerEvent: (...a: unknown[]) => submitAnswerEvent(...a),
 }));
 
 import { GuestSharePage } from './GuestSharePage';
@@ -43,6 +45,7 @@ beforeEach(() => {
   fetchGuestShare.mockReset();
   fetchShareResourceEvents.mockReset().mockResolvedValue([]);
   submitResourceEvent.mockReset().mockResolvedValue(true);
+  submitAnswerEvent.mockReset().mockResolvedValue(true);
 });
 
 describe('GuestSharePage (#761)', () => {
@@ -216,6 +219,22 @@ describe('GuestSharePage (#761)', () => {
     ]);
     fireEvent(window, new Event('focus'));
     expect(await screen.findByText(/cartons 2\/4/)).toBeInTheDocument();
+  });
+
+  it('delegated questions (#827): overlay answer, tap to answer, quiet refusal', async () => {
+    fetchGuestShare.mockResolvedValue({
+      ...CONTENT,
+      items: [{ id: 'aa11', title: 'Camp', questions: [{ index: 0, question: 'Bringing a tent?', value: '?' }] }],
+    });
+    // Another guest already answered yes.
+    fetchShareResourceEvents.mockResolvedValue([{ node_id: 'aa11', res_index: 0, delta: null, answer: 'yes' }]);
+    render(<GuestSharePage token="tok123" />);
+    const yes = await screen.findByRole('button', { name: 'Answer yes: Bringing a tent?' });
+    expect(yes).toHaveAttribute('aria-pressed', 'true'); // overlaid from the event
+    // Change it to no.
+    fireEvent.click(screen.getByRole('button', { name: 'Answer no: Bringing a tent?' }));
+    await waitFor(() => expect(submitAnswerEvent).toHaveBeenCalledWith('tok123', 'aa11', 0, 'no'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Answer no: Bringing a tent?' })).toHaveAttribute('aria-pressed', 'true'));
   });
 
   it('an undelegated page never fetches the overlay (#810)', async () => {

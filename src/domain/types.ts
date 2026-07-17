@@ -5,7 +5,7 @@
 
 export type NodeStatus = 'NEXT' | 'BACKLOG' | 'DONE' | 'CANCELLED' | 'ARCHIVED';
 
-export type ResourceType = 'TEXT' | 'EMAIL' | 'URI' | 'FILE' | 'COUNT';
+export type ResourceType = 'TEXT' | 'EMAIL' | 'URI' | 'FILE' | 'COUNT' | 'QUESTION';
 
 export interface Resource {
   type: ResourceType;

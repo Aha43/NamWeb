@@ -1,5 +1,6 @@
 import type { NamNode, NodeStatus, WorkspaceDocument } from '../../domain/types';
 import { parseCount } from '@/domain/resourceCount';
+import { parseQuestion } from '@/domain/resourceQuestion';
 import { buildPath, effectiveTags, subtreeIds } from '../../domain/lenses';
 import type { ProjectPathSegment } from './ProjectPathLinks';
 
@@ -28,6 +29,7 @@ export interface ActionRowData {
   hasResources?: boolean;
   /** COUNT resources (#798): the row shows a tappable progress pill per counter. */
   counts?: { index: number; current: number; target: number; unlimited: boolean; raw: string; label: string | null }[];
+  questions?: { index: number; answer: 'yes' | 'no' | null; question: string; raw: string }[];
   /** Descendant count (0 for a leaf) — drives the delete-confirm message. */
   descendantCount?: number;
 }
@@ -63,6 +65,14 @@ export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowDat
         return c ? { index, current: c.current, target: c.target, unlimited: c.unlimited, raw: r.value, label: r.description } : null;
       })
       .filter((c): c is NonNullable<typeof c> => c !== null),
+    questions: node.resources
+      .map((r, index) => ({ r, index }))
+      .filter(({ r }) => r.type === 'QUESTION')
+      .map(({ r, index }) => {
+        const q = parseQuestion(r.value);
+        return q && r.description ? { index, answer: q.answer, question: r.description, raw: r.value } : null;
+      })
+      .filter((q): q is NonNullable<typeof q> => q !== null),
     descendantCount: subtreeIds(doc, node.id).size - 1,
   };
 }

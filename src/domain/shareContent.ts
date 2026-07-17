@@ -6,6 +6,7 @@
 
 import type { NamNode, WorkspaceDocument } from './types';
 import { canonicalTag, PRIVATE_TAG } from './systemTags';
+import { parseQuestion } from './resourceQuestion';
 import { effectiveDue } from './derivedDue';
 
 /** Per-share field toggles. Defaults (design Q4): dates on, statuses off, notes on. */
@@ -44,6 +45,16 @@ export interface ShareCounter {
   label?: string;
 }
 
+/** A delegated question on the guest page (#827): guest-answerable tri-state. Only
+ *  guestEditable QUESTIONs are copied; `index` is the event round-trip key. */
+export interface ShareQuestion {
+  index: number;
+  /** The question text (humans). */
+  question: string;
+  /** The packed answer ("yes" / "no" / "?"). */
+  value: string;
+}
+
 /** One doable thing on the guest page. */
 export interface ShareItem {
   id: string;
@@ -53,6 +64,7 @@ export interface ShareItem {
   /** Present (true) only when the share includes statuses and the item is done. */
   done?: boolean;
   counters?: ShareCounter[];
+  questions?: ShareQuestion[];
 }
 
 /** A sub-project rendered as a section. */
@@ -62,6 +74,7 @@ export interface ShareSection {
   note?: string;
   due?: ShareDue;
   counters?: ShareCounter[];
+  questions?: ShareQuestion[];
   items: ShareItem[];
   sections: ShareSection[];
 }
@@ -111,6 +124,17 @@ function isPrivate(node: NamNode): boolean {
  *  (a trip page showing progress is a feature); statuses only *render* when enabled. */
 function isExcluded(node: NamNode): boolean {
   return isPrivate(node) || node.status === 'CANCELLED' || node.status === 'ARCHIVED';
+}
+
+/** The delegated questions of a node — only guestEditable QUESTIONs with text. */
+function nodeQuestions(node: NamNode): ShareQuestion[] {
+  const questions: ShareQuestion[] = [];
+  node.resources.forEach((r, index) => {
+    if (r.type !== 'QUESTION' || !r.guestEditable || !r.description?.trim()) return;
+    if (!parseQuestion(r.value)) return;
+    questions.push({ index, question: r.description, value: r.value });
+  });
+  return questions;
 }
 
 /** The delegated counters of a node — empty for everything not explicitly handed over. */
@@ -197,6 +221,8 @@ export function shareContent(
     if (options.includeStatus && node.status === 'DONE') item.done = true;
     const counters = nodeCounters(node);
     if (counters.length > 0) item.counters = counters;
+    const questions = nodeQuestions(node);
+    if (questions.length > 0) item.questions = questions;
     return item;
   }
 
@@ -230,6 +256,8 @@ export function shareContent(
     }
     const counters = nodeCounters(node);
     if (counters.length > 0) section.counters = counters;
+    const questions = nodeQuestions(node);
+    if (questions.length > 0) section.questions = questions;
     return section;
   }
 

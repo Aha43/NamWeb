@@ -144,10 +144,30 @@ export async function submitResourceEvent(
   return data === true;
 }
 
+/** A guest answer on a delegated question (#827): the RPC, boolean out — same quiet-false
+ *  contract as the tick (no oracle; a refused answer just doesn't stick). */
+export async function submitAnswerEvent(
+  token: string,
+  nodeId: string,
+  resIndex: number,
+  answer: 'yes' | 'no' | 'clear',
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('add_share_answer_event', {
+    share_token: token,
+    node: nodeId,
+    res_index: resIndex,
+    answer,
+  });
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
 export interface ShareResourceEvent {
   node_id: string;
   res_index: number;
-  delta: number;
+  /** A counter tick carries delta; a question answer carries answer — exactly one. */
+  delta: number | null;
+  answer: 'yes' | 'no' | 'clear' | null;
 }
 
 /** The guest overlay read (#810): undrained events for an enabled share, oldest first.
@@ -168,10 +188,10 @@ export async function fetchOwnerShares(): Promise<Pick<ProjectShare, 'token' | '
 /** A share's undrained events, oldest first (owner RLS) (#811). */
 export async function fetchUndrainedEvents(
   shareId: string,
-): Promise<{ id: number; node_id: string; res_index: number; delta: number }[]> {
+): Promise<{ id: number; node_id: string; res_index: number; delta: number | null; answer: 'yes' | 'no' | 'clear' | null }[]> {
   const { data, error } = await supabase
     .from('share_resource_events')
-    .select('id, node_id, res_index, delta')
+    .select('id, node_id, res_index, delta, answer')
     .eq('share_id', shareId)
     .eq('drained', false)
     .order('id');

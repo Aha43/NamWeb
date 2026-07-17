@@ -240,6 +240,25 @@ describe('ResourcesEditor dialogs (#720)', () => {
     ]);
   });
 
+  it('creates a QUESTION via the dialog — text in, unanswered "?" out (#827)', () => {
+    const onChange = vi.fn();
+    render(<ResourcesEditor resources={[]} onChange={onChange} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'QUESTION' } });
+    fireEvent.change(screen.getByLabelText('Question'), { target: { value: 'Bringing a tent?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add' }));
+    expect(onChange).toHaveBeenCalledWith([{ type: 'QUESTION', value: '?', description: 'Bringing a tent?' }]);
+  });
+
+  it('the editor QUESTION row answers are buffered; tap active to clear (#827)', () => {
+    const onChange = vi.fn();
+    render(
+      <ResourcesEditor resources={[{ type: 'QUESTION', value: '?', description: 'Bringing a tent?' }]} onChange={onChange} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Answer yes: Bringing a tent?' }));
+    expect(onChange).toHaveBeenCalledWith([{ type: 'QUESTION', value: 'yes', description: 'Bringing a tent?' }]);
+  });
+
   it('the guest-delegation checkbox writes guestEditable — only when ticked, never false (#809)', () => {
     const onChange = vi.fn();
     render(<ResourcesEditor resources={[]} onChange={onChange} />);

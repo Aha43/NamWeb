@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- A new resource type: the yes/no **Question** — a tri-state (unanswered / yes / no) you
+  answer with a tap, tapping the active answer to clear it. Like counters, a question can be
+  delegated to guests: publish it and family answers "bringing a tent?" straight from the
+  shared page, flowing home through the same drain. Closes #827.
+
 ## [1.9.0] - 2026-07-17
 
 **Guests keep the count.** Shared pages stop being read-only: the owner delegates a counter
