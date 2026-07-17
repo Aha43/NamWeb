@@ -16,6 +16,7 @@ const service = {
   resolveSuggestion: vi.fn(),
   fetchUndrainedEvents: vi.fn(),
   claimEvents: vi.fn(),
+  deleteEvents: vi.fn(),
   countShareEvents: vi.fn(),
 };
 vi.mock('./shares', async (orig) => ({
@@ -28,6 +29,7 @@ vi.mock('./shares', async (orig) => ({
   resolveSuggestion: (...a: unknown[]) => service.resolveSuggestion(...a),
   fetchUndrainedEvents: (...a: unknown[]) => service.fetchUndrainedEvents(...a),
   claimEvents: (...a: unknown[]) => service.claimEvents(...a),
+  deleteEvents: (...a: unknown[]) => service.deleteEvents(...a),
   countShareEvents: (...a: unknown[]) => service.countShareEvents(...a),
 }));
 
@@ -80,6 +82,7 @@ beforeEach(() => {
   service.rotateShareToken.mockReset();
   service.fetchUndrainedEvents.mockReset().mockResolvedValue([]);
   service.claimEvents.mockReset().mockImplementation((ids: number[]) => Promise.resolve(ids));
+  service.deleteEvents.mockReset().mockResolvedValue(undefined);
   service.countShareEvents.mockReset().mockResolvedValue(0);
 });
 
@@ -241,7 +244,7 @@ describe('ShareDialog', () => {
       service.countShareEvents.mockResolvedValue(9);
       const { dispatch } = renderButton();
       fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
-      await waitFor(() => expect(screen.getByText('Ticks from guests on delegated counters: 9')).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByText('New guest ticks since your last look: 9')).toBeInTheDocument());
       expect(service.claimEvents).toHaveBeenCalledWith([7, 8]);
       // The folded chain: first guard is the STORED value, the second its successor.
       expect(dispatch).toHaveBeenNthCalledWith(1, expect.objectContaining({ type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '3/12', delta: 1 }));
@@ -259,6 +262,14 @@ describe('ShareDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
     await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it('the guests-can\'t-see-yet cue counts what a republish would reveal (#821/F3)', async () => {
+    // Stored snapshot has NO items; the doc has one includable item (a1; p1 is private).
+    service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: { version: 1, title: 'Asia trip', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
+    renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(screen.getByText(/1 item\(s\) guests can’t see yet/)).toBeInTheDocument());
   });
 
   it('a stale snapshot shows the republish hint', async () => {

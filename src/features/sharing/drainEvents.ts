@@ -39,6 +39,12 @@ export function drainPlan(
     if (!nodeId) continue;
     const resource = doc.nodes[nodeId]?.resources[event.res_index];
     if (!resource || resource.type !== 'COUNT' || !resource.guestEditable) continue;
+    // Accepted residue (#821/F5): if the owner REORDERS resources while the queue is open,
+    // an event can land on a SIBLING delegated counter of the same node (milk ticks on
+    // eggs) — inside the delegated set, so the trust boundary holds; the data lands wrong.
+    // Needs same-node multiple delegated counters + a mid-queue reorder. True addressing
+    // needs resource ids — the same doc-format change #802/F4 declined.
+
     const key = `${nodeId}:${event.res_index}`;
     const value = running.get(key) ?? resource.value;
     const count = parseCount(value);

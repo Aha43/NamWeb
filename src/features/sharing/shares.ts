@@ -194,7 +194,16 @@ export async function claimEvents(ids: number[]): Promise<number[]> {
   return (data ?? []).map((r) => r.id);
 }
 
-/** Lifetime guest ticks on a share — the provenance line (#811). */
+/** Remove landed events (#821): drained rows serve nothing and would ratchet the lifetime
+ *  cap toward a permanently deaf share — the suggestion-cap lesson, one table over. */
+export async function deleteEvents(ids: number[]): Promise<void> {
+  if (ids.length === 0) return;
+  const { error } = await supabase.from('share_resource_events').delete().in('id', ids);
+  if (error) throw new Error(error.message);
+}
+
+/** The share's queued guest ticks at this moment — counted BEFORE the dialog's drain lands
+ *  (and deletes) them, so the line reads "since your last look" (#821). */
 export async function countShareEvents(shareId: string): Promise<number> {
   const { count, error } = await supabase
     .from('share_resource_events')

@@ -81,15 +81,15 @@ export function ShareDialog({
       .then(async (s) => {
         if (cancelled) return;
         setShare(s);
-        // The dialog-open drain (#811): land any guest ticks before the tray and the
-        // provenance count — a failed drain is quiet (retried on the next trigger). The ref
-        // keeps the load effect's deps honest (document churns every mutation).
-        const drainCtx = drainRef.current;
-        if (s && drainCtx.document) await drainShare(drainCtx.document, drainCtx.dispatch, s).catch(() => {});
+        // Count queued ticks BEFORE the drain lands (and deletes) them (#821): the line
+        // reads "new since your last look". Then the dialog-open drain (#811) — a failed
+        // drain is quiet (retried on the next trigger). The ref keeps the load effect's
+        // deps honest (document churns every mutation), and the GETTER resolves the doc
+        // after the claim (#821/F2).
+        const ticks = s ? await countShareEvents(s.share_id).catch(() => 0) : 0;
+        if (s) await drainShare(() => drainRef.current.document, drainRef.current.dispatch, s).catch(() => {});
         // The From-guests tray (#796): unhandled suggestions ride along with the share.
-        const [tray, ticks] = s
-          ? await Promise.all([fetchSuggestions(s.share_id), countShareEvents(s.share_id).catch(() => 0)])
-          : [[], 0];
+        const tray = s ? await fetchSuggestions(s.share_id) : [];
         if (cancelled) return; // the await above can outlive a close/project switch (#804)
         setSuggestions(tray);
         setGuestTicks(ticks);
@@ -140,6 +140,23 @@ export function ShareDialog({
     const strip = (c: object) => canonicalSnapshot({ ...c, publishedAt: null });
     return strip(now) !== strip(share.content);
   }, [share, buildContent]);
+
+  // #821/F3: the composed shopping lifecycle can strand items guests can't see — reopened
+  // after a hide-completed publish, or newly added ("we need axes"). The cue counts ids the
+  // NEXT publish would reveal, so a dirty share says what the republish is FOR.
+  const invisibleToGuests = useMemo(() => {
+    if (!share || !dirty) return 0;
+    const now = buildContent(share.token);
+    if (!now) return 0;
+    // Defensive: a round-tripped/minimal stored content may lack the arrays entirely.
+    const ids = (c: { items?: { id: string }[]; sections?: { id: string; items?: { id: string }[] }[] }): string[] => [
+      ...(c.items ?? []).map((i) => i.id),
+      ...(c.sections ?? []).flatMap((sec) => ids(sec as never)),
+      ...(c.sections ?? []).map((sec) => sec.id),
+    ];
+    const published = new Set(ids(share.content as never));
+    return ids(now as never).filter((id) => !published.has(id)).length;
+  }, [share, dirty, buildContent]);
 
   async function run(action: () => Promise<void>) {
     setBusy(true);
@@ -278,6 +295,9 @@ export function ShareDialog({
               </Tooltip>
             </div>
             {dirty && <p className="text-xs text-muted-foreground">{t('share.dirtyHint')}</p>}
+            {invisibleToGuests > 0 && (
+              <p className="text-xs text-amber-600 dark:text-amber-500">{t('share.invisibleToGuests', { count: invisibleToGuests })}</p>
+            )}
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">{t('share.notPublished')}</p>

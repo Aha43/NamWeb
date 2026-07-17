@@ -202,6 +202,22 @@ describe('GuestSharePage (#761)', () => {
     await waitFor(() => expect(screen.getByText('Buy beans')).not.toHaveClass('line-through'));
   });
 
+  it('coming back to the tab re-pulls the other shoppers\' ticks (#821/F4)', async () => {
+    fetchGuestShare.mockResolvedValue({
+      ...CONTENT,
+      items: [{ id: 'aa11', title: 'Buy milk', counters: [{ index: 0, value: '0/4', label: 'cartons' }] }],
+    });
+    render(<GuestSharePage token="tok123" />);
+    expect(await screen.findByText(/cartons 0\/4/)).toBeInTheDocument();
+    // Another guest bought two while this phone was pocketed.
+    fetchShareResourceEvents.mockResolvedValue([
+      { node_id: 'aa11', res_index: 0, delta: 1 },
+      { node_id: 'aa11', res_index: 0, delta: 1 },
+    ]);
+    fireEvent(window, new Event('focus'));
+    expect(await screen.findByText(/cartons 2\/4/)).toBeInTheDocument();
+  });
+
   it('an undelegated page never fetches the overlay (#810)', async () => {
     fetchGuestShare.mockResolvedValue(CONTENT);
     render(<GuestSharePage token="tok123" />);
