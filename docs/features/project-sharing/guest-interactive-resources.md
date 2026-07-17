@@ -155,6 +155,16 @@ Lessons applied from birth (the stage-1/stage-4 corrections):
    registry-wide with one consumer? *Lean: registry-wide field (`interactive` types only),
    COUNT the sole current member — that's one entry, not speculative machinery.*
 
+## Known composition hole (review #821/F3, 2026-07-17)
+
+Hide-completed × completesAction × the drain composes into a reachable "stock depleted but
+invisible at the store" state: a republished-as-hidden item reopens at home (a down-crossing
+tick), but guests can't see it again until the owner manually republishes — and the hand-edit
+depletion path never reopens at all. Iteration-1 mitigation: the share dialog counts what a
+republish would reveal ("N items guests can't see yet"). The real fix is **auto-republish
+after a drain that leaves the share dirty** — deliberately iteration-2 territory, since it
+changes publish from a user action to a system action and deserves its own decision.
+
 ## Staging (lab iterations, all Labs-dark)
 
 1. **The flag + the pipe** — `guestEditable` on COUNT in the ResourceDialog, sanitizer

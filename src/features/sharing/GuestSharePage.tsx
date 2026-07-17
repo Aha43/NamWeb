@@ -83,6 +83,35 @@ export function GuestSharePage({ token }: { token: string }) {
     if (content && hash && parentOf.has(hash)) revealAnchor(hash);
   }, [content, parentOf, revealAnchor]);
 
+  /** Re-pull the overlay only — cheap, and honest between simultaneous shoppers (#821/F4). */
+  const refreshTicks = useCallback(() => {
+    fetchShareResourceEvents(token)
+      .then((events) => {
+        const sums = new Map<string, number>();
+        for (const e of events) {
+          const key = `${e.node_id}:${e.res_index}`;
+          sums.set(key, (sums.get(key) ?? 0) + e.delta);
+        }
+        setTicks(sums);
+      })
+      .catch(() => {});
+  }, [token]);
+
+  // Shoppers pocket their phones constantly: coming back to the tab re-pulls the other
+  // guests' ticks (#821/F4) — not realtime, just not stale-blind.
+  useEffect(() => {
+    if (!content || !hasCounters(content)) return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') refreshTicks();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', refreshTicks);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', refreshTicks);
+    };
+  }, [content, refreshTicks]);
+
   const load = useCallback(() => {
     setState('loading');
     fetchGuestShare(token)

@@ -536,16 +536,20 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const current = count.current + delta;
       resources[intent.index] = { ...resource, value: formatCount(current, count.target, count.unlimited) };
       const updated = { ...node, resources, updatedAt: intent.now };
-      // The symmetric stock loop (#816, opt-in): a TICK crossing the goal boundary completes
-      // the action; a tick dropping back below reopens it. Ticks only — hand edits in the
-      // dialog never transition (editing is curation, ticking is doing). No flapping: an
-      // unlimited counter moving within overshoot stays on its side of the boundary.
+      // The symmetric stock loop (#816, opt-in): a TICK CROSSING the goal boundary completes
+      // the action; a tick crossing back below reopens it. Crossings, not thresholds
+      // (#821/F1): a tick that stays on its side of the boundary never transitions — so a
+      // deliberately reopened action isn't re-completed by an overshoot-zone tick, and a
+      // hand-marked DONE below target isn't reopened by a mere decrement. Ticks only — hand
+      // edits in the dialog never transition (editing is curation, ticking is doing).
       if (resource.completesAction) {
-        if (current >= count.target && node.status !== 'DONE' && node.status !== 'CANCELLED' && node.status !== 'ARCHIVED') {
+        const wasMet = count.current >= count.target;
+        const isMet = current >= count.target;
+        if (!wasMet && isMet && node.status !== 'DONE' && node.status !== 'CANCELLED' && node.status !== 'ARCHIVED') {
           updated.status = 'DONE';
           updated.statusChangedAt = intent.now;
           updated.tags = updated.tags.filter((tag) => canonicalTag(tag) !== IN_PROGRESS_TAG);
-        } else if (current < count.target && node.status === 'DONE') {
+        } else if (wasMet && !isMet && node.status === 'DONE') {
           updated.status = 'NEXT';
           updated.statusChangedAt = intent.now;
         }

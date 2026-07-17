@@ -8,6 +8,18 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Counter completion now fires on boundary CROSSINGS, not thresholds — a guest tick in the
+  overshoot zone no longer re-completes an action the owner deliberately reopened, and a
+  decrement below target no longer reopens a hand-completed one. Closes #821.
+- The guest-tick drain resolves its plan against the live document after claiming events — a
+  sync refetch landing mid-drain can no longer strand claimed ticks — and landed events are
+  now deleted, so the lifetime cap can never ratchet a share deaf. Closes #821.
+- The guest page re-pulls other shoppers' ticks when the tab regains focus (two family
+  members no longer both buy the milk), and the share dialog counts what a republish would
+  reveal ("N items guests can't see yet"). Closes #821.
+
 ### Added
 
 - A "Hide completed" toggle on shares: the trip page keeps showing progress, the shopping

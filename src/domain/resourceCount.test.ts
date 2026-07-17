@@ -105,6 +105,29 @@ describe('count resources (#798)', () => {
     expect(next.nodes['a1'].status).toBe('NEXT');
   });
 
+  it('crossings, not thresholds (#821/F1): owner status decisions survive same-side ticks', () => {
+    let doc = createDefaultWorkspace();
+    const inbox = doc.nodes[doc.inboxNodeId];
+    doc = {
+      ...doc,
+      nodes: {
+        ...doc.nodes,
+        // Deliberately reopened at goal (unlimited): the owner said "we need more".
+        a1: { ...inbox, id: 'a1', title: 'Reopened at goal', project: false, status: 'NEXT', childIds: [], resources: [{ type: 'COUNT', value: '12/12+', description: null, completesAction: true }] },
+        // Hand-marked DONE below target: completion was the owner's call, not the counter's.
+        a2: { ...inbox, id: 'a2', title: 'Done by hand', project: false, status: 'DONE', childIds: [], resources: [{ type: 'COUNT', value: '5/12', description: null, completesAction: true }] },
+      },
+    };
+    // An overshoot-zone +1 (12→13, both sides met) must NOT re-complete the reopened action.
+    let next = applyIntent(doc, { type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '12/12+', now: 'T' });
+    expect(next.nodes['a1'].resources[0].value).toBe('13/12+');
+    expect(next.nodes['a1'].status).toBe('NEXT');
+    // A −1 below target (5→4, both sides unmet) must NOT reopen the hand-completed action.
+    next = applyIntent(doc, { type: 'incrementCountResource', id: 'a2', index: 0, expectedValue: '5/12', delta: -1, now: 'T' });
+    expect(next.nodes['a2'].resources[0].value).toBe('4/12');
+    expect(next.nodes['a2'].status).toBe('DONE');
+  });
+
   it('completesAction on an unlimited counter (#816): no flapping within overshoot', () => {
     let doc = createDefaultWorkspace();
     const inbox = doc.nodes[doc.inboxNodeId];
