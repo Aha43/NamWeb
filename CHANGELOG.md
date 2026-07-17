@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- Shared pages open with every section collapsed — the table of contents is the front door,
+  so guests land on the index and open straight to what they came for (deep links still
+  arrive with their target unfolded). Closes #826.
+
 ## [1.9.0] - 2026-07-17
 
 **Guests keep the count.** Shared pages stop being read-only: the owner delegates a counter
