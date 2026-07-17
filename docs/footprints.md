@@ -11,6 +11,28 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.9.0 — 2026-07-17
+
+*(two days; 9 PRs, 1 release)* The cycle where a design premise fell in the best possible
+way: "guests capture, never edit" met "she's responsible for the jar count" and bent instead
+of breaking. The resource became the contract surface — the owner delegates a specific
+counter, the guest exercises its registry-defined legal moves, and an events-not-state pipe
+(guests append via quiet-false RPC, the owner's client drains into the document as ordinary
+intents) kept the single-writer model pure through the whole thing. Everything after that
+was the readiness use case pulling features into existence within hours of being spoken:
+counters that complete their action at the goal and reopen when stock depletes, a
+hide-completed toggle born from two live use cases disagreeing about done items, got-it
+strikes in the grocery aisle. The dual review then earned its keep on the hardest code of
+the epic — Claude caught completion firing on thresholds instead of crossings (guest ticks
+silently overriding deliberate owner status decisions) plus a drain window that stranded
+claimed ticks; Codex went deeper on the same seam and found deletion racing durability,
+forgotten publish options, and check-then-insert cap races — seventh consecutive
+zero-overlap cycle, and the first where both reviewers converged on the same subsystem from
+different altitudes. Process scar: a stacked train taught (the hard way) that merging a base
+auto-closes dependent PRs beyond reopening — retarget first, always. Still converging: the
+2.0.0 unveiling stayed banked a third time; the pantry and the trip are now stress-testing
+the same machinery from opposite ends.
+
 ## v1.8.0 — 2026-07-16
 
 *(two days; 9 PRs, 1 release)* Two arcs that never touched each other's files, converging on

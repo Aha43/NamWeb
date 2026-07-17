@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-07-17
+
+**Guests keep the count.** Shared pages stop being read-only: the owner delegates a counter
+("you keep the jar count") and family ticks it from the store — events flow through a
+guest-append / owner-drain pipe that leaves the single-writer model untouched. Counters can
+complete their action at the goal and reopen when stock depletes; a "Hide completed" toggle
+turns a share into a proper shopping list; and got-enough items strike through in the aisle,
+live. Hardened by a dual review before the cut — durable-before-delete draining, remembered
+publish options, crossing-not-threshold completion.
+
 ### Fixed
 
 - Guest ticks are deleted only after their workspace writes durably confirm — a crash,
@@ -1614,7 +1624,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.8.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.9.0...HEAD
+[1.9.0]: https://github.com/Aha43/NamWeb/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/Aha43/NamWeb/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/Aha43/NamWeb/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/Aha43/NamWeb/compare/v1.5.0...v1.6.0
