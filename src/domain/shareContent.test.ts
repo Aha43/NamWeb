@@ -134,6 +134,13 @@ describe('shareContent — the sanitizer', () => {
     expect(json).not.toContain('secret.example');
   });
 
+  it('the envelope remembers HOW it was published (#823/P2)', () => {
+    const c = shareContent(trip(), 'trip', { ...OPTS, includeDone: false })!;
+    expect(c.options).toEqual({ includeDue: true, includeStatus: false, includeNotes: true, includeDone: false });
+    const d = shareContent(trip(), 'trip', OPTS)!; // absent includeDone reads as true
+    expect(d.options?.includeDone).toBe(true);
+  });
+
   it('hide completed (#817): DONE subtrees stay home when the share says so — default keeps them', () => {
     const doc = trip();
     doc.nodes['a1'].status = 'DONE';

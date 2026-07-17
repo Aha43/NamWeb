@@ -10,6 +10,22 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- Guest ticks are deleted only after their workspace writes durably confirm — a crash,
+  logout, or failed push between drain and save can no longer lose them; dead leftover rows
+  from old sessions are swept so no cap ever ratchets; and the "new guest ticks" line counts
+  only the open queue. Closes #823.
+- A share published with "Hide completed" re-seeds the dialog from how it was published — no
+  phantom dirty hint, and a routine republish no longer silently re-exposes hidden items
+  (the snapshot now remembers its publish options). Closes #823.
+- The guest overlay's refresh is generation-guarded — an older response can no longer rewind
+  a just-accepted tick or a fresher refresh — and the event/suggestion caps are enforced
+  atomically per share (concurrent inserts on a leaked token can't race past the bounds).
+  Closes #823.
+- The counter-completion checkbox speaks in crossings: "Ticking to the goal completes the
+  action (ticking below reopens it)". Closes #823.
+
+### Fixed
+
 - Counter completion now fires on boundary CROSSINGS, not thresholds — a guest tick in the
   overshoot zone no longer re-completes an action the owner deliberately reopened, and a
   decrement below target no longer reopens a hand-completed one. Closes #821.

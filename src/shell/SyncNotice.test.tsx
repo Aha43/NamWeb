@@ -16,6 +16,7 @@ function ws(notice: Notice | null, over: Partial<UseWorkspace> = {}): UseWorkspa
     clearNotice: vi.fn(),
     retry: vi.fn(),
     retrySync: vi.fn(),
+    flush: async () => true,
     dispatch: vi.fn(),
     ...over,
   };

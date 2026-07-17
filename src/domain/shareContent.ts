@@ -66,6 +66,17 @@ export interface ShareSection {
   sections: ShareSection[];
 }
 
+/** The publish-time toggles, embedded in the snapshot (#823/P2): the dialog re-seeds its
+ *  controls from here — a share published with "Hide completed" must not open dirty and
+ *  silently re-expose hidden items on a routine republish. Nothing here is secret (all four
+ *  are derivable from what the page shows). */
+export interface ShareContentOptions {
+  includeDue: boolean;
+  includeStatus: boolean;
+  includeNotes: boolean;
+  includeDone: boolean;
+}
+
 /** The guest renderer's whole world — versioned independently of the workspace format. */
 export interface ShareContent {
   version: 1;
@@ -73,6 +84,8 @@ export interface ShareContent {
   note?: string;
   due?: ShareDue;
   publishedAt: string;
+  /** Absent on pre-#823 snapshots — the dialog falls back to defaults then. */
+  options?: ShareContentOptions;
   items: ShareItem[];
   sections: ShareSection[];
 }
@@ -224,6 +237,12 @@ export function shareContent(
     version: 1,
     title: root.title,
     publishedAt: options.publishedAt,
+    options: {
+      includeDue: options.includeDue,
+      includeStatus: options.includeStatus,
+      includeNotes: options.includeNotes,
+      includeDone: options.includeDone !== false,
+    },
     ...buildChildren(root),
   };
   if (options.includeNotes && root.description) content.note = root.description;

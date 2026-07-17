@@ -17,6 +17,7 @@ const service = {
   fetchUndrainedEvents: vi.fn(),
   claimEvents: vi.fn(),
   deleteEvents: vi.fn(),
+  fetchLeftoverDrained: vi.fn(),
   countShareEvents: vi.fn(),
 };
 vi.mock('./shares', async (orig) => ({
@@ -30,6 +31,7 @@ vi.mock('./shares', async (orig) => ({
   fetchUndrainedEvents: (...a: unknown[]) => service.fetchUndrainedEvents(...a),
   claimEvents: (...a: unknown[]) => service.claimEvents(...a),
   deleteEvents: (...a: unknown[]) => service.deleteEvents(...a),
+  fetchLeftoverDrained: (...a: unknown[]) => service.fetchLeftoverDrained(...a),
   countShareEvents: (...a: unknown[]) => service.countShareEvents(...a),
 }));
 
@@ -64,7 +66,7 @@ function renderButton({ labs = true, user = REAL_USER as User | undefined, dispa
   render(
     <SettingsContext.Provider value={{ labs, setLabs: vi.fn() } as unknown as SettingsContextValue}>
       <AuthUserContext.Provider value={user}>
-        <WorkspaceContext.Provider value={{ document: doc, dispatch } as unknown as UseWorkspace}>
+        <WorkspaceContext.Provider value={{ document: doc, dispatch, flush: async () => true } as unknown as UseWorkspace}>
           <ShareButton projectId="trip" />
         </WorkspaceContext.Provider>
       </AuthUserContext.Provider>
@@ -83,6 +85,7 @@ beforeEach(() => {
   service.fetchUndrainedEvents.mockReset().mockResolvedValue([]);
   service.claimEvents.mockReset().mockImplementation((ids: number[]) => Promise.resolve(ids));
   service.deleteEvents.mockReset().mockResolvedValue(undefined);
+  service.fetchLeftoverDrained.mockReset().mockResolvedValue([]);
   service.countShareEvents.mockReset().mockResolvedValue(0);
 });
 
@@ -262,6 +265,19 @@ describe('ShareDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
     await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it('a hide-completed share re-seeds its toggles — no phantom dirty, no silent re-expose (#823/P2)', async () => {
+    const { shareContent } = await import('@/domain/shareContent');
+    const opts = { includeDue: true, includeStatus: false, includeNotes: true, includeDone: false, salt: 'tok123', publishedAt: 'x' };
+    const published = shareContent(doc, 'trip', opts)!;
+    service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: published, enabled: true, updated_at: 'x' });
+    renderButton();
+    fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+    await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());
+    const boxes = screen.getAllByRole('checkbox');
+    expect((boxes[3] as HTMLInputElement).checked).toBe(true); // Hide completed re-seeded ON
+    expect(screen.queryByText(/changed since the last publish/)).not.toBeInTheDocument(); // not dirty
   });
 
   it('the guests-can\'t-see-yet cue counts what a republish would reveal (#821/F3)', async () => {

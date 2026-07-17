@@ -50,7 +50,7 @@ export function ShareDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const { document, dispatch } = useWorkspaceContext();
+  const { document, dispatch, flush } = useWorkspaceContext();
   const user = useAuthUser();
   const { copied, copy } = useCopyToClipboard();
 
@@ -60,8 +60,8 @@ export function ShareDialog({
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<ShareSuggestion[]>([]);
   const [guestTicks, setGuestTicks] = useState(0);
-  const drainRef = useRef({ document, dispatch });
-  drainRef.current = { document, dispatch };
+  const drainRef = useRef({ document, dispatch, flush });
+  drainRef.current = { document, dispatch, flush };
   const [includeDue, setIncludeDue] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeDue);
   const [includeStatus, setIncludeStatus] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeStatus);
   const [includeNotes, setIncludeNotes] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeNotes);
@@ -81,13 +81,27 @@ export function ShareDialog({
       .then(async (s) => {
         if (cancelled) return;
         setShare(s);
+        // Re-seed the toggles from HOW the share was published (#823/P2): a hide-completed
+        // share must not open dirty and re-expose its hidden items on a routine republish.
+        const opts = s?.content?.options;
+        if (opts) {
+          setIncludeDue(opts.includeDue);
+          setIncludeStatus(opts.includeStatus);
+          setIncludeNotes(opts.includeNotes);
+          setIncludeDone(opts.includeDone);
+        } else {
+          setIncludeDue(SHARE_DEFAULT_OPTIONS.includeDue);
+          setIncludeStatus(SHARE_DEFAULT_OPTIONS.includeStatus);
+          setIncludeNotes(SHARE_DEFAULT_OPTIONS.includeNotes);
+          setIncludeDone(true);
+        }
         // Count queued ticks BEFORE the drain lands (and deletes) them (#821): the line
         // reads "new since your last look". Then the dialog-open drain (#811) — a failed
         // drain is quiet (retried on the next trigger). The ref keeps the load effect's
         // deps honest (document churns every mutation), and the GETTER resolves the doc
         // after the claim (#821/F2).
         const ticks = s ? await countShareEvents(s.share_id).catch(() => 0) : 0;
-        if (s) await drainShare(() => drainRef.current.document, drainRef.current.dispatch, s).catch(() => {});
+        if (s) await drainShare(() => drainRef.current.document, drainRef.current.dispatch, drainRef.current.flush, s).catch(() => {});
         // The From-guests tray (#796): unhandled suggestions ride along with the share.
         const tray = s ? await fetchSuggestions(s.share_id) : [];
         if (cancelled) return; // the await above can outlive a close/project switch (#804)
