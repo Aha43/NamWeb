@@ -6,12 +6,14 @@ const service = {
   fetchUndrainedEvents: vi.fn(),
   claimEvents: vi.fn(),
   deleteEvents: vi.fn(),
+  fetchLeftoverDrained: vi.fn(),
 };
 vi.mock('./shares', async (orig) => ({
   ...(await orig<typeof import('./shares')>()),
   fetchUndrainedEvents: (...a: unknown[]) => service.fetchUndrainedEvents(...a),
   claimEvents: (...a: unknown[]) => service.claimEvents(...a),
   deleteEvents: (...a: unknown[]) => service.deleteEvents(...a),
+  fetchLeftoverDrained: (...a: unknown[]) => service.fetchLeftoverDrained(...a),
 }));
 
 import { drainShare } from './drainShare';
@@ -52,8 +54,9 @@ describe('drainShare (#821)', () => {
       return ids;
     });
     service.deleteEvents.mockResolvedValue(undefined);
+    service.fetchLeftoverDrained.mockResolvedValue([]);
     const dispatch = vi.fn();
-    const landed = await drainShare(() => doc, dispatch, SHARE);
+    const landed = await drainShare(() => doc, dispatch, async () => true, SHARE);
     expect(landed).toBe(1);
     // A stale plan would guard on '10/12' and silently no-op against the fresh doc.
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ expectedValue: '11/12' }));
@@ -61,12 +64,32 @@ describe('drainShare (#821)', () => {
     expect(service.deleteEvents).toHaveBeenCalledWith([7]);
   });
 
+  it('deletes only after DURABLE success — a failed flush keeps the rows (#823/P1)', async () => {
+    service.fetchUndrainedEvents.mockResolvedValue([{ id: 7, node_id: pseudoA1, res_index: 0, delta: 1 }]);
+    service.claimEvents.mockImplementation((ids: number[]) => Promise.resolve(ids));
+    service.fetchLeftoverDrained.mockResolvedValue([]);
+    service.deleteEvents.mockClear();
+    const dispatch = vi.fn();
+    await drainShare(() => docWith('10/12'), dispatch, async () => false, SHARE);
+    expect(dispatch).toHaveBeenCalled(); // the intents went out (optimistic + Retry own them)
+    expect(service.deleteEvents).not.toHaveBeenCalled(); // but nothing is deleted
+  });
+
+  it('sweeps dead leftover drained rows before claiming (#823/P2)', async () => {
+    service.fetchUndrainedEvents.mockResolvedValue([]);
+    service.fetchLeftoverDrained.mockResolvedValue([3, 4]);
+    service.deleteEvents.mockClear().mockResolvedValue(undefined);
+    await drainShare(() => docWith('10/12'), vi.fn(), async () => true, SHARE);
+    expect(service.deleteEvents).toHaveBeenCalledWith([3, 4]);
+  });
+
   it('a lost claim applies and deletes nothing', async () => {
     service.fetchUndrainedEvents.mockResolvedValue([{ id: 7, node_id: pseudoA1, res_index: 0, delta: 1 }]);
     service.claimEvents.mockResolvedValue([]); // the other device won
+    service.fetchLeftoverDrained.mockResolvedValue([]);
     service.deleteEvents.mockClear();
     const dispatch = vi.fn();
-    expect(await drainShare(() => docWith('10/12'), dispatch, SHARE)).toBe(0);
+    expect(await drainShare(() => docWith('10/12'), dispatch, async () => true, SHARE)).toBe(0);
     expect(dispatch).not.toHaveBeenCalled();
     expect(service.deleteEvents).not.toHaveBeenCalled();
   });

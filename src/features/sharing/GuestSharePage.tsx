@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
 import type { ShareContent, ShareCounter, ShareDue, ShareItem, ShareSection } from '@/domain/shareContent';
@@ -83,10 +83,18 @@ export function GuestSharePage({ token }: { token: string }) {
     if (content && hash && parentOf.has(hash)) revealAnchor(hash);
   }, [content, parentOf, revealAnchor]);
 
-  /** Re-pull the overlay only — cheap, and honest between simultaneous shoppers (#821/F4). */
+  /** Re-pull the overlay only — cheap, and honest between simultaneous shoppers (#821/F4).
+   *  Guarded by generations (#823/P2): a refresh applies only if it is still the LATEST
+   *  request and no local tick was accepted while it was in flight — otherwise an older
+   *  response would rewind a just-accepted tick or a fresher refresh. */
+  const refreshGen = useRef(0);
+  const localGen = useRef(0);
   const refreshTicks = useCallback(() => {
+    const req = ++refreshGen.current;
+    const local = localGen.current;
     fetchShareResourceEvents(token)
       .then((events) => {
+        if (req !== refreshGen.current || local !== localGen.current) return; // superseded
         const sums = new Map<string, number>();
         for (const e of events) {
           const key = `${e.node_id}:${e.res_index}`;
@@ -189,6 +197,7 @@ export function GuestSharePage({ token }: { token: string }) {
     submitResourceEvent(token, nodeId, index, delta)
       .then((ok) => {
         if (!ok) return;
+        localGen.current += 1; // invalidate any refresh that was in flight before this tick
         setTicks((prev) => {
           const next = new Map(prev);
           const key = `${nodeId}:${index}`;

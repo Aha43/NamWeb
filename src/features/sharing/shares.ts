@@ -194,6 +194,18 @@ export async function claimEvents(ids: number[]): Promise<number[]> {
   return (data ?? []).map((r) => r.id);
 }
 
+/** Drained rows left by a previous session (#823/P2) — dead weight either way (see
+ *  drainShare); swept at the next drain so they never ratchet the lifetime cap. */
+export async function fetchLeftoverDrained(shareId: string): Promise<number[]> {
+  const { data, error } = await supabase
+    .from('share_resource_events')
+    .select('id')
+    .eq('share_id', shareId)
+    .eq('drained', true);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => r.id);
+}
+
 /** Remove landed events (#821): drained rows serve nothing and would ratchet the lifetime
  *  cap toward a permanently deaf share — the suggestion-cap lesson, one table over. */
 export async function deleteEvents(ids: number[]): Promise<void> {
@@ -208,7 +220,8 @@ export async function countShareEvents(shareId: string): Promise<number> {
   const { count, error } = await supabase
     .from('share_resource_events')
     .select('id', { count: 'exact', head: true })
-    .eq('share_id', shareId);
+    .eq('share_id', shareId)
+    .eq('drained', false); // open queue only (#823/P2): inert leftovers must not inflate the line
   if (error) throw new Error(error.message);
   return count ?? 0;
 }

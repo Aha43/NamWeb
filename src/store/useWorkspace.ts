@@ -47,6 +47,10 @@ export interface UseWorkspace {
   /** Re-push the current local document after a failed write (the error-notice Retry). */
   retrySync: () => void;
   dispatch: (intent: Intent) => void;
+  /** Await everything dispatched SO FAR reaching the backend; resolves true when every write
+   *  confirmed, false when a write failed (the sticky error + Retry own recovery). The guest
+   *  drain (#823/P1) deletes its claimed events only on true. */
+  flush: () => Promise<boolean>;
 }
 
 const NOTICE_TIMEOUT_MS = 4000;
@@ -204,6 +208,11 @@ export function useWorkspace(): UseWorkspace {
       });
   }, []);
 
+  const flush = useCallback(async () => {
+    await queueRef.current;
+    return !failedRef.current;
+  }, []);
+
   const clearNotice = useCallback(() => setNotice(null), []);
   const retry = useCallback(() => void load(), [load]);
 
@@ -251,5 +260,6 @@ export function useWorkspace(): UseWorkspace {
     retry,
     retrySync,
     dispatch,
+    flush,
   };
 }

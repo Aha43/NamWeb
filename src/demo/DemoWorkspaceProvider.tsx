@@ -57,6 +57,8 @@ export function DemoWorkspaceProvider({ onSignUp, children }: { onSignUp: () => 
     clearNotice: () => {},
     retry: () => {},
     retrySync: () => {},
+    // The demo is local-only: every dispatch is as durable as it will ever be.
+    flush: async () => true,
     dispatch,
   };
 
