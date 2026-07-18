@@ -70,7 +70,7 @@ export function toActionRow(doc: WorkspaceDocument, node: NamNode): ActionRowDat
       .filter(({ r }) => r.type === 'QUESTION')
       .map(({ r, index }) => {
         const q = parseQuestion(r.value);
-        return q && r.description ? { index, answer: q.answer, question: r.description, raw: r.value } : null;
+        return q && r.description?.trim() ? { index, answer: q.answer, question: r.description, raw: r.value } : null;
       })
       .filter((q): q is NonNullable<typeof q> => q !== null),
     descendantCount: subtreeIds(doc, node.id).size - 1,

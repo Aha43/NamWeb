@@ -155,6 +155,19 @@ Lessons applied from birth (the stage-1/stage-4 corrections):
    registry-wide with one consumer? *Lean: registry-wide field (`interactive` types only),
    COUNT the sole current member — that's one entry, not speculative machinery.*
 
+## Documented residues (dual review, 2026-07-18)
+
+Inherent to the events-not-state model, logged rather than fixed:
+
+- **A guest "undo" can erase a newer answer** (#830/F3). An answer event carries only the
+  desired state, not the value the guest saw. If the owner answers "no" locally after the
+  snapshot said "yes", a guest tapping the highlighted Yes to clear it lands `clear` on the
+  owner's "no". Deltas commute; last-wins SETs don't. A real fix carries the observed value
+  in the event — deferred until it bites in practice.
+- **A focus-refresh can briefly double-display a counter tick** (#830/N1, #810-era). A
+  refresh resolving between a tick's commit and its own `.then` applies the delta twice for
+  one render; self-heals on the next refresh. Answers are immune (idempotent SET).
+
 ## Known composition hole (review #821/F3, 2026-07-17)
 
 Hide-completed × completesAction × the drain composes into a reachable "stock depleted but

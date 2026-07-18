@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- The guest-event drain only claims event kinds it can apply — an owner client running an
+  older bundle (or, later, a newer event type) no longer claims-and-deletes guest input it
+  can't yet handle; unknown events wait for a client that understands them. Closes #830.
+- Switching a counter with "completes at the goal" to another resource type no longer leaves
+  the invisible flag stranded on it. Closes #830.
+
 ### Added
 
 - A new resource type: the yes/no **Question** — a tri-state (unanswered / yes / no) you
