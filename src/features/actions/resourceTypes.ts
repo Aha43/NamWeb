@@ -2,7 +2,7 @@
 // rows — a new resource type is a one-entry job, not a hunt for scattered conditionals.
 // Invariant across the family: `value` is for machines, `description` is for humans.
 
-import { FileText, Hash, Link2, Mail, StickyNote, type LucideIcon } from 'lucide-react';
+import { CircleHelp, FileText, Hash, Link2, Mail, StickyNote, type LucideIcon } from 'lucide-react';
 import type { ResourceType } from '@/domain/types';
 
 export interface ResourceTypeDef {
@@ -14,8 +14,9 @@ export interface ResourceTypeDef {
   hasNameField: boolean;
   /** i18n key for that field's label — "Link name" fits a URI, not a counter (#800). */
   nameLabelKey?: string;
-  /** The dialog's value entry: free text, or the COUNT target (a number ≥ 1). */
-  valueKind: 'text' | 'countTarget';
+  /** The dialog's value entry: free text, the COUNT target (a number ≥ 1), or none —
+   *  QUESTION starts unanswered and takes only its question text. */
+  valueKind: 'text' | 'countTarget' | 'question';
   /** The type has registry-defined legal moves a guest could exercise (#809) — gates the
    *  per-resource guestEditable checkbox. */
   interactive?: boolean;
@@ -27,6 +28,7 @@ export const RESOURCE_TYPE_DEFS: Record<ResourceType, ResourceTypeDef> = {
   FILE: { type: 'FILE', icon: FileText, labelKey: 'resourceType.FILE', hasNameField: false, valueKind: 'text' },
   TEXT: { type: 'TEXT', icon: StickyNote, labelKey: 'resourceType.TEXT', hasNameField: false, valueKind: 'text' },
   COUNT: { type: 'COUNT', icon: Hash, labelKey: 'resourceType.COUNT', hasNameField: true, nameLabelKey: 'editor.resourceNameCount', valueKind: 'countTarget', interactive: true },
+  QUESTION: { type: 'QUESTION', icon: CircleHelp, labelKey: 'resourceType.QUESTION', hasNameField: true, nameLabelKey: 'editor.resourceQuestionText', valueKind: 'question', interactive: true },
 };
 
-export const RESOURCE_TYPES_ORDERED: ResourceType[] = ['URI', 'EMAIL', 'FILE', 'TEXT', 'COUNT'];
+export const RESOURCE_TYPES_ORDERED: ResourceType[] = ['URI', 'EMAIL', 'FILE', 'TEXT', 'COUNT', 'QUESTION'];

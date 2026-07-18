@@ -116,6 +116,19 @@ describe('shareContent — the sanitizer', () => {
     }
   });
 
+  it('delegated questions (#827): guestEditable QUESTIONs copied with text + answer', () => {
+    const doc = trip();
+    doc.nodes['a1'].resources = [
+      { type: 'QUESTION', value: 'yes', description: 'Bringing a tent?', guestEditable: true },
+      { type: 'QUESTION', value: '?', description: 'private q' }, // un-flagged: ABSENT
+      { type: 'QUESTION', value: 'no', description: '', guestEditable: true }, // no text: ABSENT
+    ];
+    const c = shareContent(doc, 'trip', OPTS)!;
+    expect(c.items[0].questions).toEqual([{ index: 0, question: 'Bringing a tent?', value: 'yes' }]);
+    const json = JSON.stringify(c);
+    expect(json).not.toContain('private q');
+  });
+
   it('delegated counters (#809): guestEditable COUNTs are copied, everything else stays home', () => {
     const doc = trip();
     doc.nodes['a1'].resources = [

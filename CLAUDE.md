@@ -25,9 +25,9 @@ secret URLs — guests never become users) is the road to **2.0.0**.
 - The **workspace document format** (one JSONB doc per workspace) is no longer a two-client
   contract, but it remains a **spec-in-progress** for the future desktop redo: keep the
   additive-only / absent-key-means-off discipline, and write contract-relevant changes down.
-  Known divergences a revival must absorb BEFORE syncing: the `COUNT` resource type (#799 —
-  NamDesktop's Java `ResourceType` enum would throw on deserialize; extend the enum first,
-  same rigidity that forced #658's `nam://` links to hide inside `URI`).
+  Known divergences a revival must absorb BEFORE syncing: the `COUNT` (#799) and `QUESTION`
+  (#827) resource types — NamDesktop's Java `ResourceType` enum would throw on deserialize;
+  extend the enum first, same rigidity that forced #658's `nam://` links to hide inside `URI`.
 
 ## Tech stack
 

@@ -166,6 +166,38 @@ test('resource events (#809): guests append, owners drain, the table stays dark'
   }
 });
 
+test('question answers (#827): guests answer via the RPC, drain into the overlay', async ({ browserName }) => {
+  const TOKEN = `e2e-smoke-answers-${browserName}`;
+  const projectId = `e2e-smoke-answers-${browserName}`;
+  const { client: owner, userId } = await ownerClient();
+  const anon = createClient(E2E.supabaseUrl, E2E.supabaseKey);
+  await owner.from('project_shares').delete().eq('project_id', projectId);
+  const up = await owner
+    .from('project_shares')
+    .insert({ token: TOKEN, owner_user_id: userId, project_id: projectId, content: { version: 1 }, enabled: true })
+    .select('share_id')
+    .single();
+  expect(up.error).toBeNull();
+  try {
+    expect((await anon.rpc('add_share_answer_event', { share_token: TOKEN, node: 'abcd1234', res_index: 2, answer: 'yes' })).data).toBe(true);
+    expect((await anon.rpc('add_share_answer_event', { share_token: TOKEN, node: 'abcd1234', res_index: 2, answer: 'clear' })).data).toBe(true);
+    // Malformed answer and unknown token → the same quiet false.
+    expect((await anon.rpc('add_share_answer_event', { share_token: TOKEN, node: 'abcd1234', res_index: 2, answer: 'maybe' })).data).toBe(false);
+    expect((await anon.rpc('add_share_answer_event', { share_token: 'nope', node: 'x', res_index: 0, answer: 'yes' })).data).toBe(false);
+    // The overlay read returns answer rows (delta null) alongside any ticks.
+    const overlay = await anon.rpc('get_share_resource_events', { share_token: TOKEN });
+    expect(overlay.error).toBeNull();
+    expect(overlay.data).toEqual([
+      { node_id: 'abcd1234', res_index: 2, delta: null, answer: 'yes' },
+      { node_id: 'abcd1234', res_index: 2, delta: null, answer: 'clear' },
+    ]);
+    // A counter tick still works on the same table (exactly-one-of holds).
+    expect((await anon.rpc('add_share_resource_event', { share_token: TOKEN, node: 'abcd1234', res_index: 0, delta: 1 })).data).toBe(true);
+  } finally {
+    await owner.from('project_shares').delete().eq('project_id', projectId);
+  }
+});
+
 test('guests read exactly one enabled share via the RPC — and nothing else', async ({ browserName }) => {
   const TOKEN = `e2e-smoke-share-${browserName}`;
   const { client: owner, userId } = await ownerClient();

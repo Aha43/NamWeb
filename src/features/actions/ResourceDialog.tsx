@@ -14,6 +14,7 @@ import {
 import type { Resource, ResourceType } from '@/domain/types';
 import { RESOURCE_TYPE_DEFS, RESOURCE_TYPES_ORDERED } from './resourceTypes';
 import { newCountValue, parseCount, formatCount } from '@/domain/resourceCount';
+import { newQuestionValue } from '@/domain/resourceQuestion';
 
 /**
  * Create / edit one resource in a small dialog (#720) — rows stay pure display; this is where the
@@ -63,6 +64,9 @@ export function ResourceDialog({
       // Editing keeps progress (clamped to a shrunken cap) unless a reset is asked for.
       const current = resetCount ? 0 : (initialCount?.current ?? 0);
       committedValue = resetCount ? newCountValue(target, unlimited) : formatCount(current, target, unlimited);
+    } else if (def.valueKind === 'question') {
+      if (!name.trim()) return; // the question text is required
+      committedValue = initial?.type === 'QUESTION' ? initial.value : newQuestionValue();
     } else {
       const trimmed = value.trim();
       if (!trimmed) return;
@@ -153,7 +157,7 @@ export function ResourceDialog({
                 </label>
               )}
             </div>
-          ) : (
+          ) : def.valueKind === 'question' ? null : (
             <div className="space-y-1.5">
               <Label htmlFor="resource-value">{t('editor.resourceValue')}</Label>
               <Input
@@ -171,10 +175,12 @@ export function ResourceDialog({
                 <input type="checkbox" checked={guestEditable} onChange={(e) => setGuestEditable(e.target.checked)} />
                 {t('editor.resourceGuestEditable')}
               </label>
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                <input type="checkbox" checked={completesAction} onChange={(e) => setCompletesAction(e.target.checked)} />
-                {t('editor.resourceCompletesAction')}
-              </label>
+              {def.valueKind === 'countTarget' && (
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input type="checkbox" checked={completesAction} onChange={(e) => setCompletesAction(e.target.checked)} />
+                  {t('editor.resourceCompletesAction')}
+                </label>
+              )}
             </>
           )}
           {def.hasNameField && (
@@ -182,7 +188,8 @@ export function ResourceDialog({
               <Label htmlFor="resource-name">{t(def.nameLabelKey ?? 'editor.resourceName')}</Label>
               <Input
                 id="resource-name"
-                placeholder={t('editor.resourceNamePlaceholder')}
+                autoFocus={def.valueKind === 'question'}
+                placeholder={def.valueKind === 'question' ? t('editor.resourceQuestionPlaceholder') : t('editor.resourceNamePlaceholder')}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -194,7 +201,7 @@ export function ResourceDialog({
             </Button>
             <Button
               type="submit"
-              disabled={def.valueKind === 'countTarget' ? !(Number.isInteger(Number(countTarget)) && Number(countTarget) >= 1) : !value.trim()}
+              disabled={def.valueKind === 'countTarget' ? !(Number.isInteger(Number(countTarget)) && Number(countTarget) >= 1) : def.valueKind === 'question' ? !name.trim() : !value.trim()}
             >
               {initial ? t('common.save') : t('common.add')}
             </Button>

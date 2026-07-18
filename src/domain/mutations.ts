@@ -8,6 +8,7 @@ import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDo
 import { IN_PROGRESS_TAG, canonicalTag, isSystemTag } from './systemTags';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 import { formatCount, parseCount } from './resourceCount';
+import { formatQuestion, parseQuestion } from './resourceQuestion';
 
 export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; atTop?: boolean; now: string }
@@ -43,6 +44,7 @@ export type Intent =
   | { type: 'convertActionToProject'; id: string; now: string }
   | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
   | { type: 'incrementCountResource'; id: string; index: number; expectedValue: string; delta?: 1 | -1; now: string }
+  | { type: 'answerQuestionResource'; id: string; index: number; expectedValue: string; answer: 'yes' | 'no' | 'clear'; now: string }
   | { type: 'addPrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'removePrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'createSavedView'; name: string; tags: string[]; nextOnly: boolean }
@@ -555,6 +557,22 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
         }
       }
       next.nodes[intent.id] = updated;
+      return next;
+    }
+    case 'answerQuestionResource': {
+      // The QUESTION resource (#827): a SET, not a toggle — the pill computes the toggle
+      // (tap the active answer to clear) and sends the resulting desired state, so the
+      // reducer and the guest drain both just apply it. expectedValue is the same stale
+      // guard the counter carries (a replay / raced answer against a moved value no-ops).
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      const resource = node.resources[intent.index];
+      if (!resource || resource.type !== 'QUESTION' || resource.value !== intent.expectedValue) return next;
+      if (!parseQuestion(resource.value)) return next;
+      const answer = intent.answer === 'clear' ? null : intent.answer;
+      const resources = node.resources.slice();
+      resources[intent.index] = { ...resource, value: formatQuestion(answer) };
+      next.nodes[intent.id] = { ...node, resources, updatedAt: intent.now };
       return next;
     }
     case 'addPrerequisite': {

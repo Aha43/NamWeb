@@ -11,13 +11,16 @@
 import type { Intent } from '@/domain/mutations';
 import type { WorkspaceDocument } from '@/domain/types';
 import { formatCount, parseCount } from '@/domain/resourceCount';
+import { formatQuestion, parseQuestion } from '@/domain/resourceQuestion';
 import { guestIdMap } from '@/domain/shareContent';
 
 export interface DrainableEvent {
   id: number;
   node_id: string;
   res_index: number;
-  delta: number;
+  /** A counter tick carries delta; a question answer carries answer — exactly one. */
+  delta: number | null;
+  answer?: 'yes' | 'no' | 'clear' | null;
 }
 
 /** The intents a batch of claimed events folds into, in arrival order. Pure. */
@@ -34,9 +37,28 @@ export function drainPlan(
   // every later one on the value its predecessor will have produced.
   const running = new Map<string, string>();
   for (const event of events) {
-    if (event.delta !== 1 && event.delta !== -1) continue;
     const nodeId = map.get(event.node_id);
     if (!nodeId) continue;
+    // Question answers (#827): a SET, chained on the running value like the counter chain.
+    if (event.answer) {
+      const resource = doc.nodes[nodeId]?.resources[event.res_index];
+      if (!resource || resource.type !== 'QUESTION' || !resource.guestEditable) continue;
+      const key = `q:${nodeId}:${event.res_index}`;
+      const value = running.get(key) ?? resource.value;
+      const q = parseQuestion(value);
+      if (!q) continue;
+      intents.push({
+        type: 'answerQuestionResource',
+        id: nodeId,
+        index: event.res_index,
+        expectedValue: value,
+        answer: event.answer,
+        now,
+      });
+      running.set(key, formatQuestion(event.answer === 'clear' ? null : event.answer));
+      continue;
+    }
+    if (event.delta !== 1 && event.delta !== -1) continue;
     const resource = doc.nodes[nodeId]?.resources[event.res_index];
     if (!resource || resource.type !== 'COUNT' || !resource.guestEditable) continue;
     // Accepted residue (#821/F5): if the owner REORDERS resources while the queue is open,

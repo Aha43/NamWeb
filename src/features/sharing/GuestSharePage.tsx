@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronRight, MapPin } from 'lucide-react';
-import type { ShareContent, ShareCounter, ShareDue, ShareItem, ShareSection } from '@/domain/shareContent';
+import type { ShareContent, ShareCounter, ShareDue, ShareItem, ShareQuestion, ShareSection } from '@/domain/shareContent';
 import { parseCount } from '@/domain/resourceCount';
+import { parseQuestion, type QuestionAnswer } from '@/domain/resourceQuestion';
 import { CountPill } from '@/features/actions/CountPill';
-import { fetchGuestShare, fetchShareResourceEvents, submitResourceEvent, submitSuggestion } from './shares';
+import { QuestionPill } from '@/features/actions/QuestionPill';
+import { fetchGuestShare, fetchShareResourceEvents, submitAnswerEvent, submitResourceEvent, submitSuggestion, type ShareResourceEvent } from './shares';
 
 /**
  * The guest page (#761): what a secret share link renders. Deliberately un-NAM — no chrome,
@@ -12,6 +14,25 @@ import { fetchGuestShare, fetchShareResourceEvents, submitResourceEvent, submitS
  * browser locale is its language (the i18n runtime auto-detects); Intl formats the dates.
  * Guest ids become DOM anchors (stage 4's per-item suggestions will address them).
  */
+/** Fold an event list into the counter-sum and last-answer overlays (#827). */
+function foldEvents(events: ShareResourceEvent[]): { sums: Map<string, number>; answers: Map<string, QuestionAnswer | null> } {
+  const sums = new Map<string, number>();
+  const answers = new Map<string, QuestionAnswer | null>();
+  for (const e of events) {
+    const key = `${e.node_id}:${e.res_index}`;
+    if (typeof e.delta === 'number') sums.set(key, (sums.get(key) ?? 0) + e.delta);
+    else if (e.answer) answers.set(key, e.answer === 'clear' ? null : e.answer); // last wins
+  }
+  return { sums, answers };
+}
+
+function hasInteractive(content: ShareContent): boolean {
+  const any = (i: { counters?: unknown[]; questions?: unknown[] }) => (i.counters?.length ?? 0) > 0 || (i.questions?.length ?? 0) > 0;
+  const walk = (sections: ShareSection[]): boolean =>
+    sections.some((sec) => any(sec) || sec.items.some(any) || walk(sec.sections));
+  return content.items.some(any) || walk(content.sections);
+}
+
 /** Every section id at every depth. */
 function allSectionIds(content: ShareContent): Set<string> {
   const ids = new Set<string>();
@@ -50,12 +71,6 @@ function closedOnArrival(content: ShareContent): Set<string> {
   return closed;
 }
 
-function hasCounters(content: ShareContent): boolean {
-  const inSections = (sections: ShareSection[]): boolean =>
-    sections.some((s) => (s.counters?.length ?? 0) > 0 || s.items.some((i) => (i.counters?.length ?? 0) > 0) || inSections(s.sections));
-  return content.items.some((i) => (i.counters?.length ?? 0) > 0) || inSections(content.sections);
-}
-
 export function GuestSharePage({ token }: { token: string }) {
   const { t, i18n } = useTranslation();
   const [content, setContent] = useState<ShareContent | null>(null);
@@ -72,6 +87,8 @@ export function GuestSharePage({ token }: { token: string }) {
   // Delegated counters (#810): the page shows snapshot + Σ undrained events, so a guest's own
   // ticks land instantly and a stale published count never confuses. Keyed `${nodeId}:${index}`.
   const [ticks, setTicks] = useState<Map<string, number>>(new Map());
+  // Question answers (#827): last-answer-wins per node:index, overlaid on the snapshot.
+  const [answers, setAnswers] = useState<Map<string, QuestionAnswer | null>>(new Map());
   // id → parent-section id for every section AND item — anchor navigation (TOC taps, #hash
   // deep links, stage 4's per-item suggestions) must expand ancestors before scrolling.
   const parentOf = useMemo(() => {
@@ -134,12 +151,9 @@ export function GuestSharePage({ token }: { token: string }) {
     fetchShareResourceEvents(token)
       .then((events) => {
         if (req !== refreshGen.current || local !== localGen.current) return; // superseded
-        const sums = new Map<string, number>();
-        for (const e of events) {
-          const key = `${e.node_id}:${e.res_index}`;
-          sums.set(key, (sums.get(key) ?? 0) + e.delta);
-        }
+        const { sums, answers: ans } = foldEvents(events);
         setTicks(sums);
+        setAnswers(ans);
       })
       .catch(() => {});
   }, [token]);
@@ -147,7 +161,7 @@ export function GuestSharePage({ token }: { token: string }) {
   // Shoppers pocket their phones constantly: coming back to the tab re-pulls the other
   // guests' ticks (#821/F4) — not realtime, just not stale-blind.
   useEffect(() => {
-    if (!content || !hasCounters(content)) return;
+    if (!content || !hasInteractive(content)) return;
     const onVisible = () => {
       if (document.visibilityState === 'visible') refreshTicks();
     };
@@ -165,15 +179,12 @@ export function GuestSharePage({ token }: { token: string }) {
       .then(async (c) => {
         // A future envelope version renders as "needs a newer link", never wrong (#772).
         const usable = c && c.version === 1 ? c : null;
-        if (usable && hasCounters(usable)) {
+        if (usable && hasInteractive(usable)) {
           // Overlay failures degrade to the bare snapshot — the page still renders.
           const events = await fetchShareResourceEvents(token).catch(() => []);
-          const sums = new Map<string, number>();
-          for (const e of events) {
-            const key = `${e.node_id}:${e.res_index}`;
-            sums.set(key, (sums.get(key) ?? 0) + e.delta);
-          }
+          const { sums, answers: ans } = foldEvents(events);
           setTicks(sums);
+          setAnswers(ans);
         }
         if (usable) setCollapsedIds(closedOnArrival(usable)); // closed on arrival (#826)
         setContent(usable);
@@ -247,6 +258,44 @@ export function GuestSharePage({ token }: { token: string }) {
       })
       .catch(() => {});
 
+  /** A guest answer (#827): quiet failure by design; the local overlay updates optimistically. */
+  const answer = (nodeId: string, index: number, desired: 'yes' | 'no' | 'clear') =>
+    submitAnswerEvent(token, nodeId, index, desired)
+      .then((ok) => {
+        if (!ok) return;
+        localGen.current += 1;
+        setAnswers((prev) => {
+          const next = new Map(prev);
+          next.set(`${nodeId}:${index}`, desired === 'clear' ? null : desired);
+          return next;
+        });
+      })
+      .catch(() => {});
+
+  const renderQuestions = (nodeId: string, questions: ShareQuestion[] | undefined) => {
+    if (!questions?.length) return null;
+    return (
+      <div className="mt-1 flex flex-col gap-1.5">
+        {questions.map((q) => {
+          const parsed = parseQuestion(q.value);
+          if (!parsed) return null;
+          const key = `${nodeId}:${q.index}`;
+          const current = answers.has(key) ? answers.get(key)! : parsed.answer;
+          return (
+            <QuestionPill
+              key={`q${q.index}`}
+              nodeId={nodeId}
+              index={q.index}
+              answer={current}
+              question={q.question}
+              onAnswer={(desired) => void answer(nodeId, q.index, desired)}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
   const renderCounters = (nodeId: string, counters: ShareCounter[] | undefined) => {
     if (!counters?.length) return null;
     return (
@@ -306,6 +355,7 @@ export function GuestSharePage({ token }: { token: string }) {
         {item.due && <p className="text-xs text-muted-foreground">{formatDue(item.due)}</p>}
         {item.note && <p className="mt-0.5 whitespace-pre-wrap text-sm text-muted-foreground">{item.note}</p>}
         {renderCounters(item.id, item.counters)}
+        {renderQuestions(item.id, item.questions)}
       </div>
     </li>
     );
@@ -343,6 +393,7 @@ export function GuestSharePage({ token }: { token: string }) {
         <div id={`guest-section-${section.id}`} className={isCollapsed ? 'hidden' : undefined}>
           {section.note && <p className="mt-1 whitespace-pre-wrap text-sm text-muted-foreground">{section.note}</p>}
           {renderCounters(section.id, section.counters)}
+          {renderQuestions(section.id, section.questions)}
           {section.items.length > 0 && <ul className="mt-2 divide-y divide-border/60">{section.items.map(renderItem)}</ul>}
           {section.sections.map((s) => renderSection(s, depth + 1))}
         </div>
