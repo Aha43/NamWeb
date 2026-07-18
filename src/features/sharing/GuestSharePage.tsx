@@ -12,6 +12,44 @@ import { fetchGuestShare, fetchShareResourceEvents, submitResourceEvent, submitS
  * browser locale is its language (the i18n runtime auto-detects); Intl formats the dates.
  * Guest ids become DOM anchors (stage 4's per-item suggestions will address them).
  */
+/** Every section id at every depth. */
+function allSectionIds(content: ShareContent): Set<string> {
+  const ids = new Set<string>();
+  const walk = (sections: ShareSection[]) => {
+    for (const sec of sections) {
+      ids.add(sec.id);
+      walk(sec.sections);
+    }
+  };
+  walk(content.sections);
+  return ids;
+}
+
+/** The #826 closed-on-arrival set, minus the ancestor chain of a #hash deep-link target so a
+ *  shared anchor lands OPEN without racing the reveal effect. */
+function closedOnArrival(content: ShareContent): Set<string> {
+  const closed = allSectionIds(content);
+  const hash = window.location.hash.slice(1);
+  if (!hash) return closed;
+  const parent = new Map<string, string | null>();
+  const walk = (sections: ShareSection[], p: string | null) => {
+    for (const sec of sections) {
+      parent.set(sec.id, p);
+      for (const item of sec.items) parent.set(item.id, sec.id);
+      walk(sec.sections, sec.id);
+    }
+  };
+  for (const item of content.items) parent.set(item.id, null);
+  walk(content.sections, null);
+  if (!parent.has(hash)) return closed;
+  let cursor: string | null | undefined = hash;
+  while (cursor) {
+    closed.delete(cursor);
+    cursor = parent.get(cursor) ?? null;
+  }
+  return closed;
+}
+
 function hasCounters(content: ShareContent): boolean {
   const inSections = (sections: ShareSection[]): boolean =>
     sections.some((s) => (s.counters?.length ?? 0) > 0 || s.items.some((i) => (i.counters?.length ?? 0) > 0) || inSections(s.sections));
@@ -22,8 +60,9 @@ export function GuestSharePage({ token }: { token: string }) {
   const { t, i18n } = useTranslation();
   const [content, setContent] = useState<ShareContent | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'gone'>('loading');
-  // Collapsible sections (#794): default EXPANDED — the page reads exactly as before until a
-  // guest chooses focus. Collapse hides details, never existence (headers keep dates + count).
+  // Collapsible sections (#794). Default COLLAPSED since #826: guests come for something
+  // specific — the TOC is the front door, and every section opens folded (headers stay
+  // honest: date span + count). Anchor arrivals still unfold their chain (revealAnchor).
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   // The suggestion box (#796): guests capture, the owner clarifies. sent = the thanks state;
   // failure reads as the same quiet non-acceptance as a dead link (no oracle).
@@ -136,6 +175,7 @@ export function GuestSharePage({ token }: { token: string }) {
           }
           setTicks(sums);
         }
+        if (usable) setCollapsedIds(closedOnArrival(usable)); // closed on arrival (#826)
         setContent(usable);
         setState(usable ? 'ready' : 'gone');
       })

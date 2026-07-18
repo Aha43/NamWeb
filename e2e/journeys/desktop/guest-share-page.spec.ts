@@ -37,13 +37,16 @@ test('a share link renders the itinerary — no sign-in wall, no NAM chrome', as
   await expect(page.getByRole('button', { name: 'Capture' })).toHaveCount(0);
   await expect(page.getByText(/sign in|sign up/i)).toHaveCount(0);
 
-  // Collapse a section (#794): honest header, hidden details, TOC tap reopens.
+  // Sections open COLLAPSED (#826): the TOC is the front door, details hidden but honest.
   const legHeader = page.getByRole('button', { name: /Japan leg/ });
-  await legHeader.click();
   await expect(page.getByText('Ryokan night')).toBeHidden();
   await expect(legHeader).toContainText('1 inside');
+  // A TOC tap reveals it (fold-aware anchor nav, #794).
   await toc.getByRole('link', { name: /Japan leg/ }).click();
   await expect(page.getByText('Ryokan night')).toBeVisible();
+  // And the header folds it back.
+  await legHeader.click();
+  await expect(page.getByText('Ryokan night')).toBeHidden();
 
   // The tab is the trip; robots are told to leave.
   await expect(page).toHaveTitle('Asia round trip');
