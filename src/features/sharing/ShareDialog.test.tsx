@@ -14,8 +14,7 @@ const service = {
   rotateShareToken: vi.fn(),
   fetchSuggestions: vi.fn(),
   resolveSuggestion: vi.fn(),
-  fetchUndrainedEvents: vi.fn(),
-  claimEvents: vi.fn(),
+  claimDrainableEvents: vi.fn(),
   deleteEvents: vi.fn(),
   fetchLeftoverDrained: vi.fn(),
   countShareEvents: vi.fn(),
@@ -28,8 +27,7 @@ vi.mock('./shares', async (orig) => ({
   rotateShareToken: (...a: unknown[]) => service.rotateShareToken(...a),
   fetchSuggestions: (...a: unknown[]) => service.fetchSuggestions(...a),
   resolveSuggestion: (...a: unknown[]) => service.resolveSuggestion(...a),
-  fetchUndrainedEvents: (...a: unknown[]) => service.fetchUndrainedEvents(...a),
-  claimEvents: (...a: unknown[]) => service.claimEvents(...a),
+  claimDrainableEvents: (...a: unknown[]) => service.claimDrainableEvents(...a),
   deleteEvents: (...a: unknown[]) => service.deleteEvents(...a),
   fetchLeftoverDrained: (...a: unknown[]) => service.fetchLeftoverDrained(...a),
   countShareEvents: (...a: unknown[]) => service.countShareEvents(...a),
@@ -82,8 +80,7 @@ beforeEach(() => {
   service.publishShare.mockReset();
   service.unpublishShare.mockReset().mockResolvedValue(undefined);
   service.rotateShareToken.mockReset();
-  service.fetchUndrainedEvents.mockReset().mockResolvedValue([]);
-  service.claimEvents.mockReset().mockImplementation((ids: number[]) => Promise.resolve(ids));
+  service.claimDrainableEvents.mockReset().mockResolvedValue([]);
   service.deleteEvents.mockReset().mockResolvedValue(undefined);
   service.fetchLeftoverDrained.mockReset().mockResolvedValue([]);
   service.countShareEvents.mockReset().mockResolvedValue(0);
@@ -240,15 +237,14 @@ describe('ShareDialog', () => {
     try {
       const pseudoA1 = [...guestIdMap(doc, 'trip', 'tok123').entries()].find(([, r]) => r === 'a1')![0];
       service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: { version: 1, title: 'Asia trip', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
-      service.fetchUndrainedEvents.mockResolvedValue([
-        { id: 7, node_id: pseudoA1, res_index: 0, delta: 1 },
-        { id: 8, node_id: pseudoA1, res_index: 0, delta: 1 },
+      service.claimDrainableEvents.mockResolvedValue([
+        { id: 7, node_id: pseudoA1, res_index: 0, delta: 1, answer: null },
+        { id: 8, node_id: pseudoA1, res_index: 0, delta: 1, answer: null },
       ]);
       service.countShareEvents.mockResolvedValue(9);
       const { dispatch } = renderButton();
       fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
       await waitFor(() => expect(screen.getByText('New guest ticks since your last look: 9')).toBeInTheDocument());
-      expect(service.claimEvents).toHaveBeenCalledWith([7, 8]);
       // The folded chain: first guard is the STORED value, the second its successor.
       expect(dispatch).toHaveBeenNthCalledWith(1, expect.objectContaining({ type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '3/12', delta: 1 }));
       expect(dispatch).toHaveBeenNthCalledWith(2, expect.objectContaining({ expectedValue: '4/12' }));
@@ -259,8 +255,7 @@ describe('ShareDialog', () => {
 
   it('a lost claim race applies nothing (#811 — the other device won)', async () => {
     service.fetchShare.mockResolvedValue({ token: 'tok123', share_id: 'sid1', project_id: 'trip', content: { version: 1, title: 'Asia trip', publishedAt: 'x', items: [], sections: [] }, enabled: true, updated_at: 'x' });
-    service.fetchUndrainedEvents.mockResolvedValue([{ id: 7, node_id: 'ffffffff', res_index: 0, delta: 1 }]);
-    service.claimEvents.mockResolvedValue([]); // another device claimed first
+    service.claimDrainableEvents.mockResolvedValue([]); // another device won the split
     const { dispatch } = renderButton();
     fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
     await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());

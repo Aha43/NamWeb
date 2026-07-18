@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +54,12 @@ export function ResourceDialog({
       ? { current: initialCount.current, target: parsedTarget }
       : null;
   const def = RESOURCE_TYPE_DEFS[type];
+  // #832/P3: switching the type TO question mid-dialog only flips the input's autoFocus prop,
+  // which React does not re-run on an already-mounted element — focus it explicitly.
+  const nameRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (def.valueKind === 'question') nameRef.current?.focus();
+  }, [def.valueKind]);
 
   // The commit shared by the form submit and ⌘/Ctrl+Enter (#746). Guards intact: empty refuses.
   function commit() {
@@ -188,6 +194,7 @@ export function ResourceDialog({
               <Label htmlFor="resource-name">{t(def.nameLabelKey ?? 'editor.resourceName')}</Label>
               <Input
                 id="resource-name"
+                ref={nameRef}
                 autoFocus={def.valueKind === 'question'}
                 placeholder={def.valueKind === 'question' ? t('editor.resourceQuestionPlaceholder') : t('editor.resourceNamePlaceholder')}
                 value={name}

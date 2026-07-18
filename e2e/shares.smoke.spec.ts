@@ -149,13 +149,17 @@ test('resource events (#809): guests append, owners drain, the table stays dark'
     // The table is dark to anon — events flow only through the two RPCs.
     expect((await anon.from('share_resource_events').select('id')).error).not.toBeNull();
 
-    // The owner drains: reads via RLS, marks drained — and the guest overlay empties.
-    const mine = await owner.from('share_resource_events').select('id, node_id, res_index, delta').eq('share_id', up.data!.share_id);
-    expect(mine.error).toBeNull();
-    expect(mine.data).toHaveLength(2);
-    const drained = await owner.from('share_resource_events').update({ drained: true }).eq('share_id', up.data!.share_id);
-    expect(drained.error).toBeNull();
+    // The owner claims via the RPC (#832/P1) — direct UPDATE/DELETE is revoked, so an old
+    // bundle fails closed. The RPC returns the claimed rows; the guest overlay then empties.
+    const directUpdate = await owner.from('share_resource_events').update({ drained: true }).eq('share_id', up.data!.share_id);
+    expect(directUpdate.error).not.toBeNull(); // fail closed: no direct write grant
+    const claimed = await owner.rpc('claim_drainable_events', { p_share_id: up.data!.share_id, p_kinds: ['delta', 'answer'] });
+    expect(claimed.error).toBeNull();
+    expect(claimed.data).toHaveLength(2);
     expect((await anon.rpc('get_share_resource_events', { share_token: TOKEN })).data).toEqual([]);
+    // The owner deletes via the RPC too (direct DELETE is revoked).
+    const del = await owner.rpc('delete_drained_events', { p_ids: (claimed.data as { id: number }[]).map((r) => r.id) });
+    expect(del.error).toBeNull();
 
     // A disabled share goes silent in BOTH directions.
     await owner.from('project_shares').update({ enabled: false }).eq('token', TOKEN);

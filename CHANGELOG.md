@@ -10,6 +10,17 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- Draining guest events now happens through owner-scoped server functions, and direct writes
+  to the events table are revoked — an owner tab running an older app version can no longer
+  claim-and-delete guest input it doesn't understand; it simply can't touch it. Closes #832.
+- A guest page open in a pocketed phone no longer discards another shopper's fresh answer just
+  because you ticked a counter (and vice versa) — the two live overlays refresh independently.
+  Closes #832.
+- Switching a resource's type to Question in the editor now moves the cursor to the question
+  field. Closes #832.
+
+### Fixed
+
 - The guest-event drain only claims event kinds it can apply — an owner client running an
   older bundle (or, later, a newer event type) no longer claims-and-deletes guest input it
   can't yet handle; unknown events wait for a client that understands them. Closes #830.
