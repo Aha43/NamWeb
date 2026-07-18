@@ -155,6 +155,19 @@ Lessons applied from birth (the stage-1/stage-4 corrections):
    registry-wide with one consumer? *Lean: registry-wide field (`interactive` types only),
    COUNT the sole current member — that's one entry, not speculative machinery.*
 
+## Open design task — concurrent same-resource drains (#832/P1-b)
+
+Two owner devices draining the same share concurrently can LOSE an event: the atomic claim
+splits events, but each device plans against its own stale document, and the second device's
+`expectedValue`-guarded intent no-ops on conflict-replay while `flush()` still reports success
+— so the event is deleted, unapplied. The guard conflates "don't double-apply on sync-replay"
+with "the base I computed from" — wrong for a commutative delta across devices. The fix needs
+per-intent applied-status from the commit contract (delete only applied, un-claim the rest) or
+a re-plan-against-refreshed-doc pass — a deliberate change to the sync layer, tracked in #832.
+A hasty fix risks the opposite bug (double-counting), which is worse. Exposure: two owner
+devices in one sync window — edge for single-owner use, real before the 2.0.0 multi-participant
+unveiling.
+
 ## Documented residues (dual review, 2026-07-18)
 
 Inherent to the events-not-state model, logged rather than fixed:

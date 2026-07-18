@@ -33,6 +33,23 @@ jobs:
       - run: npm run test
       - run: npm run build
 
+  # Clean-database migration gate (#832/P2): the mocked pipeline never touches a real DB, so a
+  # migration that fails on a fresh reset (bad order, non-idempotent alter, function drop/recreate
+  # mismatch) could reach prod undetected. This applies EVERY migration from scratch on each PR.
+  migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Apply all migrations to a clean database
+        # `supabase start` boots a fresh local Postgres and applies every file in
+        # supabase/migrations/ in order — it FAILS on a bad order, a non-idempotent alter, or a
+        # function drop/recreate mismatch. Parallel to `check` (not a branch-protection gate),
+        # so Supabase-image flakiness never blocks a merge while still surfacing real breakage.
+        run: supabase start
+
   # Network-mocked Playwright journeys — no Supabase backend (the HTTP calls are intercepted).
   # Deliberately NOT a PR gate, nor per-merge: it runs **nightly** and **on demand**
   # (workflow_dispatch). The per-change gate is running it locally before pushing; the nightly is

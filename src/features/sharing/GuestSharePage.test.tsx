@@ -240,6 +240,31 @@ describe('GuestSharePage (#761)', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Answer no: Bringing a tent?' })).toHaveAttribute('aria-pressed', 'true'));
   });
 
+  it('a local tick keeps a concurrent refresh\'s fresh answer (#832/P2)', async () => {
+    let resolveRefresh: (v: unknown) => void = () => {};
+    fetchGuestShare.mockResolvedValue({
+      ...CONTENT,
+      items: [{
+        id: 'aa11', title: 'Camp',
+        counters: [{ index: 0, value: '0/4', label: 'cartons' }],
+        questions: [{ index: 1, question: 'Tent?', value: '?' }],
+      }],
+    });
+    fetchShareResourceEvents.mockResolvedValueOnce([]); // initial load: empty
+    render(<GuestSharePage token="tok123" />);
+    await screen.findByText(/cartons 0\/4/);
+    // A focus-refresh begins carrying another guest's fresh answer…
+    fetchShareResourceEvents.mockImplementationOnce(() => new Promise((r) => { resolveRefresh = r; }));
+    fireEvent(window, new Event('focus'));
+    // …and a local counter tick lands before it resolves.
+    fireEvent.click(screen.getByRole('button', { name: 'Count one on cartons' }));
+    await waitFor(() => expect(screen.getByText(/cartons 1\/4/)).toBeInTheDocument());
+    resolveRefresh([{ node_id: 'aa11', res_index: 1, delta: null, answer: 'yes' }]);
+    // The tick survives (its generation bumped), AND the unrelated fresh answer still applies.
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Answer yes: Tent?' })).toHaveAttribute('aria-pressed', 'true'));
+    expect(screen.getByText(/cartons 1\/4/)).toBeInTheDocument();
+  });
+
   it('an undelegated page never fetches the overlay (#810)', async () => {
     fetchGuestShare.mockResolvedValue(CONTENT);
     render(<GuestSharePage token="tok123" />);

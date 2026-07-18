@@ -185,33 +185,20 @@ export async function fetchOwnerShares(): Promise<Pick<ProjectShare, 'token' | '
   return data ?? [];
 }
 
-/** A share's undrained events, oldest first (owner RLS) (#811). */
-export async function fetchUndrainedEvents(
-  shareId: string,
-): Promise<{ id: number; node_id: string; res_index: number; delta: number | null; answer: 'yes' | 'no' | 'clear' | null }[]> {
-  const { data, error } = await supabase
-    .from('share_resource_events')
-    .select('id, node_id, res_index, delta, answer')
-    .eq('share_id', shareId)
-    .eq('drained', false)
-    .order('id');
-  if (error) throw new Error(error.message);
-  return data ?? [];
-}
+/** The kinds a drain can apply — server-enforced by claim_drainable_events (#832/P1). */
+export const DRAINABLE_KINDS = ['delta', 'answer'] as const;
 
-/** Claim events before applying (#811): the atomic `drained = false` filter means two devices
- *  draining concurrently split the batch — every event is applied by exactly one of them.
- *  Returns the ids THIS caller won. */
-export async function claimEvents(ids: number[]): Promise<number[]> {
-  if (ids.length === 0) return [];
-  const { data, error } = await supabase
-    .from('share_resource_events')
-    .update({ drained: true })
-    .in('id', ids)
-    .eq('drained', false)
-    .select('id');
+/** Claim this share's undrained events of supported KINDS, atomically, via the owner-scoped
+ *  RPC (#832/P1 — direct UPDATE is revoked, so an old bundle fails closed). Two devices
+ *  draining concurrently still split the batch (the UPDATE ... RETURNING is atomic); an
+ *  unknown kind stays unclaimed for a newer client. Returns the rows THIS caller won. */
+export async function claimDrainableEvents(
+  shareId: string,
+  kinds: readonly string[],
+): Promise<{ id: number; node_id: string; res_index: number; delta: number | null; answer: 'yes' | 'no' | 'clear' | null }[]> {
+  const { data, error } = await supabase.rpc('claim_drainable_events', { p_share_id: shareId, p_kinds: kinds as string[] });
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => r.id);
+  return (data ?? []) as { id: number; node_id: string; res_index: number; delta: number | null; answer: 'yes' | 'no' | 'clear' | null }[];
 }
 
 /** Drained rows left by a previous session (#823/P2) — dead weight either way (see
@@ -230,7 +217,7 @@ export async function fetchLeftoverDrained(shareId: string): Promise<number[]> {
  *  cap toward a permanently deaf share — the suggestion-cap lesson, one table over. */
 export async function deleteEvents(ids: number[]): Promise<void> {
   if (ids.length === 0) return;
-  const { error } = await supabase.from('share_resource_events').delete().in('id', ids);
+  const { error } = await supabase.rpc('delete_drained_events', { p_ids: ids });
   if (error) throw new Error(error.message);
 }
 

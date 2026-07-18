@@ -1,7 +1,7 @@
 import type { Intent } from '@/domain/mutations';
 import type { WorkspaceDocument } from '@/domain/types';
 import { nowIso } from '@/lib/local';
-import { claimEvents, deleteEvents, fetchLeftoverDrained, fetchUndrainedEvents } from './shares';
+import { DRAINABLE_KINDS, claimDrainableEvents, deleteEvents, fetchLeftoverDrained } from './shares';
 import { drainPlan } from './drainEvents';
 
 /**
@@ -28,14 +28,10 @@ export async function drainShare(
   await fetchLeftoverDrained(share.share_id)
     .then((ids) => (ids.length > 0 ? deleteEvents(ids) : undefined))
     .catch(() => {});
-  const events = await fetchUndrainedEvents(share.share_id);
-  // Forward-compatible claim (#830/F1): only claim event kinds THIS client can apply —
-  // an unknown shape (a newer event type against an old bundle) must stay undrained for a
-  // newer client to handle, never be claimed-and-deleted into oblivion.
-  const known = events.filter((e) => e.delta === 1 || e.delta === -1 || e.answer === 'yes' || e.answer === 'no' || e.answer === 'clear');
-  if (known.length === 0) return 0;
-  const won = new Set(await claimEvents(known.map((e) => e.id)));
-  const mine = known.filter((e) => won.has(e.id));
+  // The claim is now the owner-scoped, kind-filtered RPC (#832/P1): it returns exactly the
+  // supported-kind rows this caller won, so the forward-compat filter is server-enforced and
+  // an old bundle without the grant fails closed instead of eating unparseable rows.
+  const mine = await claimDrainableEvents(share.share_id, DRAINABLE_KINDS);
   const doc = getDocument();
   if (mine.length === 0 || !doc) return 0;
   for (const intent of drainPlan(doc, share.project_id, share.token, mine, nowIso())) dispatch(intent);

@@ -144,16 +144,21 @@ export function GuestSharePage({ token }: { token: string }) {
    *  request and no local tick was accepted while it was in flight — otherwise an older
    *  response would rewind a just-accepted tick or a fresher refresh. */
   const refreshGen = useRef(0);
-  const localGen = useRef(0);
+  // #832/P2: a generation PER overlay kind — a local counter tick must not discard a refresh
+  // that also carried another guest's fresh question answer, and vice versa. Apply each half
+  // only if no local mutation of THAT kind landed while the refresh was in flight.
+  const localTickGen = useRef(0);
+  const localAnswerGen = useRef(0);
   const refreshTicks = useCallback(() => {
     const req = ++refreshGen.current;
-    const local = localGen.current;
+    const tickGen = localTickGen.current;
+    const answerGen = localAnswerGen.current;
     fetchShareResourceEvents(token)
       .then((events) => {
-        if (req !== refreshGen.current || local !== localGen.current) return; // superseded
+        if (req !== refreshGen.current) return; // superseded by a newer refresh
         const { sums, answers: ans } = foldEvents(events);
-        setTicks(sums);
-        setAnswers(ans);
+        if (tickGen === localTickGen.current) setTicks(sums);
+        if (answerGen === localAnswerGen.current) setAnswers(ans);
       })
       .catch(() => {});
   }, [token]);
@@ -248,7 +253,7 @@ export function GuestSharePage({ token }: { token: string }) {
     submitResourceEvent(token, nodeId, index, delta)
       .then((ok) => {
         if (!ok) return;
-        localGen.current += 1; // invalidate any refresh that was in flight before this tick
+        localTickGen.current += 1; // a refresh in flight must not rewind this tick (#832/P2)
         setTicks((prev) => {
           const next = new Map(prev);
           const key = `${nodeId}:${index}`;
@@ -263,7 +268,7 @@ export function GuestSharePage({ token }: { token: string }) {
     submitAnswerEvent(token, nodeId, index, desired)
       .then((ok) => {
         if (!ok) return;
-        localGen.current += 1;
+        localAnswerGen.current += 1; // a refresh in flight must not rewind this answer (#832/P2)
         setAnswers((prev) => {
           const next = new Map(prev);
           next.set(`${nodeId}:${index}`, desired === 'clear' ? null : desired);

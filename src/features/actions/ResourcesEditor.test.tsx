@@ -253,6 +253,13 @@ describe('ResourcesEditor dialogs (#720)', () => {
     expect(onChange.mock.calls[0][0][0]).not.toHaveProperty('completesAction');
   });
 
+  it('switching the type to QUESTION focuses the question field (#832/P3)', () => {
+    render(<ResourcesEditor resources={[]} onChange={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Add resource…' }));
+    fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'QUESTION' } });
+    expect(screen.getByLabelText('Question')).toHaveFocus();
+  });
+
   it('creates a QUESTION via the dialog — text in, unanswered "?" out (#827)', () => {
     const onChange = vi.fn();
     render(<ResourcesEditor resources={[]} onChange={onChange} />);
