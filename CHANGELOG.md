@@ -14,6 +14,11 @@ minor = features (breaking changes allowed), patch = fixes.
   answer with a tap, tapping the active answer to clear it. Like counters, a question can be
   delegated to guests: publish it and family answers "bringing a tent?" straight from the
   shared page, flowing home through the same drain. Closes #827.
+### Changed
+
+- Shared pages open with every section collapsed — the table of contents is the front door,
+  so guests land on the index and open straight to what they came for (deep links still
+  arrive with their target unfolded). Closes #826.
 
 ## [1.9.0] - 2026-07-17
 

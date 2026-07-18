@@ -89,17 +89,14 @@ describe('GuestSharePage (#761)', () => {
     expect(screen.queryByRole('navigation', { name: 'Contents' })).not.toBeInTheDocument();
   });
 
-  it('sections collapse honestly and expand back — default is fully expanded (#794)', async () => {
+  it('sections open COLLAPSED (#826) and fold honestly both ways (#794)', async () => {
     fetchGuestShare.mockResolvedValue(CONTENT);
     render(<GuestSharePage token="tok123" />);
     await screen.findByRole('heading', { name: 'Asia round trip' });
 
-    // Default expanded: content readable as before.
-    expect(screen.getByText('Ryokan night')).toBeVisible();
+    // Closed on arrival (#826): the TOC is the front door; root items stay visible.
+    expect(screen.getByText('Book flights')).toBeVisible();
     const header = screen.getByRole('button', { name: /Japan leg/ });
-    expect(header).toHaveAttribute('aria-expanded', 'true');
-
-    fireEvent.click(header);
     expect(header).toHaveAttribute('aria-expanded', 'false');
     expect(document.getElementById('guest-section-cc33')).toHaveClass('hidden');
     // Honest collapsed header: date span + content count still shown.
@@ -107,15 +104,21 @@ describe('GuestSharePage (#761)', () => {
     expect(header).toHaveTextContent('2 inside'); // one item + one nested section
 
     fireEvent.click(header);
+    expect(header).toHaveAttribute('aria-expanded', 'true');
     expect(document.getElementById('guest-section-cc33')).not.toHaveClass('hidden');
+    expect(screen.getByText('Ryokan night')).toBeVisible();
+    // The nested section inside opened its OWN fold closed (#826 covers every depth).
+    expect(screen.getByRole('button', { name: /Tokyo days/ })).toHaveAttribute('aria-expanded', 'false');
+
+    fireEvent.click(header);
+    expect(document.getElementById('guest-section-cc33')).toHaveClass('hidden');
   });
 
   it('a TOC tap into a collapsed section expands it — deep links never dead-end (#794)', async () => {
     fetchGuestShare.mockResolvedValue(CONTENT);
     render(<GuestSharePage token="tok123" />);
     await screen.findByRole('heading', { name: 'Asia round trip' });
-    fireEvent.click(screen.getByRole('button', { name: /Japan leg/ })); // collapse it
-    expect(document.getElementById('guest-section-cc33')).toHaveClass('hidden');
+    expect(document.getElementById('guest-section-cc33')).toHaveClass('hidden'); // closed on arrival (#826)
 
     const toc = within(screen.getByRole('navigation', { name: 'Contents' }));
     fireEvent.click(toc.getByRole('link', { name: /Japan leg/ }));
