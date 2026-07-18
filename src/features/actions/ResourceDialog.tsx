@@ -77,7 +77,7 @@ export function ResourceDialog({
       value: committedValue,
       // Additive, absent-means-off (#809): never write false into the document.
       ...(RESOURCE_TYPE_DEFS[type].interactive && guestEditable ? { guestEditable: true } : {}),
-      ...(RESOURCE_TYPE_DEFS[type].interactive && completesAction ? { completesAction: true } : {}),
+      ...(def.valueKind === 'countTarget' && completesAction ? { completesAction: true } : {}),
       // The name field shows only where the def says so; an empty entry there is a deliberate
       // clear. Elsewhere PRESERVE any existing description — it's a shared-contract field a
       // desktop-era document can carry; a web-side value edit must not silently null it (#724).

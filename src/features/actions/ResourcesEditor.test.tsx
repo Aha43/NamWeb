@@ -240,6 +240,19 @@ describe('ResourcesEditor dialogs (#720)', () => {
     ]);
   });
 
+  it('switching a completesAction COUNT to QUESTION drops the flag (#830/F2)', () => {
+    const onChange = vi.fn();
+    render(
+      <ResourcesEditor resources={[{ type: 'COUNT', value: '2/3', description: 'boxes', completesAction: true }]} onChange={onChange} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Edit resource boxes' }));
+    fireEvent.change(screen.getByLabelText('Resource type'), { target: { value: 'QUESTION' } });
+    fireEvent.change(screen.getByLabelText('Question'), { target: { value: 'Enough?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onChange).toHaveBeenCalledWith([{ type: 'QUESTION', value: '?', description: 'Enough?' }]);
+    expect(onChange.mock.calls[0][0][0]).not.toHaveProperty('completesAction');
+  });
+
   it('creates a QUESTION via the dialog — text in, unanswered "?" out (#827)', () => {
     const onChange = vi.fn();
     render(<ResourcesEditor resources={[]} onChange={onChange} />);

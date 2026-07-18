@@ -75,6 +75,21 @@ describe('drainShare (#821)', () => {
     expect(service.deleteEvents).not.toHaveBeenCalled(); // but nothing is deleted
   });
 
+  it('leaves unknown event kinds unclaimed for a newer client (#830/F1)', async () => {
+    // A future 4th event kind (neither delta nor a known answer) this client can't apply.
+    service.fetchUndrainedEvents.mockResolvedValue([
+      { id: 7, node_id: pseudoA1, res_index: 0, delta: 1, answer: null },
+      { id: 8, node_id: pseudoA1, res_index: 0, delta: null, answer: 'toggle' },
+    ]);
+    service.claimEvents.mockImplementation((ids: number[]) => Promise.resolve(ids));
+    service.fetchLeftoverDrained.mockResolvedValue([]);
+    service.deleteEvents.mockClear().mockResolvedValue(undefined);
+    const landed = await drainShare(() => docWith('10/12'), vi.fn(), async () => true, SHARE);
+    expect(landed).toBe(1); // only the known tick
+    expect(service.claimEvents).toHaveBeenCalledWith([7]); // the unknown row (8) is NOT claimed
+    expect(service.deleteEvents).toHaveBeenCalledWith([7]);
+  });
+
   it('sweeps dead leftover drained rows before claiming (#823/P2)', async () => {
     service.fetchUndrainedEvents.mockResolvedValue([]);
     service.fetchLeftoverDrained.mockResolvedValue([3, 4]);

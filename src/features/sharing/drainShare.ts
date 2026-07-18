@@ -29,9 +29,13 @@ export async function drainShare(
     .then((ids) => (ids.length > 0 ? deleteEvents(ids) : undefined))
     .catch(() => {});
   const events = await fetchUndrainedEvents(share.share_id);
-  if (events.length === 0) return 0;
-  const won = new Set(await claimEvents(events.map((e) => e.id)));
-  const mine = events.filter((e) => won.has(e.id));
+  // Forward-compatible claim (#830/F1): only claim event kinds THIS client can apply —
+  // an unknown shape (a newer event type against an old bundle) must stay undrained for a
+  // newer client to handle, never be claimed-and-deleted into oblivion.
+  const known = events.filter((e) => e.delta === 1 || e.delta === -1 || e.answer === 'yes' || e.answer === 'no' || e.answer === 'clear');
+  if (known.length === 0) return 0;
+  const won = new Set(await claimEvents(known.map((e) => e.id)));
+  const mine = known.filter((e) => won.has(e.id));
   const doc = getDocument();
   if (mine.length === 0 || !doc) return 0;
   for (const intent of drainPlan(doc, share.project_id, share.token, mine, nowIso())) dispatch(intent);
