@@ -11,6 +11,29 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.10.0 — 2026-07-18
+
+*(one day; 6 PRs, 1 release)* The registry pattern paid off: the **Question** resource — a
+tri-state yes/no — arrived as almost pure composition, reusing the counter epic's whole
+guest-append / owner-drain machinery, and in doing so answered the design doc's open
+`guestPolicy` question (auto-drain, no adopt ceremony) by the simple fact that "answer as
+counter" needed nothing new. The load-bearing decision was making the answer a SET, not a
+toggle — the pill computes tap-active-clears and dispatches the desired state, so the reducer
+and the drain both just apply it. Alongside it, a one-line-of-intent change with an outsized
+feel: guest pages open collapsed, turning the shared project from a brochure into an index.
+But the cycle's real character was the dual review going three layers deep on the same seam.
+Claude found the forward-compat trap (an old client claiming answer events it can't parse);
+its fix protected the current bundle. Codex then found that fix insufficient — an already-open
+old tab still holds direct table writes — and prescribed moving the whole claim/delete path
+behind owner-scoped RPCs so old clients fail closed, which is what shipped. And beneath THAT,
+Codex surfaced a genuine distributed-systems bug — concurrent same-resource drains losing an
+event to the expectedValue guard no-opping a conflict-replay — that I deliberately did NOT
+fix under review pressure, because every quick patch risked double-counting, worse than the
+rare loss; it's filed (#832) as a sync-contract design task, banked against the 2.0.0
+unveiling. Eighth and ninth zero-overlap review cycles; the pattern where the two reviewers
+pincer one subsystem from different altitudes is now the norm, not the exception. The 2.0.0
+unveiling stayed banked a fourth time — correctly, now with a named blocker.
+
 ## v1.9.0 — 2026-07-17
 
 *(two days; 9 PRs, 1 release)* The cycle where a design premise fell in the best possible

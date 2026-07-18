@@ -8,6 +8,17 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-07-18
+
+**A second thing to ask, and a tidier front door.** Shared projects gain the **Question**
+resource — a tri-state yes/no that family answers straight from the shared page ("bringing a
+tent?"), flowing home through the same guest-append / owner-drain pipe the counters use;
+tap the active answer to un-decide. And guest pages now open with every section collapsed, so
+the table of contents is the front door and visitors open straight to what they came for. A
+dual review hardened the drain's write path behind owner-scoped RPCs (an old client now fails
+closed rather than eating guest input) and split the guest overlays so simultaneous shoppers
+don't clobber each other.
+
 ### Fixed
 
 - Draining guest events now happens through owner-scoped server functions, and direct writes
@@ -1655,7 +1666,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.9.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.10.0...HEAD
+[1.10.0]: https://github.com/Aha43/NamWeb/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/Aha43/NamWeb/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/Aha43/NamWeb/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/Aha43/NamWeb/compare/v1.6.0...v1.7.0
