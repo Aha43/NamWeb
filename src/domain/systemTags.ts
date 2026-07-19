@@ -54,14 +54,3 @@ export function isSystemTag(tag: string): boolean {
   return SYSTEM_TAGS.includes(canonicalTag(tag));
 }
 
-/** A `#…` tag the app doesn't know — the reserved namespace a user may not keep. normalizeTags
- *  DEMOTES these (strips the sigil) rather than destroying them (#842/F1). */
-export function isUnknownSystemTag(tag: string): boolean {
-  const c = canonicalTag(tag);
-  return c.startsWith(SYSTEM_SIGIL) && !SYSTEM_TAGS.includes(c);
-}
-
-/** Strip the reserved sigil from an unknown `#…` tag, demoting it to a plain user tag. */
-export function demoteSystemTag(tag: string): string {
-  return tag.trim().toLowerCase().replace(/^#+/, '');
-}

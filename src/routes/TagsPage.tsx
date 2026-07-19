@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { allTags, contextItems, effectiveTags } from '@/domain/lenses';
+import { canonicalTag } from '@/domain/systemTags';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
@@ -80,7 +81,12 @@ export function TagsPage() {
     // Count effective tags (own + inherited) so a rubbed-off project tag is reflected on every
     // descendant, matching how filtering already treats it.
     for (const node of Object.values(document.nodes)) {
-      for (const t of effectiveTags(document, node.id)) tagCounts[t] = (tagCounts[t] ?? 0) + 1;
+      // Key by the CANONICAL identity so a legacy `in progress` node counts under its
+      // canonical `#in-progress` row (allTags canonicalizes too) — not a phantom raw row (#844/#4).
+      for (const t of effectiveTags(document, node.id)) {
+        const c = canonicalTag(t);
+        tagCounts[c] = (tagCounts[c] ?? 0) + 1;
+      }
     }
   }
   // Only filter once at least one tag is chosen — an empty selection matches everything.

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalTag, demoteSystemTag, isSystemTag, isUnknownSystemTag } from './systemTags';
+import { IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_OPEN_TAG, SHARED_SHOW_TAG, SYSTEM_TAGS, canonicalTag, isSystemTag } from './systemTags';
 
 describe('systemTags (#837/#842)', () => {
   it('canonicalTag: legacy alias, sigil case-folding, trimmed user tags', () => {
@@ -23,11 +23,17 @@ describe('systemTags (#837/#842)', () => {
     expect(isSystemTag('@phone')).toBe(false);
   });
 
-  it('isUnknownSystemTag / demoteSystemTag: the reserved namespace, non-destructive', () => {
-    expect(isUnknownSystemTag('#foo')).toBe(true);
-    expect(isUnknownSystemTag('#shared-hide')).toBe(false); // known
-    expect(isUnknownSystemTag('foo')).toBe(false); // not in the namespace
-    expect(demoteSystemTag('#Foo')).toBe('foo'); // strip sigil, lowercased
-    expect(demoteSystemTag('##bar')).toBe('bar');
+  it('an unknown #… tag is inert — kept as an ordinary tag, never a system tag (#844)', () => {
+    // Semantic reservation: a user's #foo can't collide with / behave as a system tag, but it
+    // is NOT rewritten (demoting broke idempotence + cross-store coherence). It stays #foo.
+    expect(isSystemTag('#foo')).toBe(false);
+    expect(canonicalTag('#foo')).toBe('#foo');
+  });
+
+  it('every exported *_TAG constant is registered in SYSTEM_TAGS (drift guard #844)', () => {
+    for (const c of [IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG]) {
+      expect(SYSTEM_TAGS).toContain(c); // a constant missing from the registry would silently
+      expect(isSystemTag(c)).toBe(true); //  fail: not bold, not protected, treated as user input
+    }
   });
 });

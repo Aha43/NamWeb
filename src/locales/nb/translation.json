@@ -566,7 +566,6 @@
   "share.includeNotes": "Notater",
   "share.includeStatus": "Fremdrift",
   "share.invisibleToGuests": "{count} element(er) gjester ikke ser ennå — publiser på nytt for å vise",
-  "share.legacyPrivate": "{count} node(r) er merket med det vanlige ordet «private» — det skjuler dem ikke lenger fra delingen. Merk dem #shared-hide for å holde dem borte fra siden.",
   "share.loading": "Sjekker…",
   "share.notPublished": "Ikke publisert. Publiser for å få en hemmelig lenke.",
   "share.publish": "Publiser",
