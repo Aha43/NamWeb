@@ -11,6 +11,25 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.11.0 — 2026-07-19
+
+*(one day; 4 PRs, 1 release)* A cleanup the user named at exactly the right moment: system tags
+and user tags had always looked identical, and with sharing about to lean harder on tag-driven
+visibility, the ambiguity was a latent trap. The fix reserved a `#` namespace for system tags —
+and the interesting part was the sequencing decision. Rather than add a duplicate `shared-hide`
+alongside `private`, we renamed `private` → `#shared-hide` (freeing the generic word), and did
+the sigil refactor FIRST so the two new share-shape tags (`#shared-show`, `#shared-open`) were
+born in their final form instead of named twice. Then the dual review did what it does: Claude
+caught that a pre-existing user `#foo` tag would be bold-protected yet silently destroyed on any
+write, and I "fixed" it by demoting unknown `#…` to plain — which Codex then showed was itself
+broken TWO ways (non-idempotent: `#in progress` promotes to the system tag on a second pass;
+cross-store split: a node demoted while the registry kept the old spelling). The real fix was to
+stop rewriting tag data entirely — reserve the namespace *semantically* (registry-based
+membership) not *syntactically*. That the strict "forbid the `#` character" version needs a
+document migration is now a banked follow-up alongside #832. Two review rounds, and the second
+found that the first round's fix was the bug — the exact value of not stopping at one reviewer.
+The 2.0.0 unveiling stays banked (its blocker, #832, unchanged).
+
 ## v1.10.0 — 2026-07-18
 
 *(one day; 6 PRs, 1 release)* The registry pattern paid off: the **Question** resource — a
