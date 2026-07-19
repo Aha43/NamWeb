@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-07-19
+
+**System tags grow up.** The built-in tags that shape sharing and focus — long indistinguishable
+from your own vocabulary — move into a reserved `#` namespace (`#in-progress`, `#shared-hide`)
+that reads clearly as system and can't be collided with. `private` becomes `#shared-hide` (and
+the plain word `private` is yours again). Two new share-shaping tags ride the namespace:
+`#shared-show` pins an item onto a shared page past "Hide completed", and `#shared-open` opens a
+section expanded on arrival. A two-round dual review hardened the reservation to be
+idempotent and non-destructive — your tags are never rewritten or lost.
+
 ### Fixed
 
 - A `#`-prefixed tag that isn't a real system tag is no longer treated as one — it stays an
@@ -1686,7 +1696,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.10.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.11.0...HEAD
+[1.11.0]: https://github.com/Aha43/NamWeb/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/Aha43/NamWeb/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/Aha43/NamWeb/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/Aha43/NamWeb/compare/v1.7.0...v1.8.0
