@@ -33,12 +33,14 @@ function hasInteractive(content: ShareContent): boolean {
   return content.items.some(any) || walk(content.sections);
 }
 
-/** Every section id at every depth. */
+/** Every section id at every depth, EXCEPT those tagged #shared-open (#838) — an open section
+ *  is left out of the collapsed-on-arrival set so it renders expanded. A guest can still fold
+ *  it afterward; the seed only decides the initial state. */
 function allSectionIds(content: ShareContent): Set<string> {
   const ids = new Set<string>();
   const walk = (sections: ShareSection[]) => {
     for (const sec of sections) {
-      ids.add(sec.id);
+      if (!sec.open) ids.add(sec.id);
       walk(sec.sections);
     }
   };

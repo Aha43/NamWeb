@@ -172,6 +172,35 @@ describe('shareContent — the sanitizer', () => {
     expect(shareContent(doc, 'trip', { ...OPTS, includeDone: false })).toBeNull();
   });
 
+  it('#shared-show (#838): forces a DONE item past Hide-completed, but never past a hard hide', () => {
+    const doc = trip();
+    doc.nodes['a1'].status = 'DONE';
+    doc.nodes['a1'].tags = ['#shared-show']; // pin this done item visible
+    // A2 lives under a done section we also hide, but tagged #shared-show — must NOT resurrect
+    // (its ancestor is hard/soft-hidden and buildChildren never recurses in).
+    doc.nodes['legs'].status = 'DONE';
+    doc.nodes['a2'].tags = ['#shared-show'];
+    const shown = shareContent(doc, 'trip', { ...OPTS, includeDone: false })!;
+    expect(shown.items.map((i) => i.title)).toEqual(['Book flights']); // forced-in survives
+    expect(shown.sections).toEqual([]); // the done section stays hidden; a2 doesn't escape it
+
+    // #shared-show never beats a HARD exclusion: a #shared-hide + #shared-show node stays gone.
+    const doc2 = trip();
+    doc2.nodes['a1'].tags = ['#shared-hide', '#shared-show'];
+    const c = shareContent(doc2, 'trip', OPTS)!;
+    expect(c.items.map((i) => i.title)).toEqual([]); // hide wins
+  });
+
+  it('#shared-open (#838): a section carries open=true for the guest renderer', () => {
+    const doc = trip();
+    doc.nodes['legs'].tags = ['#shared-open'];
+    const c = shareContent(doc, 'trip', OPTS)!;
+    expect(c.sections[0].open).toBe(true);
+    // Untagged sections leave the flag absent (minimal JSON).
+    const plain = shareContent(trip(), 'trip', OPTS)!;
+    expect(plain.sections[0].open).toBeUndefined();
+  });
+
   it('pseudonymous ids: stable for the same salt, different across salts, never the node id', () => {
     const a = shareContent(trip(), 'trip', OPTS)!;
     const b = shareContent(trip(), 'trip', OPTS)!;
