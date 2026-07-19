@@ -5,7 +5,7 @@
 // publish time on the owner's device — never in a request path.
 
 import type { NamNode, WorkspaceDocument } from './types';
-import { canonicalTag, SHARED_HIDE_TAG } from './systemTags';
+import { canonicalTag, SHARED_HIDE_TAG, SHARED_OPEN_TAG, SHARED_SHOW_TAG } from './systemTags';
 import { parseQuestion } from './resourceQuestion';
 import { effectiveDue } from './derivedDue';
 
@@ -75,6 +75,8 @@ export interface ShareSection {
   due?: ShareDue;
   counters?: ShareCounter[];
   questions?: ShareQuestion[];
+  /** The section renders expanded on arrival (#838, tag #shared-open) instead of folded. */
+  open?: boolean;
   items: ShareItem[];
   sections: ShareSection[];
 }
@@ -118,6 +120,12 @@ function pseudoId(salt: string, id: string): string {
 
 function isHidden(node: NamNode): boolean {
   return node.tags.some((tag) => canonicalTag(tag) === SHARED_HIDE_TAG);
+}
+
+/** #838: a node tagged #shared-show is kept IN even when a per-share TOGGLE would hide it —
+ *  overrides ONLY the soft toggle-hide, never a hard exclusion (isExcluded short-circuits). */
+function isForceShown(node: NamNode): boolean {
+  return node.tags.some((tag) => canonicalTag(tag) === SHARED_SHOW_TAG);
 }
 
 /** Excluded regardless of toggles: private subtrees, cancelled and archived work. Done stays
@@ -207,7 +215,7 @@ export function shareContent(
   options: ShareOptions,
 ): ShareContent | null {
   const hideDone = options.includeDone === false;
-  const excluded = (node: NamNode) => isExcluded(node) || (hideDone && node.status === 'DONE');
+  const excluded = (node: NamNode) => isExcluded(node) || (hideDone && node.status === 'DONE' && !isForceShown(node));
   const root = doc.nodes[projectId];
   if (!root || !root.project || excluded(root)) return null;
 
@@ -258,6 +266,7 @@ export function shareContent(
     if (counters.length > 0) section.counters = counters;
     const questions = nodeQuestions(node);
     if (questions.length > 0) section.questions = questions;
+    if (node.tags.some((tag) => canonicalTag(tag) === SHARED_OPEN_TAG)) section.open = true;
     return section;
   }
 

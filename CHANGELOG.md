@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- Two more share-shaping tags: `#shared-show` pins an item onto the guest page even when "Hide
+  completed" would drop it (great for "we already got the axes"), and `#shared-open` makes a
+  section open expanded on arrival instead of folded. Closes #838.
+
 ### Changed
 
 - System tags now live in a reserved `#` namespace — "in progress" becomes `#in-progress` and

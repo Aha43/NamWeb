@@ -25,10 +25,17 @@ export const IN_PROGRESS_TAG = '#in-progress';
  *  half of the sharing visibility grammar. Renamed from the pre-sigil `private` (#837). */
 export const SHARED_HIDE_TAG = '#shared-hide';
 
+/** Forces a node back IN on a share even when a per-share TOGGLE (e.g. Hide completed) would
+ *  drop it (#838). Never beats a hard exclusion (#shared-hide/cancelled/archived). */
+export const SHARED_SHOW_TAG = '#shared-show';
+
+/** A section that renders EXPANDED on arrival, overriding the collapsed-by-default (#838). */
+export const SHARED_OPEN_TAG = '#shared-open';
+
 /** The registry of MEANINGFUL system tags — drives suggestions and the enforcement allowlist.
  *  Membership is otherwise structural (any `#…` tag is system); this list is which ones the app
  *  knows about and lets users apply. */
-export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG, SHARED_HIDE_TAG];
+export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG];
 
 /** The canonical form of a tag: the legacy `in progress` maps to `#in-progress`; any `#…` tag is
  *  lowercased to its canonical sigil form (NamDesktop may write case variants); a user tag is

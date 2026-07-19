@@ -114,6 +114,24 @@ describe('GuestSharePage (#761)', () => {
     expect(document.getElementById('guest-section-cc33')).toHaveClass('hidden');
   });
 
+  it('a #shared-open section renders EXPANDED on arrival while siblings stay folded (#838)', async () => {
+    fetchGuestShare.mockResolvedValue({
+      ...CONTENT,
+      sections: [
+        { ...CONTENT.sections[0], open: true }, // Japan leg pinned open
+        { id: 'ff66', title: 'Canada alt', items: [{ id: 'gg77', title: 'Rockies' }], sections: [] },
+      ],
+    });
+    render(<GuestSharePage token="tok123" />);
+    await screen.findByRole('heading', { name: 'Asia round trip' });
+    // The open section is expanded on arrival — its content is visible, header aria-expanded.
+    expect(screen.getByRole('button', { name: /Japan leg/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByText('Ryokan night')).toBeVisible();
+    // A sibling without the tag still opens collapsed (#826).
+    expect(screen.getByRole('button', { name: /Canada alt/ })).toHaveAttribute('aria-expanded', 'false');
+    expect(document.getElementById('guest-section-ff66')).toHaveClass('hidden');
+  });
+
   it('a TOC tap into a collapsed section expands it — deep links never dead-end (#794)', async () => {
     fetchGuestShare.mockResolvedValue(CONTENT);
     render(<GuestSharePage token="tok123" />);
