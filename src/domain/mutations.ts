@@ -5,7 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
-import { IN_PROGRESS_TAG, canonicalTag, isSystemTag, isUnknownSystemTag, SYSTEM_SIGIL } from './systemTags';
+import { IN_PROGRESS_TAG, SYSTEM_TAGS, canonicalTag, demoteSystemTag, isSystemTag, isUnknownSystemTag } from './systemTags';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 import { formatCount, parseCount } from './resourceCount';
 import { formatQuestion, parseQuestion } from './resourceQuestion';
@@ -109,13 +109,16 @@ export function normalizeTags(tags: string[]): string[] {
   const out: string[] = [];
   for (const raw of tags) {
     if (!raw.trim()) continue;
-    // Invented `#…` tags are dropped (the reserved namespace, #837); known system tags are
-    // canonicalized to their sigil form (migrating the legacy `in progress` on write); user
-    // tags are lowercased as before.
-    if (isUnknownSystemTag(raw)) continue;
     const canon = canonicalTag(raw);
-    const tag = canon.startsWith(SYSTEM_SIGIL) ? canon : raw.trim().toLowerCase();
-    if (!seen.has(tag)) {
+    // Known system tags are canonicalized to their sigil form (migrating legacy `in progress`
+    // on write). An INVENTED `#…` is DEMOTED to a plain tag (#842/F1) — the namespace is
+    // reserved, but a user's tag is never destroyed, only de-sigiled. User tags lowercase.
+    const tag = SYSTEM_TAGS.includes(canon)
+      ? canon
+      : isUnknownSystemTag(raw)
+        ? demoteSystemTag(raw)
+        : raw.trim().toLowerCase();
+    if (tag && !seen.has(tag)) {
       seen.add(tag);
       out.push(tag);
     }

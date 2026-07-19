@@ -566,6 +566,7 @@
   "share.includeNotes": "Notes",
   "share.includeStatus": "Progress",
   "share.invisibleToGuests": "{count} item(s) guests can’t see yet — republish to reveal",
+  "share.legacyPrivate": "{count} node(s) are tagged the plain word \"private\" — that no longer hides them from the share. Tag them #shared-hide to keep them off the page.",
   "share.loading": "Checking…",
   "share.notPublished": "Not published. Publish to get a secret link.",
   "share.publish": "Publish",

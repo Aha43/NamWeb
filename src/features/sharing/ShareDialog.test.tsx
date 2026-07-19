@@ -262,6 +262,17 @@ describe('ShareDialog', () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  it('warns about legacy `private` tags that no longer hide (#842/F2)', async () => {
+    doc.nodes['a1'].tags = ['private']; // a plain-word tag authored under the old meaning
+    try {
+      renderButton();
+      fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
+      await waitFor(() => expect(screen.getByText(/tagged the plain word "private"/)).toBeInTheDocument());
+    } finally {
+      doc.nodes['a1'].tags = [];
+    }
+  });
+
   it('a hide-completed share re-seeds its toggles — no phantom dirty, no silent re-expose (#823/P2)', async () => {
     const { shareContent } = await import('@/domain/shareContent');
     const opts = { includeDue: true, includeStatus: false, includeNotes: true, includeDone: false, salt: 'tok123', publishedAt: 'x' };

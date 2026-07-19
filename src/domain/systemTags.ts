@@ -44,17 +44,24 @@ export function canonicalTag(tag: string): string {
   const t = tag.trim().toLowerCase();
   if (t === LEGACY_IN_PROGRESS) return IN_PROGRESS_TAG;
   if (t.startsWith(SYSTEM_SIGIL)) return t;
-  return tag;
+  return tag.trim(); // #842/F3: trim user tags too, so a NamDesktop-padded " foo" matches "foo"
 }
 
-/** A system tag is anything whose canonical form sits in the `#` namespace (incl. legacy
- *  `in progress`). Users can't create these — normalizeTags drops unknown `#…` tags. */
+/** A system tag is a KNOWN one (canonical form in the registry, incl. legacy `in progress`)
+ *  — registry-based, not "any `#…`" (#842/F1): an unregistered `#foo` a user's doc predates the
+ *  reservation with must render/behave as an ORDINARY tag, not masquerade as system. */
 export function isSystemTag(tag: string): boolean {
-  return canonicalTag(tag).startsWith(SYSTEM_SIGIL);
+  return SYSTEM_TAGS.includes(canonicalTag(tag));
 }
 
-/** A `#…` tag the app doesn't know — an invented system tag a user must not be allowed to keep. */
+/** A `#…` tag the app doesn't know — the reserved namespace a user may not keep. normalizeTags
+ *  DEMOTES these (strips the sigil) rather than destroying them (#842/F1). */
 export function isUnknownSystemTag(tag: string): boolean {
   const c = canonicalTag(tag);
   return c.startsWith(SYSTEM_SIGIL) && !SYSTEM_TAGS.includes(c);
+}
+
+/** Strip the reserved sigil from an unknown `#…` tag, demoting it to a plain user tag. */
+export function demoteSystemTag(tag: string): string {
+  return tag.trim().toLowerCase().replace(/^#+/, '');
 }
