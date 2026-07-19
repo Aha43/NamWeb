@@ -5,7 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
-import { IN_PROGRESS_TAG, canonicalTag, isSystemTag } from './systemTags';
+import { IN_PROGRESS_TAG, canonicalTag, isSystemTag, isUnknownSystemTag, SYSTEM_SIGIL } from './systemTags';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 import { formatCount, parseCount } from './resourceCount';
 import { formatQuestion, parseQuestion } from './resourceQuestion';
@@ -108,8 +108,14 @@ export function normalizeTags(tags: string[]): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
   for (const raw of tags) {
-    const tag = raw.trim().toLowerCase();
-    if (tag && !seen.has(tag)) {
+    if (!raw.trim()) continue;
+    // Invented `#…` tags are dropped (the reserved namespace, #837); known system tags are
+    // canonicalized to their sigil form (migrating the legacy `in progress` on write); user
+    // tags are lowercased as before.
+    if (isUnknownSystemTag(raw)) continue;
+    const canon = canonicalTag(raw);
+    const tag = canon.startsWith(SYSTEM_SIGIL) ? canon : raw.trim().toLowerCase();
+    if (!seen.has(tag)) {
       seen.add(tag);
       out.push(tag);
     }

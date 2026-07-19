@@ -383,15 +383,16 @@ describe('tags & search', () => {
   it('allTags is the sorted union of node + registered tags — plus the system tags (#651)', () => {
     const doc = tagged();
     doc.registeredTags = ['waiting'];
-    expect(allTags(doc)).toEqual(['home', 'in progress', 'private', 'urgent', 'waiting']);
+    expect(allTags(doc)).toEqual(['#in-progress', '#shared-hide', 'home', 'urgent', 'waiting']);
   });
 
   it('allTags collapses NamDesktop-cased system-tag variants into the canonical form (#654)', () => {
     const doc = tagged();
     doc.nodes['a'].tags.push('In Progress'); // desktop-written case variant
     const tags = allTags(doc);
-    expect(tags).toContain('in progress');
+    expect(tags).toContain('#in-progress');
     expect(tags).not.toContain('In Progress');
+    expect(tags).not.toContain('in progress'); // legacy spelling canonicalizes to the sigil form
   });
 
   it('contextItems matches tags case-insensitively (#654)', () => {

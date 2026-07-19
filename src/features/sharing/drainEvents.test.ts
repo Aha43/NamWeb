@@ -32,7 +32,7 @@ function workspace(): WorkspaceDocument {
           { type: 'QUESTION', value: '?', description: 'Bringing a tent?', guestEditable: true },
         ],
       }),
-      secret: node('secret', { tags: ['private'] }),
+      secret: node('secret', { tags: ['#shared-hide'] }),
     },
     registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
   };
