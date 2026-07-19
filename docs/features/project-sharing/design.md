@@ -117,9 +117,14 @@ A **pure domain function**: `shareContent(doc, projectId, options) → ShareCont
 
 - Walks the project subtree only; **copies** enabled data into a fresh structure (allowlist,
   not blocklist — fields are *included* by name, so new document fields default to private).
-- Excludes any node carrying the `private` system tag (subtree-inclusive: a private node's
-  children are gone too — **including their dates**: derived section spans are computed over
-  the pruned subtree, #772/F1).
+- Excludes any node carrying the `#shared-hide` system tag (renamed from `private` in #837 —
+  `private` is now a free user word; subtree-inclusive: a hidden node's children are gone too —
+  **including their dates**: derived section spans are computed over the pruned subtree, #772/F1).
+  A legacy node still tagged the plain word `private` is NOT hidden (the word was freed); the
+  ShareDialog surfaces a detection line so such a node can't leak unnoticed (#842/F2) — retag it
+  `#shared-hide`. The owner's live workspace was verified clean of `private` at the #837 cut.
+- `#shared-show` forces a node back IN past a per-share toggle (e.g. Hide completed) but never
+  past a hard exclusion; `#shared-open` renders a section expanded on arrival (#838).
 - Honors `options`: include due dates / statuses / notes (per-share toggles).
 - Strips everything structural/nerdy: ids are re-minted (guest-side ids must not leak
   workspace node ids — see Open questions), tags are dropped (except possibly a curated

@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Typing a `#`-prefixed tag that isn't a system tag now keeps it as a plain tag (the `#` is
+  dropped) instead of silently deleting it, and such a tag no longer renders as a bold system
+  tag — the `#` namespace is reserved without ever destroying your input. Closes #842.
+- The share dialog flags any node still tagged the old plain word "private" (which no longer
+  hides it), so a legacy hide can't publish unnoticed. Closes #842.
+
 ### Added
 
 - Two more share-shaping tags: `#shared-show` pins an item onto the guest page even when "Hide
