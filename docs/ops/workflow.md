@@ -51,8 +51,8 @@ migration path.
 
 ## Schema flow (high-risk, armor it)
 
-Schema lives in **NamDesktop** (`supabase/migrations`, the single source of truth) and is pushed to
-prod manually. Rules:
+Schema lives in **NamWeb** (`supabase/migrations`, the single source of truth since Sprint 0,
+#753) and is pushed to prod manually. Rules:
 
 1. **Back up first.** Run a `pg_dump` of prod immediately before any `supabase db push`. This is the
    substitute for staging + PITR — if a migration goes wrong, restore.
@@ -66,6 +66,8 @@ prod manually. Rules:
    ship a build that expects a column prod doesn't have yet.
 5. **Mind the shared backend.** A migration affects **both** NamWeb and NamDesktop users — coordinate
    accordingly.
+6. **Cascade from `auth.users`.** Any table referencing `auth.users` must `on delete cascade` — else
+   an account/admin user-delete breaks silently on the FK (NamAdmin's delete relies on it; #847).
 
 ## Universal gates
 

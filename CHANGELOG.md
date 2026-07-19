@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- Deleting an account now removes the workspace through the database's foreign-key cascade
+  (matching how shared projects already clean up), so account and admin-side user deletion
+  work reliably; `delete_my_account` is simplified to rely on the single cascade mechanism.
+  Closes #847.
+
 ## [1.11.0] - 2026-07-19
 
 **System tags grow up.** The built-in tags that shape sharing and focus — long indistinguishable
