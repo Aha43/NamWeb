@@ -529,17 +529,16 @@ describe('normalizeTags', () => {
     expect(normalizeTags(['  Phone ', 'PHONE', 'home', '', '  '])).toEqual(['phone', 'home']);
   });
 
-  it('reserves the # namespace (#837/#842): demotes invented system tags, keeps known ones, migrates legacy', () => {
-    // A user cannot KEEP a new #… tag — it is DEMOTED to a plain tag (#842/F1), never destroyed.
-    expect(normalizeTags(['home', '#invented', '#shared-hide'])).toEqual(['home', 'invented', '#shared-hide']);
-    // The legacy `in progress` spelling is canonicalized to the sigil form on write.
+  it('the # namespace (#837/#844): known tags canonicalize + legacy migrates; unknown #… stays ordinary', () => {
+    // Known system tags are canonicalized; the legacy `in progress` spelling migrates on write.
     expect(normalizeTags(['In Progress', 'home'])).toEqual(['#in-progress', 'home']);
-    // Case variants of a known system tag collapse to canonical.
     expect(normalizeTags(['#Shared-Hide', '#SHARED-HIDE'])).toEqual(['#shared-hide']);
-    // Context tags (@…) are ordinary user tags — untouched by the reservation.
-    expect(normalizeTags(['@phone', 'GROCERIES'])).toEqual(['@phone', 'groceries']);
-    // A demote that collides with an existing plain tag de-dupes (order preserved).
-    expect(normalizeTags(['idea', '#idea'])).toEqual(['idea']);
+    // An UNKNOWN #… tag is kept AS-IS (semantic reservation only — never rewritten, #844).
+    expect(normalizeTags(['home', '#invented', '#shared-hide'])).toEqual(['home', '#invented', '#shared-hide']);
+    // Context tags (@…) untouched. And it's IDEMPOTENT — a second pass is a no-op (#844/#1).
+    const once = normalizeTags(['@phone', 'GROCERIES', '#in progress', '#invented']);
+    expect(once).toEqual(['@phone', 'groceries', '#in progress', '#invented']);
+    expect(normalizeTags(once)).toEqual(once);
   });
 });
 

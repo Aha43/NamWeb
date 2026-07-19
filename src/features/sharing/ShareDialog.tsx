@@ -129,19 +129,6 @@ export function ShareDialog({
     return count;
   }, [document, projectId, open]);
 
-  // #842/F2: `private` was freed (no longer hides). A node tagged the plain word — from a
-  // NamDesktop-era doc or an import authored under the old meaning — would publish silently.
-  // Detection-only: surface it so a legacy hide can't leak unnoticed (doesn't reserve the word).
-  const legacyPrivateCount = useMemo(() => {
-    if (!document || !open) return 0;
-    let count = 0;
-    for (const id of subtreeIds(document, projectId)) {
-      const node = document.nodes[id];
-      if (node && node.tags.some((tag) => tag.trim().toLowerCase() === 'private')) count++;
-    }
-    return count;
-  }, [document, projectId, open]);
-
   const buildContent = useCallback(
     (salt: string) =>
       document
@@ -298,9 +285,6 @@ export function ShareDialog({
           </label>
         </div>
 
-        {legacyPrivateCount > 0 && (
-          <p className="text-xs text-amber-600 dark:text-amber-500">{t('share.legacyPrivate', { count: legacyPrivateCount })}</p>
-        )}
         {hiddenCount > 0 && (
           <p className="text-xs text-muted-foreground">{t('share.hiddenCount', { count: hiddenCount })}</p>
         )}

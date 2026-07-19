@@ -5,7 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
-import { IN_PROGRESS_TAG, SYSTEM_TAGS, canonicalTag, demoteSystemTag, isSystemTag, isUnknownSystemTag } from './systemTags';
+import { IN_PROGRESS_TAG, SYSTEM_TAGS, canonicalTag, isSystemTag } from './systemTags';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 import { formatCount, parseCount } from './resourceCount';
 import { formatQuestion, parseQuestion } from './resourceQuestion';
@@ -110,14 +110,12 @@ export function normalizeTags(tags: string[]): string[] {
   for (const raw of tags) {
     if (!raw.trim()) continue;
     const canon = canonicalTag(raw);
-    // Known system tags are canonicalized to their sigil form (migrating legacy `in progress`
-    // on write). An INVENTED `#…` is DEMOTED to a plain tag (#842/F1) — the namespace is
-    // reserved, but a user's tag is never destroyed, only de-sigiled. User tags lowercase.
-    const tag = SYSTEM_TAGS.includes(canon)
-      ? canon
-      : isUnknownSystemTag(raw)
-        ? demoteSystemTag(raw)
-        : raw.trim().toLowerCase();
+    // Known system tags → canonical sigil form (migrating legacy `in progress` on write).
+    // Everything else — INCLUDING a user's #-prefixed tag — is kept as an ordinary lowercased
+    // tag. The `#` namespace is reserved SEMANTICALLY (only registered #… tags behave as
+    // system — see isSystemTag), NEVER by rewriting your input: demoting broke idempotence
+    // (#in progress → in progress → #in-progress) and split one tag across stores (#844).
+    const tag = SYSTEM_TAGS.includes(canon) ? canon : raw.trim().toLowerCase();
     if (tag && !seen.has(tag)) {
       seen.add(tag);
       out.push(tag);

@@ -10,11 +10,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
-- Typing a `#`-prefixed tag that isn't a system tag now keeps it as a plain tag (the `#` is
-  dropped) instead of silently deleting it, and such a tag no longer renders as a bold system
-  tag — the `#` namespace is reserved without ever destroying your input. Closes #842.
-- The share dialog flags any node still tagged the old plain word "private" (which no longer
-  hides it), so a legacy hide can't publish unnoticed. Closes #842.
+- A `#`-prefixed tag that isn't a real system tag is no longer treated as one — it stays an
+  ordinary tag (not bold, not protected) and is never deleted or rewritten. Only the built-in
+  system tags behave specially, so tag edits stay predictable and consistent. Closes #842, #844.
 
 ### Added
 
