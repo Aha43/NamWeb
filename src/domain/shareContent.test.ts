@@ -44,7 +44,7 @@ const trip = () =>
       node('legs', { title: 'Japan leg', project: true, childIds: ['a2'] }),
       node('a1', { title: 'Book flights', status: 'NEXT', dueAt: '2027-06-01', description: 'via Doha?' }),
       node('a2', { title: 'Ryokan night', status: 'NEXT', dueAt: '2027-06-10', dueEndAt: '2027-06-11', dueTime: '15:00', dueEndTime: '11:00' }),
-      node('secret', { title: 'Budget ceiling', tags: ['private'], childIds: ['leak'] }),
+      node('secret', { title: 'Budget ceiling', tags: ['#shared-hide'], childIds: ['leak'] }),
       node('leak', { title: 'Absolutely not public' }),
       node('cancelled', { title: 'Skipped idea', status: 'CANCELLED' }),
     ],
@@ -72,10 +72,10 @@ describe('shareContent — the sanitizer', () => {
     expect(json).not.toContain('Absolutely not public');
     // Case variants too (canonicalTag collapses system tags).
     const doc = trip();
-    doc.nodes['secret'].tags = ['Private'];
+    doc.nodes['secret'].tags = ['#Shared-Hide'];
     expect(JSON.stringify(shareContent(doc, 'trip', OPTS))).not.toContain('Budget ceiling');
     // Private root: nothing to publish.
-    doc.nodes['trip'].tags = ['private'];
+    doc.nodes['trip'].tags = ['#shared-hide'];
     expect(shareContent(doc, 'trip', OPTS)).toBeNull();
   });
 
@@ -193,14 +193,14 @@ describe('shareContent — the sanitizer', () => {
     const doc = trip();
     // The section's ONLY dated child is private: the span must not exist at all.
     doc.nodes['legs'].deriveDue = true;
-    doc.nodes['a2'].tags = ['private'];
+    doc.nodes['a2'].tags = ['#shared-hide'];
     const c = shareContent(doc, 'trip', OPTS)!;
     expect(c.sections[0].due).toBeUndefined();
     // And a private sibling must not stretch a span derived from public children.
     const doc2 = trip();
     doc2.nodes['legs'].deriveDue = true;
     doc2.nodes['legs'].childIds = ['a2', 'secretTrip'];
-    doc2.nodes['secretTrip'] = { ...doc2.nodes['a2'], id: 'secretTrip', title: 'Divorce lawyer', tags: ['private'], dueAt: '2027-09-01', dueEndAt: '2027-09-30' };
+    doc2.nodes['secretTrip'] = { ...doc2.nodes['a2'], id: 'secretTrip', title: 'Divorce lawyer', tags: ['#shared-hide'], dueAt: '2027-09-01', dueEndAt: '2027-09-30' };
     const c2 = shareContent(doc2, 'trip', OPTS)!;
     expect(c2.sections[0].due).toMatchObject({ start: '2027-06-10', end: '2027-06-11' });
   });

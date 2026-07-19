@@ -52,7 +52,7 @@ const doc: WorkspaceDocument = {
     actions: node('actions'),
     trip: node('trip', { title: 'Asia trip', project: true, childIds: ['a1', 'p1'] }),
     a1: node('a1', { title: 'Book flights', status: 'NEXT' }),
-    p1: node('p1', { title: 'Budget', project: true, tags: ['private'] }),
+    p1: node('p1', { title: 'Budget', project: true, tags: ['#shared-hide'] }),
   },
   registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
 };
@@ -119,7 +119,7 @@ describe('ShareDialog', () => {
     const boxes = screen.getAllByRole('checkbox');
     expect(boxes.map((b) => (b as HTMLInputElement).checked)).toEqual([true, false, true, false]);
     // The private sub-project is surfaced, not silent.
-    expect(screen.getByText(/1 item\(s\) tagged private/)).toBeInTheDocument();
+    expect(screen.getByText(/1 item\(s\) tagged #shared-hide/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
     await waitFor(() => expect(screen.getByLabelText('Secret share link')).toBeInTheDocument());

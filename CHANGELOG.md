@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- System tags now live in a reserved `#` namespace — "in progress" becomes `#in-progress` and
+  the share-hide tag is `#shared-hide` (renamed from `private`, which is now a free tag again).
+  You can still apply system tags from the suggestions, but can no longer accidentally create a
+  colliding one, and they read clearly as system rather than your own vocabulary. Existing
+  `in progress` tags keep working. Closes #837.
+
 ## [1.10.0] - 2026-07-18
 
 **A second thing to ask, and a tidier front door.** Shared projects gain the **Question**

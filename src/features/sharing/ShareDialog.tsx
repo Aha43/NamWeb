@@ -16,7 +16,7 @@ import { useCopyToClipboard } from '@/lib/useCopyToClipboard';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useAuthUser } from '@/auth/auth-context';
 import { shareContent, SHARE_DEFAULT_OPTIONS } from '@/domain/shareContent';
-import { canonicalTag, PRIVATE_TAG } from '@/domain/systemTags';
+import { canonicalTag, SHARED_HIDE_TAG } from '@/domain/systemTags';
 import { subtreeIds } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import {
@@ -119,12 +119,12 @@ export function ShareDialog({
     };
   }, [open, projectId]);
 
-  const privateCount = useMemo(() => {
+  const hiddenCount = useMemo(() => {
     if (!document || !open) return 0;
     let count = 0;
     for (const id of subtreeIds(document, projectId)) {
       const node = document.nodes[id];
-      if (node && node.tags.some((tag) => canonicalTag(tag) === PRIVATE_TAG)) count++;
+      if (node && node.tags.some((tag) => canonicalTag(tag) === SHARED_HIDE_TAG)) count++;
     }
     return count;
   }, [document, projectId, open]);
@@ -285,8 +285,8 @@ export function ShareDialog({
           </label>
         </div>
 
-        {privateCount > 0 && (
-          <p className="text-xs text-muted-foreground">{t('share.privateCount', { count: privateCount })}</p>
+        {hiddenCount > 0 && (
+          <p className="text-xs text-muted-foreground">{t('share.hiddenCount', { count: hiddenCount })}</p>
         )}
 
         {loading ? (

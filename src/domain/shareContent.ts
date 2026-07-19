@@ -5,7 +5,7 @@
 // publish time on the owner's device — never in a request path.
 
 import type { NamNode, WorkspaceDocument } from './types';
-import { canonicalTag, PRIVATE_TAG } from './systemTags';
+import { canonicalTag, SHARED_HIDE_TAG } from './systemTags';
 import { parseQuestion } from './resourceQuestion';
 import { effectiveDue } from './derivedDue';
 
@@ -116,14 +116,14 @@ function pseudoId(salt: string, id: string): string {
   return hash.toString(16).padStart(8, '0');
 }
 
-function isPrivate(node: NamNode): boolean {
-  return node.tags.some((tag) => canonicalTag(tag) === PRIVATE_TAG);
+function isHidden(node: NamNode): boolean {
+  return node.tags.some((tag) => canonicalTag(tag) === SHARED_HIDE_TAG);
 }
 
 /** Excluded regardless of toggles: private subtrees, cancelled and archived work. Done stays
  *  (a trip page showing progress is a feature); statuses only *render* when enabled. */
 function isExcluded(node: NamNode): boolean {
-  return isPrivate(node) || node.status === 'CANCELLED' || node.status === 'ARCHIVED';
+  return isHidden(node) || node.status === 'CANCELLED' || node.status === 'ARCHIVED';
 }
 
 /** The delegated questions of a node — only guestEditable QUESTIONs with text. */

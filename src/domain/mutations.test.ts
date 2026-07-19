@@ -160,7 +160,7 @@ describe('applyIntent', () => {
     const undone = applyIntent(doc, {
       type: 'setStatus', id: 'a', status: 'NEXT', expectedStatus: 'DONE', restoreInProgress: true, now: NOW,
     });
-    expect(undone.nodes['a'].tags).toEqual(['home', 'in progress']);
+    expect(undone.nodes['a'].tags).toEqual(['home', '#in-progress']); // restore writes the sigiled form
     // A stale undo (status changed again since) restores neither status nor tag.
     const changed = applyIntent(doc, { type: 'setStatus', id: 'a', status: 'BACKLOG', now: NOW });
     const stale = applyIntent(changed, {
@@ -527,6 +527,17 @@ describe('applyIntent', () => {
 describe('normalizeTags', () => {
   it('trims, lower-cases, de-duplicates, and drops empties (order preserved)', () => {
     expect(normalizeTags(['  Phone ', 'PHONE', 'home', '', '  '])).toEqual(['phone', 'home']);
+  });
+
+  it('reserves the # namespace (#837): drops invented system tags, keeps known ones, migrates legacy', () => {
+    // A user cannot mint a new #… tag, but can apply the known ones (via suggestions).
+    expect(normalizeTags(['home', '#invented', '#shared-hide'])).toEqual(['home', '#shared-hide']);
+    // The legacy `in progress` spelling is canonicalized to the sigil form on write.
+    expect(normalizeTags(['In Progress', 'home'])).toEqual(['#in-progress', 'home']);
+    // Case variants of a known system tag collapse to canonical.
+    expect(normalizeTags(['#Shared-Hide', '#SHARED-HIDE'])).toEqual(['#shared-hide']);
+    // Context tags (@…) are ordinary user tags — untouched by the reservation.
+    expect(normalizeTags(['@phone', 'GROCERIES'])).toEqual(['@phone', 'groceries']);
   });
 });
 

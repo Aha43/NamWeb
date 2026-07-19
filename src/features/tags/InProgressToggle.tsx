@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Tooltip } from '@/components/ui/tooltip';
 import { useContext } from 'react';
 import { WorkspaceContext } from '@/store/workspace-context';
-import { IN_PROGRESS_TAG } from '@/domain/systemTags';
+import { IN_PROGRESS_TAG, canonicalTag } from '@/domain/systemTags';
 import { nowIso } from '@/lib/local';
 import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
@@ -24,7 +24,7 @@ export function InProgressToggle({ id, title }: { id: string; title: string }) {
   if (node.status === 'DONE' || node.status === 'CANCELLED') return null;
   const { dispatch } = workspace;
   // Case-insensitive: NamDesktop-written documents can carry "In Progress" (#654).
-  const isMark = (tag: string) => tag.trim().toLowerCase() === IN_PROGRESS_TAG;
+  const isMark = (tag: string) => canonicalTag(tag) === IN_PROGRESS_TAG;
   const on = node.tags.some(isMark);
   const label = t('tags.inProgressToggleAria', { title });
   return (

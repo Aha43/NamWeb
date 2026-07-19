@@ -35,7 +35,7 @@ describe('InProgressToggle (#651)', () => {
     expect(button).toHaveAttribute('aria-pressed', 'false');
     fireEvent.click(button);
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'updateTags', id: 'a', tags: ['home', 'in progress'] }),
+      expect.objectContaining({ type: 'updateTags', id: 'a', tags: ['home', '#in-progress'] }),
     );
   });
 

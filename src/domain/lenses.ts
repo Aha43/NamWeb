@@ -492,8 +492,8 @@ export function contextItems(
     if (requiredTags.length === 0) return true;
     // Case-insensitive match: the web normalizes tags to lowercase, but NamDesktop-written
     // documents can carry case variants — a lowercase filter must still find them (#654).
-    const tags = new Set(effectiveTags(doc, n.id).map((t) => t.trim().toLowerCase()));
-    return requiredTags.every((t) => tags.has(t.trim().toLowerCase()));
+    const tags = new Set(effectiveTags(doc, n.id).map((t) => canonicalTag(t).toLowerCase()));
+    return requiredTags.every((t) => tags.has(canonicalTag(t).toLowerCase()));
   });
 }
 
