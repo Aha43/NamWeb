@@ -178,12 +178,26 @@ a BFF later do not conflict.
 
 ## Cross-repo notes
 
-- The **JWT secret, GoTrue config, and `workspaces` RLS live in NamDesktop** (`supabase/`),
-  the single source of truth for the backend contract both clients share. Any RLS/auth
-  change is a NamDesktop change that affects both desktop and web.
-- The desktop client (`SupabaseSyncService`) uses the **same** GoTrue token flow over
-  hand-rolled HTTP; supabase-js just automates token storage/refresh here. Security
-  decisions should be evaluated for **both** clients.
+- The **JWT secret, GoTrue config, schema/migrations, and `workspaces` RLS live in NamWeb**
+  (`supabase/`, the single source of truth for the backend since Sprint 0, #753). Any
+  RLS/auth/schema change is a NamWeb change.
+- **NamDesktop is parked** (since 2026-07-12). Its client (`SupabaseSyncService`) used the
+  **same** GoTrue token flow over hand-rolled HTTP; that flow is preserved as spec for a future
+  desktop redo, not an active client — but a revival shares this backend, so evaluate
+  security decisions for it too.
+- **NamAdmin** (`Aha43/NamAdmin`, private) is a **local-only admin tool** — never hosted, run
+  on the admin's machine against prod Supabase. React/Vite SPA + a local Hono server that holds
+  the `service_role` key in a gitignored `.env` (never deployed, never in a browser bundle). It
+  talks to the **Supabase Auth Admin API only** — zero PostgREST/table access, enforced by a CI
+  guard — so it can list users, mint password-recovery links, ban/unban, and delete users, but
+  **never reads or exposes user workspace data**. Admin operations on users live here, not in
+  NamWeb (no admin UIs, admin RPCs, or service-key paths in the web app). Planned later seam:
+  plan/tier via auth `app_metadata` (NamAdmin writes it via the admin API, NamWeb reads it from
+  the session) — not built yet, just don't design against it.
+  - **Convention this enforces:** any table referencing `auth.users` must `on delete cascade`,
+    or NamAdmin's `auth.admin.deleteUser` (and any auth-user delete) breaks on the FK.
+    `workspaces` now cascades (#847); `project_shares` already did (its `share_suggestions` /
+    `share_resource_events` cascade transitively off it).
 
 ## Out of scope (for now)
 
@@ -197,3 +211,4 @@ mobile auth. Revisit only if the product direction changes.
 | 2026-06-10 | Initial spec — documents the web-MVP auth baseline (JWT-bearer SPA, localStorage session, Supabase RLS) and a first hardening backlog. |
 | 2026-06-10 | Sharpened H1 to the BFF / token-mediating backend pattern (IETF browser-apps BCP); added H1a sender-constrained tokens (DPoP/mTLS, Supabase bearer-only caveat); added an "Upgrade path" section on the seams that keep the climb cheap and the discipline that protects it. |
 | 2026-06-10 | Added "Identity providers & SSO": Google + Microsoft social login near-term/deploy-time (issue #14, with the identity-linking-across-clients prerequisite) and enterprise SSO as a way-down, multi-tenant-gated item. |
+| 2026-07-19 | Documented **NamAdmin** (local-only admin tool, Auth Admin API only, holds the service key locally) and the **`auth.users`-must-cascade** convention; corrected the backend source-of-truth to NamWeb (Sprint 0). `workspaces` FK now cascades (#847). |

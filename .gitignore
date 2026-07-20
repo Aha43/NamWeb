@@ -55,3 +55,6 @@ pnpm-debug.log*
 # Supabase CLI local runtime state (created by db:start)
 supabase/.branches/
 supabase/.temp/
+
+# Prod database dumps (pre-migration safety net) — contain real user data, NEVER commit
+backups/
