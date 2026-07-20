@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-07-20
+
+**The backend learns to clean up after a departed user.** Deleting an account (or, now, an
+admin deleting a user via the new **NamAdmin** tool) removes the owner's workspace through a
+database foreign-key cascade — the same mechanism shared projects already use — instead of
+failing on the constraint. A small, foundational change that unblocks NamAdmin, the local-only
+admin surface for NamWeb's users.
+
 ### Changed
 
 - Deleting an account now removes the workspace through the database's foreign-key cascade
@@ -1703,7 +1711,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.11.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.12.0...HEAD
+[1.12.0]: https://github.com/Aha43/NamWeb/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/Aha43/NamWeb/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/Aha43/NamWeb/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/Aha43/NamWeb/compare/v1.8.0...v1.9.0

@@ -11,6 +11,22 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.12.0 — 2026-07-20
+
+*(one PR, 1 release; off-cycle)* Not a feature cut — a foundational one, and the first release
+driven by a *sibling* project rather than NamWeb's own roadmap. **NamAdmin** was born (a
+local-only admin tool: holds the service key on the operator's machine, talks only to the
+Supabase Auth Admin API, never touches workspace data), and its user-delete needed one thing
+from NamWeb's schema: `workspaces.owner_user_id` had no `ON DELETE CASCADE`, so deleting an auth
+user failed on the FK. The fix cascaded it (matching `project_shares`), simplified
+`delete_my_account` to the single mechanism, and — the durable part — wrote down the division of
+labor: admin-operations-on-users live in NamAdmin, schema/RLS/migrations live in NamWeb, and any
+table referencing `auth.users` must cascade. The migration was dual-verified (a rolled-back
+behavioral cascade test on the local stack, then a clean prod apply behind a full `pg_dump`
+backup). The review gate was a proportionate self-review — no client logic, just SQL + docs.
+Two banked items still wait on real design passes: #832 (concurrent-drain loss, the 2.0.0
+blocker) and strict syntactic tag-namespace reservation.
+
 ## v1.11.0 — 2026-07-19
 
 *(one day; 4 PRs, 1 release)* A cleanup the user named at exactly the right moment: system tags
