@@ -209,15 +209,24 @@ export async function claimDrainableEvents(shareId: string, kinds: readonly stri
   return (data ?? []) as DrainRow[];
 }
 
+/** The most leftover rows one drain fetches. Bounds the query so a large un-deleted backlog can't
+ *  silently truncate to an arbitrary subset (the PostgREST default cap): a full page (`=== LIMIT`)
+ *  signals a possibly-incomplete working set, which the drain uses to SKIP ledger pruning (#850 —
+ *  pruning a possibly-live id would re-introduce a double-apply). Ordered by id so the subset is the
+ *  OLDEST leftovers and deterministic; the rest are drained on the next pass. */
+export const DRAIN_LEFTOVER_LIMIT = 1000;
+
 /** Claimed rows left by a previous session (#823/P2, #850): with the idempotency ledger they are
  *  recoverable, so the drain re-processes them (a no-op if they in fact landed) rather than blindly
- *  deleting. Returns FULL rows so the drain can re-plan them. */
+ *  deleting. Returns FULL rows (oldest first, bounded) so the drain can re-plan them. */
 export async function fetchLeftoverDrained(shareId: string): Promise<DrainRow[]> {
   const { data, error } = await supabase
     .from('share_resource_events')
     .select('id, node_id, res_index, delta, answer')
     .eq('share_id', shareId)
-    .eq('drained', true);
+    .eq('drained', true)
+    .order('id', { ascending: true })
+    .limit(DRAIN_LEFTOVER_LIMIT);
   if (error) throw new Error(error.message);
   return (data ?? []) as DrainRow[];
 }

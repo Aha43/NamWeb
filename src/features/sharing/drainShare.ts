@@ -2,7 +2,7 @@ import type { Intent } from '@/domain/mutations';
 import type { WorkspaceDocument } from '@/domain/types';
 import { nowIso } from '@/lib/local';
 import { guestIdMap } from '@/domain/shareContent';
-import { DRAINABLE_KINDS, claimDrainableEvents, deleteEvents, fetchLeftoverDrained, type DrainRow } from './shares';
+import { DRAINABLE_KINDS, DRAIN_LEFTOVER_LIMIT, claimDrainableEvents, deleteEvents, fetchLeftoverDrained, type DrainRow } from './shares';
 import { drainPlan } from './drainEvents';
 
 /**
@@ -24,7 +24,9 @@ import { drainPlan } from './drainEvents';
  * failure at any point re-processes safely instead of deleting an event that never applied.
  *
  * Leftover claimed rows from a previous session are folded back into the working set (NOT blindly
- * swept): with idempotency they are recoverable, so re-processing beats the old blind delete.
+ * swept): with idempotency they are recoverable, so re-processing beats the old blind delete. Ledger
+ * pruning (GC) runs only when that leftover set is provably complete — otherwise an unseen older
+ * leftover could be evicted from the ledger and then double-applied.
  *
  * Returns the number of events this drain resolved (applied or spent).
  */
@@ -35,7 +37,18 @@ export async function drainShare(
   flush: () => Promise<boolean>,
   share: { share_id: string; project_id: string; token: string },
 ): Promise<number> {
-  const leftovers = await fetchLeftoverDrained(share.share_id).catch(() => [] as DrainRow[]);
+  // Whether the leftover fetch is COMPLETE — a failed fetch (network hiccup) or a full page (a large
+  // un-deleted backlog truncated at the cap) means the working set may be missing still-existing
+  // drained rows, which would make ledger pruning unsafe (#850, see below). The claim set can't
+  // truncate: the open queue is capped at 500, well under the fetch cap.
+  let leftoversComplete = true;
+  let leftovers: DrainRow[] = [];
+  try {
+    leftovers = await fetchLeftoverDrained(share.share_id);
+    if (leftovers.length >= DRAIN_LEFTOVER_LIMIT) leftoversComplete = false;
+  } catch {
+    leftoversComplete = false;
+  }
   const claimed = await claimDrainableEvents(share.share_id, DRAINABLE_KINDS);
   // Leftovers (already drained=true) and freshly claimed rows are disjoint; dedupe by id defensively
   // and process in id order (the drain's FIFO).
@@ -47,13 +60,19 @@ export async function drainShare(
   const doc = getDocument();
   if (!doc) return 0;
 
-  // The ledger's live-id floor per resource = the smallest working-set id. Ids below it name events
+  // The ledger's live-id floor per resource = the smallest working-set id: ids below it name events
   // already deleted from the table, so they can never be re-processed and are safe to evict (#850).
+  // This holds ONLY when the working set contains every still-existing drained row for the resource,
+  // so we prune ONLY when the leftover fetch was complete — otherwise an unseen older leftover could
+  // be evicted and then double-applied. Skipping pruning just lets the ledger grow this pass (bounded,
+  // self-healing on the next complete drain); pruning is pure GC, never correctness.
   const pruneBelow = new Map<string, number>();
-  for (const e of working) {
-    const key = `${e.node_id}:${e.res_index}`;
-    const prev = pruneBelow.get(key);
-    if (prev === undefined || e.id < prev) pruneBelow.set(key, e.id);
+  if (leftoversComplete) {
+    for (const e of working) {
+      const key = `${e.node_id}:${e.res_index}`;
+      const prev = pruneBelow.get(key);
+      if (prev === undefined || e.id < prev) pruneBelow.set(key, e.id);
+    }
   }
 
   const plan = drainPlan(doc, share.project_id, share.token, working, nowIso(), pruneBelow);

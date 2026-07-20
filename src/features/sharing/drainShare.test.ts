@@ -16,7 +16,7 @@ vi.mock('./shares', async (orig) => ({
 }));
 
 import { drainShare } from './drainShare';
-import { DRAINABLE_KINDS } from './shares';
+import { DRAINABLE_KINDS, DRAIN_LEFTOVER_LIMIT } from './shares';
 
 function node(id: string, p: Partial<NamNode> = {}): NamNode {
   return {
@@ -100,6 +100,32 @@ describe('drainShare (#832/#850) — restartable, ledger-durable drain', () => {
     const h = harness();
     await drainShare(() => docWith('10/12'), h.getCommittedDocument, h.dispatch, h.flush, SHARE);
     for (const call of h.dispatch.mock.calls) expect(call[0]).toMatchObject({ pruneBelow: 7 });
+  });
+
+  it('SKIPS pruning (pruneBelow undefined) when the leftover fetch FAILS — never evict a possibly-live id', async () => {
+    baseMocks();
+    // A failed leftover fetch means the working set may be missing an older still-existing leftover;
+    // pruning its id from the ledger would let it double-apply. So no eviction this pass (#850 review).
+    service.fetchLeftoverDrained.mockRejectedValue(new Error('network hiccup'));
+    service.claimDrainableEvents.mockResolvedValue([ev(9)]);
+    const h = harness();
+    await drainShare(() => docWith('10/12'), h.getCommittedDocument, h.dispatch, h.flush, SHARE);
+    expect((h.dispatch.mock.calls[0][0] as { eventId?: number; pruneBelow?: number }).eventId).toBe(9);
+    expect((h.dispatch.mock.calls[0][0] as { pruneBelow?: number }).pruneBelow).toBeUndefined();
+  });
+
+  it('SKIPS pruning when the leftover fetch returns a FULL PAGE (possible truncation)', async () => {
+    baseMocks();
+    // A full page of leftovers (on unrelated resources) signals the fetch may be truncated → the
+    // working set is possibly incomplete → do not prune.
+    service.fetchLeftoverDrained.mockResolvedValue(
+      Array.from({ length: DRAIN_LEFTOVER_LIMIT }, (_, i) => ({ id: i + 1, node_id: 'zzzzzzzz', res_index: 0, delta: 1, answer: null })),
+    );
+    service.claimDrainableEvents.mockResolvedValue([ev(5000)]);
+    const h = harness();
+    await drainShare(() => docWith('10/12'), h.getCommittedDocument, h.dispatch, h.flush, SHARE);
+    const a1 = h.dispatch.mock.calls.find((c) => (c[0] as { eventId?: number }).eventId === 5000)!;
+    expect((a1[0] as { pruneBelow?: number }).pruneBelow).toBeUndefined();
   });
 
   it('LEAVES CLAIMED an event whose write did NOT land (never in the committed ledger)', async () => {
