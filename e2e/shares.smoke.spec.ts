@@ -176,6 +176,38 @@ test('resource events (#809): guests append, owners drain, the table stays dark'
   }
 });
 
+test('drain lease (#852): exclusive per share, holder-only release, re-acquire; anon cannot', async ({ browserName }) => {
+  const TOKEN = `e2e-smoke-lease-${browserName}`;
+  const projectId = `e2e-smoke-lease-${browserName}`;
+  const { client: owner, userId } = await ownerClient();
+  const anon = createClient(E2E.supabaseUrl, E2E.supabaseKey);
+  await owner.from('project_shares').delete().eq('project_id', projectId);
+  const up = await owner
+    .from('project_shares')
+    .insert({ token: TOKEN, owner_user_id: userId, project_id: projectId, content: { version: 1 }, enabled: true })
+    .select('share_id')
+    .single();
+  expect(up.error).toBeNull();
+  const shareId = up.data!.share_id;
+  try {
+    // Acquire → a token; a second acquire while held → null (exclusive).
+    const first = await owner.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 });
+    expect(first.error).toBeNull();
+    expect(typeof first.data).toBe('string');
+    expect((await owner.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 })).data).toBeNull();
+    // A wrong-token release is a no-op — the lease stays held.
+    await owner.rpc('release_drain_lease', { p_share_id: shareId, p_token: 'not-the-token' });
+    expect((await owner.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 })).data).toBeNull();
+    // The holder releases → re-acquire succeeds.
+    expect((await owner.rpc('release_drain_lease', { p_share_id: shareId, p_token: first.data as string })).error).toBeNull();
+    expect(typeof (await owner.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 })).data).toBe('string');
+    // Anon gets no lease (owner-scoped, and execute is granted only to authenticated).
+    expect(typeof (await anon.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 })).data).not.toBe('string');
+  } finally {
+    await owner.from('project_shares').delete().eq('project_id', projectId);
+  }
+});
+
 test('question answers (#827): guests answer via the RPC, drain into the overlay', async ({ browserName }) => {
   const TOKEN = `e2e-smoke-answers-${browserName}`;
   const projectId = `e2e-smoke-answers-${browserName}`;

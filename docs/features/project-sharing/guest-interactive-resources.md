@@ -81,31 +81,37 @@ confused by a stale published count. Delegation is opt-in **per resource**: an a
    event. Ticking the `guestEditable` box **was** the adoption — pre-approval of the whole
    class of legal moves for that resource.
 
-### The idempotency ledger (#832/#850) — a round-trip-load-bearing field
+### The idempotency watermark + drain lease (#832/#850/#852) — a round-trip-load-bearing field
 
-Step 5's "idempotent per event id" is made real by a **node-level `drainLedger`**
-(`NamNode.drainLedger?: Record<resourceIndex, eventId[]>`): the drain applies each event as an
-`incrementCountResource`/`answerQuestionResource` intent *carrying its event id*, and the reducer
-applies it only if the id is not already recorded, then **records it atomically with the value** (same
-JSONB push). Membership is order-independent, so a re-processed id — a concurrent second-device drain
-(even one that applies a *later* event before an *earlier* one), a re-fetched leftover, a
-conflict-replay — is a safe no-op. It is **append-only**: nothing is ever removed, because a removal
-can't be proven safe against another tab still holding a fetched copy of the event.
+Step 5's "idempotent per event id" is made real by two layers.
+
+**A per-share drain lease** (`acquire_drain_lease`/`release_drain_lease`, a `drain_lease_until` column
+on `project_shares`) serializes drains: exactly one tab/device drains a share at a time; a tab that
+can't get the lease skips quietly and retries on the next trigger, and a crashed holder's lease
+expires (TTL) so another tab takes over. This gives a **single global application order per share** —
+without it, two tabs claiming time-separated events (A claims 7, then B claims a later-arriving 8)
+could commit out of order, and since COUNT clamping and QUESTION set-last-write are *not* commutative,
+that corrupts the result.
+
+Given that order, idempotency is a **node-level `drainedThrough`** watermark
+(`NamNode.drainedThrough?: Record<resourceIndex, eventId>`): the drain applies each event as an
+`incrementCountResource`/`answerQuestionResource` intent *carrying its event id*, in id order, and the
+reducer applies it only if the id exceeds the resource's watermark, then **advances the watermark
+atomically with the value** (same JSONB push). The watermark only ever RISES — one int per resource,
+self-bounding, immune to the re-apply an evictable ledger suffered — so a re-processed leftover or a
+conflict-replay is a safe no-op.
 
 The drain plans and classifies against the **committed** (server-acknowledged) document, never the
-optimistic snapshot, and deletes an event only once its id is in the committed ledger (durably
-applied) or it is structural junk against that committed doc — so a failed local edit can't make a
-still-valid event look like junk, and a failed write or a closed tab re-processes safely instead of
-dropping the change.
-
-**Known limitation:** the ledger grows unbounded (one id per applied guest event). Safe bounded
-compaction needs a server-side drain lease (serialize drains per share so a compact watermark can't be
-advanced past an unapplied lower event by a racing tab) — tracked as #852, deferred while sharing is
-Labs-dark.
+optimistic snapshot, and deletes an event only once its id is at/under the committed watermark
+(durably applied) or it is structural junk against that committed doc — so a failed local edit can't
+make a still-valid event look like junk, and a failed write or a closed tab re-processes safely
+instead of dropping the change. Leftovers are processed oldest-id-first, and when the leftover set is
+incomplete (a failed or truncated fetch) newer claims are deferred so the watermark can't skip a
+lower event.
 
 Two contract properties this leans on, both already honored, both worth guarding:
 
-- **Sanitizer non-leak.** `drainLedger` is owner-side bookkeeping and must never reach a guest
+- **Sanitizer non-leak.** `drainedThrough` is owner-side bookkeeping and must never reach a guest
   snapshot. The sanitizer's allowlist (it copies only `{index, value, label}` off resources, never
   the node) already excludes it; a test pins this.
 - **NamDesktop round-trip (correctness-load-bearing).** It lives on `NamNode`, not on the nested

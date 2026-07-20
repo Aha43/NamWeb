@@ -18,6 +18,8 @@ const service = {
   deleteEvents: vi.fn(),
   fetchLeftoverDrained: vi.fn(),
   countShareEvents: vi.fn(),
+  acquireDrainLease: vi.fn(),
+  releaseDrainLease: vi.fn(),
 };
 vi.mock('./shares', async (orig) => ({
   ...(await orig<typeof import('./shares')>()),
@@ -31,6 +33,8 @@ vi.mock('./shares', async (orig) => ({
   deleteEvents: (...a: unknown[]) => service.deleteEvents(...a),
   fetchLeftoverDrained: (...a: unknown[]) => service.fetchLeftoverDrained(...a),
   countShareEvents: (...a: unknown[]) => service.countShareEvents(...a),
+  acquireDrainLease: (...a: unknown[]) => service.acquireDrainLease(...a),
+  releaseDrainLease: (...a: unknown[]) => service.releaseDrainLease(...a),
 }));
 
 import { ShareButton } from './ShareButton';
@@ -84,6 +88,8 @@ beforeEach(() => {
   service.deleteEvents.mockReset().mockResolvedValue(undefined);
   service.fetchLeftoverDrained.mockReset().mockResolvedValue([]);
   service.countShareEvents.mockReset().mockResolvedValue(0);
+  service.acquireDrainLease.mockReset().mockResolvedValue('lease-token'); // held by default
+  service.releaseDrainLease.mockReset().mockResolvedValue(undefined);
 });
 
 describe('ShareButton gating (#759 — dark until the 2.0.0 cut)', () => {

@@ -209,9 +209,30 @@ export async function claimDrainableEvents(shareId: string, kinds: readonly stri
   return (data ?? []) as DrainRow[];
 }
 
+/** How long a drain holds the per-share lease (#850/#852). Comfortably covers a full drain — the
+ *  working set is bounded by the 500 open-queue cap and applies are optimistic commits — while a
+ *  crashed holder's lease expires quickly enough that another tab can take over. */
+export const DRAIN_LEASE_TTL_SECONDS = 120;
+
+/** Acquire the per-share drain lease (#850/#852) — serializes drains so guest events apply in one
+ *  global order (the watermark's correctness rests on this). Returns a holder token, or null when
+ *  another owner tab holds an unexpired lease (this drain then skips, retried on the next trigger). */
+export async function acquireDrainLease(shareId: string, ttlSeconds: number): Promise<string | null> {
+  const { data, error } = await supabase.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: ttlSeconds });
+  if (error) throw new Error(error.message);
+  return (data as string | null) ?? null;
+}
+
+/** Release the drain lease — only the holder (matching token) succeeds; best-effort, the TTL backs
+ *  it up if the release never lands (a crash / closed tab). */
+export async function releaseDrainLease(shareId: string, token: string): Promise<void> {
+  const { error } = await supabase.rpc('release_drain_lease', { p_share_id: shareId, p_token: token });
+  if (error) throw new Error(error.message);
+}
+
 /** The most leftover rows one drain fetches (bounds an unbounded backlog to a deterministic page).
- *  Ordered by id so the page is the OLDEST leftovers; a truncated page just defers the rest to the
- *  next pass — the append-only set idempotency needs no completeness, only re-processing safety. */
+ *  Ordered by id so the page is the OLDEST leftovers; a full page (=== LIMIT) signals a possibly
+ *  incomplete set, which the drain uses to defer newer claims (keeping the watermark loss-safe). */
 export const DRAIN_LEFTOVER_LIMIT = 1000;
 
 /** Claimed rows left by a previous session (#823/P2, #850): with the idempotency ledger they are

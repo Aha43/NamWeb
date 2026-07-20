@@ -10,12 +10,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
-- Concurrent or interrupted drains of a shared resource can no longer lose a guest's tick or
-  answer. When two of your devices drain the same shared counter at once (or a drain races your
-  own edit to it), each guest event is now folded in exactly once via a per-resource idempotency
-  ledger recorded atomically with the value, and the drain deletes an event only after its landing
-  is durably confirmed — so a lost network call, a closed tab, or a second device re-processes
-  safely instead of dropping the change. Closes #850.
+- Concurrent or interrupted drains of a shared resource can no longer lose or mis-apply a guest's
+  tick or answer. A per-share drain lease serializes draining across your devices (so events apply
+  in one global order), each event is folded in exactly once via a per-resource idempotency
+  watermark recorded atomically with the value, and the drain deletes an event only after its
+  landing is durably confirmed — so two devices, a lost network call, or a closed tab re-process
+  safely instead of dropping or reordering the change. Closes #850, #852.
 
 ## [1.12.0] - 2026-07-20
 
