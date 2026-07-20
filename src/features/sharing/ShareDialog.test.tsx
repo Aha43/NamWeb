@@ -64,7 +64,7 @@ function renderButton({ labs = true, user = REAL_USER as User | undefined, dispa
   render(
     <SettingsContext.Provider value={{ labs, setLabs: vi.fn() } as unknown as SettingsContextValue}>
       <AuthUserContext.Provider value={user}>
-        <WorkspaceContext.Provider value={{ document: doc, dispatch, flush: async () => true } as unknown as UseWorkspace}>
+        <WorkspaceContext.Provider value={{ document: doc, dispatch, flush: async () => true, getCommittedDocument: () => doc } as unknown as UseWorkspace}>
           <ShareButton projectId="trip" />
         </WorkspaceContext.Provider>
       </AuthUserContext.Provider>
@@ -245,9 +245,9 @@ describe('ShareDialog', () => {
       const { dispatch } = renderButton();
       fireEvent.click(screen.getByRole('button', { name: 'Share project' }));
       await waitFor(() => expect(screen.getByText('New guest ticks since your last look: 9')).toBeInTheDocument());
-      // The folded chain: first guard is the STORED value, the second its successor.
-      expect(dispatch).toHaveBeenNthCalledWith(1, expect.objectContaining({ type: 'incrementCountResource', id: 'a1', index: 0, expectedValue: '3/12', delta: 1 }));
-      expect(dispatch).toHaveBeenNthCalledWith(2, expect.objectContaining({ expectedValue: '4/12' }));
+      // Per-event idempotent intents in id order — each carries its event id, no expectedValue chain.
+      expect(dispatch).toHaveBeenNthCalledWith(1, expect.objectContaining({ type: 'incrementCountResource', id: 'a1', index: 0, delta: 1, eventId: 7 }));
+      expect(dispatch).toHaveBeenNthCalledWith(2, expect.objectContaining({ type: 'incrementCountResource', id: 'a1', index: 0, delta: 1, eventId: 8 }));
     } finally {
       doc.nodes['a1'].resources = [];
     }

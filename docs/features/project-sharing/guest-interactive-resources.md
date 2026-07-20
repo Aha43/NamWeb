@@ -81,6 +81,29 @@ confused by a stale published count. Delegation is opt-in **per resource**: an a
    event. Ticking the `guestEditable` box **was** the adoption — pre-approval of the whole
    class of legal moves for that resource.
 
+### The idempotency ledger (#832/#850) — a round-trip-load-bearing field
+
+Step 5's "idempotent per event id" is made real by a **node-level `drainLedger`**
+(`NamNode.drainLedger?: Record<resourceIndex, eventId[]>`): the drain applies each event as an
+`incrementCountResource`/`answerQuestionResource` intent *carrying its event id*, and the reducer
+records that id in the ledger **atomically with the value** (same JSONB push). A re-processed id —
+a concurrent second-device drain, a re-fetched leftover, a conflict-replay — is a no-op. The drain
+then deletes an event only once its id is confirmed in the **committed** (server-acknowledged)
+ledger, so a failed write or a closed tab re-processes safely instead of dropping the change. The
+ledger is pruned to live ids (anything below the smallest still-queued event id is gone for good),
+so it stays near-empty in health.
+
+Two contract properties this leans on, both already honored, both worth guarding:
+
+- **Sanitizer non-leak.** `drainLedger` is owner-side bookkeeping and must never reach a guest
+  snapshot. The sanitizer's allowlist (it copies only `{index, value, label}` off resources, never
+  the node) already excludes it; a test pins this.
+- **NamDesktop round-trip (correctness-load-bearing).** It lives on `NamNode`, not on the nested
+  `Resource`, *specifically* because node-level unknown-field passthrough is the confirmed contract
+  (the `dueEndAt`/`dueTime` family rides it). A future desktop that reads and rewrites the document
+  MUST preserve it — dropping it resurrects already-applied events → over-count. Unlike
+  `guestEditable` (whose loss is merely cosmetic), this field cannot be silently discarded.
+
 ## Auto-apply vs adopt — the doctrine ruling
 
 The suggestion box made the owner the clarifier on purpose: free text needs clarifying.

@@ -36,7 +36,7 @@ function workspace(): UseWorkspace {
     document, loading: false, error: null, noRemote: false, creating: false,
     createWorkspace: vi.fn(), notice: null,
     clearNotice: vi.fn(), retry: vi.fn(), retrySync: vi.fn(), dispatch: vi.fn(),
- flush: async () => true,
+ flush: async () => true, getCommittedDocument: () => document,
   };
 }
 

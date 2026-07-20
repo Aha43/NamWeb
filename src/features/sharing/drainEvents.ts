@@ -1,17 +1,18 @@
-// The owner drain's pure core (#811): fold a share's claimed guest events into the ordinary
-// incrementCountResource intents the workspace already speaks — the single-writer model
+// The owner drain's pure core (#811, redesigned #850): fold a share's claimed guest events into
+// the ordinary increment/answer intents the workspace already speaks — the single-writer model
 // survives because only the owner's client ever writes the document; guests fed a queue.
 //
-// node_id/res_index arrive as UNTRUSTED HINTS: unknown pseudonymous ids, shifted indexes,
-// and non-COUNT targets are tolerated drops (the same no-op family as the intent itself).
-// The fold applies the reducer's own edge rules so a queue of ticks lands exactly as the
-// owner's own taps would — including the running expectedValue chain, which starts from the
-// STORED value verbatim (#802/F3: never reconstruct the first guard).
+// node_id/res_index arrive as UNTRUSTED HINTS: unknown pseudonymous ids, shifted indexes, and
+// non-matching types are tolerated STRUCTURAL DROPS (the event yields no intent → drainShare
+// deletes it). Everything else emits ONE intent carrying the event id — the reducer's idempotency
+// ledger (#832/#850) makes the apply safe under re-processing, so there is no running-value chain
+// and no at-target/at-zero pre-check here: the reducer clamps and records. Ordering (the FIFO the
+// ledger relies on) is the drain's job, not this plan's — it is handed events already id-sorted.
 
 import type { Intent } from '@/domain/mutations';
 import type { WorkspaceDocument } from '@/domain/types';
-import { formatCount, parseCount } from '@/domain/resourceCount';
-import { formatQuestion, parseQuestion } from '@/domain/resourceQuestion';
+import { parseCount } from '@/domain/resourceCount';
+import { parseQuestion } from '@/domain/resourceQuestion';
 import { guestIdMap } from '@/domain/shareContent';
 
 export interface DrainableEvent {
@@ -23,66 +24,76 @@ export interface DrainableEvent {
   answer?: 'yes' | 'no' | 'clear' | null;
 }
 
-/** The intents a batch of claimed events folds into, in arrival order. Pure. */
+/** One planned drain intent plus the event id it came from (drainShare's delete/keep key) and the
+ *  resolved (nodeId, index) it targets — so drainShare can read the ledger without narrowing Intent. */
+export interface PlannedIntent {
+  intent: Intent;
+  eventId: number;
+  nodeId: string;
+  index: number;
+}
+
+/**
+ * The intents a batch of claimed events folds into, in arrival (id) order. Pure. `pruneBelow` maps
+ * `${node_id}:${res_index}` → the ledger's live-id floor for that resource (drainShare's min working
+ * id); an event that yields no intent (structural drop) is simply absent from the result.
+ */
 export function drainPlan(
   doc: WorkspaceDocument,
   projectId: string,
   salt: string,
   events: DrainableEvent[],
   now: string,
-): Intent[] {
+  pruneBelow?: Map<string, number>,
+): PlannedIntent[] {
   const map = guestIdMap(doc, projectId, salt);
-  const intents: Intent[] = [];
-  // The running value per (node, index): the first intent guards on the stored string,
-  // every later one on the value its predecessor will have produced.
-  const running = new Map<string, string>();
+  const planned: PlannedIntent[] = [];
   for (const event of events) {
     const nodeId = map.get(event.node_id);
-    if (!nodeId) continue;
-    // Question answers (#827): a SET, chained on the running value like the counter chain.
+    if (!nodeId) continue; // unresolved pseudonymous id — structural drop
+    const resource = doc.nodes[nodeId]?.resources[event.res_index];
+    if (!resource || !resource.guestEditable) continue;
+    const floor = pruneBelow?.get(`${event.node_id}:${event.res_index}`);
+    // Question answers (#827): a SET. The reducer skips it if already recorded, else applies.
     if (event.answer) {
-      const resource = doc.nodes[nodeId]?.resources[event.res_index];
-      if (!resource || resource.type !== 'QUESTION' || !resource.guestEditable) continue;
-      const key = `q:${nodeId}:${event.res_index}`;
-      const value = running.get(key) ?? resource.value;
-      const q = parseQuestion(value);
-      if (!q) continue;
-      intents.push({
-        type: 'answerQuestionResource',
-        id: nodeId,
+      if (resource.type !== 'QUESTION' || !parseQuestion(resource.value)) continue;
+      planned.push({
+        eventId: event.id,
+        nodeId,
         index: event.res_index,
-        expectedValue: value,
-        answer: event.answer,
-        now,
+        intent: {
+          type: 'answerQuestionResource',
+          id: nodeId,
+          index: event.res_index,
+          answer: event.answer,
+          eventId: event.id,
+          pruneBelow: floor,
+          now,
+        },
       });
-      running.set(key, formatQuestion(event.answer === 'clear' ? null : event.answer));
       continue;
     }
     if (event.delta !== 1 && event.delta !== -1) continue;
-    const resource = doc.nodes[nodeId]?.resources[event.res_index];
-    if (!resource || resource.type !== 'COUNT' || !resource.guestEditable) continue;
-    // Accepted residue (#821/F5): if the owner REORDERS resources while the queue is open,
-    // an event can land on a SIBLING delegated counter of the same node (milk ticks on
-    // eggs) — inside the delegated set, so the trust boundary holds; the data lands wrong.
-    // Needs same-node multiple delegated counters + a mid-queue reorder. True addressing
-    // needs resource ids — the same doc-format change #802/F4 declined.
-
-    const key = `${nodeId}:${event.res_index}`;
-    const value = running.get(key) ?? resource.value;
-    const count = parseCount(value);
-    if (!count) continue;
-    // The reducer's own edge rules — a tick that would no-op emits no intent.
-    if (event.delta > 0 && !count.unlimited && count.current >= count.target) continue;
-    if (event.delta < 0 && count.current <= 0) continue;
-    intents.push({
-      type: 'incrementCountResource',
-      id: nodeId,
+    // Accepted residue (#821/F5): if the owner REORDERS resources while the queue is open, an event
+    // can land on a SIBLING delegated counter of the same node (milk ticks on eggs) — inside the
+    // delegated set, so the trust boundary holds; the data lands wrong. Dropping expectedValue on
+    // this path (the ledger identifies by event id, not value) slightly widens this; true addressing
+    // needs resource ids, the doc-format change #802/F4 declined.
+    if (resource.type !== 'COUNT' || !parseCount(resource.value)) continue;
+    planned.push({
+      eventId: event.id,
+      nodeId,
       index: event.res_index,
-      expectedValue: value,
-      delta: event.delta,
-      now,
+      intent: {
+        type: 'incrementCountResource',
+        id: nodeId,
+        index: event.res_index,
+        delta: event.delta,
+        eventId: event.id,
+        pruneBelow: floor,
+        now,
+      },
     });
-    running.set(key, formatCount(count.current + event.delta, count.target, count.unlimited));
   }
-  return intents;
+  return planned;
 }

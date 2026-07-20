@@ -17,6 +17,7 @@ function ws(notice: Notice | null, over: Partial<UseWorkspace> = {}): UseWorkspa
     retry: vi.fn(),
     retrySync: vi.fn(),
     flush: async () => true,
+    getCommittedDocument: () => null,
     dispatch: vi.fn(),
     ...over,
   };

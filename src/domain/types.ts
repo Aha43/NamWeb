@@ -62,6 +62,20 @@ export interface NamNode {
    * shared-contract treatment as `dueTime`. See docs/features/derived-project-time/design.md.
    */
   deriveDue?: boolean;
+  /**
+   * The owner-drain idempotency ledger (#832/#850): resource index → the guest-event ids already
+   * folded into that resource's value. Guests append ticks/answers to `share_resource_events`; the
+   * owner's client drains them, and this remembers which have landed so a concurrent or restarted
+   * drain re-processes them as a no-op instead of double-counting or losing one. Absent-means-empty;
+   * only delegated (guestEditable) resources ever accrue. Pruned to live ids (see drainShare), so it
+   * stays near-empty in health.
+   *
+   * CORRECTNESS-LOAD-BEARING across the future NamDesktop round-trip: it lives on `NamNode` (not on
+   * the nested `Resource`) precisely because node-level unknown-field passthrough is the confirmed
+   * contract (the `dueEndAt`/`dueTime` family rides it). A client that drops this on rewrite would
+   * resurrect already-applied events → over-count. Additive, absent-means-off.
+   */
+  drainLedger?: Record<number, number[]>;
 }
 
 export interface SavedView {

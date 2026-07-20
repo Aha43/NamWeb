@@ -136,8 +136,8 @@ test('resource events (#809): guests append, owners drain, the table stays dark'
     const overlay = await anon.rpc('get_share_resource_events', { share_token: TOKEN });
     expect(overlay.error).toBeNull();
     expect(overlay.data).toEqual([
-      { node_id: 'abcd1234', res_index: 1, delta: 1 },
-      { node_id: 'abcd1234', res_index: 1, delta: -1 },
+      { node_id: 'abcd1234', res_index: 1, delta: 1, answer: null },
+      { node_id: 'abcd1234', res_index: 1, delta: -1, answer: null },
     ]);
 
     // The same quiet false for unknown tokens and malformed shapes (no oracle).
@@ -156,6 +156,12 @@ test('resource events (#809): guests append, owners drain, the table stays dark'
     const claimed = await owner.rpc('claim_drainable_events', { p_share_id: up.data!.share_id, p_kinds: ['delta', 'answer'] });
     expect(claimed.error).toBeNull();
     expect(claimed.data).toHaveLength(2);
+    // Claimed rows come back id-ordered (#850): the drain applies them as a FIFO its idempotency
+    // ledger relies on (a -1 then +1 must land in that order), so the +1 (inserted first, smaller
+    // id) precedes the -1.
+    const ids = (claimed.data as { id: number; delta: number }[]).map((r) => r.id);
+    expect([...ids].sort((a, b) => a - b)).toEqual(ids);
+    expect((claimed.data as { delta: number }[]).map((r) => r.delta)).toEqual([1, -1]);
     expect((await anon.rpc('get_share_resource_events', { share_token: TOKEN })).data).toEqual([]);
     // The owner deletes via the RPC too (direct DELETE is revoked).
     const del = await owner.rpc('delete_drained_events', { p_ids: (claimed.data as { id: number }[]).map((r) => r.id) });
