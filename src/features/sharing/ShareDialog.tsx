@@ -101,7 +101,7 @@ export function ShareDialog({
         // deps honest (document churns every mutation), and the GETTER resolves the doc
         // after the claim (#821/F2).
         const ticks = s ? await countShareEvents(s.share_id).catch(() => 0) : 0;
-        if (s) await drainShare(() => drainRef.current.document, drainRef.current.getCommittedDocument, drainRef.current.dispatch, drainRef.current.flush, s).catch(() => {});
+        if (s) await drainShare(drainRef.current.getCommittedDocument, drainRef.current.dispatch, drainRef.current.flush, s).catch(() => {});
         // The From-guests tray (#796): unhandled suggestions ride along with the share.
         const tray = s ? await fetchSuggestions(s.share_id) : [];
         if (cancelled) return; // the await above can outlive a close/project switch (#804)

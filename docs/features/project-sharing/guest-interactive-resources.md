@@ -88,10 +88,13 @@ Step 5's "idempotent per event id" is made real by a **node-level `drainLedger`*
 `incrementCountResource`/`answerQuestionResource` intent *carrying its event id*, and the reducer
 records that id in the ledger **atomically with the value** (same JSONB push). A re-processed id —
 a concurrent second-device drain, a re-fetched leftover, a conflict-replay — is a no-op. The drain
-then deletes an event only once its id is confirmed in the **committed** (server-acknowledged)
-ledger, so a failed write or a closed tab re-processes safely instead of dropping the change. The
-ledger is pruned to live ids (anything below the smallest still-queued event id is gone for good),
-so it stays near-empty in health.
+plans and classifies against the **committed** (server-acknowledged) document, never the optimistic
+snapshot, and deletes an event only once its id is in the committed ledger (durably applied) or it is
+structural junk against that committed doc — so a failed local edit can't make a still-valid event
+look like junk, and a failed write or a closed tab re-processes safely instead of dropping the change.
+The ledger is bounded by a **delete-confirmed tombstone** (`pruneDrainLedger`): after a drain deletes
+an event's row it forgets exactly that id — the only race-safe GC, since a tab must never forget an id
+whose event row another tab may still hold undeleted. It stays near-empty in health.
 
 Two contract properties this leans on, both already honored, both worth guarding:
 

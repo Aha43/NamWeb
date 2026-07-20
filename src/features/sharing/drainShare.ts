@@ -2,108 +2,97 @@ import type { Intent } from '@/domain/mutations';
 import type { WorkspaceDocument } from '@/domain/types';
 import { nowIso } from '@/lib/local';
 import { guestIdMap } from '@/domain/shareContent';
-import { DRAINABLE_KINDS, DRAIN_LEFTOVER_LIMIT, claimDrainableEvents, deleteEvents, fetchLeftoverDrained, type DrainRow } from './shares';
+import { DRAINABLE_KINDS, claimDrainableEvents, deleteEvents, fetchLeftoverDrained, type DrainRow } from './shares';
 import { drainPlan } from './drainEvents';
 
 /**
  * Drain one share's guest events into the workspace (#811, redesigned #850). Claim-then-apply: the
- * atomic claim splits the batch across concurrent devices; the document is read through a GETTER,
- * resolved AFTER the claim (#821/F2).
+ * atomic claim splits the batch across concurrent devices.
  *
- * The #832 fix — an idempotency ledger, not a batch-wide flush. Guests append ticks/answers; the
- * owner folds them in, and each resource's `drainLedger` (#850) remembers which event ids landed.
- * That makes the drain RESTARTABLE and each event's outcome DURABLE:
- *   - Events are dispatched in id order (a FIFO the ledger's `-1,+1` correctness relies on), then we
- *     await `flush()` and read the COMMITTED document (`getCommittedDocument`).
- *   - An event whose id is now in its resource's committed ledger DURABLY APPLIED → DELETE it.
- *   - An event that produced no intent (unresolved id, wrong type, un-delegated) is structural junk
- *     → DELETE (it can never apply; matches the guest overlay's drop).
- *   - Anything else (a first-ever apply that ERRORED, or a teardown race) is LEFT CLAIMED — the next
- *     drain re-processes it, and the ledger makes that re-processing a no-op if it in fact landed.
- * Deletion depends only on durable ledger state, never on a best-effort write — so a crash or an RPC
- * failure at any point re-processes safely instead of deleting an event that never applied.
+ * Everything keys off the COMMITTED (server-confirmed) document, never the optimistic snapshot
+ * (#850 review): an unconfirmed local edit — e.g. a failed removal of a delegated resource — must
+ * not make a still-valid guest event look like junk and get deleted. So we plan against the
+ * committed doc, dispatch, `await flush()`, then decide each event's fate against the *now*-committed
+ * doc:
+ *   - id in the committed `drainLedger` → DURABLY APPLIED → delete.
+ *   - yields no intent against the committed doc → structural junk (unresolved id, wrong type,
+ *     un-delegated) → delete.
+ *   - otherwise (applicable but not landed — a failed/pending write) → LEAVE CLAIMED; the next drain
+ *     re-processes it, idempotently.
+ * The ledger makes re-processing a no-op, so a crash / RPC failure / second device is safe.
  *
- * Leftover claimed rows from a previous session are folded back into the working set (NOT blindly
- * swept): with idempotency they are recoverable, so re-processing beats the old blind delete. Ledger
- * pruning (GC) runs only when that leftover set is provably complete — otherwise an unseen older
- * leftover could be evicted from the ledger and then double-applied.
+ * Ledger GC is a TOMBSTONE step (#850 review): after a successful delete we dispatch `pruneDrainLedger`
+ * to forget exactly the ids whose rows we just removed. A tab never forgets an id it didn't delete —
+ * the only race-safe bound, since another tab may hold an undeleted-but-applied row with a smaller id.
  *
  * Returns the number of events this drain resolved (applied or spent).
  */
 export async function drainShare(
-  getDocument: () => WorkspaceDocument | null,
   getCommittedDocument: () => WorkspaceDocument | null,
   dispatch: (intent: Intent) => void,
   flush: () => Promise<boolean>,
   share: { share_id: string; project_id: string; token: string },
 ): Promise<number> {
-  // Whether the leftover fetch is COMPLETE — a failed fetch (network hiccup) or a full page (a large
-  // un-deleted backlog truncated at the cap) means the working set may be missing still-existing
-  // drained rows, which would make ledger pruning unsafe (#850, see below). The claim set can't
-  // truncate: the open queue is capped at 500, well under the fetch cap.
-  let leftoversComplete = true;
-  let leftovers: DrainRow[] = [];
+  let leftovers: DrainRow[];
   try {
     leftovers = await fetchLeftoverDrained(share.share_id);
-    if (leftovers.length >= DRAIN_LEFTOVER_LIMIT) leftoversComplete = false;
   } catch {
-    leftoversComplete = false;
+    leftovers = []; // a hiccup: this drain just processes the freshly-claimed rows, leftovers next time
   }
   const claimed = await claimDrainableEvents(share.share_id, DRAINABLE_KINDS);
   // Leftovers (already drained=true) and freshly claimed rows are disjoint; dedupe by id defensively
-  // and process in id order (the drain's FIFO).
+  // and process in id order (the drain's FIFO the ledger's −1,+1 correctness relies on).
   const working = [...new Map([...leftovers, ...claimed].map((e) => [e.id, e])).values()].sort(
     (a, b) => a.id - b.id,
   );
   if (working.length === 0) return 0;
 
-  const doc = getDocument();
-  if (!doc) return 0;
+  const before = getCommittedDocument();
+  if (!before) return 0; // no committed truth to plan against — retried on the next trigger
 
-  // The ledger's live-id floor per resource = the smallest working-set id: ids below it name events
-  // already deleted from the table, so they can never be re-processed and are safe to evict (#850).
-  // This holds ONLY when the working set contains every still-existing drained row for the resource,
-  // so we prune ONLY when the leftover fetch was complete — otherwise an unseen older leftover could
-  // be evicted and then double-applied. Skipping pruning just lets the ledger grow this pass (bounded,
-  // self-healing on the next complete drain); pruning is pure GC, never correctness.
-  const pruneBelow = new Map<string, number>();
-  if (leftoversComplete) {
-    for (const e of working) {
-      const key = `${e.node_id}:${e.res_index}`;
-      const prev = pruneBelow.get(key);
-      if (prev === undefined || e.id < prev) pruneBelow.set(key, e.id);
-    }
-  }
+  const inLedger = (doc: WorkspaceDocument | null, eventId: number, nodeId: string | undefined, index: number): boolean =>
+    !!doc && !!nodeId && (doc.nodes[nodeId]?.drainLedger?.[index]?.includes(eventId) ?? false);
 
-  const plan = drainPlan(doc, share.project_id, share.token, working, nowIso(), pruneBelow);
-  const plannedIds = new Set(plan.map((p) => p.eventId));
-
-  // Resolve pseudonymous ids once for the committed-ledger membership tests (same lens the sanitizer
-  // used). An event already in the COMMITTED ledger is durably applied: skip re-dispatching it (an
-  // idempotent no-op that would still cost a version-bumping push) and delete it below.
-  const idMap = guestIdMap(doc, share.project_id, share.token);
-  const inCommittedLedger = (eventId: number, nodeId: string | undefined, index: number): boolean => {
-    const committed = getCommittedDocument();
-    if (!committed || !nodeId) return false;
-    return committed.nodes[nodeId]?.drainLedger?.[index]?.includes(eventId) ?? false;
-  };
-
+  // Dispatch each planned intent in id order, skipping any already durably applied (an idempotent
+  // no-op that would still cost a version-bumping push).
+  const plan = drainPlan(before, share.project_id, share.token, working, nowIso());
   for (const p of plan) {
-    if (inCommittedLedger(p.eventId, p.nodeId, p.index)) continue; // already landed — don't re-push
-    dispatch(p.intent);
+    if (!inLedger(before, p.eventId, p.nodeId, p.index)) dispatch(p.intent);
   }
   await flush();
 
-  // Partition the working set against the now-committed ledger: applied (or junk) → delete; a still
-  // un-applied dispatched event → leave claimed for the next drain.
+  // Decide fate against the POST-FLUSH committed doc.
+  const after = getCommittedDocument() ?? before;
+  const afterMap = guestIdMap(after, share.project_id, share.token);
+  const plannableAfter = new Set(
+    drainPlan(after, share.project_id, share.token, working, nowIso()).map((p) => p.eventId),
+  );
   const deleteIds: number[] = [];
   for (const e of working) {
-    if (!plannedIds.has(e.id)) {
-      deleteIds.push(e.id); // no intent produced — structural junk, spent
-      continue;
-    }
-    if (inCommittedLedger(e.id, idMap.get(e.node_id), e.res_index)) deleteIds.push(e.id);
+    const applied = inLedger(after, e.id, afterMap.get(e.node_id), e.res_index);
+    const junk = !plannableAfter.has(e.id); // yields no intent against the committed doc
+    if (applied || junk) deleteIds.push(e.id);
+    // else: applicable but not yet landed (a failed/pending write) — leave claimed
   }
-  if (deleteIds.length > 0) await deleteEvents(deleteIds).catch(() => {});
+  if (deleteIds.length === 0) return 0;
+
+  const deleted = await deleteEvents(deleteIds).then(() => true).catch(() => false);
+  if (!deleted) return 0; // rows still there; next drain re-processes idempotently
+
+  // Tombstone GC: forget the just-deleted ids from their resources' ledgers (race-safe — only ids
+  // whose rows we durably removed). Only APPLIED ids are in a ledger; junk was never recorded, so we
+  // skip it (no wasted no-op prune).
+  const deleteSet = new Set(deleteIds);
+  const byResource = new Map<string, { id: string; index: number; eventIds: number[] }>();
+  for (const e of working) {
+    if (!deleteSet.has(e.id)) continue;
+    const nodeId = afterMap.get(e.node_id);
+    if (!inLedger(after, e.id, nodeId, e.res_index)) continue; // junk — never in a ledger
+    const key = `${nodeId}:${e.res_index}`;
+    const entry = byResource.get(key) ?? { id: nodeId!, index: e.res_index, eventIds: [] };
+    entry.eventIds.push(e.id);
+    byResource.set(key, entry);
+  }
+  if (byResource.size > 0) dispatch({ type: 'pruneDrainLedger', entries: [...byResource.values()] });
   return deleteIds.length;
 }

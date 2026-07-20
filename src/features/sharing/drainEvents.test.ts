@@ -77,15 +77,6 @@ describe('drainPlan (#811/#850) — the owner drain folds guest events into idem
     expect(next.nodes['a1'].drainLedger?.[1]).toEqual([1, 2, 3, 4]);
   });
 
-  it('threads pruneBelow onto each intent so the reducer evicts dead ledger ids', () => {
-    const doc = workspace();
-    const a1 = pseudo(doc, 'a1');
-    const events = [{ id: 5, node_id: a1, res_index: 1, delta: 1 }];
-    const pruneBelow = new Map([[`${a1}:1`, 5]]);
-    const plan = drainPlan(doc, 'trip', SALT, events, 'T', pruneBelow);
-    expect(plan[0].intent.type === 'incrementCountResource' && plan[0].intent.pruneBelow).toBe(5);
-  });
-
   it('drops untrusted hints: unknown ids, private subtrees, wrong types, undelegated counters, bad deltas', () => {
     const doc = workspace();
     const a1 = pseudo(doc, 'a1');

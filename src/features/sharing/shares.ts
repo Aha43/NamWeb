@@ -209,11 +209,9 @@ export async function claimDrainableEvents(shareId: string, kinds: readonly stri
   return (data ?? []) as DrainRow[];
 }
 
-/** The most leftover rows one drain fetches. Bounds the query so a large un-deleted backlog can't
- *  silently truncate to an arbitrary subset (the PostgREST default cap): a full page (`=== LIMIT`)
- *  signals a possibly-incomplete working set, which the drain uses to SKIP ledger pruning (#850 —
- *  pruning a possibly-live id would re-introduce a double-apply). Ordered by id so the subset is the
- *  OLDEST leftovers and deterministic; the rest are drained on the next pass. */
+/** The most leftover rows one drain fetches (bounds an unbounded backlog to a deterministic page).
+ *  Ordered by id so the page is the OLDEST leftovers; the rest are drained on the next pass. Ledger
+ *  GC is delete-confirmed (`pruneDrainLedger`), so a truncated page is safe — it just defers work. */
 export const DRAIN_LEFTOVER_LIMIT = 1000;
 
 /** Claimed rows left by a previous session (#823/P2, #850): with the idempotency ledger they are

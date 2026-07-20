@@ -46,9 +46,13 @@ export type Intent =
   // Two modes, selected by `eventId`. PILL MODE (owner's own tap, `eventId` absent): `expectedValue`
   // is the stale guard. LEDGER MODE (the guest-event drain, `eventId` set): the event id makes the
   // apply idempotent — a re-processed id no-ops via `drainLedger`; no `expectedValue`, the delta
-  // clamps instead of no-oping, and `pruneBelow` is the ledger's live-id floor (#832/#850).
-  | { type: 'incrementCountResource'; id: string; index: number; expectedValue?: string; delta?: 1 | -1; eventId?: number; pruneBelow?: number; now: string }
-  | { type: 'answerQuestionResource'; id: string; index: number; expectedValue?: string; answer: 'yes' | 'no' | 'clear'; eventId?: number; pruneBelow?: number; now: string }
+  // clamps instead of no-oping, and the id is recorded (#832/#850).
+  | { type: 'incrementCountResource'; id: string; index: number; expectedValue?: string; delta?: 1 | -1; eventId?: number; now: string }
+  | { type: 'answerQuestionResource'; id: string; index: number; expectedValue?: string; answer: 'yes' | 'no' | 'clear'; eventId?: number; now: string }
+  // Tombstone GC for the drain ledger (#850): remove the given event ids from a resource's
+  // `drainLedger` AFTER their rows are confirmed deleted — the only race-safe way to bound it, since
+  // a tab may only forget ids whose events IT durably deleted. Replay-safe (filtering is idempotent).
+  | { type: 'pruneDrainLedger'; entries: { id: string; index: number; eventIds: number[] }[] }
   | { type: 'addPrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'removePrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'createSavedView'; name: string; tags: string[]; nextOnly: boolean }
@@ -257,20 +261,18 @@ function toTemplateNodes(doc: WorkspaceDocument, parentId: string): TemplateNode
 
 /**
  * Record a drained guest-event id in a node's idempotency ledger (#832/#850), returning a NEW
- * ledger map (the caller has already cloned the node). `pruneBelow` is the drain's live-id floor:
- * any id below it belongs to an event already deleted from `share_resource_events`, so it can never
- * be re-processed and is safe to evict — which keeps the ledger bounded by the open+leftover set.
+ * ledger map (the caller has already cloned the node). Append-only; eviction is a separate,
+ * delete-confirmed step (`pruneDrainLedger`) so a tab never forgets an id whose event row still
+ * exists — the race-safe bound.
  */
 function recordDrainEvent(
   ledger: Record<number, number[]> | undefined,
   index: number,
   eventId: number,
-  pruneBelow?: number,
 ): Record<number, number[]> {
   const existing = ledger?.[index] ?? [];
-  const appended = existing.includes(eventId) ? existing : [...existing, eventId];
-  const pruned = pruneBelow === undefined ? appended : appended.filter((id) => id >= pruneBelow);
-  return { ...ledger, [index]: pruned };
+  if (existing.includes(eventId)) return { ...ledger };
+  return { ...ledger, [index]: [...existing, eventId] };
 }
 
 const structuralIds = (doc: WorkspaceDocument): Set<string> =>
@@ -299,9 +301,10 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'removeBookmark' ||
     intent.type === 'renameBookmark' ||
     intent.type === 'reorderBookmarks' ||
-    intent.type === 'restoreNodes'
+    intent.type === 'restoreNodes' ||
+    intent.type === 'pruneDrainLedger'
   ) {
-    return true; // operate on a document-level list, not a node
+    return true; // operate on a document-level list (or across nodes, tolerant of missing), not one node
   }
   if (intent.type === 'saveAsTemplate') return Boolean(doc.nodes[intent.nodeId]);
   if (
@@ -578,7 +581,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const current = count.current + delta;
       resources[intent.index] = { ...resource, value: formatCount(current, count.target, count.unlimited) };
       const updated = { ...node, resources, updatedAt: intent.now };
-      if (drained) updated.drainLedger = recordDrainEvent(node.drainLedger, intent.index, intent.eventId!, intent.pruneBelow);
+      if (drained) updated.drainLedger = recordDrainEvent(node.drainLedger, intent.index, intent.eventId!);
       // The symmetric stock loop (#816, opt-in): a TICK CROSSING the goal boundary completes
       // the action; a tick crossing back below reopens it. Crossings, not thresholds
       // (#821/F1): a tick that stays on its side of the boundary never transitions — so a
@@ -621,8 +624,25 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const resources = node.resources.slice();
       resources[intent.index] = { ...resource, value: formatQuestion(answer) };
       const updated = { ...node, resources, updatedAt: intent.now };
-      if (drained) updated.drainLedger = recordDrainEvent(node.drainLedger, intent.index, intent.eventId!, intent.pruneBelow);
+      if (drained) updated.drainLedger = recordDrainEvent(node.drainLedger, intent.index, intent.eventId!);
       next.nodes[intent.id] = updated;
+      return next;
+    }
+    case 'pruneDrainLedger': {
+      // Forget the given event ids (their rows are confirmed deleted) — the ledger's race-safe GC.
+      // Tolerant: a vanished node/resource or an already-forgotten id is a no-op; empty entries clear
+      // back to absent so an untouched resource stays byte-identical (additive contract).
+      for (const entry of intent.entries) {
+        const node = next.nodes[entry.id];
+        const existing = node?.drainLedger?.[entry.index];
+        if (!node || !existing) continue;
+        const remaining = existing.filter((id) => !entry.eventIds.includes(id));
+        const ledger = { ...node.drainLedger };
+        if (remaining.length > 0) ledger[entry.index] = remaining;
+        else delete ledger[entry.index];
+        if (Object.keys(ledger).length > 0) node.drainLedger = ledger;
+        else delete node.drainLedger; // back to absent (additive contract)
+      }
       return next;
     }
     case 'addPrerequisite': {

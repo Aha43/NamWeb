@@ -28,8 +28,8 @@ const count = (value: string, extra: Partial<NamNode> = {}) =>
 const question = (value: string) =>
   doc(node('a1', { resources: [{ type: 'QUESTION', value, description: 'Tent?', guestEditable: true }] }));
 
-const tick = (index: number, delta: 1 | -1, eventId: number, pruneBelow?: number) =>
-  ({ type: 'incrementCountResource' as const, id: 'a1', index, delta, eventId, pruneBelow, now: 'T' });
+const tick = (index: number, delta: 1 | -1, eventId: number) =>
+  ({ type: 'incrementCountResource' as const, id: 'a1', index, delta, eventId, now: 'T' });
 const answer = (index: number, a: 'yes' | 'no' | 'clear', eventId: number) =>
   ({ type: 'answerQuestionResource' as const, id: 'a1', index, answer: a, eventId, now: 'T' });
 
@@ -76,17 +76,35 @@ describe('drain ledger idempotency (#850) — counters', () => {
     expect(next.nodes['a1'].status).toBe('DONE');
   });
 
-  it('prunes ledger ids below pruneBelow (dead ids that name already-deleted events)', () => {
-    const base = count('3/12', { resources: [{ type: 'COUNT', value: '3/12', description: 'j', guestEditable: true }] });
-    base.nodes['a1'].drainLedger = { 0: [1, 2, 3] };
-    const next = applyIntent(base, tick(0, 1, 10, 5)); // append 10, evict everything < 5
-    expect(next.nodes['a1'].drainLedger?.[0]).toEqual([10]);
-    expect(next.nodes['a1'].resources[0].value).toBe('4/12');
-  });
-
   it('no-ops on a missing node or wrong resource type', () => {
     const wrongType = doc(node('a1', { resources: [{ type: 'TEXT', value: 'x', description: null }] }));
     expect(applyIntent(wrongType, tick(0, 1, 7))).toEqual(wrongType);
+  });
+});
+
+describe('pruneDrainLedger (#850) — delete-confirmed tombstone GC', () => {
+  it('forgets exactly the given ids, keeping the rest', () => {
+    const base = count('3/12');
+    base.nodes['a1'].drainLedger = { 0: [1, 2, 3, 4] };
+    const next = applyIntent(base, { type: 'pruneDrainLedger', entries: [{ id: 'a1', index: 0, eventIds: [1, 2] }] });
+    expect(next.nodes['a1'].drainLedger?.[0]).toEqual([3, 4]);
+  });
+
+  it('clears the ledger back to ABSENT when its last id is forgotten (additive contract)', () => {
+    const base = count('3/12');
+    base.nodes['a1'].drainLedger = { 0: [7] };
+    const next = applyIntent(base, { type: 'pruneDrainLedger', entries: [{ id: 'a1', index: 0, eventIds: [7] }] });
+    expect(next.nodes['a1'].drainLedger).toBeUndefined();
+  });
+
+  it('is idempotent and tolerant: an already-forgotten id or a vanished node is a no-op', () => {
+    const base = count('3/12');
+    base.nodes['a1'].drainLedger = { 0: [7] };
+    const once = applyIntent(base, { type: 'pruneDrainLedger', entries: [{ id: 'a1', index: 0, eventIds: [7] }] });
+    const twice = applyIntent(once, { type: 'pruneDrainLedger', entries: [{ id: 'a1', index: 0, eventIds: [7] }] });
+    expect(twice.nodes['a1'].drainLedger).toBeUndefined();
+    // A vanished node just no-ops (replay against a doc where the node was deleted).
+    expect(applyIntent(base, { type: 'pruneDrainLedger', entries: [{ id: 'gone', index: 0, eventIds: [1] }] })).toEqual(base);
   });
 });
 

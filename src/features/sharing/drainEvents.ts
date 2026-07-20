@@ -34,9 +34,8 @@ export interface PlannedIntent {
 }
 
 /**
- * The intents a batch of claimed events folds into, in arrival (id) order. Pure. `pruneBelow` maps
- * `${node_id}:${res_index}` → the ledger's live-id floor for that resource (drainShare's min working
- * id); an event that yields no intent (structural drop) is simply absent from the result.
+ * The intents a batch of claimed events folds into, in arrival (id) order. Pure. An event that
+ * yields no intent (structural drop) is simply absent from the result.
  */
 export function drainPlan(
   doc: WorkspaceDocument,
@@ -44,7 +43,6 @@ export function drainPlan(
   salt: string,
   events: DrainableEvent[],
   now: string,
-  pruneBelow?: Map<string, number>,
 ): PlannedIntent[] {
   const map = guestIdMap(doc, projectId, salt);
   const planned: PlannedIntent[] = [];
@@ -53,7 +51,6 @@ export function drainPlan(
     if (!nodeId) continue; // unresolved pseudonymous id — structural drop
     const resource = doc.nodes[nodeId]?.resources[event.res_index];
     if (!resource || !resource.guestEditable) continue;
-    const floor = pruneBelow?.get(`${event.node_id}:${event.res_index}`);
     // Question answers (#827): a SET. The reducer skips it if already recorded, else applies.
     if (event.answer) {
       if (resource.type !== 'QUESTION' || !parseQuestion(resource.value)) continue;
@@ -67,7 +64,6 @@ export function drainPlan(
           index: event.res_index,
           answer: event.answer,
           eventId: event.id,
-          pruneBelow: floor,
           now,
         },
       });
@@ -90,7 +86,6 @@ export function drainPlan(
         index: event.res_index,
         delta: event.delta,
         eventId: event.id,
-        pruneBelow: floor,
         now,
       },
     });
