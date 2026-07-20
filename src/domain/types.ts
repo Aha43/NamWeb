@@ -63,19 +63,20 @@ export interface NamNode {
    */
   deriveDue?: boolean;
   /**
-   * The owner-drain idempotency ledger (#832/#850): resource index → the guest-event ids already
-   * folded into that resource's value. Guests append ticks/answers to `share_resource_events`; the
-   * owner's client drains them, and this remembers which have landed so a concurrent or restarted
-   * drain re-processes them as a no-op instead of double-counting or losing one. Absent-means-empty;
-   * only delegated (guestEditable) resources ever accrue. Pruned to live ids (see drainShare), so it
-   * stays near-empty in health.
+   * The owner-drain idempotency watermark (#832/#850): resource index → the HIGHEST guest-event id
+   * already folded into that resource's value. Guests append ticks/answers to `share_resource_events`
+   * (monotonic ids); the owner's client drains them in id order, and this records how far. Idempotency
+   * is `eventId <= drainedThrough[index]` → already applied → a concurrent or restarted drain
+   * re-processes it as a no-op instead of double-counting or losing one. A watermark, not a set, so it
+   * only ever ADVANCES — immune to the re-apply an evictable ledger suffered — and is one int per
+   * resource (self-bounding, no GC). Absent-means-zero; only delegated resources ever accrue.
    *
    * CORRECTNESS-LOAD-BEARING across the future NamDesktop round-trip: it lives on `NamNode` (not on
    * the nested `Resource`) precisely because node-level unknown-field passthrough is the confirmed
    * contract (the `dueEndAt`/`dueTime` family rides it). A client that drops this on rewrite would
    * resurrect already-applied events → over-count. Additive, absent-means-off.
    */
-  drainLedger?: Record<number, number[]>;
+  drainedThrough?: Record<number, number>;
 }
 
 export interface SavedView {

@@ -16,7 +16,7 @@ vi.mock('./shares', async (orig) => ({
 }));
 
 import { drainShare } from './drainShare';
-import { DRAINABLE_KINDS } from './shares';
+import { DRAINABLE_KINDS, DRAIN_LEFTOVER_LIMIT } from './shares';
 
 function node(id: string, p: Partial<NamNode> = {}): NamNode {
   return {
@@ -26,8 +26,8 @@ function node(id: string, p: Partial<NamNode> = {}): NamNode {
   };
 }
 
-/** A committed doc with one delegated COUNT on a1[0]; `ledger` seeds a1's drainLedger. */
-function docWith(ledger: number[]): WorkspaceDocument {
+/** A committed doc with one delegated COUNT on a1[0]; `watermark` seeds a1.drainedThrough[0]. */
+function docWith(watermark?: number): WorkspaceDocument {
   return {
     formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects', nextActionsNodeId: 'actions',
     nodes: {
@@ -38,7 +38,7 @@ function docWith(ledger: number[]): WorkspaceDocument {
       trip: node('trip', { project: true, childIds: ['a1'] }),
       a1: node('a1', {
         resources: [{ type: 'COUNT', value: '0/12', description: 'jars', guestEditable: true }],
-        ...(ledger.length ? { drainLedger: { 0: ledger } } : {}),
+        ...(watermark ? { drainedThrough: { 0: watermark } } : {}),
       }),
     },
     registeredTags: [], savedViews: [], missionControls: [], templates: [], viewOrders: {},
@@ -46,41 +46,36 @@ function docWith(ledger: number[]): WorkspaceDocument {
 }
 
 const SHARE = { share_id: 'sid1', project_id: 'trip', token: 'tok123' };
-const pseudoA1 = [...guestIdMap(docWith([]), 'trip', 'tok123').entries()].find(([, r]) => r === 'a1')![0];
+const pseudoA1 = [...guestIdMap(docWith(), 'trip', 'tok123').entries()].find(([, r]) => r === 'a1')![0];
 const ev = (id: number, res_index = 0) => ({ id, node_id: pseudoA1, res_index, delta: 1, answer: null });
 
 function baseMocks() {
-  service.claimDrainableEvents.mockReset();
+  service.claimDrainableEvents.mockReset().mockResolvedValue([]);
   service.deleteEvents.mockReset().mockResolvedValue(undefined);
   service.fetchLeftoverDrained.mockReset().mockResolvedValue([]);
 }
 
 /**
- * Models the real write path against the COMMITTED doc: an apply dispatch records its event id as
- * durably landed (unless `land(id)` is false — a failed write); `pruneDrainLedger` forgets ids;
- * `getCommittedDocument` reflects the ledger. `preLanded` seeds a prior session's applied ids.
+ * Models the committed write path: an apply dispatch, if it lands, advances a1's watermark to the
+ * highest landed id; `getCommittedDocument` reflects it. `preLanded` seeds a prior session's high
+ * watermark; `land` can block a write (a failed commit); `committed` overrides the doc entirely.
  */
-function harness(opts: { preLanded?: number[]; land?: (id: number) => boolean; committed?: () => WorkspaceDocument | null } = {}) {
-  const landed = new Set<number>(opts.preLanded ?? []);
+function harness(opts: { preLanded?: number; land?: (id: number) => boolean; committed?: () => WorkspaceDocument | null } = {}) {
+  let watermark = opts.preLanded ?? 0;
   const land = opts.land ?? (() => true);
   const applied: number[] = [];
-  const pruned: number[] = [];
   const dispatch = vi.fn((intent: Intent) => {
-    if (intent.type === 'pruneDrainLedger') {
-      for (const e of intent.entries) for (const id of e.eventIds) { landed.delete(id); pruned.push(id); }
-      return;
-    }
     if (intent.type !== 'incrementCountResource' && intent.type !== 'answerQuestionResource') return;
     applied.push(intent.eventId!);
-    if (land(intent.eventId!)) landed.add(intent.eventId!);
+    if (land(intent.eventId!)) watermark = Math.max(watermark, intent.eventId!);
   });
-  const getCommittedDocument = opts.committed ?? (() => docWith([...landed]));
+  const getCommittedDocument = opts.committed ?? (() => docWith(watermark || undefined));
   const flush = vi.fn(async () => true);
-  return { dispatch, getCommittedDocument, flush, applied, pruned };
+  return { dispatch, getCommittedDocument, flush, applied };
 }
 
-describe('drainShare (#832/#850) — restartable, ledger-durable, committed-truth drain', () => {
-  it('dispatches a claimed event, deletes it once durably applied, and tombstones its ledger id', async () => {
+describe('drainShare (#832/#850) — watermark, restartable, committed-truth drain', () => {
+  it('dispatches a claimed event and deletes it once its id is at/under the committed watermark', async () => {
     baseMocks();
     service.claimDrainableEvents.mockResolvedValue([ev(7)]);
     const h = harness();
@@ -88,10 +83,9 @@ describe('drainShare (#832/#850) — restartable, ledger-durable, committed-trut
     expect(service.claimDrainableEvents).toHaveBeenCalledWith('sid1', DRAINABLE_KINDS);
     expect(h.applied).toEqual([7]);
     expect(service.deleteEvents).toHaveBeenCalledWith([7]);
-    expect(h.pruned).toEqual([7]); // tombstone GC: forget exactly the deleted id
   });
 
-  it('dispatches in id order even when the claim returns rows unsorted (the FIFO the ledger needs)', async () => {
+  it('dispatches in id order even when the claim returns rows unsorted (the FIFO the watermark needs)', async () => {
     baseMocks();
     service.claimDrainableEvents.mockResolvedValue([ev(9), ev(7), ev(8)]);
     const h = harness();
@@ -99,65 +93,45 @@ describe('drainShare (#832/#850) — restartable, ledger-durable, committed-trut
     expect(h.applied).toEqual([7, 8, 9]);
   });
 
+  it('ABA-immune: a leftover already under the committed watermark is deleted WITHOUT re-dispatching', async () => {
+    baseMocks();
+    service.fetchLeftoverDrained.mockResolvedValue([ev(7)]); // applied last session (watermark 7), delete failed
+    const h = harness({ preLanded: 7 });
+    await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
+    expect(h.applied).toEqual([]); // 7 ≤ watermark → never re-applied
+    expect(service.deleteEvents).toHaveBeenCalledWith([7]);
+  });
+
   it('P1#2: an applicable event that did NOT land is LEFT CLAIMED, never deleted as junk', async () => {
     baseMocks();
-    // The write fails → 7 never enters the committed ledger. It is still PLANNABLE against the
-    // committed doc (the resource exists), so it must NOT be mistaken for junk and deleted.
+    // The write fails → the watermark never reaches 7. 7 is still PLANNABLE against the committed doc
+    // (the resource exists), so it must NOT be mistaken for junk and deleted.
     service.claimDrainableEvents.mockResolvedValue([ev(7)]);
     const h = harness({ land: () => false });
     await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
-    expect(h.applied).toEqual([7]); // it was dispatched…
+    expect(h.applied).toEqual([7]); // dispatched…
     expect(service.deleteEvents).not.toHaveBeenCalled(); // …but never deleted (left claimed)
-    expect(h.pruned).toEqual([]);
   });
 
   it('P1#2: a resource removed only OPTIMISTICALLY (committed still has it) keeps the event claimed', async () => {
     baseMocks();
-    // getCommittedDocument always returns the doc WITH the delegated resource — modelling a failed
-    // optimistic removal. The event stays plannable against committed, so it is not junk-deleted.
     service.claimDrainableEvents.mockResolvedValue([ev(7)]);
-    const h = harness({ land: () => false, committed: () => docWith([]) });
+    const h = harness({ land: () => false, committed: () => docWith() });
     await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
     expect(service.deleteEvents).not.toHaveBeenCalled();
   });
 
-  it('P1#1: pruning is a tombstone of DELETED ids, never a floor — a non-landed lower id survives', async () => {
+  it('DELETES a junk event (no intent vs the committed doc) without applying it', async () => {
     baseMocks();
-    // 3 fails to land; 7 and 9 apply. 3 is a lower id than the applied ones — a min-floor prune would
-    // have evicted it. Tombstone GC forgets ONLY 7 and 9 (deleted), and leaves 3 claimed.
-    service.fetchLeftoverDrained.mockResolvedValue([ev(3)]);
-    service.claimDrainableEvents.mockResolvedValue([ev(7), ev(9)]);
-    const h = harness({ land: (id) => id !== 3 });
-    await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
-    expect(service.deleteEvents).toHaveBeenCalledWith([7, 9]); // 3 NOT deleted
-    expect(h.pruned).toEqual([7, 9]); // 3 NOT pruned — no floor eviction
-  });
-
-  it('DELETES a junk event (no intent vs the committed doc) without applying or tombstoning it', async () => {
-    baseMocks();
-    // res_index 9 resolves to a1 but has no resource → not plannable → junk → delete, never applied.
-    service.claimDrainableEvents.mockResolvedValue([ev(9, 9)]);
+    service.claimDrainableEvents.mockResolvedValue([ev(9, 9)]); // res_index 9 has no resource → junk
     const h = harness();
     await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
     expect(h.applied).toEqual([]);
     expect(service.deleteEvents).toHaveBeenCalledWith([9]);
-    expect(h.pruned).toEqual([]); // junk was never in a ledger — no tombstone
-  });
-
-  it('restartable: a leftover ALREADY in the committed ledger is deleted WITHOUT re-dispatching', async () => {
-    baseMocks();
-    service.claimDrainableEvents.mockResolvedValue([]);
-    service.fetchLeftoverDrained.mockResolvedValue([ev(7)]); // claimed last session, applied durably
-    const h = harness({ preLanded: [7] });
-    await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
-    expect(h.applied).toEqual([]); // idempotent skip — no redundant version-bumping push
-    expect(service.deleteEvents).toHaveBeenCalledWith([7]);
-    expect(h.pruned).toEqual([7]);
   });
 
   it('restartable: a leftover NOT yet applied is re-processed (dispatched) then deleted', async () => {
     baseMocks();
-    service.claimDrainableEvents.mockResolvedValue([]);
     service.fetchLeftoverDrained.mockResolvedValue([ev(7)]); // claimed but never landed (crash)
     const h = harness();
     await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
@@ -165,19 +139,39 @@ describe('drainShare (#832/#850) — restartable, ledger-durable, committed-trut
     expect(service.deleteEvents).toHaveBeenCalledWith([7]);
   });
 
-  it('does NOT tombstone when the delete RPC fails (rows still there → re-process next drain)', async () => {
+  it('DEFERS claiming new events when the leftover fetch FAILS (loss-safety for the watermark)', async () => {
+    baseMocks();
+    service.fetchLeftoverDrained.mockRejectedValue(new Error('network')); // incomplete → don't advance past unseen
+    const h = harness();
+    const resolved = await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
+    expect(service.claimDrainableEvents).not.toHaveBeenCalled();
+    expect(h.applied).toEqual([]);
+    expect(resolved).toBe(0);
+  });
+
+  it('DEFERS claiming when the leftover page is FULL (possible truncation); drains the page only', async () => {
+    baseMocks();
+    // A full page of junk leftovers (unresolved node) — process/delete them, but do NOT claim newer
+    // events (their ids could sit above an unfetched leftover).
+    service.fetchLeftoverDrained.mockResolvedValue(
+      Array.from({ length: DRAIN_LEFTOVER_LIMIT }, (_, i) => ({ id: i + 1, node_id: 'zzzzzzzz', res_index: 0, delta: 1, answer: null })),
+    );
+    const h = harness();
+    await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
+    expect(service.claimDrainableEvents).not.toHaveBeenCalled();
+    expect(service.deleteEvents).toHaveBeenCalled(); // the junk page is swept
+  });
+
+  it('on a delete-RPC failure it resolves 0 — rows stay, re-processed idempotently next drain', async () => {
     baseMocks();
     service.claimDrainableEvents.mockResolvedValue([ev(7)]);
     service.deleteEvents.mockRejectedValue(new Error('network'));
     const h = harness();
-    const resolved = await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
-    expect(resolved).toBe(0);
-    expect(h.pruned).toEqual([]); // never forget an id whose row deletion we didn't confirm
+    expect(await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE)).toBe(0);
   });
 
   it('a lost claim (other device won the split) with no leftovers touches nothing', async () => {
     baseMocks();
-    service.claimDrainableEvents.mockResolvedValue([]);
     const h = harness();
     expect(await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE)).toBe(0);
     expect(h.applied).toEqual([]);

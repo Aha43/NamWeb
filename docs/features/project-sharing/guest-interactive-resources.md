@@ -81,24 +81,28 @@ confused by a stale published count. Delegation is opt-in **per resource**: an a
    event. Ticking the `guestEditable` box **was** the adoption — pre-approval of the whole
    class of legal moves for that resource.
 
-### The idempotency ledger (#832/#850) — a round-trip-load-bearing field
+### The idempotency watermark (#832/#850) — a round-trip-load-bearing field
 
-Step 5's "idempotent per event id" is made real by a **node-level `drainLedger`**
-(`NamNode.drainLedger?: Record<resourceIndex, eventId[]>`): the drain applies each event as an
+Step 5's "idempotent per event id" is made real by a **node-level `drainedThrough`**
+(`NamNode.drainedThrough?: Record<resourceIndex, eventId>`): the drain applies each event as an
 `incrementCountResource`/`answerQuestionResource` intent *carrying its event id*, and the reducer
-records that id in the ledger **atomically with the value** (same JSONB push). A re-processed id —
-a concurrent second-device drain, a re-fetched leftover, a conflict-replay — is a no-op. The drain
-plans and classifies against the **committed** (server-acknowledged) document, never the optimistic
-snapshot, and deletes an event only once its id is in the committed ledger (durably applied) or it is
-structural junk against that committed doc — so a failed local edit can't make a still-valid event
-look like junk, and a failed write or a closed tab re-processes safely instead of dropping the change.
-The ledger is bounded by a **delete-confirmed tombstone** (`pruneDrainLedger`): after a drain deletes
-an event's row it forgets exactly that id — the only race-safe GC, since a tab must never forget an id
-whose event row another tab may still hold undeleted. It stays near-empty in health.
+applies it only if the id exceeds the resource's watermark, then **advances the watermark atomically
+with the value** (same JSONB push). Because the watermark only ever RISES, a re-processed id — a
+concurrent second-device drain, a re-fetched leftover, a conflict-replay — is a safe no-op, and there
+is nothing to evict (so the re-apply an evictable ledger suffered can't happen). It is one integer per
+resource — self-bounding, no GC, no tombstone.
+
+The drain plans and classifies against the **committed** (server-acknowledged) document, never the
+optimistic snapshot, and deletes an event only once its id is at/under the committed watermark
+(durably applied) or it is structural junk against that committed doc — so a failed local edit can't
+make a still-valid event look like junk, and a failed write or a closed tab re-processes safely
+instead of dropping the change. Leftovers are processed oldest-id-first, and when the leftover set is
+incomplete (a failed or possibly-truncated fetch) newer claims are DEFERRED — so the watermark can
+never jump past an unseen lower event (a lost tick).
 
 Two contract properties this leans on, both already honored, both worth guarding:
 
-- **Sanitizer non-leak.** `drainLedger` is owner-side bookkeeping and must never reach a guest
+- **Sanitizer non-leak.** `drainedThrough` is owner-side bookkeeping and must never reach a guest
   snapshot. The sanitizer's allowlist (it copies only `{index, value, label}` off resources, never
   the node) already excludes it; a test pins this.
 - **NamDesktop round-trip (correctness-load-bearing).** It lives on `NamNode`, not on the nested

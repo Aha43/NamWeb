@@ -211,7 +211,7 @@ export async function claimDrainableEvents(shareId: string, kinds: readonly stri
 
 /** The most leftover rows one drain fetches (bounds an unbounded backlog to a deterministic page).
  *  Ordered by id so the page is the OLDEST leftovers; the rest are drained on the next pass. Ledger
- *  GC is delete-confirmed (`pruneDrainLedger`), so a truncated page is safe — it just defers work. */
+ *  A truncated page is safe — the drain defers newer claims until the leftover set is complete. */
 export const DRAIN_LEFTOVER_LIMIT = 1000;
 
 /** Claimed rows left by a previous session (#823/P2, #850): with the idempotency ledger they are

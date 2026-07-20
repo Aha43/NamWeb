@@ -45,14 +45,10 @@ export type Intent =
   | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
   // Two modes, selected by `eventId`. PILL MODE (owner's own tap, `eventId` absent): `expectedValue`
   // is the stale guard. LEDGER MODE (the guest-event drain, `eventId` set): the event id makes the
-  // apply idempotent — a re-processed id no-ops via `drainLedger`; no `expectedValue`, the delta
-  // clamps instead of no-oping, and the id is recorded (#832/#850).
+  // apply idempotent — an id at or below the resource's `drainedThrough` watermark no-ops; no
+  // `expectedValue`, the delta clamps instead of no-oping, and the watermark advances (#832/#850).
   | { type: 'incrementCountResource'; id: string; index: number; expectedValue?: string; delta?: 1 | -1; eventId?: number; now: string }
   | { type: 'answerQuestionResource'; id: string; index: number; expectedValue?: string; answer: 'yes' | 'no' | 'clear'; eventId?: number; now: string }
-  // Tombstone GC for the drain ledger (#850): remove the given event ids from a resource's
-  // `drainLedger` AFTER their rows are confirmed deleted — the only race-safe way to bound it, since
-  // a tab may only forget ids whose events IT durably deleted. Replay-safe (filtering is idempotent).
-  | { type: 'pruneDrainLedger'; entries: { id: string; index: number; eventIds: number[] }[] }
   | { type: 'addPrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'removePrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'createSavedView'; name: string; tags: string[]; nextOnly: boolean }
@@ -259,20 +255,19 @@ function toTemplateNodes(doc: WorkspaceDocument, parentId: string): TemplateNode
     .map((n) => ({ title: n.title, project: n.project, children: toTemplateNodes(doc, n.id) }));
 }
 
-/**
- * Record a drained guest-event id in a node's idempotency ledger (#832/#850), returning a NEW
- * ledger map (the caller has already cloned the node). Append-only; eviction is a separate,
- * delete-confirmed step (`pruneDrainLedger`) so a tab never forgets an id whose event row still
- * exists — the race-safe bound.
- */
-function recordDrainEvent(
-  ledger: Record<number, number[]> | undefined,
+/** The drain watermark for a resource — the highest applied guest-event id (0 if none). */
+function drainedThroughAt(node: NamNode, index: number): number {
+  return node.drainedThrough?.[index] ?? 0;
+}
+
+/** Advance a node's drain watermark for a resource, returning a NEW map (node already cloned). Only
+ *  ever raises it (events arrive in id order), so idempotency is monotonic — never re-applies. */
+function advanceDrainedThrough(
+  drainedThrough: Record<number, number> | undefined,
   index: number,
   eventId: number,
-): Record<number, number[]> {
-  const existing = ledger?.[index] ?? [];
-  if (existing.includes(eventId)) return { ...ledger };
-  return { ...ledger, [index]: [...existing, eventId] };
+): Record<number, number> {
+  return { ...drainedThrough, [index]: Math.max(drainedThrough?.[index] ?? 0, eventId) };
 }
 
 const structuralIds = (doc: WorkspaceDocument): Set<string> =>
@@ -301,10 +296,9 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
     intent.type === 'removeBookmark' ||
     intent.type === 'renameBookmark' ||
     intent.type === 'reorderBookmarks' ||
-    intent.type === 'restoreNodes' ||
-    intent.type === 'pruneDrainLedger'
+    intent.type === 'restoreNodes'
   ) {
-    return true; // operate on a document-level list (or across nodes, tolerant of missing), not one node
+    return true; // operate on a document-level list, not a node
   }
   if (intent.type === 'saveAsTemplate') return Boolean(doc.nodes[intent.nodeId]);
   if (
@@ -552,8 +546,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       // The first interactive resource (#798): a +1 from the flow, no editor, no Save buffer.
       // Two modes (see the Intent type): PILL MODE (owner tap, `eventId` absent) guards on
       // `expectedValue` — a replay against a moved/shifted counter no-ops. LEDGER MODE (the guest
-      // drain, `eventId` set) makes the apply idempotent: an id already in `drainLedger` no-ops, and
-      // otherwise the delta CLAMPS (never no-ops) so it can be recorded once and never re-processed.
+      // drain, `eventId` set) makes the apply idempotent: an id at/under the `drainedThrough`
+      // watermark no-ops, else the delta CLAMPS (never no-ops) and the watermark advances past it.
       const node = next.nodes[intent.id];
       if (!node) return next;
       const resource = node.resources[intent.index];
@@ -561,9 +555,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const drained = intent.eventId !== undefined;
       if (drained) {
         // Weak identity is the type check alone (no resource ids — #802/F4 accepted residue). An
-        // already-recorded event is a no-op: re-processing a leftover or a raced claim must not
-        // double-count.
-        if (node.drainLedger?.[intent.index]?.includes(intent.eventId!)) return next;
+        // event at or below the watermark is already applied: re-processing a leftover or a raced
+        // claim must not double-count. The watermark only rises, so this can never re-open.
+        if (intent.eventId! <= drainedThroughAt(node, intent.index)) return next;
       } else if (resource.value !== intent.expectedValue) {
         return next; // pill-mode stale guard (the #573 family)
       }
@@ -581,7 +575,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const current = count.current + delta;
       resources[intent.index] = { ...resource, value: formatCount(current, count.target, count.unlimited) };
       const updated = { ...node, resources, updatedAt: intent.now };
-      if (drained) updated.drainLedger = recordDrainEvent(node.drainLedger, intent.index, intent.eventId!);
+      if (drained) updated.drainedThrough = advanceDrainedThrough(node.drainedThrough, intent.index, intent.eventId!);
       // The symmetric stock loop (#816, opt-in): a TICK CROSSING the goal boundary completes
       // the action; a tick crossing back below reopens it. Crossings, not thresholds
       // (#821/F1): a tick that stays on its side of the boundary never transitions — so a
@@ -615,7 +609,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!resource || resource.type !== 'QUESTION') return next;
       const drained = intent.eventId !== undefined;
       if (drained) {
-        if (node.drainLedger?.[intent.index]?.includes(intent.eventId!)) return next;
+        if (intent.eventId! <= drainedThroughAt(node, intent.index)) return next;
       } else if (resource.value !== intent.expectedValue) {
         return next;
       }
@@ -624,25 +618,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const resources = node.resources.slice();
       resources[intent.index] = { ...resource, value: formatQuestion(answer) };
       const updated = { ...node, resources, updatedAt: intent.now };
-      if (drained) updated.drainLedger = recordDrainEvent(node.drainLedger, intent.index, intent.eventId!);
+      if (drained) updated.drainedThrough = advanceDrainedThrough(node.drainedThrough, intent.index, intent.eventId!);
       next.nodes[intent.id] = updated;
-      return next;
-    }
-    case 'pruneDrainLedger': {
-      // Forget the given event ids (their rows are confirmed deleted) — the ledger's race-safe GC.
-      // Tolerant: a vanished node/resource or an already-forgotten id is a no-op; empty entries clear
-      // back to absent so an untouched resource stays byte-identical (additive contract).
-      for (const entry of intent.entries) {
-        const node = next.nodes[entry.id];
-        const existing = node?.drainLedger?.[entry.index];
-        if (!node || !existing) continue;
-        const remaining = existing.filter((id) => !entry.eventIds.includes(id));
-        const ledger = { ...node.drainLedger };
-        if (remaining.length > 0) ledger[entry.index] = remaining;
-        else delete ledger[entry.index];
-        if (Object.keys(ledger).length > 0) node.drainLedger = ledger;
-        else delete node.drainLedger; // back to absent (additive contract)
-      }
       return next;
     }
     case 'addPrerequisite': {
