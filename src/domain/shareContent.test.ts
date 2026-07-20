@@ -147,17 +147,17 @@ describe('shareContent — the sanitizer', () => {
     expect(json).not.toContain('secret.example');
   });
 
-  it('never leaks the drain idempotency watermark (#850): drainedThrough stays owner-private', () => {
+  it('never leaks the drain idempotency ledger (#850): drainLedger stays owner-private', () => {
     const doc = trip();
-    // A delegated counter whose node carries a watermark of the highest applied guest-event id.
+    // A delegated counter whose node carries a ledger of already-applied guest-event ids.
     doc.nodes['a1'].resources = [{ type: 'COUNT', value: '3/12', description: 'jars', guestEditable: true }];
-    doc.nodes['a1'].drainedThrough = { 0: 90003 };
+    doc.nodes['a1'].drainLedger = { 0: [90001, 90002, 90003] };
     const c = shareContent(doc, 'trip', OPTS)!;
-    // The counter is copied, but the watermark — server-side bookkeeping — is not, anywhere.
+    // The counter is copied, but the ledger — server-side bookkeeping — is not, anywhere.
     expect(c.items[0].counters).toEqual([{ index: 0, value: '3/12', label: 'jars' }]);
     const json = JSON.stringify(c);
-    expect(json).not.toContain('drainedThrough');
-    expect(json).not.toContain('90003');
+    expect(json).not.toContain('drainLedger');
+    expect(json).not.toContain('90001');
   });
 
   it('the envelope remembers HOW it was published (#823/P2)', () => {

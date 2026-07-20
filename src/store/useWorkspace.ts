@@ -53,9 +53,9 @@ export interface UseWorkspace {
   flush: () => Promise<boolean>;
   /** The last SERVER-CONFIRMED document (not the optimistic snapshot) — null before the first load.
    *  The guest drain (#850) reads it AFTER `flush` to decide which claimed events durably landed:
-   *  an event id at/under a resource's `drainedThrough` watermark here means the advance reached the
-   *  backend, so the event is safe to delete. An optimistic-only advance (a failed write) is NOT here,
-   *  so its event is left claimed for the next drain to re-process idempotently. */
+   *  an event id in a resource's `drainLedger` here means the record reached the backend, so the
+   *  event is safe to delete. An optimistic-only record (a failed write) is NOT here, so its event is
+   *  left claimed for the next drain to re-process idempotently. */
   getCommittedDocument: () => WorkspaceDocument | null;
 }
 

@@ -73,8 +73,8 @@ describe('drainPlan (#811/#850) — the owner drain folds guest events into idem
     let next = doc;
     for (const p of plan) next = applyIntent(next, p.intent);
     expect(next.nodes['a1'].resources[1].value).toBe('12/12');
-    // The watermark advances to the highest id so none is ever re-driven — even the two that clamped.
-    expect(next.nodes['a1'].drainedThrough?.[1]).toBe(4);
+    // Every event id is recorded so none is ever re-driven — even the two that clamped to nothing.
+    expect(next.nodes['a1'].drainLedger?.[1]).toEqual([1, 2, 3, 4]);
   });
 
   it('drops untrusted hints: unknown ids, private subtrees, wrong types, undelegated counters, bad deltas', () => {

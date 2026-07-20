@@ -2,30 +2,27 @@ import type { Intent } from '@/domain/mutations';
 import type { WorkspaceDocument } from '@/domain/types';
 import { nowIso } from '@/lib/local';
 import { guestIdMap } from '@/domain/shareContent';
-import { DRAINABLE_KINDS, DRAIN_LEFTOVER_LIMIT, claimDrainableEvents, deleteEvents, fetchLeftoverDrained, type DrainRow } from './shares';
+import { DRAINABLE_KINDS, claimDrainableEvents, deleteEvents, fetchLeftoverDrained, type DrainRow } from './shares';
 import { drainPlan } from './drainEvents';
 
 /**
  * Drain one share's guest events into the workspace (#811, redesigned #850). Claim-then-apply: the
  * atomic claim splits the batch across concurrent devices.
  *
- * Idempotency is a per-resource WATERMARK (`drainedThrough`): the reducer applies an event only if
- * its id exceeds the resource's watermark, then advances it. Because the watermark only ever rises,
- * a re-processed leftover, a raced second-device claim, or a conflict-replay is a safe no-op — there
- * is nothing to evict, so the re-apply that sank an evictable ledger cannot happen.
+ * Idempotency is a per-resource APPEND-ONLY set (`drainLedger`): the reducer applies an event only if
+ * its id is not already recorded, then records it. Membership is order-independent, so two devices
+ * that apply their events out of order (a later event committing before an earlier one), a re-fetched
+ * leftover, or a conflict-replay are all safe no-ops — and nothing is ever removed, so there is no
+ * eviction/tombstone race to re-apply a landed event. (The trade-off is unbounded growth; safe bounded
+ * compaction needs a server-side drain lease — tracked as #852. Fine while sharing is Labs-dark.)
  *
  * Everything keys off the COMMITTED (server-confirmed) document, never the optimistic snapshot: an
  * unconfirmed local edit — e.g. a failed removal of a delegated resource — must not make a valid
- * event look like junk and get deleted. So we plan against the committed doc, dispatch in id order,
- * `await flush()`, then decide each event against the *now*-committed doc:
- *   - id ≤ the committed watermark → DURABLY APPLIED → delete.
+ * event look like junk and get deleted. So we plan against the committed doc, dispatch, `await
+ * flush()`, then decide each event against the *now*-committed doc:
+ *   - id in the committed ledger → DURABLY APPLIED → delete.
  *   - yields no intent against the committed doc → structural junk → delete.
  *   - otherwise (applicable but not landed — a failed/pending write) → LEAVE CLAIMED for the next drain.
- *
- * Loss-safety around leftovers: they are fetched OLDEST-id-first and, when the leftover set is
- * incomplete (fetch failed, or a full page that may be truncated), we DEFER claiming newer events —
- * so the watermark can never jump past an unseen lower leftover. The deferred events wait, undrained,
- * for a drain whose leftover set is complete (self-healing as the backlog clears).
  *
  * Returns the number of events this drain resolved (applied or spent).
  */
@@ -36,18 +33,15 @@ export async function drainShare(
   share: { share_id: string; project_id: string; token: string },
 ): Promise<number> {
   let leftovers: DrainRow[];
-  let leftoversComplete: boolean;
   try {
     leftovers = await fetchLeftoverDrained(share.share_id);
-    leftoversComplete = leftovers.length < DRAIN_LEFTOVER_LIMIT; // a full page may be truncated
   } catch {
-    leftovers = [];
-    leftoversComplete = false;
+    leftovers = []; // a hiccup: this drain just processes the freshly-claimed rows, leftovers next time
   }
-  // Only claim NEW (higher-id) events once we've seen every older leftover — else applying a newer
-  // event would advance the watermark past an unseen lower one (a lost tick). Deferred events stay
-  // undrained for the next complete drain.
-  const claimed = leftoversComplete ? await claimDrainableEvents(share.share_id, DRAINABLE_KINDS) : [];
+  const claimed = await claimDrainableEvents(share.share_id, DRAINABLE_KINDS);
+  // Leftovers (already drained=true) and freshly claimed rows are disjoint; dedupe by id defensively
+  // and process in id order (a coherent per-resource sequence; the set idempotency needs no ordering,
+  // but a −1 then +1 must still land in that order).
   const working = [...new Map([...leftovers, ...claimed].map((e) => [e.id, e])).values()].sort(
     (a, b) => a.id - b.id,
   );
@@ -57,9 +51,9 @@ export async function drainShare(
   if (!before) return 0; // no committed truth to plan against — retried on the next trigger
 
   const applied = (doc: WorkspaceDocument | null, eventId: number, nodeId: string | undefined, index: number): boolean =>
-    !!doc && !!nodeId && eventId <= (doc.nodes[nodeId]?.drainedThrough?.[index] ?? 0);
+    !!doc && !!nodeId && (doc.nodes[nodeId]?.drainLedger?.[index]?.includes(eventId) ?? false);
 
-  // Dispatch each planned intent in id order, skipping any already at/under the committed watermark
+  // Dispatch each planned intent in id order, skipping any already recorded in the committed ledger
   // (an idempotent no-op that would still cost a version-bumping push).
   const plan = drainPlan(before, share.project_id, share.token, working, nowIso());
   for (const p of plan) {

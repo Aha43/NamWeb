@@ -210,8 +210,8 @@ export async function claimDrainableEvents(shareId: string, kinds: readonly stri
 }
 
 /** The most leftover rows one drain fetches (bounds an unbounded backlog to a deterministic page).
- *  Ordered by id so the page is the OLDEST leftovers; the rest are drained on the next pass. Ledger
- *  A truncated page is safe — the drain defers newer claims until the leftover set is complete. */
+ *  Ordered by id so the page is the OLDEST leftovers; a truncated page just defers the rest to the
+ *  next pass — the append-only set idempotency needs no completeness, only re-processing safety. */
 export const DRAIN_LEFTOVER_LIMIT = 1000;
 
 /** Claimed rows left by a previous session (#823/P2, #850): with the idempotency ledger they are

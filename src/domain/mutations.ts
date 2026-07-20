@@ -45,8 +45,8 @@ export type Intent =
   | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
   // Two modes, selected by `eventId`. PILL MODE (owner's own tap, `eventId` absent): `expectedValue`
   // is the stale guard. LEDGER MODE (the guest-event drain, `eventId` set): the event id makes the
-  // apply idempotent — an id at or below the resource's `drainedThrough` watermark no-ops; no
-  // `expectedValue`, the delta clamps instead of no-oping, and the watermark advances (#832/#850).
+  // apply idempotent — an id already in the resource's `drainLedger` no-ops; no `expectedValue`, the
+  // delta clamps instead of no-oping, and the id is recorded (#832/#850).
   | { type: 'incrementCountResource'; id: string; index: number; expectedValue?: string; delta?: 1 | -1; eventId?: number; now: string }
   | { type: 'answerQuestionResource'; id: string; index: number; expectedValue?: string; answer: 'yes' | 'no' | 'clear'; eventId?: number; now: string }
   | { type: 'addPrerequisite'; actionId: string; prereqId: string; now: string }
@@ -255,19 +255,21 @@ function toTemplateNodes(doc: WorkspaceDocument, parentId: string): TemplateNode
     .map((n) => ({ title: n.title, project: n.project, children: toTemplateNodes(doc, n.id) }));
 }
 
-/** The drain watermark for a resource — the highest applied guest-event id (0 if none). */
-function drainedThroughAt(node: NamNode, index: number): number {
-  return node.drainedThrough?.[index] ?? 0;
+/** Has this drained guest-event id already landed on the resource? (order-independent idempotency). */
+function drainEventApplied(node: NamNode, index: number, eventId: number): boolean {
+  return node.drainLedger?.[index]?.includes(eventId) ?? false;
 }
 
-/** Advance a node's drain watermark for a resource, returning a NEW map (node already cloned). Only
- *  ever raises it (events arrive in id order), so idempotency is monotonic — never re-applies. */
-function advanceDrainedThrough(
-  drainedThrough: Record<number, number> | undefined,
+/** Record a drained guest-event id, returning a NEW ledger map (node already cloned). APPEND-ONLY —
+ *  nothing is ever removed (a removal can't be proven safe against a concurrent processor). */
+function recordDrainEvent(
+  drainLedger: Record<number, number[]> | undefined,
   index: number,
   eventId: number,
-): Record<number, number> {
-  return { ...drainedThrough, [index]: Math.max(drainedThrough?.[index] ?? 0, eventId) };
+): Record<number, number[]> {
+  const existing = drainLedger?.[index] ?? [];
+  if (existing.includes(eventId)) return { ...drainLedger };
+  return { ...drainLedger, [index]: [...existing, eventId] };
 }
 
 const structuralIds = (doc: WorkspaceDocument): Set<string> =>
@@ -546,8 +548,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       // The first interactive resource (#798): a +1 from the flow, no editor, no Save buffer.
       // Two modes (see the Intent type): PILL MODE (owner tap, `eventId` absent) guards on
       // `expectedValue` — a replay against a moved/shifted counter no-ops. LEDGER MODE (the guest
-      // drain, `eventId` set) makes the apply idempotent: an id at/under the `drainedThrough`
-      // watermark no-ops, else the delta CLAMPS (never no-ops) and the watermark advances past it.
+      // drain, `eventId` set) makes the apply idempotent: an id already in `drainLedger` no-ops, else
+      // the delta CLAMPS (never no-ops) so it is recorded once and never re-driven.
       const node = next.nodes[intent.id];
       if (!node) return next;
       const resource = node.resources[intent.index];
@@ -555,9 +557,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const drained = intent.eventId !== undefined;
       if (drained) {
         // Weak identity is the type check alone (no resource ids — #802/F4 accepted residue). An
-        // event at or below the watermark is already applied: re-processing a leftover or a raced
-        // claim must not double-count. The watermark only rises, so this can never re-open.
-        if (intent.eventId! <= drainedThroughAt(node, intent.index)) return next;
+        // already-recorded event is a no-op: re-processing a leftover or a raced claim must not
+        // double-count. Membership is order-independent, so two devices applying out of order are safe.
+        if (drainEventApplied(node, intent.index, intent.eventId!)) return next;
       } else if (resource.value !== intent.expectedValue) {
         return next; // pill-mode stale guard (the #573 family)
       }
@@ -575,7 +577,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const current = count.current + delta;
       resources[intent.index] = { ...resource, value: formatCount(current, count.target, count.unlimited) };
       const updated = { ...node, resources, updatedAt: intent.now };
-      if (drained) updated.drainedThrough = advanceDrainedThrough(node.drainedThrough, intent.index, intent.eventId!);
+      if (drained) updated.drainLedger = recordDrainEvent(node.drainLedger, intent.index, intent.eventId!);
       // The symmetric stock loop (#816, opt-in): a TICK CROSSING the goal boundary completes
       // the action; a tick crossing back below reopens it. Crossings, not thresholds
       // (#821/F1): a tick that stays on its side of the boundary never transitions — so a
@@ -609,7 +611,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!resource || resource.type !== 'QUESTION') return next;
       const drained = intent.eventId !== undefined;
       if (drained) {
-        if (intent.eventId! <= drainedThroughAt(node, intent.index)) return next;
+        if (drainEventApplied(node, intent.index, intent.eventId!)) return next;
       } else if (resource.value !== intent.expectedValue) {
         return next;
       }
@@ -618,7 +620,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       const resources = node.resources.slice();
       resources[intent.index] = { ...resource, value: formatQuestion(answer) };
       const updated = { ...node, resources, updatedAt: intent.now };
-      if (drained) updated.drainedThrough = advanceDrainedThrough(node.drainedThrough, intent.index, intent.eventId!);
+      if (drained) updated.drainLedger = recordDrainEvent(node.drainLedger, intent.index, intent.eventId!);
       next.nodes[intent.id] = updated;
       return next;
     }
