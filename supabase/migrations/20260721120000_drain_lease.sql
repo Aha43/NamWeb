@@ -93,15 +93,22 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  v_valid boolean;
 begin
-  if not exists (
-    select 1 from project_shares ps
-    where ps.share_id = p_share_id
-      and ps.owner_user_id = (select auth.uid())
-      and ps.drain_lease_token = p_lease_token
-      and ps.drain_lease_until is not null
-      and ps.drain_lease_until > now()
-  ) then
+  -- LOCK the lease row FOR UPDATE so the fence check and the event claim are atomic against lease
+  -- takeover: acquire/renew/release all UPDATE this row, so they serialize behind (or block until)
+  -- this claim commits. Without the lock, a holder could pass the check just before expiry while
+  -- another tab acquires, then claim concurrently — recreating the out-of-order watermark loss.
+  select (ps.drain_lease_token = p_lease_token
+          and ps.drain_lease_until is not null
+          and ps.drain_lease_until > now())
+    into v_valid
+    from project_shares ps
+   where ps.share_id = p_share_id
+     and ps.owner_user_id = (select auth.uid())
+   for update;
+  if not found or not coalesce(v_valid, false) then
     return; -- not the current unexpired lease holder: claim nothing (fail closed)
   end if;
   return query
