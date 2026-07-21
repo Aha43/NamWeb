@@ -15,6 +15,7 @@ import { TagsPage } from './TagsPage';
 import { SearchPage } from './SearchPage';
 import { GoalsPage } from './GoalsPage';
 import { TemplatesPage } from './TemplatesPage';
+import { SharedProjectsPage } from '@/features/sharing/SharedProjectsPage';
 import { AccountPage } from './AccountPage';
 import { HelpPage } from './HelpPage';
 import { NotFound } from './NotFound';
@@ -56,6 +57,7 @@ export function AppRoutes() {
         <Route path="search" element={<SearchPage />} />
         <Route path="goals" element={<GoalsPage />} />
         <Route path="templates" element={<TemplatesPage />} />
+        <Route path="shared" element={<SharedProjectsPage />} />
         <Route path="account" element={<AccountPage />} />
         <Route path="help" element={<HelpPage />} />
         <Route path="*" element={<NotFound />} />

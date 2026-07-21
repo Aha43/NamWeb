@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState, type FormEvent } from 'react';
-import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, Trash2, Upload } from 'lucide-react';
+import { Archive, ArchiveRestore, ChevronRight, FolderInput, Pencil, Share2, Trash2, Upload } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
@@ -34,7 +34,8 @@ export interface MoveTarget {
 
 export interface ProjectsPanelProps {
   projects: NamNode[];
-  onAdd: (title: string) => void;
+  /** The quick-add box. Omit for a read-only list (e.g. the Shared view, #857). */
+  onAdd?: (title: string) => void;
   onOpen: (id: string) => void;
   /** Inline-rename a project (deliberate, via the rename button — no dialog). */
   onRename?: (id: string, title: string) => void;
@@ -66,6 +67,12 @@ export interface ProjectsPanelProps {
   archivedCount?: number;
   /** A project's effective due span (derived gap-fill, #706); raw fields when absent. */
   effectiveDueOf?: (id: string) => EffectiveDue;
+  /** Project ids that are currently published as a share (#857) — drawn with a Share2 badge so the
+   *  ordinary list shows at a glance what's shared. Absent = none. */
+  sharedIds?: Set<string>;
+  /** Override the empty-state copy (defaults to the projects.* strings) — e.g. the Shared view. */
+  emptyTitle?: string;
+  emptyHint?: string;
 }
 
 /** Top-level projects: quick-add plus the list, each opening into the workbench. Presentational. */
@@ -89,6 +96,9 @@ export function ProjectsPanel({
   onToggleShowArchived,
   archivedCount = 0,
   effectiveDueOf,
+  sharedIds,
+  emptyTitle,
+  emptyHint,
 }: ProjectsPanelProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
@@ -116,7 +126,7 @@ export function ProjectsPanel({
   function submit(event: FormEvent) {
     event.preventDefault();
     const trimmed = title.trim();
-    if (!trimmed) return;
+    if (!trimmed || !onAdd) return;
     onAdd(trimmed);
     setTitle('');
   }
@@ -190,6 +200,11 @@ export function ProjectsPanel({
                 </span>
               )}
             </span>
+            {sharedIds?.has(project.id) && (
+              <span title={t('shared.badge')} className="shrink-0">
+                <Share2 aria-label={t('shared.badge')} className="h-3.5 w-3.5 text-primary" />
+              </span>
+            )}
             {project.childIds.length > 0 && (
               <span className="text-xs text-muted-foreground">{project.childIds.length}</span>
             )}
@@ -300,17 +315,19 @@ export function ProjectsPanel({
 
   return (
     <section className="space-y-4">
-      <form onSubmit={submit} className="flex gap-2">
-        <input
-          aria-label={t('projects.addAria')}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder={t('picker.newProjectPlaceholder')}
-          className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
-        />
-        <AddPositionToggle />
-        <Button type="submit">{t('common.add')}</Button>
-      </form>
+      {onAdd && (
+        <form onSubmit={submit} className="flex gap-2">
+          <input
+            aria-label={t('projects.addAria')}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={t('picker.newProjectPlaceholder')}
+            className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
+          />
+          <AddPositionToggle />
+          <Button type="submit">{t('common.add')}</Button>
+        </form>
+      )}
 
       {(onImportWorkspace ||
         (archivedCount > 0 && onToggleShowArchived) ||
@@ -352,8 +369,8 @@ export function ProjectsPanel({
 
       {projects.length === 0 ? (
         <div className="space-y-2 py-10 text-center">
-          <p className="text-sm font-medium text-foreground">{t('projects.emptyTitle')}</p>
-          <p className="mx-auto max-w-sm text-sm text-muted-foreground">{t('projects.emptyHint')}</p>
+          <p className="text-sm font-medium text-foreground">{emptyTitle ?? t('projects.emptyTitle')}</p>
+          <p className="mx-auto max-w-sm text-sm text-muted-foreground">{emptyHint ?? t('projects.emptyHint')}</p>
           {onAddLearnNam && (
             <p className="text-sm text-muted-foreground">
               {t('projects.newToNam')}{' '}

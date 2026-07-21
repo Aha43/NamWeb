@@ -10,6 +10,7 @@ import {
   Lock,
   Copy,
   Search,
+  Share2,
   Tag,
   Target,
   type LucideIcon,
@@ -36,13 +37,16 @@ const search: NavItem = { to: '/search', label: 'domain.search', icon: Search, h
 export const projects: NavItem = { to: '/projects', label: 'domain.projects', icon: Folders, hint: 'nav.projectsHint' };
 const goals: NavItem = { to: '/goals', label: 'domain.goals', icon: LayoutDashboard, hint: 'nav.goalsHint' };
 const templates: NavItem = { to: '/templates', label: 'domain.templates', icon: Copy, hint: 'nav.templatesHint' };
+// "Shared" is a NamWeb-only surface (published project links), so its label is a plain nav key, not
+// part of the NamDesktop-shared domain vocab.
+const shared: NavItem = { to: '/shared', label: 'shared.title', icon: Share2, hint: 'nav.sharedHint' };
 const done: NavItem = { to: '/done', label: 'domain.status.done', icon: CheckCircle2, hint: 'nav.doneHint' };
 export const focus: NavItem = { to: '/focus', label: 'domain.focus', icon: Target, hint: 'nav.focusHint' };
 
 /** All routable surfaces, flat — the phone bottom bar foregrounds a subset (capture + execution) and
  *  the rest live in the More sheet. */
 export const SURFACES: NavItem[] = [
-  inbox, next, backlog, due, calendar, blocked, tags, search, projects, goals, templates, done, focus,
+  inbox, next, backlog, due, calendar, blocked, tags, search, projects, goals, templates, shared, done, focus,
 ];
 
 export interface NavGroup {
@@ -60,7 +64,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   // Calendar lives in the toolbar command bar too (#763) — one home is enough on desktop;
   // the phone More sheet keeps it (no toolbar there).
   { items: [backlog, due, blocked, done] },
-  { items: [goals, templates] },
+  { items: [goals, templates, shared] },
 ];
 
 /** Phone "More" sheet: the surfaces that aren't on the bottom bar (Inbox / Next / Focus + Capture),
@@ -68,6 +72,6 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
  *  how the per-surface descriptions reach mobile. Tags + Search live here too (no toolbar on phone). */
 export const MORE_GROUPS: NavGroup[] = [
   { label: 'nav.groupViews', items: [backlog, due, calendar, blocked, done] },
-  { label: 'nav.groupOrganize', items: [projects, goals, templates] },
+  { label: 'nav.groupOrganize', items: [projects, goals, templates, shared] },
   { label: 'nav.groupFind', items: [tags, search] },
 ];
