@@ -57,8 +57,10 @@ export function DemoWorkspaceProvider({ onSignUp, children }: { onSignUp: () => 
     clearNotice: () => {},
     retry: () => {},
     retrySync: () => {},
-    // The demo is local-only: every dispatch is as durable as it will ever be.
+    // The demo is local-only: every dispatch is as durable as it will ever be, so the committed
+    // document is just the current document (the drain's #850 ledger check reads it directly).
     flush: async () => true,
+    getCommittedDocument: () => document,
     dispatch,
   };
 

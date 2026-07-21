@@ -147,6 +147,19 @@ describe('shareContent — the sanitizer', () => {
     expect(json).not.toContain('secret.example');
   });
 
+  it('never leaks the drain idempotency watermark (#850): drainedThrough stays owner-private', () => {
+    const doc = trip();
+    // A delegated counter whose node carries a watermark of the highest applied guest-event id.
+    doc.nodes['a1'].resources = [{ type: 'COUNT', value: '3/12', description: 'jars', guestEditable: true }];
+    doc.nodes['a1'].drainedThrough = { 0: 90003 };
+    const c = shareContent(doc, 'trip', OPTS)!;
+    // The counter is copied, but the watermark — server-side bookkeeping — is not, anywhere.
+    expect(c.items[0].counters).toEqual([{ index: 0, value: '3/12', label: 'jars' }]);
+    const json = JSON.stringify(c);
+    expect(json).not.toContain('drainedThrough');
+    expect(json).not.toContain('90003');
+  });
+
   it('the envelope remembers HOW it was published (#823/P2)', () => {
     const c = shareContent(trip(), 'trip', { ...OPTS, includeDone: false })!;
     expect(c.options).toEqual({ includeDue: true, includeStatus: false, includeNotes: true, includeDone: false });

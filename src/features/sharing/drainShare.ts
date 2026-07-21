@@ -1,42 +1,125 @@
 import type { Intent } from '@/domain/mutations';
 import type { WorkspaceDocument } from '@/domain/types';
 import { nowIso } from '@/lib/local';
-import { DRAINABLE_KINDS, claimDrainableEvents, deleteEvents, fetchLeftoverDrained } from './shares';
+import { guestIdMap } from '@/domain/shareContent';
+import {
+  DRAINABLE_KINDS,
+  DRAIN_LEASE_TTL_SECONDS,
+  DRAIN_LEFTOVER_LIMIT,
+  acquireDrainLease,
+  claimDrainableEvents,
+  deleteEvents,
+  fetchLeftoverDrained,
+  releaseDrainLease,
+  renewDrainLease,
+  type DrainRow,
+} from './shares';
 import { drainPlan } from './drainEvents';
 
 /**
- * Drain one share's guest events into the workspace (#811). Claim-then-apply: the atomic
- * claim means a concurrent drain on another device splits the batch instead of
- * double-counting. The document is read through a GETTER, resolved AFTER the claim
- * (#821/F2). Deletion waits for DURABLE success (#823/P1): `flush` resolves once every
- * dispatched write confirmed at the backend — on failure the rows stay drained and the
- * ticks live on in the optimistic doc (the sticky sync error + Retry own recovery).
+ * Drain one share's guest events into the workspace (#811, redesigned #850). Two layers of ordering:
  *
- * Leftover drained rows from a PREVIOUS session are swept first (#823/P2): a boolean claim
- * cannot distinguish "applied durably, delete failed" (re-applying would double-count) from
- * "claimed, crashed before durable" (the loss already happened) — either way the rows carry
- * no recoverable value, and keeping them inflates the lifetime cap toward a deaf share.
+ * 1. A per-share LEASE (#852) serializes drains across tabs/devices — exactly one drains a share at a
+ *    time. This is what makes the `drainedThrough` watermark correct: without it, two tabs claiming
+ *    time-separated events could commit out of order and skip a lower one (a lost tick). The lease is
+ *    ENFORCED, not advisory: `claim_drainable_events` is fenced by the token, so a client without the
+ *    lease claims nothing (an old pre-lease bundle hits the dropped 2-arg signature and fails closed).
+ *    A tab that can't get the lease skips quietly, retried on the next trigger. A long drain RENEWS
+ *    the lease so another tab can't take over a progressing one; if it ever does (a hard stall past
+ *    the TTL), the holder's next claim fails closed and the taker re-processes any abandoned claims as
+ *    leftovers in id order — so even lease loss stays correct.
+ * 2. Within a drain, events apply in id order, and idempotency is the per-resource watermark: the
+ *    reducer applies an event only if its id exceeds the watermark, then advances it. Re-processing a
+ *    leftover / conflict-replay is a safe no-op, and there is nothing to evict.
  *
- * Returns the number of events this drain landed.
+ * Everything keys off the COMMITTED document, never the optimistic snapshot: a failed local edit (e.g.
+ * removing a delegated resource) must not make a valid event look like junk and get deleted. So we plan
+ * against the committed doc, dispatch in id order, `await flush()`, then decide against the committed doc:
+ *   - id ≤ the committed watermark → DURABLY APPLIED → delete.
+ *   - yields no intent against the committed doc → structural junk → delete.
+ *   - otherwise (a failed/pending write) → LEAVE CLAIMED for the next drain.
+ *
+ * Leftovers are processed oldest-id-first, and when the leftover set is incomplete (failed or full/
+ * truncated page) newer claims are DEFERRED — so the watermark can't jump past an unseen lower event.
+ *
+ * Returns the number of events this drain resolved (applied or spent).
  */
 export async function drainShare(
-  getDocument: () => WorkspaceDocument | null,
+  getCommittedDocument: () => WorkspaceDocument | null,
   dispatch: (intent: Intent) => void,
   flush: () => Promise<boolean>,
   share: { share_id: string; project_id: string; token: string },
 ): Promise<number> {
-  await fetchLeftoverDrained(share.share_id)
-    .then((ids) => (ids.length > 0 ? deleteEvents(ids) : undefined))
-    .catch(() => {});
-  // The claim is now the owner-scoped, kind-filtered RPC (#832/P1): it returns exactly the
-  // supported-kind rows this caller won, so the forward-compat filter is server-enforced and
-  // an old bundle without the grant fails closed instead of eating unparseable rows.
-  const mine = await claimDrainableEvents(share.share_id, DRAINABLE_KINDS);
-  const doc = getDocument();
-  if (mine.length === 0 || !doc) return 0;
-  for (const intent of drainPlan(doc, share.project_id, share.token, mine, nowIso())) dispatch(intent);
-  if (await flush()) {
-    await deleteEvents(mine.map((e) => e.id)).catch(() => {});
+  const lease = await acquireDrainLease(share.share_id, DRAIN_LEASE_TTL_SECONDS).catch(() => null);
+  if (!lease) return 0; // another tab is draining this share — serialized; retried on the next trigger
+  // Heartbeat: extend the lease while a long drain runs so another tab can't take over a progressing
+  // one. Best-effort — if renewal fails (lease lost) the drain's leftover re-processing keeps it safe.
+  const heartbeat = setInterval(() => {
+    void renewDrainLease(share.share_id, lease, DRAIN_LEASE_TTL_SECONDS).catch(() => {});
+  }, (DRAIN_LEASE_TTL_SECONDS * 1000) / 3);
+  try {
+    return await drainHeld(getCommittedDocument, dispatch, flush, share, lease);
+  } finally {
+    clearInterval(heartbeat);
+    await releaseDrainLease(share.share_id, lease).catch(() => {}); // best-effort; the TTL backs it up
   }
-  return mine.length;
+}
+
+/** The drain body, run under the held lease `leaseToken` (which fences the claim). */
+async function drainHeld(
+  getCommittedDocument: () => WorkspaceDocument | null,
+  dispatch: (intent: Intent) => void,
+  flush: () => Promise<boolean>,
+  share: { share_id: string; project_id: string; token: string },
+  leaseToken: string,
+): Promise<number> {
+  let leftovers: DrainRow[];
+  let leftoversComplete: boolean;
+  try {
+    leftovers = await fetchLeftoverDrained(share.share_id);
+    leftoversComplete = leftovers.length < DRAIN_LEFTOVER_LIMIT; // a full page may be truncated
+  } catch {
+    leftovers = [];
+    leftoversComplete = false;
+  }
+  // Only claim NEW (higher-id) events once we've seen every older leftover — else applying a newer
+  // event would advance the watermark past an unseen lower one (a lost tick). Deferred events stay
+  // undrained for the next complete drain.
+  const claimed = leftoversComplete ? await claimDrainableEvents(share.share_id, DRAINABLE_KINDS, leaseToken) : [];
+  const working = [...new Map([...leftovers, ...claimed].map((e) => [e.id, e])).values()].sort(
+    (a, b) => a.id - b.id,
+  );
+  if (working.length === 0) return 0;
+
+  const before = getCommittedDocument();
+  if (!before) return 0; // no committed truth to plan against — retried on the next trigger
+
+  const applied = (doc: WorkspaceDocument | null, eventId: number, nodeId: string | undefined, index: number): boolean =>
+    !!doc && !!nodeId && eventId <= (doc.nodes[nodeId]?.drainedThrough?.[index] ?? 0);
+
+  // Dispatch each planned intent in id order, skipping any already at/under the committed watermark
+  // (an idempotent no-op that would still cost a version-bumping push).
+  const plan = drainPlan(before, share.project_id, share.token, working, nowIso());
+  for (const p of plan) {
+    if (!applied(before, p.eventId, p.nodeId, p.index)) dispatch(p.intent);
+  }
+  await flush();
+
+  // Decide fate against the POST-FLUSH committed doc.
+  const after = getCommittedDocument() ?? before;
+  const afterMap = guestIdMap(after, share.project_id, share.token);
+  const plannableAfter = new Set(
+    drainPlan(after, share.project_id, share.token, working, nowIso()).map((p) => p.eventId),
+  );
+  const deleteIds: number[] = [];
+  for (const e of working) {
+    const isApplied = applied(after, e.id, afterMap.get(e.node_id), e.res_index);
+    const junk = !plannableAfter.has(e.id); // yields no intent against the committed doc
+    if (isApplied || junk) deleteIds.push(e.id);
+    // else: applicable but not yet landed (a failed/pending write) — leave claimed
+  }
+  if (deleteIds.length === 0) return 0;
+
+  const deleted = await deleteEvents(deleteIds).then(() => true).catch(() => false);
+  return deleted ? deleteIds.length : 0; // on delete failure the rows stay; next drain re-processes idempotently
 }

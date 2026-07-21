@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Concurrent or interrupted drains of a shared resource can no longer lose or mis-apply a guest's
+  tick or answer. A per-share drain lease serializes draining across your devices (so events apply
+  in one global order), each event is folded in exactly once via a per-resource idempotency
+  watermark recorded atomically with the value, and the drain deletes an event only after its
+  landing is durably confirmed — so two devices, a lost network call, or a closed tab re-process
+  safely instead of dropping or reordering the change. Closes #850, #852.
+
 ## [1.12.0] - 2026-07-20
 
 **The backend learns to clean up after a departed user.** Deleting an account (or, now, an

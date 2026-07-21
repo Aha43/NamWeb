@@ -136,8 +136,8 @@ test('resource events (#809): guests append, owners drain, the table stays dark'
     const overlay = await anon.rpc('get_share_resource_events', { share_token: TOKEN });
     expect(overlay.error).toBeNull();
     expect(overlay.data).toEqual([
-      { node_id: 'abcd1234', res_index: 1, delta: 1 },
-      { node_id: 'abcd1234', res_index: 1, delta: -1 },
+      { node_id: 'abcd1234', res_index: 1, delta: 1, answer: null },
+      { node_id: 'abcd1234', res_index: 1, delta: -1, answer: null },
     ]);
 
     // The same quiet false for unknown tokens and malformed shapes (no oracle).
@@ -153,9 +153,19 @@ test('resource events (#809): guests append, owners drain, the table stays dark'
     // bundle fails closed. The RPC returns the claimed rows; the guest overlay then empties.
     const directUpdate = await owner.from('share_resource_events').update({ drained: true }).eq('share_id', up.data!.share_id);
     expect(directUpdate.error).not.toBeNull(); // fail closed: no direct write grant
-    const claimed = await owner.rpc('claim_drainable_events', { p_share_id: up.data!.share_id, p_kinds: ['delta', 'answer'] });
+    // The claim is FENCED by the drain lease (#852): without a valid token it claims nothing.
+    expect((await owner.rpc('claim_drainable_events', { p_share_id: up.data!.share_id, p_kinds: ['delta', 'answer'], p_lease_token: 'bogus' })).data).toEqual([]);
+    const lease = await owner.rpc('acquire_drain_lease', { p_share_id: up.data!.share_id, p_ttl_seconds: 120 });
+    expect(typeof lease.data).toBe('string');
+    const claimed = await owner.rpc('claim_drainable_events', { p_share_id: up.data!.share_id, p_kinds: ['delta', 'answer'], p_lease_token: lease.data as string });
     expect(claimed.error).toBeNull();
     expect(claimed.data).toHaveLength(2);
+    // Claimed rows come back id-ordered (#850): the drain applies them as a FIFO its idempotency
+    // ledger relies on (a -1 then +1 must land in that order), so the +1 (inserted first, smaller
+    // id) precedes the -1.
+    const ids = (claimed.data as { id: number; delta: number }[]).map((r) => r.id);
+    expect([...ids].sort((a, b) => a - b)).toEqual(ids);
+    expect((claimed.data as { delta: number }[]).map((r) => r.delta)).toEqual([1, -1]);
     expect((await anon.rpc('get_share_resource_events', { share_token: TOKEN })).data).toEqual([]);
     // The owner deletes via the RPC too (direct DELETE is revoked).
     const del = await owner.rpc('delete_drained_events', { p_ids: (claimed.data as { id: number }[]).map((r) => r.id) });
@@ -167,6 +177,43 @@ test('resource events (#809): guests append, owners drain, the table stays dark'
     expect((await anon.rpc('get_share_resource_events', { share_token: TOKEN })).data).toEqual([]);
   } finally {
     await owner.from('project_shares').delete().eq('project_id', projectId); // cascades the events
+  }
+});
+
+test('drain lease (#852): exclusive per share, holder-only release, re-acquire; anon cannot', async ({ browserName }) => {
+  const TOKEN = `e2e-smoke-lease-${browserName}`;
+  const projectId = `e2e-smoke-lease-${browserName}`;
+  const { client: owner, userId } = await ownerClient();
+  const anon = createClient(E2E.supabaseUrl, E2E.supabaseKey);
+  await owner.from('project_shares').delete().eq('project_id', projectId);
+  const up = await owner
+    .from('project_shares')
+    .insert({ token: TOKEN, owner_user_id: userId, project_id: projectId, content: { version: 1 }, enabled: true })
+    .select('share_id')
+    .single();
+  expect(up.error).toBeNull();
+  const shareId = up.data!.share_id;
+  try {
+    // Acquire → a token; a second acquire while held → null (exclusive).
+    const first = await owner.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 });
+    expect(first.error).toBeNull();
+    expect(typeof first.data).toBe('string');
+    expect((await owner.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 })).data).toBeNull();
+    // A wrong-token release is a no-op — the lease stays held.
+    await owner.rpc('release_drain_lease', { p_share_id: shareId, p_token: 'not-the-token' });
+    expect((await owner.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 })).data).toBeNull();
+    // The current holder can RENEW (extend); a stale token cannot.
+    expect((await owner.rpc('renew_drain_lease', { p_share_id: shareId, p_token: first.data as string, p_ttl_seconds: 120 })).data).toBe(true);
+    expect((await owner.rpc('renew_drain_lease', { p_share_id: shareId, p_token: 'not-the-token', p_ttl_seconds: 120 })).data).toBe(false);
+    // The holder releases → re-acquire succeeds.
+    expect((await owner.rpc('release_drain_lease', { p_share_id: shareId, p_token: first.data as string })).error).toBeNull();
+    const reacquired = await owner.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 });
+    expect(typeof reacquired.data).toBe('string');
+    // Anon gets no lease, and cannot claim (owner-scoped; execute granted only to authenticated).
+    expect(typeof (await anon.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: 120 })).data).not.toBe('string');
+    expect((await anon.rpc('claim_drainable_events', { p_share_id: shareId, p_kinds: ['delta', 'answer'], p_lease_token: reacquired.data as string })).data ?? []).toEqual([]);
+  } finally {
+    await owner.from('project_shares').delete().eq('project_id', projectId);
   }
 });
 

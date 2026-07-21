@@ -43,8 +43,8 @@ const pseudo = (doc: WorkspaceDocument, realId: string) => {
   throw new Error(`no pseudo id for ${realId}`);
 };
 
-describe('drainPlan (#811) — the owner drain folds guest events into ordinary intents', () => {
-  it('folds sequential ticks with a chained expectedValue, starting from the STORED string', () => {
+describe('drainPlan (#811/#850) — the owner drain folds guest events into idempotent intents', () => {
+  it('emits ONE intent per event carrying its event id + delta, no expectedValue chain', () => {
     const doc = workspace();
     const a1 = pseudo(doc, 'a1');
     const events = [
@@ -52,32 +52,34 @@ describe('drainPlan (#811) — the owner drain folds guest events into ordinary 
       { id: 2, node_id: a1, res_index: 1, delta: 1 },
       { id: 3, node_id: a1, res_index: 1, delta: -1 },
     ];
-    const intents = drainPlan(doc, 'trip', SALT, events, 'T');
-    expect(intents.map((i) => (i.type === 'incrementCountResource' ? i.expectedValue : ''))).toEqual([
-      '10/12', '11/12', '12/12',
-    ]);
-    // And the chain actually applies: run it through the real reducer.
+    const plan = drainPlan(doc, 'trip', SALT, events, 'T');
+    // No stale-guard chain — each intent identifies its event by id and lets the reducer clamp.
+    expect(plan.map((p) => p.eventId)).toEqual([1, 2, 3]);
+    expect(plan.map((p) => (p.intent.type === 'incrementCountResource' ? p.intent.delta : 0))).toEqual([1, 1, -1]);
+    expect(plan.every((p) => p.intent.type === 'incrementCountResource' && p.intent.expectedValue === undefined)).toBe(true);
+    expect(plan.every((p) => p.intent.type === 'incrementCountResource' && p.intent.eventId === p.eventId)).toBe(true);
+    // The chain actually applies in id order through the real reducer: 10 → 11 → 12 → 11.
     let next = doc;
-    for (const intent of intents) next = applyIntent(next, intent);
+    for (const p of plan) next = applyIntent(next, p.intent);
     expect(next.nodes['a1'].resources[1].value).toBe('11/12');
   });
 
-  it('applies the reducer edge rules: a limited counter stops at its target mid-queue', () => {
+  it('does NOT pre-drop at-target ticks — it emits them and the reducer CLAMPS (idempotency)', () => {
     const doc = workspace();
     const a1 = pseudo(doc, 'a1');
     const events = [1, 2, 3, 4].map((id) => ({ id, node_id: a1, res_index: 1, delta: 1 }));
-    const intents = drainPlan(doc, 'trip', SALT, events, 'T');
-    expect(intents).toHaveLength(2); // 10 → 11 → 12, the last two ticks fold to nothing
+    const plan = drainPlan(doc, 'trip', SALT, events, 'T');
+    expect(plan).toHaveLength(4); // every event is planned; the reducer, not the plan, stops at target
     let next = doc;
-    for (const intent of intents) next = applyIntent(next, intent);
+    for (const p of plan) next = applyIntent(next, p.intent);
     expect(next.nodes['a1'].resources[1].value).toBe('12/12');
+    // The watermark advances to the highest id so none is ever re-driven — even the two that clamped.
+    expect(next.nodes['a1'].drainedThrough?.[1]).toBe(4);
   });
 
   it('drops untrusted hints: unknown ids, private subtrees, wrong types, undelegated counters, bad deltas', () => {
     const doc = workspace();
     const a1 = pseudo(doc, 'a1');
-    // The private node's WOULD-BE pseudo id (computed from a doc where it isn't private):
-    // in the real doc it's pruned from the map, so an event addressing it must drop.
     const secret = pseudo({ ...doc, nodes: { ...doc.nodes, secret: node('secret') } }, 'secret');
     const events = [
       { id: 1, node_id: 'ffffffff', res_index: 1, delta: 1 }, // unknown pseudo id
@@ -90,7 +92,7 @@ describe('drainPlan (#811) — the owner drain folds guest events into ordinary 
     expect(drainPlan(doc, 'trip', SALT, events, 'T')).toEqual([]);
   });
 
-  it('folds question answers into answerQuestionResource intents, chained (#827)', () => {
+  it('folds question answers into per-event answerQuestionResource intents (#827)', () => {
     const doc = workspace();
     const a1 = pseudo(doc, 'a1');
     const events = [
@@ -98,12 +100,13 @@ describe('drainPlan (#811) — the owner drain folds guest events into ordinary 
       { id: 2, node_id: a1, res_index: 3, delta: null, answer: 'clear' as const }, // undo
       { id: 3, node_id: a1, res_index: 3, delta: null, answer: 'no' as const },
     ];
-    const intents = drainPlan(doc, 'trip', SALT, events, 'T');
-    expect(intents.map((i) => (i.type === 'answerQuestionResource' ? [i.expectedValue, i.answer] : []))).toEqual([
-      ['?', 'yes'], ['yes', 'clear'], ['?', 'no'],
+    const plan = drainPlan(doc, 'trip', SALT, events, 'T');
+    expect(plan.map((p) => (p.intent.type === 'answerQuestionResource' ? p.intent.answer : ''))).toEqual([
+      'yes', 'clear', 'no',
     ]);
+    expect(plan.every((p) => p.intent.type === 'answerQuestionResource' && p.intent.expectedValue === undefined)).toBe(true);
     let next = doc;
-    for (const intent of intents) next = applyIntent(next, intent);
+    for (const p of plan) next = applyIntent(next, p.intent);
     expect(next.nodes['a1'].resources[3].value).toBe('no');
   });
 
@@ -122,10 +125,10 @@ describe('drainPlan (#811) — the owner drain folds guest events into ordinary 
     doc.nodes['a1'].resources[1] = { type: 'COUNT', value: '11/12+', description: 'jars', guestEditable: true };
     const a1 = pseudo(doc, 'a1');
     const events = [1, 2, 3].map((id) => ({ id, node_id: a1, res_index: 1, delta: 1 }));
-    const intents = drainPlan(doc, 'trip', SALT, events, 'T');
-    expect(intents).toHaveLength(3);
+    const plan = drainPlan(doc, 'trip', SALT, events, 'T');
+    expect(plan).toHaveLength(3);
     let next = doc;
-    for (const intent of intents) next = applyIntent(next, intent);
+    for (const p of plan) next = applyIntent(next, p.intent);
     expect(next.nodes['a1'].resources[1].value).toBe('14/12+');
   });
 });

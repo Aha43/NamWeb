@@ -81,6 +81,49 @@ confused by a stale published count. Delegation is opt-in **per resource**: an a
    event. Ticking the `guestEditable` box **was** the adoption — pre-approval of the whole
    class of legal moves for that resource.
 
+### The idempotency watermark + drain lease (#832/#850/#852) — a round-trip-load-bearing field
+
+Step 5's "idempotent per event id" is made real by two layers.
+
+**A per-share drain lease** (`acquire_drain_lease`/`renew_drain_lease`/`release_drain_lease`, a
+`drain_lease_until` + `drain_lease_token` on `project_shares`) serializes drains: exactly one
+tab/device drains a share at a time. This gives a **single global application order per share** —
+without it, two tabs claiming time-separated events (A claims 7, then B claims a later-arriving 8)
+could commit out of order, and since COUNT clamping and QUESTION set-last-write are *not* commutative,
+that corrupts the result. The lease is **enforced, not advisory**: `claim_drainable_events` is FENCED
+by the token (it claims nothing unless the caller holds the current unexpired lease), and the old
+2-arg signature is dropped so a pre-lease client fails closed. A long drain **renews** the lease so
+another tab can't take over a progressing one; and if a hard stall past the TTL ever does hand the
+lease over, correctness still holds — the taker re-processes any abandoned claims as leftovers in id
+order (before newer events), so the watermark never advances past an unapplied lower event.
+
+Given that order, idempotency is a **node-level `drainedThrough`** watermark
+(`NamNode.drainedThrough?: Record<resourceIndex, eventId>`): the drain applies each event as an
+`incrementCountResource`/`answerQuestionResource` intent *carrying its event id*, in id order, and the
+reducer applies it only if the id exceeds the resource's watermark, then **advances the watermark
+atomically with the value** (same JSONB push). The watermark only ever RISES — one int per resource,
+self-bounding, immune to the re-apply an evictable ledger suffered — so a re-processed leftover or a
+conflict-replay is a safe no-op.
+
+The drain plans and classifies against the **committed** (server-acknowledged) document, never the
+optimistic snapshot, and deletes an event only once its id is at/under the committed watermark
+(durably applied) or it is structural junk against that committed doc — so a failed local edit can't
+make a still-valid event look like junk, and a failed write or a closed tab re-processes safely
+instead of dropping the change. Leftovers are processed oldest-id-first, and when the leftover set is
+incomplete (a failed or truncated fetch) newer claims are deferred so the watermark can't skip a
+lower event.
+
+Two contract properties this leans on, both already honored, both worth guarding:
+
+- **Sanitizer non-leak.** `drainedThrough` is owner-side bookkeeping and must never reach a guest
+  snapshot. The sanitizer's allowlist (it copies only `{index, value, label}` off resources, never
+  the node) already excludes it; a test pins this.
+- **NamDesktop round-trip (correctness-load-bearing).** It lives on `NamNode`, not on the nested
+  `Resource`, *specifically* because node-level unknown-field passthrough is the confirmed contract
+  (the `dueEndAt`/`dueTime` family rides it). A future desktop that reads and rewrites the document
+  MUST preserve it — dropping it resurrects already-applied events → over-count. Unlike
+  `guestEditable` (whose loss is merely cosmetic), this field cannot be silently discarded.
+
 ## Auto-apply vs adopt — the doctrine ruling
 
 The suggestion box made the owner the clarifier on purpose: free text needs clarifying.

@@ -188,29 +188,78 @@ export async function fetchOwnerShares(): Promise<Pick<ProjectShare, 'token' | '
 /** The kinds a drain can apply — server-enforced by claim_drainable_events (#832/P1). */
 export const DRAINABLE_KINDS = ['delta', 'answer'] as const;
 
-/** Claim this share's undrained events of supported KINDS, atomically, via the owner-scoped
- *  RPC (#832/P1 — direct UPDATE is revoked, so an old bundle fails closed). Two devices
- *  draining concurrently still split the batch (the UPDATE ... RETURNING is atomic); an
- *  unknown kind stays unclaimed for a newer client. Returns the rows THIS caller won. */
-export async function claimDrainableEvents(
-  shareId: string,
-  kinds: readonly string[],
-): Promise<{ id: number; node_id: string; res_index: number; delta: number | null; answer: 'yes' | 'no' | 'clear' | null }[]> {
-  const { data, error } = await supabase.rpc('claim_drainable_events', { p_share_id: shareId, p_kinds: kinds as string[] });
-  if (error) throw new Error(error.message);
-  return (data ?? []) as { id: number; node_id: string; res_index: number; delta: number | null; answer: 'yes' | 'no' | 'clear' | null }[];
+/** One drainable guest event as the owner sees it — the drain's unit of work (claimed or leftover). */
+export interface DrainRow {
+  id: number;
+  node_id: string;
+  res_index: number;
+  /** A counter tick carries delta; a question answer carries answer — exactly one. */
+  delta: number | null;
+  answer: 'yes' | 'no' | 'clear' | null;
 }
 
-/** Drained rows left by a previous session (#823/P2) — dead weight either way (see
- *  drainShare); swept at the next drain so they never ratchet the lifetime cap. */
-export async function fetchLeftoverDrained(shareId: string): Promise<number[]> {
+/** Claim this share's undrained events of supported KINDS, atomically, via the owner-scoped RPC.
+ *  FENCED by the drain lease token (#850/#852): the server claims nothing unless the caller holds the
+ *  current unexpired lease, so a bypassing/old client can't drain concurrently with the holder. Rows
+ *  come back id-ordered (#850). Returns the rows THIS caller won. */
+export async function claimDrainableEvents(shareId: string, kinds: readonly string[], leaseToken: string): Promise<DrainRow[]> {
+  const { data, error } = await supabase.rpc('claim_drainable_events', {
+    p_share_id: shareId,
+    p_kinds: kinds as string[],
+    p_lease_token: leaseToken,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as DrainRow[];
+}
+
+/** How long a drain holds the per-share lease (#850/#852). Comfortably covers a full drain — the
+ *  working set is bounded by the 500 open-queue cap and applies are optimistic commits — while a
+ *  crashed holder's lease expires quickly enough that another tab can take over. */
+export const DRAIN_LEASE_TTL_SECONDS = 120;
+
+/** Acquire the per-share drain lease (#850/#852) — serializes drains so guest events apply in one
+ *  global order (the watermark's correctness rests on this). Returns a holder token, or null when
+ *  another owner tab holds an unexpired lease (this drain then skips, retried on the next trigger). */
+export async function acquireDrainLease(shareId: string, ttlSeconds: number): Promise<string | null> {
+  const { data, error } = await supabase.rpc('acquire_drain_lease', { p_share_id: shareId, p_ttl_seconds: ttlSeconds });
+  if (error) throw new Error(error.message);
+  return (data as string | null) ?? null;
+}
+
+/** Release the drain lease — only the holder (matching token) succeeds; best-effort, the TTL backs
+ *  it up if the release never lands (a crash / closed tab). */
+export async function releaseDrainLease(shareId: string, token: string): Promise<void> {
+  const { error } = await supabase.rpc('release_drain_lease', { p_share_id: shareId, p_token: token });
+  if (error) throw new Error(error.message);
+}
+
+/** Extend the lease while a long drain is still running (keeps another tab from taking over a
+ *  progressing drain). Resolves false when the lease was lost (someone else acquired) — the holder
+ *  then stops extending; the drain's leftover re-processing keeps correctness regardless. */
+export async function renewDrainLease(shareId: string, token: string, ttlSeconds: number): Promise<boolean> {
+  const { data, error } = await supabase.rpc('renew_drain_lease', { p_share_id: shareId, p_token: token, p_ttl_seconds: ttlSeconds });
+  if (error) throw new Error(error.message);
+  return data === true;
+}
+
+/** The most leftover rows one drain fetches (bounds an unbounded backlog to a deterministic page).
+ *  Ordered by id so the page is the OLDEST leftovers; a full page (=== LIMIT) signals a possibly
+ *  incomplete set, which the drain uses to defer newer claims (keeping the watermark loss-safe). */
+export const DRAIN_LEFTOVER_LIMIT = 1000;
+
+/** Claimed rows left by a previous session (#823/P2, #850): with the idempotency ledger they are
+ *  recoverable, so the drain re-processes them (a no-op if they in fact landed) rather than blindly
+ *  deleting. Returns FULL rows (oldest first, bounded) so the drain can re-plan them. */
+export async function fetchLeftoverDrained(shareId: string): Promise<DrainRow[]> {
   const { data, error } = await supabase
     .from('share_resource_events')
-    .select('id')
+    .select('id, node_id, res_index, delta, answer')
     .eq('share_id', shareId)
-    .eq('drained', true);
+    .eq('drained', true)
+    .order('id', { ascending: true })
+    .limit(DRAIN_LEFTOVER_LIMIT);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r) => r.id);
+  return (data ?? []) as DrainRow[];
 }
 
 /** Remove landed events (#821): drained rows serve nothing and would ratchet the lifetime

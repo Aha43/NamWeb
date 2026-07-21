@@ -22,6 +22,7 @@ function ws(bookmarks: Bookmark[], over: Partial<WorkspaceDocument> = {}): UseWo
     retry: vi.fn(),
     retrySync: vi.fn(),
     flush: async () => true,
+    getCommittedDocument: () => document,
     dispatch: vi.fn(),
   };
 }

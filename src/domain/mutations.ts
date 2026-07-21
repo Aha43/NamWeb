@@ -43,8 +43,12 @@ export type Intent =
   | { type: 'moveNode'; id: string; newParentId: string; now: string }
   | { type: 'convertActionToProject'; id: string; now: string }
   | { type: 'convertProjectToAction'; id: string; status: NodeStatus; now: string }
-  | { type: 'incrementCountResource'; id: string; index: number; expectedValue: string; delta?: 1 | -1; now: string }
-  | { type: 'answerQuestionResource'; id: string; index: number; expectedValue: string; answer: 'yes' | 'no' | 'clear'; now: string }
+  // Two modes, selected by `eventId`. PILL MODE (owner's own tap, `eventId` absent): `expectedValue`
+  // is the stale guard. LEDGER MODE (the guest-event drain, `eventId` set): the event id makes the
+  // apply idempotent — an id at or below the resource's `drainedThrough` watermark no-ops; no
+  // `expectedValue`, the delta clamps instead of no-oping, and the watermark advances (#832/#850).
+  | { type: 'incrementCountResource'; id: string; index: number; expectedValue?: string; delta?: 1 | -1; eventId?: number; now: string }
+  | { type: 'answerQuestionResource'; id: string; index: number; expectedValue?: string; answer: 'yes' | 'no' | 'clear'; eventId?: number; now: string }
   | { type: 'addPrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'removePrerequisite'; actionId: string; prereqId: string; now: string }
   | { type: 'createSavedView'; name: string; tags: string[]; nextOnly: boolean }
@@ -249,6 +253,21 @@ function toTemplateNodes(doc: WorkspaceDocument, parentId: string): TemplateNode
     .map((id) => doc.nodes[id])
     .filter((n): n is NamNode => Boolean(n))
     .map((n) => ({ title: n.title, project: n.project, children: toTemplateNodes(doc, n.id) }));
+}
+
+/** The drain watermark for a resource — the highest applied guest-event id (0 if none). */
+function drainedThroughAt(node: NamNode, index: number): number {
+  return node.drainedThrough?.[index] ?? 0;
+}
+
+/** Advance a node's drain watermark for a resource, returning a NEW map (node already cloned). Only
+ *  ever raises it (events arrive in id order), so idempotency is monotonic — never re-applies. */
+function advanceDrainedThrough(
+  drainedThrough: Record<number, number> | undefined,
+  index: number,
+  eventId: number,
+): Record<number, number> {
+  return { ...drainedThrough, [index]: Math.max(drainedThrough?.[index] ?? 0, eventId) };
 }
 
 const structuralIds = (doc: WorkspaceDocument): Set<string> =>
@@ -525,26 +544,38 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'incrementCountResource': {
       // The first interactive resource (#798): a +1 from the flow, no editor, no Save buffer.
-      // expectedValue is the stale guard (the #573 family): a replay against a document where
-      // the counter moved (or the resource list shifted under the index) no-ops instead of
-      // double-counting or clobbering a different resource.
+      // Two modes (see the Intent type): PILL MODE (owner tap, `eventId` absent) guards on
+      // `expectedValue` — a replay against a moved/shifted counter no-ops. LEDGER MODE (the guest
+      // drain, `eventId` set) makes the apply idempotent: an id at/under the `drainedThrough`
+      // watermark no-ops, else the delta CLAMPS (never no-ops) and the watermark advances past it.
       const node = next.nodes[intent.id];
       if (!node) return next;
       const resource = node.resources[intent.index];
-      if (!resource || resource.type !== 'COUNT' || resource.value !== intent.expectedValue) return next;
+      if (!resource || resource.type !== 'COUNT') return next;
+      const drained = intent.eventId !== undefined;
+      if (drained) {
+        // Weak identity is the type check alone (no resource ids — #802/F4 accepted residue). An
+        // event at or below the watermark is already applied: re-processing a leftover or a raced
+        // claim must not double-count. The watermark only rises, so this can never re-open.
+        if (intent.eventId! <= drainedThroughAt(node, intent.index)) return next;
+      } else if (resource.value !== intent.expectedValue) {
+        return next; // pill-mode stale guard (the #573 family)
+      }
       const count = parseCount(resource.value);
       if (!count) return next;
-      // Both directions (#798 stock-keeping): +1 stops at the target, −1 stops at zero.
-      // Known gap (#802/F4): two counters sharing a value ("0/10" twice) defeat the shift
-      // guard — a concurrent structural edit could bump the wrong one on replay. Accepted:
-      // true per-resource identity needs ids, a doc-format change not worth it for this.
       const delta = intent.delta ?? 1;
-      if (delta > 0 && !count.unlimited && count.current >= count.target) return next;
-      if (delta < 0 && count.current <= 0) return next;
+      // Both directions (#798 stock-keeping): +1 stops at the target, −1 stops at zero. Pill mode
+      // no-ops at the boundary (nothing to record); ledger mode instead CLAMPS via formatCount and
+      // still records, so the event terminates (never re-driven) even when it lands nothing.
+      if (!drained) {
+        if (delta > 0 && !count.unlimited && count.current >= count.target) return next;
+        if (delta < 0 && count.current <= 0) return next;
+      }
       const resources = node.resources.slice();
       const current = count.current + delta;
       resources[intent.index] = { ...resource, value: formatCount(current, count.target, count.unlimited) };
       const updated = { ...node, resources, updatedAt: intent.now };
+      if (drained) updated.drainedThrough = advanceDrainedThrough(node.drainedThrough, intent.index, intent.eventId!);
       // The symmetric stock loop (#816, opt-in): a TICK CROSSING the goal boundary completes
       // the action; a tick crossing back below reopens it. Crossings, not thresholds
       // (#821/F1): a tick that stays on its side of the boundary never transitions — so a
@@ -569,17 +600,26 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'answerQuestionResource': {
       // The QUESTION resource (#827): a SET, not a toggle — the pill computes the toggle
       // (tap the active answer to clear) and sends the resulting desired state, so the
-      // reducer and the guest drain both just apply it. expectedValue is the same stale
-      // guard the counter carries (a replay / raced answer against a moved value no-ops).
+      // reducer and the guest drain both just apply it. Same two modes as the counter: PILL MODE
+      // (`eventId` absent) guards on `expectedValue`; LEDGER MODE (`eventId` set) skips an
+      // already-recorded id and otherwise SETs unconditionally, recording the event.
       const node = next.nodes[intent.id];
       if (!node) return next;
       const resource = node.resources[intent.index];
-      if (!resource || resource.type !== 'QUESTION' || resource.value !== intent.expectedValue) return next;
+      if (!resource || resource.type !== 'QUESTION') return next;
+      const drained = intent.eventId !== undefined;
+      if (drained) {
+        if (intent.eventId! <= drainedThroughAt(node, intent.index)) return next;
+      } else if (resource.value !== intent.expectedValue) {
+        return next;
+      }
       if (!parseQuestion(resource.value)) return next;
       const answer = intent.answer === 'clear' ? null : intent.answer;
       const resources = node.resources.slice();
       resources[intent.index] = { ...resource, value: formatQuestion(answer) };
-      next.nodes[intent.id] = { ...node, resources, updatedAt: intent.now };
+      const updated = { ...node, resources, updatedAt: intent.now };
+      if (drained) updated.drainedThrough = advanceDrainedThrough(node.drainedThrough, intent.index, intent.eventId!);
+      next.nodes[intent.id] = updated;
       return next;
     }
     case 'addPrerequisite': {

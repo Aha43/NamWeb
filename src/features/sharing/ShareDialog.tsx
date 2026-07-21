@@ -50,7 +50,7 @@ export function ShareDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const { document, dispatch, flush } = useWorkspaceContext();
+  const { document, dispatch, flush, getCommittedDocument } = useWorkspaceContext();
   const user = useAuthUser();
   const { copied, copy } = useCopyToClipboard();
 
@@ -60,8 +60,8 @@ export function ShareDialog({
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<ShareSuggestion[]>([]);
   const [guestTicks, setGuestTicks] = useState(0);
-  const drainRef = useRef({ document, dispatch, flush });
-  drainRef.current = { document, dispatch, flush };
+  const drainRef = useRef({ document, dispatch, flush, getCommittedDocument });
+  drainRef.current = { document, dispatch, flush, getCommittedDocument };
   const [includeDue, setIncludeDue] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeDue);
   const [includeStatus, setIncludeStatus] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeStatus);
   const [includeNotes, setIncludeNotes] = useState<boolean>(SHARE_DEFAULT_OPTIONS.includeNotes);
@@ -101,7 +101,7 @@ export function ShareDialog({
         // deps honest (document churns every mutation), and the GETTER resolves the doc
         // after the claim (#821/F2).
         const ticks = s ? await countShareEvents(s.share_id).catch(() => 0) : 0;
-        if (s) await drainShare(() => drainRef.current.document, drainRef.current.dispatch, drainRef.current.flush, s).catch(() => {});
+        if (s) await drainShare(drainRef.current.getCommittedDocument, drainRef.current.dispatch, drainRef.current.flush, s).catch(() => {});
         // The From-guests tray (#796): unhandled suggestions ride along with the share.
         const tray = s ? await fetchSuggestions(s.share_id) : [];
         if (cancelled) return; // the await above can outlive a close/project switch (#804)

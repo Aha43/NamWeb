@@ -51,6 +51,12 @@ export interface UseWorkspace {
    *  confirmed, false when a write failed (the sticky error + Retry own recovery). The guest
    *  drain (#823/P1) deletes its claimed events only on true. */
   flush: () => Promise<boolean>;
+  /** The last SERVER-CONFIRMED document (not the optimistic snapshot) — null before the first load.
+   *  The guest drain (#850) reads it AFTER `flush` to decide which claimed events durably landed:
+   *  an event id at/under a resource's `drainedThrough` watermark here means the advance reached the
+   *  backend, so the event is safe to delete. An optimistic-only advance (a failed write) is NOT here,
+   *  so its event is left claimed for the next drain to re-process idempotently. */
+  getCommittedDocument: () => WorkspaceDocument | null;
 }
 
 const NOTICE_TIMEOUT_MS = 4000;
@@ -213,6 +219,10 @@ export function useWorkspace(): UseWorkspace {
     return !failedRef.current;
   }, []);
 
+  // The last server-confirmed document — the drain's durable-apply oracle (#850). Read AFTER flush,
+  // so every committed intent's ledger append is reflected.
+  const getCommittedDocument = useCallback(() => committedRef.current?.document ?? null, []);
+
   const clearNotice = useCallback(() => setNotice(null), []);
   const retry = useCallback(() => void load(), [load]);
 
@@ -261,5 +271,6 @@ export function useWorkspace(): UseWorkspace {
     retrySync,
     dispatch,
     flush,
+    getCommittedDocument,
   };
 }
