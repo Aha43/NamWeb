@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-07-21
+
+**Shared counters keep an honest count under concurrent editing.** The behind-the-scenes machinery
+that folds guests' ticks and answers into your workspace is now safe when two of your devices are
+open at once (or a drain is interrupted) — the 2.0.0 blocker for real multi-device sharing.
+
 ### Fixed
 
 - Concurrent or interrupted drains of a shared resource can no longer lose or mis-apply a guest's
@@ -1720,7 +1726,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.12.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.12.1...HEAD
+[1.12.1]: https://github.com/Aha43/NamWeb/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/Aha43/NamWeb/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/Aha43/NamWeb/compare/v1.10.0...v1.11.0
 [1.10.0]: https://github.com/Aha43/NamWeb/compare/v1.9.0...v1.10.0
