@@ -28,9 +28,9 @@ export function SharedProjectsPage() {
           .sort((a, b) => a.title.localeCompare(b.title))
       : [];
 
-  // While the first fetch is in flight, hold the panel back so the "nothing shared yet" empty state
-  // doesn't flash for an owner who does have shares.
-  if (shared === null) {
+  // While the shares fetch OR the workspace document is still loading, hold the panel back so the
+  // "nothing shared yet" empty state doesn't flash for an owner who does have shares.
+  if (shared === null || !document) {
     return <section className="py-10 text-center text-sm text-muted-foreground">{t('shared.loading')}</section>;
   }
 

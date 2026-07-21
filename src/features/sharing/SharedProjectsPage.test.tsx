@@ -1,9 +1,14 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import type { User } from '@supabase/supabase-js';
 import type { NamNode, WorkspaceDocument } from '@/domain/types';
 import type { UseWorkspace } from '@/store/useWorkspace';
 import { WorkspaceContext } from '@/store/workspace-context';
+import { AuthUserContext } from '@/auth/auth-context';
+
+const REAL_USER = { id: 'u1', aud: 'authenticated' } as unknown as User;
+const DEMO_USER = { id: 'demo', aud: 'demo' } as unknown as User;
 
 const service = { fetchOwnerShares: vi.fn() };
 vi.mock('./shares', async (orig) => ({
@@ -38,13 +43,15 @@ function docWith(...projects: NamNode[]): WorkspaceDocument {
   };
 }
 
-function renderPage(doc: WorkspaceDocument) {
+function renderPage(doc: WorkspaceDocument, user: User = REAL_USER) {
   render(
-    <WorkspaceContext.Provider value={{ document: doc } as unknown as UseWorkspace}>
-      <MemoryRouter>
-        <SharedProjectsPage />
-      </MemoryRouter>
-    </WorkspaceContext.Provider>,
+    <AuthUserContext.Provider value={user}>
+      <WorkspaceContext.Provider value={{ document: doc } as unknown as UseWorkspace}>
+        <MemoryRouter>
+          <SharedProjectsPage />
+        </MemoryRouter>
+      </WorkspaceContext.Provider>
+    </AuthUserContext.Provider>,
   );
 }
 
@@ -93,5 +100,11 @@ describe('SharedProjectsPage (#857)', () => {
     service.fetchOwnerShares.mockRejectedValue(new Error('offline'));
     renderPage(docWith());
     await waitFor(() => expect(screen.getByText('No shared projects yet')).toBeInTheDocument());
+  });
+
+  it('never hits the backend in the demo — empty state, no fetch (offline invariant)', async () => {
+    renderPage(docWith(), DEMO_USER);
+    await waitFor(() => expect(screen.getByText('No shared projects yet')).toBeInTheDocument());
+    expect(service.fetchOwnerShares).not.toHaveBeenCalled();
   });
 });
