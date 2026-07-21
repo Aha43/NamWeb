@@ -15,6 +15,12 @@ minor = features (breaking changes allowed), patch = fixes.
   and manage the share. Shared projects also get a small share badge in the regular Projects list.
   Closes #857.
 
+### Changed
+
+- **Project sharing is now available to everyone** — publishing a project as a guest-friendly web
+  page (with delegated counters/questions and a from-guests suggestion tray) no longer requires
+  enabling Labs. The Share button lives in every project's workbench for signed-in users. Closes #856.
+
 ## [1.12.1] - 2026-07-21
 
 **Shared counters keep an honest count under concurrent editing.** The behind-the-scenes machinery
