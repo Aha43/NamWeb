@@ -38,7 +38,7 @@ import { drainShare } from './drainShare';
  * The owner's Share dialog (#759, stage 1 of the sharing epic). Publish mints the secret
  * link; republish refreshes the snapshot; unpublish/rotate kill the old link (confirmed).
  * The dialog is where the snapshot's shape is chosen (field toggles) and where exclusions
- * are made visible (the private-tag count). Labs-gated by the caller.
+ * are made visible (the private-tag count). Mounted by ShareButton (real users only, #856).
  */
 export function ShareDialog({
   projectId,
