@@ -6,6 +6,7 @@ import { buildLearnNam } from '@/domain/learnNam';
 import { importSeedFromJson } from '@/domain/importWorkspace';
 import { newId, nowIso } from '@/lib/local';
 import { ProjectsPanel } from '@/features/projects/ProjectsPanel';
+import { useSharedProjectIds } from '@/features/sharing/useSharedProjectIds';
 import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useSettings } from '@/components/settings/settings-context';
@@ -18,6 +19,7 @@ export function ProjectsPage() {
   const navigate = useNavigate();
   const { requestDeleteProject } = useDeleteProject();
   const [showArchived, setShowArchived] = useState(false);
+  const sharedIds = useSharedProjectIds() ?? undefined; // a Share2 badge on shared rows (#857)
 
   const allProjects = document ? projects(document) : [];
   const archivedCount = allProjects.filter((p) => p.status === 'ARCHIVED').length;
@@ -26,6 +28,7 @@ export function ProjectsPage() {
   return (
     <ProjectsPanel
       projects={visibleProjects}
+      sharedIds={sharedIds}
       effectiveDueOf={document ? (id) => effectiveDue(document, id) : undefined}
       showArchived={showArchived}
       onToggleShowArchived={() => setShowArchived((v) => !v)}

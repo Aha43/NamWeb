@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **A Shared view** — a new sidebar/More entry listing every project you've published as a share, in
+  the ordinary project-list way, so it's easy to find what's shared; click one to open its workbench
+  and manage the share. Shared projects also get a small share badge in the regular Projects list.
+  Closes #857.
+
 ### Changed
 
 - **Project sharing is now available to everyone** — publishing a project as a guest-friendly web
