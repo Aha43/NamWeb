@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-21
+
+**Project sharing goes public.** Turn any project into a guest-friendly web page from a secret link —
+guests read it, tick delegated counters, answer delegated questions, and leave suggestions, all
+without an account, while you stay the single owner of the workspace. The epic that shipped dark
+behind Labs since #759 — through the sanitizer security boundary, guest-interactive resources, the
+concurrent-drain data-loss fix (v1.12.1), and now the unveil — is the road to **2.0**.
+
 ### Added
 
 - **A Shared view** — a new sidebar/More entry listing every project you've published as a share, in
@@ -1739,7 +1747,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v1.12.1...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Aha43/NamWeb/compare/v1.12.1...v2.0.0
 [1.12.1]: https://github.com/Aha43/NamWeb/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/Aha43/NamWeb/compare/v1.11.0...v1.12.0
 [1.11.0]: https://github.com/Aha43/NamWeb/compare/v1.10.0...v1.11.0
