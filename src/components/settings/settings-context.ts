@@ -18,8 +18,9 @@ export interface SettingsContextValue {
   /** The persisted default new-item position (set in Settings). New sessions start here. */
   addToBottomDefault: boolean;
   setAddToBottomDefault: (value: boolean) => void;
-  /** Labs (device-level): surfaces features still being built dark — currently project
-   *  sharing (#759). Off = those controls simply don't render. */
+  /** Labs (device-level): surfaces features still being built dark. Off = those controls simply
+   *  don't render. Tenantless since #856 (project sharing left Labs at 2.0.0); kept as the
+   *  ship-dark mechanism for the next in-progress feature. */
   labs: boolean;
   setLabs: (labs: boolean) => void;
   /** Compact rows (device-level, #765): action lists drop the tag/time meta line and tighten
