@@ -85,13 +85,17 @@ confused by a stale published count. Delegation is opt-in **per resource**: an a
 
 Step 5's "idempotent per event id" is made real by two layers.
 
-**A per-share drain lease** (`acquire_drain_lease`/`release_drain_lease`, a `drain_lease_until` column
-on `project_shares`) serializes drains: exactly one tab/device drains a share at a time; a tab that
-can't get the lease skips quietly and retries on the next trigger, and a crashed holder's lease
-expires (TTL) so another tab takes over. This gives a **single global application order per share** —
+**A per-share drain lease** (`acquire_drain_lease`/`renew_drain_lease`/`release_drain_lease`, a
+`drain_lease_until` + `drain_lease_token` on `project_shares`) serializes drains: exactly one
+tab/device drains a share at a time. This gives a **single global application order per share** —
 without it, two tabs claiming time-separated events (A claims 7, then B claims a later-arriving 8)
 could commit out of order, and since COUNT clamping and QUESTION set-last-write are *not* commutative,
-that corrupts the result.
+that corrupts the result. The lease is **enforced, not advisory**: `claim_drainable_events` is FENCED
+by the token (it claims nothing unless the caller holds the current unexpired lease), and the old
+2-arg signature is dropped so a pre-lease client fails closed. A long drain **renews** the lease so
+another tab can't take over a progressing one; and if a hard stall past the TTL ever does hand the
+lease over, correctness still holds — the taker re-processes any abandoned claims as leftovers in id
+order (before newer events), so the watermark never advances past an unapplied lower event.
 
 Given that order, idempotency is a **node-level `drainedThrough`** watermark
 (`NamNode.drainedThrough?: Record<resourceIndex, eventId>`): the drain applies each event as an

@@ -11,6 +11,7 @@ import {
   deleteEvents,
   fetchLeftoverDrained,
   releaseDrainLease,
+  renewDrainLease,
   type DrainRow,
 } from './shares';
 import { drainPlan } from './drainEvents';
@@ -20,8 +21,13 @@ import { drainPlan } from './drainEvents';
  *
  * 1. A per-share LEASE (#852) serializes drains across tabs/devices — exactly one drains a share at a
  *    time. This is what makes the `drainedThrough` watermark correct: without it, two tabs claiming
- *    time-separated events could commit out of order and skip a lower one (a lost tick). A tab that
- *    can't get the lease skips quietly, retried on the next trigger.
+ *    time-separated events could commit out of order and skip a lower one (a lost tick). The lease is
+ *    ENFORCED, not advisory: `claim_drainable_events` is fenced by the token, so a client without the
+ *    lease claims nothing (an old pre-lease bundle hits the dropped 2-arg signature and fails closed).
+ *    A tab that can't get the lease skips quietly, retried on the next trigger. A long drain RENEWS
+ *    the lease so another tab can't take over a progressing one; if it ever does (a hard stall past
+ *    the TTL), the holder's next claim fails closed and the taker re-processes any abandoned claims as
+ *    leftovers in id order — so even lease loss stays correct.
  * 2. Within a drain, events apply in id order, and idempotency is the per-resource watermark: the
  *    reducer applies an event only if its id exceeds the watermark, then advances it. Re-processing a
  *    leftover / conflict-replay is a safe no-op, and there is nothing to evict.
@@ -46,19 +52,26 @@ export async function drainShare(
 ): Promise<number> {
   const lease = await acquireDrainLease(share.share_id, DRAIN_LEASE_TTL_SECONDS).catch(() => null);
   if (!lease) return 0; // another tab is draining this share — serialized; retried on the next trigger
+  // Heartbeat: extend the lease while a long drain runs so another tab can't take over a progressing
+  // one. Best-effort — if renewal fails (lease lost) the drain's leftover re-processing keeps it safe.
+  const heartbeat = setInterval(() => {
+    void renewDrainLease(share.share_id, lease, DRAIN_LEASE_TTL_SECONDS).catch(() => {});
+  }, (DRAIN_LEASE_TTL_SECONDS * 1000) / 3);
   try {
-    return await drainHeld(getCommittedDocument, dispatch, flush, share);
+    return await drainHeld(getCommittedDocument, dispatch, flush, share, lease);
   } finally {
+    clearInterval(heartbeat);
     await releaseDrainLease(share.share_id, lease).catch(() => {}); // best-effort; the TTL backs it up
   }
 }
 
-/** The drain body, run under the held lease. */
+/** The drain body, run under the held lease `leaseToken` (which fences the claim). */
 async function drainHeld(
   getCommittedDocument: () => WorkspaceDocument | null,
   dispatch: (intent: Intent) => void,
   flush: () => Promise<boolean>,
   share: { share_id: string; project_id: string; token: string },
+  leaseToken: string,
 ): Promise<number> {
   let leftovers: DrainRow[];
   let leftoversComplete: boolean;
@@ -72,7 +85,7 @@ async function drainHeld(
   // Only claim NEW (higher-id) events once we've seen every older leftover — else applying a newer
   // event would advance the watermark past an unseen lower one (a lost tick). Deferred events stay
   // undrained for the next complete drain.
-  const claimed = leftoversComplete ? await claimDrainableEvents(share.share_id, DRAINABLE_KINDS) : [];
+  const claimed = leftoversComplete ? await claimDrainableEvents(share.share_id, DRAINABLE_KINDS, leaseToken) : [];
   const working = [...new Map([...leftovers, ...claimed].map((e) => [e.id, e])).values()].sort(
     (a, b) => a.id - b.id,
   );

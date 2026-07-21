@@ -9,6 +9,7 @@ const service = {
   fetchLeftoverDrained: vi.fn(),
   acquireDrainLease: vi.fn(),
   releaseDrainLease: vi.fn(),
+  renewDrainLease: vi.fn(),
 };
 vi.mock('./shares', async (orig) => ({
   ...(await orig<typeof import('./shares')>()),
@@ -17,6 +18,7 @@ vi.mock('./shares', async (orig) => ({
   fetchLeftoverDrained: (...a: unknown[]) => service.fetchLeftoverDrained(...a),
   acquireDrainLease: (...a: unknown[]) => service.acquireDrainLease(...a),
   releaseDrainLease: (...a: unknown[]) => service.releaseDrainLease(...a),
+  renewDrainLease: (...a: unknown[]) => service.renewDrainLease(...a),
 }));
 
 import { drainShare } from './drainShare';
@@ -59,6 +61,7 @@ function baseMocks() {
   service.fetchLeftoverDrained.mockReset().mockResolvedValue([]);
   service.acquireDrainLease.mockReset().mockResolvedValue('lease-token'); // held by default
   service.releaseDrainLease.mockReset().mockResolvedValue(undefined);
+  service.renewDrainLease.mockReset().mockResolvedValue(true);
 }
 
 /**
@@ -87,6 +90,8 @@ describe('drainShare (#832/#850/#852) — lease-serialized, watermark, committed
     const h = harness();
     await drainShare(h.getCommittedDocument, h.dispatch, h.flush, SHARE);
     expect(service.acquireDrainLease).toHaveBeenCalledWith('sid1', expect.any(Number));
+    // The claim is fenced by the held token — the client threads it through.
+    expect(service.claimDrainableEvents).toHaveBeenCalledWith('sid1', expect.anything(), 'lease-token');
     expect(h.applied).toEqual([7]);
     expect(service.deleteEvents).toHaveBeenCalledWith([7]);
     expect(service.releaseDrainLease).toHaveBeenCalledWith('sid1', 'lease-token');
