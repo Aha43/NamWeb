@@ -11,6 +11,24 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v2.0.0 — 2026-07-21
+
+*(four PRs — two features, a review-hardening, the cut; 1 release; a milestone major)* **The unveil.**
+Project sharing — projects as guest-friendly web pages via a secret link, guests never becoming users —
+leaves Labs and goes public, and NamWeb crosses to **2.0**. The code this sprint was deliberately
+small: remove two `!labs` gates and a "(Labs)" tooltip (#858), then add a read-only Shared view + a
+share badge on the projects list so it's easy to find what you've published (#859). The *weight* was
+the arc behind it — the epic has been building dark since #759 through the sanitizer security boundary,
+guest-interactive counters and questions, the from-guests suggestion tray, and last-and-hardest the
+v1.12.1 concurrent-drain fix that took seven review rounds to make multi-device-safe. So this is an
+emphatically **converging** cut: not new surface area but a threshold crossed, the banked milestone
+finally spent. Process-wise it validated *calibrated* review depth — a single independent Claude pass
+(not the full dual dance) for a UI-only diff, which correctly returned SAFE-TO-CUT with only low
+findings (the sharpest: the offline demo had begun making a spurious backend call), folded in before
+the tag. The versioning is a deliberate milestone major, not a breaking one — 2.0 names the capability,
+not a contract break. Next: the shared surface earns real dogfooding now that it's live; the roadmap
+opens toward guest-page polish and, further out, AI-via-MCP on the web.
+
 ## v1.12.1 — 2026-07-21
 
 *(one substantive PR + the release chore, 1 release; off-cycle patch)* A single fix, but the deepest
