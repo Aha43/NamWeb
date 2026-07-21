@@ -92,10 +92,10 @@ beforeEach(() => {
   service.releaseDrainLease.mockReset().mockResolvedValue(undefined);
 });
 
-describe('ShareButton gating (#759 — dark until the 2.0.0 cut)', () => {
-  it('renders nothing without Labs', () => {
+describe('ShareButton gating (#856 — public since 2.0.0)', () => {
+  it('renders for a real user regardless of Labs (public since the unveil)', () => {
     renderButton({ labs: false });
-    expect(screen.queryByRole('button', { name: 'Share project' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Share project' })).toBeInTheDocument();
   });
 
   it('renders nothing in the demo (no backend to publish to)', () => {

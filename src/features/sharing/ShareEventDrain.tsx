@@ -1,13 +1,12 @@
 import { useContext, useEffect, useRef } from 'react';
 import { WorkspaceContext } from '@/store/workspace-context';
-import { useSettings } from '@/components/settings/settings-context';
 import { fetchOwnerShares } from './shares';
 import { drainShare } from './drainShare';
 
 /** The app-open drain trigger (#811): once per mount, after the document first loads. Quiet —
- *  a failed drain simply waits for the next trigger (dialog open, next app open). */
+ *  a failed drain simply waits for the next trigger (dialog open, next app open). Public since #856
+ *  (sharing left Labs at 2.0.0); it no-ops for owners with no shares (fetchOwnerShares → []). */
 export function ShareEventDrain() {
-  const { labs } = useSettings();
   const workspace = useContext(WorkspaceContext);
   const ran = useRef(false);
   const doc = workspace?.document;
@@ -16,7 +15,7 @@ export function ShareEventDrain() {
   // The drain keys off the COMMITTED document (#850) — read live inside drainShare, after the claim.
   const getCommittedDocument = workspace?.getCommittedDocument;
   useEffect(() => {
-    if (!labs || ran.current || !doc || !dispatch || !flush || !getCommittedDocument) return;
+    if (ran.current || !doc || !dispatch || !flush || !getCommittedDocument) return;
     ran.current = true;
     void (async () => {
       try {
@@ -27,6 +26,6 @@ export function ShareEventDrain() {
         // Offline / RLS hiccup: nothing claimed, nothing lost — retried on the next trigger.
       }
     })();
-  }, [labs, doc, dispatch, flush, getCommittedDocument]);
+  }, [doc, dispatch, flush, getCommittedDocument]);
   return null;
 }

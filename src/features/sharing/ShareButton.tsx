@@ -3,22 +3,20 @@ import { useTranslation } from 'react-i18next';
 import { Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
-import { useSettings } from '@/components/settings/settings-context';
 import { AuthUserContext } from '@/auth/auth-context';
 import { ShareDialog } from './ShareDialog';
 
 /**
  * The workbench Share entry (#759) — self-gating so hosts can mount it unconditionally:
- * renders nothing unless Labs is on (the epic ships dark until the 2.0.0 cut) and the session
- * is real (the demo has no backend to publish to).
+ * renders nothing unless the session is real (the demo has no backend to publish to). Public
+ * since #856 (sharing left Labs at 2.0.0).
  */
 export function ShareButton({ projectId }: { projectId: string }) {
   const { t } = useTranslation();
-  const { labs } = useSettings();
   // Optional read: presentational hosts/tests render without the auth provider → no button.
   const user = useContext(AuthUserContext);
   const [open, setOpen] = useState(false);
-  if (!labs || !user || user.aud === 'demo') return null;
+  if (!user || user.aud === 'demo') return null;
   return (
     <>
       <Tooltip label={t('share.buttonTooltip')}>
