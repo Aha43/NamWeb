@@ -11,6 +11,24 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v1.12.1 — 2026-07-21
+
+*(one substantive PR + the release chore, 1 release; off-cycle patch)* A single fix, but the deepest
+of the sharing epic: the concurrent-drain data-loss bug (#850/#852) — the last blocker before real
+multi-device sharing (2.0.0). The theme is **correctness under concurrency**, and the story is the
+review dance itself. **Seven Codex rounds**, each surfacing a strictly deeper distributed-systems bug
+as the previous was closed: floor-pruning double-apply → applied-bit ordering/durability → tombstone-GC
+ABA → watermark cross-tab reordering → append-only-set non-commutative mis-order → advisory-lease
+bypass/expiry → non-atomic fence race. Every fix was real, and the design *converged* rather than
+thrashed — it ended where the problem always pointed: a server-side **per-share drain lease** (enforced,
+fenced, atomic, self-renewing) that serializes drains so a compact per-resource **watermark** is correct
+and bounded, with committed-truth planning and a leftover-reprocessing backstop. Emphatically converging
+— the sharing pipe earning the right to leave Labs. It also stress-tested the dual-review dance to its
+limit: no automated gate would have caught any of the seven, and each round's fix was verified before the
+next was sought. The process note worth keeping: on a concurrent-writes-to-a-synced-blob layer — exactly
+where costly bugs live — "one more round" kept paying, so diligence beat impatience every time. Next: the
+shared-projects view + the unveiling (Share leaves Labs) → 2.0.0.
+
 ## v1.12.0 — 2026-07-20
 
 *(one PR, 1 release; off-cycle)* Not a feature cut — a foundational one, and the first release
