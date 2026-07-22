@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -24,6 +25,7 @@ function sameTags(a: string[], b: string[]): boolean {
 export function ActionEditorProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { document, dispatch } = useWorkspaceContext();
   const [editingId, setEditingId] = useState<string | null>(null);
   // Fire-time state for the link-back toast (#663): the toast can fire up to 6s after save, so its
@@ -90,6 +92,9 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     if (!node) return;
     dispatch({ type: 'convertActionToProject', id: node.id, now: nowIso() });
     setEditingId(null);
+    // Open the new project right away (#867): converting is a "this is bigger than an action" moment
+    // — you want to work it as a project, not hunt for where it landed back in the list.
+    navigate(`/projects/${node.id}`);
   }
 
   // Count-aware confirm message for the dialog's inline delete confirm.

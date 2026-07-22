@@ -58,4 +58,26 @@ describe('ShellContent — no workspace yet', () => {
     renderContent(ws({ noRemote: false }));
     expect(screen.getByText('workspace surface')).toBeInTheDocument();
   });
+
+  it('shows a subtle current-view label for a list surface, but not for a specific project (#869)', () => {
+    const at = (path: string, routePath: string) =>
+      render(
+        <WorkspaceContext.Provider value={ws()}>
+          <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Routes>
+              <Route element={<ShellContent />}>
+                <Route path={routePath} element={<div>surface</div>} />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </WorkspaceContext.Provider>,
+      );
+    // /next → the nav label "Next" is shown above the surface.
+    const next = at('/next', '/next');
+    expect(next.getByText('Next')).toBeInTheDocument();
+    next.unmount();
+    // /projects/abc (a specific project workbench, shows its own title) → no surface label.
+    const proj = at('/projects/abc', '/projects/:id');
+    expect(proj.queryByText('Projects')).not.toBeInTheDocument();
+  });
 });
