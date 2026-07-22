@@ -647,6 +647,8 @@
   "templates.emptyHint": "On a project’s workbench, “Save as template…” captures its structure — then apply it to spin up similar projects in one click.",
   "templates.emptyTitle": "No templates yet",
   "templates.itemCount": "{count, plural, one {# item} other {# items}}",
+  "templates.useAction": "Create project",
+  "templates.useAria": "Create a project from the {name} template",
   "theme.switchDark": "Switch to dark",
   "theme.switchLight": "Switch to light",
   "theme.toggle": "Toggle theme",

@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Create a project from a template.** The Templates page now has a **Create project** button on
+  each template — it spins up a new top-level project from the template and drops you into it. (Until
+  now templates could only be saved and deleted, or merged into an already-open project via a buried
+  control.) Closes #864.
+
 ### Changed
 
 - **Project templates now capture the whole project, not just titles.** Saving a project as a

@@ -8,10 +8,12 @@ function countNodes(nodes: TemplateNode[]): number {
 export interface TemplatesPanelProps {
   templates: ProjectTemplate[];
   onDelete: (name: string) => void;
+  /** Create a new top-level project from a template (#864). Omit for a delete-only list. */
+  onUse?: (name: string) => void;
 }
 
-/** List of saved project templates with delete. Presentational. */
-export function TemplatesPanel({ templates, onDelete }: TemplatesPanelProps) {
+/** List of saved project templates, each with "Create project" + delete. Presentational. */
+export function TemplatesPanel({ templates, onDelete, onUse }: TemplatesPanelProps) {
   const { t } = useTranslation();
   return (
     <section>
@@ -28,6 +30,16 @@ export function TemplatesPanel({ templates, onDelete }: TemplatesPanelProps) {
                 <span className="block truncate text-sm text-foreground">{template.name}</span>
                 <span className="text-xs text-muted-foreground">{t('templates.itemCount', { count: countNodes(template.children) })}</span>
               </span>
+              {onUse && (
+                <button
+                  type="button"
+                  aria-label={t('templates.useAria', { name: template.name })}
+                  onClick={() => onUse(template.name)}
+                  className="shrink-0 rounded-md border border-input px-2 py-1 text-xs font-medium text-foreground hover:bg-accent"
+                >
+                  {t('templates.useAction')}
+                </button>
+              )}
               <button
                 type="button"
                 aria-label={t('templates.deleteAria', { name: template.name })}

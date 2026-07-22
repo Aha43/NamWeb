@@ -647,6 +647,8 @@
   "templates.emptyHint": "På en prosjektarbeidsbenk fanger «Lagre som mal…» strukturen — så kan du bruke den til å starte lignende prosjekter med ett klikk.",
   "templates.emptyTitle": "Ingen maler ennå",
   "templates.itemCount": "{count, plural, one {# element} other {# elementer}}",
+  "templates.useAction": "Opprett prosjekt",
+  "templates.useAria": "Opprett et prosjekt fra malen {name}",
   "theme.switchDark": "Bytt til mørkt",
   "theme.switchLight": "Bytt til lyst",
   "theme.toggle": "Veksle tema",

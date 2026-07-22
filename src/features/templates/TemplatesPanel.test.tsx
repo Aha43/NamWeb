@@ -21,4 +21,17 @@ describe('TemplatesPanel', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete template Reno' }));
     expect(onDelete).toHaveBeenCalledWith('Reno');
   });
+
+  it('offers "Create project" per template when onUse is given, and fires it by name (#864)', () => {
+    const onUse = vi.fn();
+    const template: ProjectTemplate = { name: 'Reno', children: [] };
+    render(<TemplatesPanel templates={[template]} onDelete={vi.fn()} onUse={onUse} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Create a project from the Reno template' }));
+    expect(onUse).toHaveBeenCalledWith('Reno');
+  });
+
+  it('omits the Create-project action when onUse is not provided', () => {
+    render(<TemplatesPanel templates={[{ name: 'Reno', children: [] }]} onDelete={vi.fn()} />);
+    expect(screen.queryByText('Create project')).not.toBeInTheDocument();
+  });
 });
