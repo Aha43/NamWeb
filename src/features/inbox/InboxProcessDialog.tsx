@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -82,17 +82,29 @@ export function InboxProcessDialog({
     setStep('kind');
   }
 
-  // Deck-only keyboard cycling (#866): ←/→ roll to the previous/next item so working the deck
-  // stays on the keyboard. Skip typing targets (the phone native select, any input) so those keep
-  // their own arrow behavior; the desktop project picker portals to its own dialog, out of here.
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (!deck || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
-    const el = e.target as HTMLElement;
-    if (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable) return;
-    e.preventDefault();
-    if (e.key === 'ArrowRight') onSkip?.();
-    else onPrev?.();
-  }
+  // Deck-only keyboard cycling (#866): ←/→ roll to the previous/next item so working the deck stays
+  // on the keyboard. A WINDOW listener, not a DialogContent onKeyDown (#882) — the latter only fires
+  // when focus is inside the dialog, which isn't guaranteed across browsers/OS keyboard settings
+  // (Safari + "Full Keyboard Access" off autofocuses a button without giving it keyboard focus, so
+  // the keydown lands on <body>). The Focus deck listens on window for the same reason. We can't
+  // reuse its isModalOpen() guard — this dialog IS the modal — so we instead bail when the nested
+  // project picker owns the keys, or when the event is a typing target / a modifier combo.
+  useEffect(() => {
+    if (!deck || !open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (pickerOpen) return; // the project picker (a layer on top) owns the keys while it's open
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable))
+        return;
+      e.preventDefault();
+      if (e.key === 'ArrowRight') onSkip?.();
+      else onPrev?.();
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [deck, open, pickerOpen, onSkip, onPrev]);
 
   const picker = (defaultLabel: string, fieldLabel: string) => {
     if (projectTargets.length === 0) return null;
@@ -155,7 +167,7 @@ export function InboxProcessDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent onKeyDown={onKeyDown}>
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{deck ? t('inbox.processDeckTitle') : t('inbox.processItemTitle')}</DialogTitle>
           <DialogDescription className="truncate">
