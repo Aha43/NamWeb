@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-07-22
+
+**Hotfix, take two — the inbox deck arrows now actually cycle.** 2.1.1 moved the ←/→ handler to a
+window listener but on the bubble phase, where the Radix dialog and the browser's own focus
+navigation (Safari / macOS "Full Keyboard Access") consumed the key first — so pressing → just moved
+focus to a button. It now listens in the **capture phase**, like the Focus deck, so `preventDefault`
+runs first and the arrows win.
+
 ### Fixed
 
 - **Inbox processing deck arrows, take two.** The 2.1.1 fix moved the ←/→ handler to a window
@@ -1813,7 +1821,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/Aha43/NamWeb/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Aha43/NamWeb/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Aha43/NamWeb/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Aha43/NamWeb/compare/v1.12.1...v2.0.0
