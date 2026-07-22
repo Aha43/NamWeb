@@ -83,12 +83,13 @@ export function InboxProcessDialog({
   }
 
   // Deck-only keyboard cycling (#866): ←/→ roll to the previous/next item so working the deck stays
-  // on the keyboard. A WINDOW listener, not a DialogContent onKeyDown (#882) — the latter only fires
-  // when focus is inside the dialog, which isn't guaranteed across browsers/OS keyboard settings
-  // (Safari + "Full Keyboard Access" off autofocuses a button without giving it keyboard focus, so
-  // the keydown lands on <body>). The Focus deck listens on window for the same reason. We can't
-  // reuse its isModalOpen() guard — this dialog IS the modal — so we instead bail when the nested
-  // project picker owns the keys, or when the event is a typing target / a modifier combo.
+  // on the keyboard. A WINDOW listener in the CAPTURE phase (#882, #885), not a DialogContent
+  // onKeyDown — the latter only fires when focus is inside the dialog, and a bubble-phase window
+  // listener still loses: something in the Radix dialog path consumes the arrow keydown, and the
+  // browser's own focus navigation (Safari / macOS "Full Keyboard Access") moves focus to a button
+  // before we ever see it. Capture runs FIRST, so our preventDefault wins — exactly how the Focus
+  // deck does it. We can't reuse its isModalOpen() guard (this dialog IS the modal), so we bail when
+  // the nested project picker owns the keys, or when the event is a typing target / a modifier combo.
   useEffect(() => {
     if (!deck || !open) return;
     function onKey(e: KeyboardEvent) {
@@ -102,8 +103,8 @@ export function InboxProcessDialog({
       if (e.key === 'ArrowRight') onSkip?.();
       else onPrev?.();
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, { capture: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
   }, [deck, open, pickerOpen, onSkip, onPrev]);
 
   const picker = (defaultLabel: string, fieldLabel: string) => {
