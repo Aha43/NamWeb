@@ -79,5 +79,9 @@ describe('ShellContent — no workspace yet', () => {
     // /projects/abc (a specific project workbench, shows its own title) → no surface label.
     const proj = at('/projects/abc', '/projects/:id');
     expect(proj.queryByText('Projects')).not.toBeInTheDocument();
+    proj.unmount();
+    // /calendar is self-titled (its own month/day heading) → no surface label (#878).
+    const cal = at('/calendar', '/calendar');
+    expect(cal.queryByText('Calendar')).not.toBeInTheDocument();
   });
 });

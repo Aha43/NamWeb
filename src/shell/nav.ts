@@ -23,6 +23,9 @@ export interface NavItem {
   icon: LucideIcon;
   /** i18n key for the short tooltip/subtitle describing the surface. */
   hint?: string;
+  /** The surface renders its own prominent heading (e.g. the calendar's month/day title), so it
+   *  skips the shell's current-view label (#878) — that label is for the look-alike list surfaces. */
+  selfTitled?: boolean;
 }
 
 // Labels are i18n keys; the surface names live under `domain.*` (shareable vocab), hints under `nav.*`.
@@ -30,7 +33,7 @@ const inbox: NavItem = { to: '/inbox', label: 'domain.inbox', icon: Inbox, hint:
 export const next: NavItem = { to: '/next', label: 'domain.status.next', icon: ListTodo, hint: 'nav.nextHint' };
 const backlog: NavItem = { to: '/backlog', label: 'domain.status.backlog', icon: Layers, hint: 'nav.backlogHint' };
 const due: NavItem = { to: '/due', label: 'domain.due', icon: CalendarClock, hint: 'nav.dueHint' };
-export const calendar: NavItem = { to: '/calendar', label: 'domain.calendar', icon: CalendarDays, hint: 'nav.calendarHint' };
+export const calendar: NavItem = { to: '/calendar', label: 'domain.calendar', icon: CalendarDays, hint: 'nav.calendarHint', selfTitled: true };
 const blocked: NavItem = { to: '/blocked', label: 'domain.blocked', icon: Lock, hint: 'nav.blockedHint' };
 export const tags: NavItem = { to: '/tags', label: 'domain.tags', icon: Tag, hint: 'nav.tagsHint' };
 const search: NavItem = { to: '/search', label: 'domain.search', icon: Search, hint: 'nav.searchHint' };

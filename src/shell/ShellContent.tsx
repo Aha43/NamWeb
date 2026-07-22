@@ -45,8 +45,8 @@ export function ShellContent() {
   // A subtle "you are here" label (#869): the list surfaces look alike and you often land on one as a
   // side-effect of navigation. Matched by EXACT path, so a specific project (`/projects/:id`, which
   // shows its own title) and non-surface routes (account/help) stay unlabelled; Focus is outside the
-  // shell entirely.
-  const surface = SURFACES.find((s) => s.to === pathname);
+  // shell entirely. Self-titled surfaces (the calendar, with its own month/day heading) opt out (#878).
+  const surface = SURFACES.find((s) => s.to === pathname && !s.selfTitled);
   const Icon = surface?.icon;
   return (
     <>
