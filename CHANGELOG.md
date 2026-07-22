@@ -17,6 +17,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- Converting an action into a project now **opens that project** right away, instead of leaving you
+  in the list to hunt for where the new project landed. Closes #867.
 - **Project templates now capture the whole project, not just titles.** Saving a project as a
   template preserves each item's tags, due dates/times, resources, descriptions, and prerequisites;
   applying it reproduces them (with fresh ids and prerequisites remapped to the new copies), so a
