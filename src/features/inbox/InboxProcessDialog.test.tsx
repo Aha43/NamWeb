@@ -121,6 +121,33 @@ describe('InboxProcessDialog', () => {
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
 
+  it('deck arrows fire in the capture phase, surviving a bubble-phase stopPropagation (#885)', () => {
+    const onSkip = vi.fn();
+    render(
+      <InboxProcessDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onResolve={vi.fn()}
+        onDelete={vi.fn()}
+        onSkip={onSkip}
+        onPrev={vi.fn()}
+        remaining={2}
+        position={1}
+      />,
+    );
+    // Mimic the real failure: something in the dialog path swallows the keydown while it bubbles.
+    // A bubble-phase window listener would never see it; our capture-phase one already fired.
+    const swallow = (e: Event) => e.stopPropagation();
+    document.addEventListener('keydown', swallow);
+    try {
+      fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+      expect(onSkip).toHaveBeenCalledTimes(1);
+    } finally {
+      document.removeEventListener('keydown', swallow);
+    }
+  });
+
   it('single-item deck hides Prev/Skip (nothing to cycle to)', () => {
     render(
       <InboxProcessDialog

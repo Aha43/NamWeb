@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Inbox processing deck arrows, take two.** The 2.1.1 fix moved the ←/→ handler to a window
+  listener but on the bubble phase, where the Radix dialog / browser focus navigation still consumed
+  the key first (→ just moved focus to a button). It now listens in the **capture phase**, like the
+  Focus deck, so the arrows win. Closes #885.
+
 ## [2.1.1] - 2026-07-22
 
 **Hotfix for the inbox deck's arrow keys.** The one-at-a-time processing deck's ←/→ cycling (new in
