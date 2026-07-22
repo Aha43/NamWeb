@@ -42,7 +42,10 @@ export function isValidLocalDate(s: string): boolean {
   return !Number.isNaN(d.getTime()) && localDateString(d) === s;
 }
 
-function openNodes(doc: WorkspaceDocument, projects: boolean): NamNode[] {
+// `includeDone` lifts the DONE/CANCELLED filter (the "Show done" toggle, #868) — archived subtrees
+// and structural containers stay excluded regardless. Default off, so the calendar shows only open
+// work as before.
+function openNodes(doc: WorkspaceDocument, projects: boolean, includeDone: boolean): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter(
@@ -50,13 +53,12 @@ function openNodes(doc: WorkspaceDocument, projects: boolean): NamNode[] {
       n.project === projects &&
       !structural.has(n.id) &&
       !archived.has(n.id) &&
-      n.status !== 'DONE' &&
-      n.status !== 'CANCELLED',
+      (includeDone || (n.status !== 'DONE' && n.status !== 'CANCELLED')),
   );
 }
 
-function openDatedActions(doc: WorkspaceDocument): NamNode[] {
-  return openNodes(doc, false).filter((n) => !!n.dueAt && /^\d{4}-\d{2}-\d{2}$/.test(n.dueAt));
+function openDatedActions(doc: WorkspaceDocument, includeDone: boolean): NamNode[] {
+  return openNodes(doc, false, includeDone).filter((n) => !!n.dueAt && /^\d{4}-\d{2}-\d{2}$/.test(n.dueAt));
 }
 
 /** A dated node with its resolved [start, end] span — for projects the *effective* span, so a
@@ -67,17 +69,17 @@ interface Dated {
   end: string;
 }
 
-function datedActions(doc: WorkspaceDocument): Dated[] {
-  return openDatedActions(doc).map((n) => ({
+function datedActions(doc: WorkspaceDocument, includeDone: boolean): Dated[] {
+  return openDatedActions(doc, includeDone).map((n) => ({
     node: n,
     start: n.dueAt!,
     end: n.dueEndAt && n.dueEndAt >= n.dueAt! ? n.dueEndAt : n.dueAt!,
   }));
 }
 
-function datedProjects(doc: WorkspaceDocument): Dated[] {
+function datedProjects(doc: WorkspaceDocument, includeDone: boolean): Dated[] {
   const out: Dated[] = [];
-  for (const n of openNodes(doc, true)) {
+  for (const n of openNodes(doc, true, includeDone)) {
     const eff = effectiveDue(doc, n.id);
     if (!eff.dueAt || !/^\d{4}-\d{2}-\d{2}$/.test(eff.dueAt)) continue;
     out.push({ node: n, start: eff.dueAt, end: eff.dueEndAt && eff.dueEndAt >= eff.dueAt ? eff.dueEndAt : eff.dueAt });
@@ -102,9 +104,13 @@ export function calendarMonth(
   year: number,
   month: number,
   now: Date = new Date(),
+  includeDone = false,
 ): CalendarDay[] {
-  const actions = datedActions(doc);
-  const projects = datedProjects(doc);
+  const actions = datedActions(doc, includeDone);
+  const projects = datedProjects(doc, includeDone);
+  // Overdue red is about *open* work waiting in the past — a day carrying only done actions must
+  // not glow red just because "Show done" is on (#868). When done is hidden the two sets coincide.
+  const openActions = includeDone ? datedActions(doc, false) : actions;
   const today = localDateString(now);
   const daysInMonth = new Date(year, month, 0).getDate();
   const days: CalendarDay[] = [];
@@ -114,7 +120,7 @@ export function calendarMonth(
     days.push({
       date,
       count: titles.length,
-      overdue: titles.length > 0 && date < today,
+      overdue: date < today && titlesOn(openActions, date).length > 0,
       titles,
       projectTitles: titlesOn(projects, date),
     });
@@ -122,18 +128,19 @@ export function calendarMonth(
   return days;
 }
 
-/** The open actions due on `date` (range-aware), title-sorted for a stable list (#676). */
-export function dayActions(doc: WorkspaceDocument, date: string): NamNode[] {
-  return datedActions(doc)
+/** The actions due on `date` (range-aware), title-sorted for a stable list (#676). Open only unless
+ *  `includeDone` is set (the "Show done" toggle, #868). */
+export function dayActions(doc: WorkspaceDocument, date: string, includeDone = false): NamNode[] {
+  return datedActions(doc, includeDone)
     .filter((d) => d.start <= date && date <= d.end)
     .map((d) => d.node)
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
-/** The open dated projects covering `date` (full effective span, #706), title-sorted — the day
- *  drill-in's Projects section (#703). */
-export function dayProjects(doc: WorkspaceDocument, date: string): NamNode[] {
-  return datedProjects(doc)
+/** The dated projects covering `date` (full effective span, #706), title-sorted — the day
+ *  drill-in's Projects section (#703). Open only unless `includeDone` is set (#868). */
+export function dayProjects(doc: WorkspaceDocument, date: string, includeDone = false): NamNode[] {
+  return datedProjects(doc, includeDone)
     .filter((d) => d.start <= date && date <= d.end)
     .map((d) => d.node)
     .sort((a, b) => a.title.localeCompare(b.title));

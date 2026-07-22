@@ -10,6 +10,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Show done actions in the calendar.** A **Show done** toggle in the calendar header (and in a
+  day's drill-in) surfaces completed and cancelled actions and projects alongside the open ones —
+  off by default, so the calendar stays focused on open work. Past days that carry only done work
+  never turn red. The choice rides in the URL (`?done=1`), so back/forward and bookmarks remember
+  it. Closes #868.
 - A subtle **current-view label** above each list surface (Inbox, Next, Projects, …) — the lists look
   alike and you often land on one as a side-effect of navigating, so a quiet "you are here" helps.
   Closes #869.
@@ -22,6 +27,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - Converting an action into a project now **opens that project** right away, instead of leaving you
   in the list to hunt for where the new project landed. Closes #867.
+- **The NAM logo moved to the top toolbar.** It used to sit at the top of the sidebar and eat a
+  full row; it now lives at the left edge of the toolbar, so the sidebar starts with your views. The
+  version and build are still one hover away on the logo. Closes #870.
 - **The inbox processing deck now cycles from the keyboard, and shows where you are.** In the
   one-at-a-time "Process inbox" deck, **←/→** step to the previous/next item (matching the on-screen
   **← Prev** / **Skip →** buttons), and the dialog now reads **"2 of 3"** instead of just "3 left" —
