@@ -90,6 +90,14 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
     <div className="flex h-dvh flex-col bg-background text-foreground">
       <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
         <div className="flex min-w-0 items-center gap-2">
+          {/* Brand moved here from the sidebar top (#870): it no longer eats a full sidebar row, and
+              the version/build stays one hover away via brandTooltip(). */}
+          <Tooltip label={brandTooltip()}>
+            <div className="flex shrink-0 items-center gap-1.5 pr-0.5">
+              <LogoMark className="h-6 w-6 text-foreground" />
+              {!dense && <span className="text-sm font-semibold tracking-tight">{APP_SHORT_NAME}</span>}
+            </div>
+          </Tooltip>
           <Tooltip label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}>
             <Button
               variant="ghost"
@@ -182,20 +190,10 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               style={dense ? undefined : { width }}
               className={cn('flex shrink-0 flex-col overflow-y-auto', dense ? 'w-14 items-center p-2' : 'p-4')}
             >
-              <div className={cn('flex items-center gap-2', dense ? 'px-0' : 'px-2')}>
-                <Tooltip label={brandTooltip()}>
-                  <LogoMark className="h-7 w-7 shrink-0 text-foreground" />
-                </Tooltip>
-                {!dense && (
-                  <Tooltip label={brandTooltip()}>
-                    <h1 className="truncate text-lg font-semibold tracking-tight">{APP_SHORT_NAME}</h1>
-                  </Tooltip>
-                )}
-              </div>
-
               {/* The foregrounded actions (Capture / Next / Contexts / Focus / Projects) live in the
-                  toolbar command bar now (#590); the sidebar is just the remaining view list. */}
-              <nav aria-label={t('nav.sidebarLandmark')} className="mt-5 flex flex-col gap-4">
+                  toolbar command bar now (#590), and the brand moved to the toolbar too (#870); the
+                  sidebar is just the remaining view list. */}
+              <nav aria-label={t('nav.sidebarLandmark')} className="flex flex-col gap-4">
                 {SIDEBAR_GROUPS.map((group, i) => (
                   <div key={group.label ?? i} className="flex flex-col gap-1">
                     {group.label && (
