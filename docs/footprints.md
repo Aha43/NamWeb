@@ -11,6 +11,29 @@ chat only. Their CHANGELOG summary lines are the surviving record.
 
 ---
 
+## v2.1.0 — 2026-07-22
+
+*(nine PRs — one feature, five dogfooding tweaks, two review-hardenings, the cut; 1 release; minor)*
+**The first dogfooding pass after the milestone.** With 2.0 shipped, the work turned inward: use the
+thing, write down what chafes, fix it. One change carried real domain weight — **templates grew up**
+(#863/#864): saving a project as a template had been title-only and effectively useless, so it now
+captures the whole subtree (tags, due dates/times, resources, descriptions, prerequisites, and
+internal action-links) and reproduces it with fresh ids on a one-click new project, every action
+landing as Next so the result reads as a draft to review. Around it, a sweep of small frictions from a
+NAM-exported dogfooding plan: calendar **Show done** (#868), the inbox focus-deck **cycling from the
+keyboard** with an "X of N" readout (#866), convert-action **opening the new project** (#867), the
+**logo moving to the toolbar** to reclaim a sidebar row (#870), and a quiet **current-view label** on
+the look-alike list surfaces (#869). So squarely a **polishing** cut — no new epic, just sharpening
+what 2.0 left rough, driven by actual use rather than a roadmap. Two process notes. First, the dual
+review **converged** this time: Claude and Codex independently landed on the *same* single real bug —
+template action-links weren't remapped like `blockedBy` (#876) — where past cuts found disjoint bugs;
+convergence-on-one is itself a signal the change was small and clean (two Claude-only lows followed: a
+redundant calendar label, fixed as #878; a transient deck-arrow discard, accepted). Second, the
+merge-train mechanics bit — five independent branches all writing the same `[Unreleased]` CHANGELOG
+spot re-conflicted each other on every merge, so the tail PRs needed re-resolving after each landing.
+Next: keep dogfooding the shared surface and this template flow now that they're real; the roadmap
+still opens toward guest-page polish and, further out, AI-via-MCP on the web.
+
 ## v2.0.0 — 2026-07-21
 
 *(four PRs — two features, a review-hardening, the cut; 1 release; a milestone major)* **The unveil.**
