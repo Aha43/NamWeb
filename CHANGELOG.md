@@ -10,6 +10,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Show done actions in the calendar.** A **Show done** toggle in the calendar header (and in a
+  day's drill-in) surfaces completed and cancelled actions and projects alongside the open ones —
+  off by default, so the calendar stays focused on open work. Past days that carry only done work
+  never turn red. The choice rides in the URL (`?done=1`), so back/forward and bookmarks remember
+  it. Closes #868.
 - A subtle **current-view label** above each list surface (Inbox, Next, Projects, …) — the lists look
   alike and you often land on one as a side-effect of navigating, so a quiet "you are here" helps.
   Closes #869.
