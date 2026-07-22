@@ -99,6 +99,25 @@ describe('calendarMonth (#675)', () => {
     expect(days).toHaveLength(29);
     expect(days[28].date).toBe('2028-02-29');
   });
+
+  it('includeDone surfaces DONE/CANCELLED actions and projects, but never paints them overdue (#868)', () => {
+    const doc = workspace([
+      node('a', { title: 'Open', dueAt: '2026-07-10' }),
+      node('done', { title: 'Shipped', dueAt: '2026-07-10', status: 'DONE' }),
+      node('cx', { title: 'Dropped', dueAt: '2026-07-12', status: 'CANCELLED' }),
+      node('p', { title: 'Reno', project: true, dueAt: '2026-07-10', status: 'DONE' }),
+    ]);
+    // Hidden (default): only the open action shows.
+    const off = calendarMonth(doc, 2026, 7, NOW);
+    expect(off[9]).toMatchObject({ count: 1, titles: ['Open'], projectTitles: [] });
+    expect(off[11].count).toBe(0);
+    // Shown: done/cancelled join the count + titles, and the done project marks its span…
+    const on = calendarMonth(doc, 2026, 7, NOW, true);
+    expect(on[9]).toMatchObject({ count: 2, titles: ['Open', 'Shipped'], projectTitles: ['Reno'] });
+    expect(on[9].overdue).toBe(true); // still an OPEN action here → warning stands
+    // …but a past day carrying only a DONE/CANCELLED action must not glow red.
+    expect(on[11]).toMatchObject({ count: 1, titles: ['Dropped'], overdue: false });
+  });
 });
 
 describe('dayActions (#676)', () => {
@@ -109,6 +128,15 @@ describe('dayActions (#676)', () => {
       node('x', { title: 'Other day', dueAt: '2026-07-11' }),
     ]);
     expect(dayActions(doc, '2026-07-10').map((n) => n.title)).toEqual(['Alpha', 'Beta']);
+  });
+
+  it('includeDone adds the day\'s DONE actions to the list (#868)', () => {
+    const doc = workspace([
+      node('a', { title: 'Open', dueAt: '2026-07-10' }),
+      node('d', { title: 'Shipped', dueAt: '2026-07-10', status: 'DONE' }),
+    ]);
+    expect(dayActions(doc, '2026-07-10').map((n) => n.title)).toEqual(['Open']);
+    expect(dayActions(doc, '2026-07-10', true).map((n) => n.title)).toEqual(['Open', 'Shipped']);
   });
 });
 

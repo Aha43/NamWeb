@@ -1,8 +1,9 @@
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Folder, Plus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Folder, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { calendarMonth, dayActions, dayProjects, isValidLocalDate, localDateString } from '@/domain/calendar';
 import { effectiveDue } from '@/domain/derivedDue';
@@ -42,18 +43,46 @@ export function CalendarPage() {
   // explicit back button both return to the same month.
   const dParam = params.get('d');
   const day = dParam && isValidLocalDate(dParam) ? dParam : null;
+  // "Show done" (#868): opt-in via ?done=1, so it's off by default and survives back/forward and
+  // bookmarks like the month/day params. Preserved across month/day navigation below.
+  const includeDone = params.get('done') === '1';
 
   function show(y: number, mo: number) {
     // Normalize (month 0 → Dec of prev year, 13 → Jan of next).
     const d = new Date(y, mo - 1, 1);
-    setParams({ m: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` });
+    const next: Record<string, string> = { m: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` };
+    if (includeDone) next.done = '1';
+    setParams(next);
   }
+
+  function toggleDone() {
+    const next = new URLSearchParams(params);
+    if (includeDone) next.delete('done');
+    else next.set('done', '1');
+    setParams(next);
+  }
+
+  const doneToggle = (
+    <Tooltip label={t('calendar.showDone')}>
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-label={t('calendar.showDone')}
+        aria-pressed={includeDone}
+        className={cn('gap-1.5', includeDone && 'bg-accent text-accent-foreground')}
+        onClick={toggleDone}
+      >
+        <CheckCircle2 className="h-4 w-4" />
+        <span className="hidden sm:inline">{t('calendar.showDone')}</span>
+      </Button>
+    </Tooltip>
+  );
 
   if (!document) return null;
 
   if (day) {
-    const rows = dayActions(document, day).map((n) => toActionRow(document, n));
-    const projects = dayProjects(document, day);
+    const rows = dayActions(document, day, includeDone).map((n) => toActionRow(document, n));
+    const projects = dayProjects(document, day, includeDone);
     const dayTitle = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'full' }).format(
       new Date(`${day}T00:00:00`),
     );
@@ -64,12 +93,13 @@ export function CalendarPage() {
             variant="ghost"
             size="sm"
             className="gap-1.5"
-            onClick={() => setParams({ m: monthParam })}
+            onClick={() => setParams(includeDone ? { m: monthParam, done: '1' } : { m: monthParam })}
           >
             <ArrowLeft className="h-4 w-4" />
             {t('calendar.backToCalendar')}
           </Button>
           <h2 className="min-w-0 flex-1 truncate text-lg font-semibold capitalize">{dayTitle}</h2>
+          {doneToggle}
           <Button
             variant="outline"
             size="sm"
@@ -143,7 +173,7 @@ export function CalendarPage() {
       </div>
     );
   }
-  const days = calendarMonth(document, year, month, now);
+  const days = calendarMonth(document, year, month, now, includeDone);
   const title = new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(
     new Date(year, month - 1, 1),
   );
@@ -152,7 +182,10 @@ export function CalendarPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold capitalize">{title}</h2>
+        <div className="flex min-w-0 items-center gap-2">
+          <h2 className="truncate text-lg font-semibold capitalize">{title}</h2>
+          {doneToggle}
+        </div>
         <div className="flex items-center gap-0.5">
           <Tooltip label={t('calendar.prevYear')}>
             <Button variant="ghost" size="sm" aria-label={t('calendar.prevYear')} onClick={() => show(year - 1, month)}>
@@ -164,7 +197,12 @@ export function CalendarPage() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
           </Tooltip>
-          <Button variant="outline" size="sm" disabled={isCurrentMonth} onClick={() => setParams({})}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isCurrentMonth}
+            onClick={() => setParams(includeDone ? { done: '1' } : {})}
+          >
             {t('calendar.today')}
           </Button>
           <Tooltip label={t('calendar.nextMonth')}>
@@ -179,7 +217,13 @@ export function CalendarPage() {
           </Tooltip>
         </div>
       </div>
-      <MonthGrid days={days} today={localDateString(now)} onSelectDay={(date) => setParams({ m: monthParam, d: date })} />
+      <MonthGrid
+        days={days}
+        today={localDateString(now)}
+        onSelectDay={(date) =>
+          setParams(includeDone ? { m: monthParam, d: date, done: '1' } : { m: monthParam, d: date })
+        }
+      />
     </div>
   );
 }

@@ -141,6 +141,31 @@ test('day drill-in: click a day, see its actions, edit one, come back (#676)', a
   await expect(page.getByRole('grid')).toBeVisible();
 });
 
+test('Show done reveals completed actions in the grid + day list, off by default (#868)', async ({ page }) => {
+  await page.goto('/calendar');
+  const todayCell = () => page.locator(`[aria-label^="${localDate(0)}:"]`);
+  await expect(page.getByRole('grid')).toBeVisible();
+  // Default: today counts 2 open actions — the DONE "Finished" is not among them.
+  await expect(todayCell()).toHaveAttribute('aria-label', new RegExp(`${localDate(0)}: 2 due`));
+
+  // Flip Show done — the completed action joins the count, and the choice rides in the URL.
+  await page.getByRole('button', { name: 'Show done' }).click();
+  await expect(page).toHaveURL(/done=1/);
+  await expect(todayCell()).toHaveAttribute('aria-label', new RegExp(`${localDate(0)}: 3 due`));
+
+  // Drill in carries the toggle: the done action now lists (it was invisible before).
+  await todayCell().click();
+  await expect(page).toHaveURL(new RegExp(`d=${localDate(0)}`));
+  await expect(page).toHaveURL(/done=1/);
+  await expect(page.getByText('Finished')).toBeVisible();
+
+  // Turning it off in the day header hides the done action again, staying on the same day.
+  await page.getByRole('button', { name: 'Show done' }).click();
+  await expect(page).not.toHaveURL(/done=1/);
+  await expect(page.getByText('Finished')).toHaveCount(0);
+  await expect(page.getByText('Due today A')).toBeVisible();
+});
+
 test('create an action from a day, due prefilled at noon (#681)', async ({ page, doc }) => {
   await page.goto('/calendar');
   await expect(page.getByRole('grid')).toBeVisible();

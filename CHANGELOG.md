@@ -10,6 +10,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Show done actions in the calendar.** A **Show done** toggle in the calendar header (and in a
+  day's drill-in) surfaces completed and cancelled actions and projects alongside the open ones —
+  off by default, so the calendar stays focused on open work. Past days that carry only done work
+  never turn red. The choice rides in the URL (`?done=1`), so back/forward and bookmarks remember
+  it. Closes #868.
 - **Create a project from a template.** The Templates page now has a **Create project** button on
   each template — it spins up a new top-level project from the template and drops you into it. (Until
   now templates could only be saved and deleted, or merged into an already-open project via a buried

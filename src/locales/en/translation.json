@@ -113,6 +113,7 @@
   "calendar.nextYear": "Next year",
   "calendar.prevMonth": "Previous month",
   "calendar.prevYear": "Previous year",
+  "calendar.showDone": "Show done",
   "calendar.today": "Today",
   "calendar.weekTooltip": "Week {week}",
   "capture.description": "Add to your inbox. Keep typing to add several.",
