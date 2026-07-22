@@ -10,6 +10,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- A subtle **current-view label** above each list surface (Inbox, Next, Projects, …) — the lists look
+  alike and you often land on one as a side-effect of navigating, so a quiet "you are here" helps.
+  Closes #869.
 - **Create a project from a template.** The Templates page now has a **Create project** button on
   each template — it spins up a new top-level project from the template and drops you into it. (Until
   now templates could only be saved and deleted, or merged into an already-open project via a buried
@@ -17,6 +20,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- Converting an action into a project now **opens that project** right away, instead of leaving you
+  in the list to hunt for where the new project landed. Closes #867.
 - **The NAM logo moved to the top toolbar.** It used to sit at the top of the sidebar and eat a
   full row; it now lives at the left edge of the toolbar, so the sidebar starts with your views. The
   version and build are still one hover away on the logo. Closes #870.
