@@ -94,7 +94,7 @@ describe('InboxProcessDialog', () => {
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
-  it('deck mode cycles the item with the ←/→ arrow keys (roll-over visible via "X of N")', () => {
+  it('deck mode cycles the item with the ←/→ arrow keys, even when focus is outside the dialog (#882)', () => {
     const onSkip = vi.fn();
     const onPrev = vi.fn();
     render(
@@ -110,11 +110,15 @@ describe('InboxProcessDialog', () => {
         position={1}
       />,
     );
-    const dialog = screen.getByRole('dialog');
-    fireEvent.keyDown(dialog, { key: 'ArrowRight' });
+    // Fire on document.body — the regression: focus need NOT be inside the dialog (Safari + Full
+    // Keyboard Access off lands the keydown here). A window listener still catches it.
+    fireEvent.keyDown(document.body, { key: 'ArrowRight' });
     expect(onSkip).toHaveBeenCalledTimes(1);
-    fireEvent.keyDown(dialog, { key: 'ArrowLeft' });
+    fireEvent.keyDown(document.body, { key: 'ArrowLeft' });
     expect(onPrev).toHaveBeenCalledTimes(1);
+    // A modifier combo is left to the browser/OS.
+    fireEvent.keyDown(document.body, { key: 'ArrowRight', metaKey: true });
+    expect(onSkip).toHaveBeenCalledTimes(1);
   });
 
   it('single-item deck hides Prev/Skip (nothing to cycle to)', () => {

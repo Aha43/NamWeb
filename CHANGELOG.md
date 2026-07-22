@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Inbox processing deck: the ←/→ arrow keys now work regardless of where focus sits.** They were
+  wired to the dialog itself, so on browsers/settings that don't keyboard-focus a button when a
+  dialog opens (e.g. Safari with macOS "Full Keyboard Access" off) the keystroke landed on the page
+  body and did nothing. They now listen at the window level, like the Focus deck. Closes #882.
+
 ## [2.1.0] - 2026-07-22
 
 **Templates grow into real starting points, plus a sweep of dogfooding polish.** Saving a project as
