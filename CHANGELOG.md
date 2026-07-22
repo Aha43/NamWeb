@@ -36,8 +36,8 @@ minor = features (breaking changes allowed), patch = fixes.
   so you can see it roll over past the ends. Closes #866.
 - **Project templates now capture the whole project, not just titles.** Saving a project as a
   template preserves each item's tags, due dates/times, resources, descriptions, and prerequisites;
-  applying it reproduces them (with fresh ids and prerequisites remapped to the new copies), so a
-  template is a real starting point. Every action lands as a **Next** action — a created project is a
+  applying it reproduces them (with fresh ids, and prerequisites plus in-project action-links
+  remapped to the new copies), so a template is a real starting point. Every action lands as a **Next** action — a created project is a
   draft to review, and nothing is ever reproduced as "done" when it isn't. Existing title-only
   templates still apply. Closes #863.
 

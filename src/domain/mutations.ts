@@ -9,6 +9,7 @@ import { IN_PROGRESS_TAG, SYSTEM_TAGS, canonicalTag, isSystemTag } from './syste
 import { canAddPrerequisite, subtreeIds } from './lenses';
 import { formatCount, parseCount } from './resourceCount';
 import { formatQuestion, parseQuestion } from './resourceQuestion';
+import { makeActionLink, parseActionLink } from './actionLinks';
 
 export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; atTop?: boolean; now: string }
@@ -252,7 +253,14 @@ export function cloneTemplateNodes(nodes: TemplateNode[], newId: () => string): 
     dueEndTime: n.dueEndTime,
     deriveDue: n.deriveDue,
     blockedBy: n.blockedBy?.map((b) => oldToNew.get(b)).filter((x): x is string => Boolean(x)),
-    resources: n.resources,
+    // Remap intra-template action-links to the cloned target (#876) — the same self-containment
+    // guarantee blockedBy gets, since a `nam://action/<id>` link is just an id ref inside a URI
+    // resource. Links to targets OUTSIDE the template point elsewhere legitimately, so keep them.
+    resources: n.resources?.map((r) => {
+      const target = parseActionLink(r);
+      const mapped = target ? oldToNew.get(target) : undefined;
+      return mapped ? { ...makeActionLink(mapped), description: r.description } : r;
+    }),
     children: n.children.map(build),
   });
   return nodes.map(build);
