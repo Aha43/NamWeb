@@ -549,6 +549,36 @@ describe('applyIntent', () => {
     });
   });
 
+  it('applyTemplate remaps an intra-template action-link, but keeps a link to an outside target (#876)', () => {
+    const doc = workspace([
+      node('p', { project: true, childIds: ['x', 'y'] }),
+      node('x', { title: 'Design' }),
+      // 'y' links to sibling 'x' (in the template) AND to 'out' (outside it).
+      node('y', {
+        title: 'Build',
+        resources: [
+          { type: 'URI', value: 'nam://action/x', description: null },
+          { type: 'URI', value: 'nam://action/out', description: null },
+        ],
+      }),
+      node('out', { title: 'Elsewhere' }),
+    ]);
+    doc.nodes['projects'].childIds.push('p');
+    doc.nodes['actions'].childIds.push('out');
+    const saved = applyIntent(doc, { type: 'saveAsTemplate', name: 'Plan', nodeId: 'p' });
+    const ids = ['nx', 'ny'];
+    let i = 0;
+    const nodes = cloneTemplateNodes(saved.templates[0].children, () => ids[i++]);
+    const target = workspace([node('q', { project: true })]);
+    target.nodes['projects'].childIds.push('q');
+    const next = applyIntent(target, { type: 'applyTemplate', parentId: 'q', nodes, now: NOW });
+    // The in-template link now points at the CLONED 'x' (nx), not the source 'x'; the outside link is untouched.
+    expect(next.nodes['ny'].resources).toEqual([
+      { type: 'URI', value: 'nam://action/nx', description: null },
+      { type: 'URI', value: 'nam://action/out', description: null },
+    ]);
+  });
+
   it('applyTemplate still applies a legacy structure-only template (defaults, no crash)', () => {
     const doc = workspace([node('p', { project: true })]);
     doc.nodes['projects'].childIds.push('p');
