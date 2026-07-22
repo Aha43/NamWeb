@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-07-22
+
+**Hotfix for the inbox deck's arrow keys.** The one-at-a-time processing deck's ←/→ cycling (new in
+2.1.0) silently did nothing on browsers/settings that don't keyboard-focus a button when a dialog
+opens — notably Safari with macOS "Full Keyboard Access" off — because the handler was scoped to the
+dialog. It now listens at the window level, like the Focus deck, so the arrows work regardless of
+where focus sits.
+
 ### Fixed
 
 - **Inbox processing deck: the ←/→ arrow keys now work regardless of where focus sits.** They were
@@ -1798,7 +1806,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/Aha43/NamWeb/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Aha43/NamWeb/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Aha43/NamWeb/compare/v1.12.1...v2.0.0
 [1.12.1]: https://github.com/Aha43/NamWeb/compare/v1.12.0...v1.12.1
