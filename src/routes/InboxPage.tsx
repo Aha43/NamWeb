@@ -131,6 +131,11 @@ export function InboxPage() {
     setPos((p) => (p + 1) % queue.length);
   }
 
+  function prev() {
+    if (!queue || queue.length === 0) return;
+    setPos((p) => (p - 1 + queue.length) % queue.length);
+  }
+
   // If the current deck item vanishes underneath us (deleted or processed on another surface),
   // drop it from the queue rather than leaving the deck stranded on a missing card.
   useEffect(() => {
@@ -199,11 +204,13 @@ export function InboxPage() {
           {...(inDeck
             ? {
                 remaining: queue.length,
+                position: pos + 1,
                 onDelete: () => {
                   dispatch({ type: 'deleteLeaf', id: current.id });
                   dropFromQueue(current.id);
                 },
                 onSkip: skip,
+                onPrev: prev,
               }
             : {})}
         />

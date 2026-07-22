@@ -17,6 +17,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **The inbox processing deck now cycles from the keyboard, and shows where you are.** In the
+  one-at-a-time "Process inbox" deck, **←/→** step to the previous/next item (matching the on-screen
+  **← Prev** / **Skip →** buttons), and the dialog now reads **"2 of 3"** instead of just "3 left" —
+  so you can see it roll over past the ends. Closes #866.
 - **Project templates now capture the whole project, not just titles.** Saving a project as a
   template preserves each item's tags, due dates/times, resources, descriptions, and prerequisites;
   applying it reproduces them (with fresh ids and prerequisites remapped to the new copies), so a

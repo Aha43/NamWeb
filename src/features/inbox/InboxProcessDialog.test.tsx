@@ -61,10 +61,11 @@ describe('InboxProcessDialog', () => {
     expect(screen.queryByRole('combobox', { name: 'File under' })).not.toBeInTheDocument();
   });
 
-  it('deck mode shows remaining + Delete/Skip and does not self-close on resolve', () => {
+  it('deck mode shows the "X of N" position + Delete/Prev/Skip and does not self-close on resolve', () => {
     const onOpenChange = vi.fn();
     const onDelete = vi.fn();
     const onSkip = vi.fn();
+    const onPrev = vi.fn();
     const onResolve = vi.fn();
     render(
       <InboxProcessDialog
@@ -74,12 +75,16 @@ describe('InboxProcessDialog', () => {
         onResolve={onResolve}
         onDelete={onDelete}
         onSkip={onSkip}
+        onPrev={onPrev}
         remaining={3}
+        position={2}
       />,
     );
-    expect(screen.getByText(/3 left/)).toBeInTheDocument();
+    expect(screen.getByText(/2 of 3/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Skip →' }));
     expect(onSkip).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: '← Prev' }));
+    expect(onPrev).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalled();
     // Resolving in deck mode advances via the parent — it must NOT close the dialog itself.
@@ -87,5 +92,46 @@ describe('InboxProcessDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
     expect(onResolve).toHaveBeenCalledWith({ kind: 'project', parentId: undefined });
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
+  });
+
+  it('deck mode cycles the item with the ←/→ arrow keys (roll-over visible via "X of N")', () => {
+    const onSkip = vi.fn();
+    const onPrev = vi.fn();
+    render(
+      <InboxProcessDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onResolve={vi.fn()}
+        onDelete={vi.fn()}
+        onSkip={onSkip}
+        onPrev={onPrev}
+        remaining={3}
+        position={1}
+      />,
+    );
+    const dialog = screen.getByRole('dialog');
+    fireEvent.keyDown(dialog, { key: 'ArrowRight' });
+    expect(onSkip).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(dialog, { key: 'ArrowLeft' });
+    expect(onPrev).toHaveBeenCalledTimes(1);
+  });
+
+  it('single-item deck hides Prev/Skip (nothing to cycle to)', () => {
+    render(
+      <InboxProcessDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onResolve={vi.fn()}
+        onDelete={vi.fn()}
+        onSkip={vi.fn()}
+        onPrev={vi.fn()}
+        remaining={1}
+        position={1}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'Skip →' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '← Prev' })).not.toBeInTheDocument();
   });
 });

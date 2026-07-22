@@ -39,7 +39,9 @@ export function InboxProcessDialog({
   onCreateProject,
   onDelete,
   onSkip,
+  onPrev,
   remaining,
+  position,
 }: {
   node: NamNode;
   open: boolean;
@@ -52,10 +54,14 @@ export function InboxProcessDialog({
   onCreateProject?: (parentId: string | null, title: string) => string;
   /** Deck mode (process-all): delete the current item and advance. */
   onDelete?: () => void;
-  /** Deck mode: leave the item in the inbox and advance to the next. */
+  /** Deck mode: leave the item in the inbox and advance to the next (→ / ArrowRight). */
   onSkip?: () => void;
+  /** Deck mode: step back to the previous item (← / ArrowLeft). */
+  onPrev?: () => void;
   /** Deck mode: how many items are left (incl. the current one). */
   remaining?: number;
+  /** Deck mode: 1-based position of the current item within the remaining set (for "X of N"). */
+  position?: number;
 }) {
   const { t } = useTranslation();
   const [step, setStep] = useState<'kind' | 'action' | 'project'>('kind');
@@ -74,6 +80,18 @@ export function InboxProcessDialog({
   function back() {
     setTargetId('');
     setStep('kind');
+  }
+
+  // Deck-only keyboard cycling (#866): ←/→ roll to the previous/next item so working the deck
+  // stays on the keyboard. Skip typing targets (the phone native select, any input) so those keep
+  // their own arrow behavior; the desktop project picker portals to its own dialog, out of here.
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (!deck || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+    const el = e.target as HTMLElement;
+    if (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable) return;
+    e.preventDefault();
+    if (e.key === 'ArrowRight') onSkip?.();
+    else onPrev?.();
   }
 
   const picker = (defaultLabel: string, fieldLabel: string) => {
@@ -137,12 +155,14 @@ export function InboxProcessDialog({
         onOpenChange(next);
       }}
     >
-      <DialogContent>
+      <DialogContent onKeyDown={onKeyDown}>
         <DialogHeader>
           <DialogTitle>{deck ? t('inbox.processDeckTitle') : t('inbox.processItemTitle')}</DialogTitle>
           <DialogDescription className="truncate">
             {node.title}
-            {deck && remaining ? ` · ${t('inbox.remainingLeft', { count: remaining })}` : ''}
+            {deck && remaining && position
+              ? ` · ${t('inbox.deckPosition', { position, total: remaining })}`
+              : ''}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,9 +179,18 @@ export function InboxProcessDialog({
                 <Button variant="ghost" size="sm" className="flex-1 text-destructive" onClick={onDelete}>
                   {t('common.delete')}
                 </Button>
-                <Button variant="ghost" size="sm" className="flex-1" onClick={onSkip}>
-                  {t('inbox.skip')} →
-                </Button>
+                {/* ←/→ mirror these; both roll (wrap past the ends), and the "X of N" above shows
+                    where you are so the wrap is visible (#866). */}
+                {remaining && remaining > 1 && (
+                  <>
+                    <Button variant="ghost" size="sm" className="flex-1" onClick={onPrev}>
+                      ← {t('inbox.prev')}
+                    </Button>
+                    <Button variant="ghost" size="sm" className="flex-1" onClick={onSkip}>
+                      {t('inbox.skip')} →
+                    </Button>
+                  </>
+                )}
               </div>
             )}
           </div>
