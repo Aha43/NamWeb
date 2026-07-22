@@ -17,6 +17,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **The NAM logo moved to the top toolbar.** It used to sit at the top of the sidebar and eat a
+  full row; it now lives at the left edge of the toolbar, so the sidebar starts with your views. The
+  version and build are still one hover away on the logo. Closes #870.
 - **Project templates now capture the whole project, not just titles.** Saving a project as a
   template preserves each item's tags, due dates/times, resources, descriptions, and prerequisites;
   applying it reproduces them (with fresh ids and prerequisites remapped to the new copies), so a
