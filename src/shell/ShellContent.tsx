@@ -1,11 +1,15 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { SURFACES } from './nav';
 import { useWorkspaceContext } from '@/store/workspace-context';
 
 /** Global workspace states (loading / error / no-remote) or the routed surface. */
 export function ShellContent() {
   const ws = useWorkspaceContext();
+  const { t } = useTranslation();
+  const { pathname } = useLocation();
 
   if (ws.loading) return <Centered>Loading…</Centered>;
   if (ws.error) {
@@ -38,7 +42,23 @@ export function ShellContent() {
       </Centered>
     );
   }
-  return <Outlet />;
+  // A subtle "you are here" label (#869): the list surfaces look alike and you often land on one as a
+  // side-effect of navigation. Matched by EXACT path, so a specific project (`/projects/:id`, which
+  // shows its own title) and non-surface routes (account/help) stay unlabelled; Focus is outside the
+  // shell entirely.
+  const surface = SURFACES.find((s) => s.to === pathname);
+  const Icon = surface?.icon;
+  return (
+    <>
+      {surface && Icon && (
+        <div className="mb-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <Icon className="h-3.5 w-3.5" aria-hidden />
+          {t(surface.label)}
+        </div>
+      )}
+      <Outlet />
+    </>
+  );
 }
 
 function Centered({ children }: { children: ReactNode }) {

@@ -10,6 +10,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- A subtle **current-view label** above each list surface (Inbox, Next, Projects, …) — the lists look
+  alike and you often land on one as a side-effect of navigating, so a quiet "you are here" helps.
+  Closes #869.
 - **Create a project from a template.** The Templates page now has a **Create project** button on
   each template — it spins up a new top-level project from the template and drops you into it. (Until
   now templates could only be saved and deleted, or merged into an already-open project via a buried
