@@ -8,6 +8,17 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-07-22
+
+**Templates grow into real starting points, plus a sweep of dogfooding polish.** Saving a project as
+a template now captures the whole thing — tags, due dates/times, resources, descriptions,
+prerequisites, and internal action-links, all reproduced with fresh ids on a new project — and a
+one-click **Create project** spins a fresh draft from it (every action landing as Next, a draft to
+review). Around that, a batch of tweaks from dogfooding: the calendar can **show done** work, the
+inbox focus deck **cycles from the keyboard** with an "X of N" readout, converting an action
+**opens the new project**, the **logo moved to the toolbar**, and the look-alike list surfaces gained
+a quiet **current-view label**.
+
 ### Added
 
 - **Show done actions in the calendar.** A **Show done** toggle in the calendar header (and in a
@@ -1780,7 +1791,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/Aha43/NamWeb/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/Aha43/NamWeb/compare/v1.12.1...v2.0.0
 [1.12.1]: https://github.com/Aha43/NamWeb/compare/v1.12.0...v1.12.1
 [1.12.0]: https://github.com/Aha43/NamWeb/compare/v1.11.0...v1.12.0
