@@ -273,7 +273,10 @@ function toTemplateNodes(doc: WorkspaceDocument, parentId: string, captured: Set
     .map((n) => {
       const t: TemplateNode = { id: n.id, title: n.title, project: n.project, children: toTemplateNodes(doc, n.id, captured) };
       if (n.description) t.description = n.description;
-      if (n.status !== 'BACKLOG') t.status = n.status;
+      // A template instance is a DRAFT to review (#864): every ACTION is captured as NEXT — so a
+      // created project surfaces all its work in Next (encouraging a real review), and no action is
+      // ever stored/reproduced as DONE when it isn't. Projects (containers) keep the default.
+      if (!n.project) t.status = 'NEXT';
       if (n.tags.length) t.tags = n.tags;
       if (n.dueAt) t.dueAt = n.dueAt;
       if (n.dueEndAt) t.dueEndAt = n.dueEndAt;

@@ -494,17 +494,32 @@ describe('applyIntent', () => {
     ]);
     doc.nodes['projects'].childIds.push('p');
     const saved = applyIntent(doc, { type: 'saveAsTemplate', name: 'Reno', nodeId: 'p' });
-    // Rich fields captured; defaults (BACKLOG status, empty tags/resources, no due) omitted for leanness.
+    // Rich fields captured; actions become NEXT (draft-to-review, #864); projects keep the default;
+    // empty tags/resources / no due omitted for leanness.
     expect(saved.templates).toEqual([
       {
         name: 'Reno',
         children: [
-          { id: 's', title: 'Plumbing', project: true, children: [{ id: 'b', title: 'Fit pipe', project: false, children: [] }] },
+          { id: 's', title: 'Plumbing', project: true, children: [{ id: 'b', title: 'Fit pipe', project: false, status: 'NEXT', children: [] }] },
           { id: 'a', title: 'Measure', project: false, status: 'NEXT', tags: ['home'], dueAt: '2027-01-05', resources: [{ type: 'COUNT', value: '0/3', description: 'coats' }], children: [] },
         ],
       },
     ]);
     expect(applyIntent(saved, { type: 'deleteTemplate', name: 'Reno' }).templates).toEqual([]);
+  });
+
+  it('captures every action as NEXT so a template instance is a draft to review (#864)', () => {
+    const doc = workspace([
+      node('p', { project: true, childIds: ['done', 'back', 'sub'] }),
+      node('done', { title: 'Done thing', status: 'DONE' }),
+      node('back', { title: 'Later thing', status: 'BACKLOG' }),
+      node('sub', { project: true, title: 'Sub', status: 'ARCHIVED' }),
+    ]);
+    doc.nodes['projects'].childIds.push('p');
+    const kids = applyIntent(doc, { type: 'saveAsTemplate', name: 'T', nodeId: 'p' }).templates[0].children;
+    expect(kids.find((k) => k.title === 'Done thing')!.status).toBe('NEXT'); // DONE → NEXT: no bogus "done"
+    expect(kids.find((k) => k.title === 'Later thing')!.status).toBe('NEXT'); // BACKLOG → NEXT: surfaced for review
+    expect(kids.find((k) => k.title === 'Sub')!.status).toBeUndefined(); // a project keeps the default
   });
 
   it('applyTemplate reproduces the full node and remaps intra-template blockers (#863)', () => {
@@ -526,6 +541,7 @@ describe('applyIntent', () => {
     expect(next.nodes['nx']).toMatchObject({ title: 'Design', status: 'NEXT', createdAt: NOW });
     expect(next.nodes['ny']).toMatchObject({
       title: 'Build',
+      status: 'NEXT', // the source 'Build' was BACKLOG; a template action lands as NEXT (#864)
       tags: ['t'],
       dueAt: '2027-02-02',
       resources: [{ type: 'URI', value: 'https://spec', description: null }],
