@@ -56,6 +56,7 @@ describe('TemplatesPage — create a project from a template (#864)', () => {
       expect.objectContaining({
         type: 'seedProject',
         parentId: 'projects',
+        atTop: true,
         nodes: [
           expect.objectContaining({
             id: 'id1',

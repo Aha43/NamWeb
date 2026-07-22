@@ -22,6 +22,7 @@ export function TemplatesPage() {
           type: 'seedProject',
           parentId: document.projectsNodeId,
           nodes: [{ id: projectId, title: name, project: true, children: cloneTemplateNodes(template.children, newId) }],
+          atTop: true, // land it first in the Projects list so it's found without scrolling (#864)
           now: nowIso(),
         });
         navigate(`/projects/${projectId}`);

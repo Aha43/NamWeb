@@ -337,6 +337,14 @@ describe('applyIntent', () => {
     expect(applyIntent(doc, { type: 'seedProject', parentId: 'ghost', now: NOW, nodes: [{ id: 'x', title: 'X' }] }).nodes['x']).toBeUndefined();
   });
 
+  it('seedProject atTop floats the seeded roots to the FRONT of the parent (#864)', () => {
+    const doc = workspace([node('projects', { project: false, childIds: ['old1', 'old2'] }), node('old1'), node('old2')]);
+    const appended = applyIntent(doc, { type: 'seedProject', parentId: 'projects', now: NOW, nodes: [{ id: 'newp', title: 'New', project: true }] });
+    expect(appended.nodes['projects'].childIds).toEqual(['old1', 'old2', 'newp']); // default: appended last
+    const fronted = applyIntent(doc, { type: 'seedProject', parentId: 'projects', atTop: true, now: NOW, nodes: [{ id: 'newp', title: 'New', project: true }] });
+    expect(fronted.nodes['projects'].childIds).toEqual(['newp', 'old1', 'old2']); // atTop: first, no scrolling
+  });
+
   it('groupIntoSubProject creates a sub-project and moves the selected actions into it', () => {
     const doc = workspace([
       node('p', { project: true, childIds: ['a', 'b', 'c'] }),

@@ -65,7 +65,7 @@ export type Intent =
   | { type: 'saveAsTemplate'; name: string; nodeId: string }
   | { type: 'deleteTemplate'; name: string }
   | { type: 'applyTemplate'; parentId: string; nodes: SeedNode[]; now: string }
-  | { type: 'seedProject'; parentId: string; nodes: SeedNode[]; now: string }
+  | { type: 'seedProject'; parentId: string; nodes: SeedNode[]; atTop?: boolean; now: string }
   | { type: 'groupIntoSubProject'; parentId: string; subProjectId: string; title: string; actionIds: string[]; now: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string }
@@ -772,6 +772,14 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     case 'seedProject': {
       if (!next.nodes[intent.parentId]) return next;
       insertSeed(next, intent.parentId, intent.nodes, intent.now);
+      // atTop (#864): float the seeded top-level nodes to the FRONT of the parent (preserving their
+      // order), so a project created from a template lands first and needs no scrolling to find.
+      // insertSeed itself always appends; this only reorders this level. Import omits atTop → appends.
+      if (intent.atTop) {
+        const parent = next.nodes[intent.parentId];
+        const seeded = new Set(intent.nodes.map((n) => n.id));
+        if (parent) parent.childIds = [...intent.nodes.map((n) => n.id), ...parent.childIds.filter((id) => !seeded.has(id))];
+      }
       return next;
     }
     case 'groupIntoSubProject': {
