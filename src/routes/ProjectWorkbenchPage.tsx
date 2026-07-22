@@ -3,10 +3,8 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { actionMoveTargets, actionMoveTargetsAll, allTags, buildParentIndex, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
 import { effectiveDue } from '@/domain/derivedDue';
 import { newId, nowIso } from '@/lib/local';
-import { normalizeTags } from '@/domain/mutations';
+import { cloneTemplateNodes, normalizeTags } from '@/domain/mutations';
 import type { NamNode } from '@/domain/types';
-import type { ClonedTemplateNode } from '@/domain/mutations';
-import type { TemplateNode } from '@/domain/types';
 import type { ActionEdits } from '@/features/actions/ActionDialog';
 import type { DueFields } from '@/features/actions/DueFieldset';
 import { toActionRow, type ActionRowData } from '@/features/actions/rows';
@@ -31,11 +29,6 @@ import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useSetStatus, useSetStatuses } from '@/features/actions/useSetStatus';
 import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
-
-/** Resolve a template subtree to concrete nodes (fresh ids) for applyTemplate. */
-function cloneTemplateNodes(nodes: TemplateNode[]): ClonedTemplateNode[] {
-  return nodes.map((n) => ({ id: newId(), title: n.title, project: n.project, children: cloneTemplateNodes(n.children) }));
-}
 
 export function ProjectWorkbenchPage() {
   const { id = '' } = useParams();
@@ -312,7 +305,7 @@ export function ProjectWorkbenchPage() {
       onApplyTemplate={(name) => {
         const template = document.templates.find((t) => t.name === name);
         if (template) {
-          dispatch({ type: 'applyTemplate', parentId: id, nodes: cloneTemplateNodes(template.children), now: nowIso() });
+          dispatch({ type: 'applyTemplate', parentId: id, nodes: cloneTemplateNodes(template.children, newId), now: nowIso() });
           // Reveal the cloned-in structure rather than dropping it into collapsed sections (#279).
           ensureSectionExpanded('actions');
           ensureSectionExpanded('subprojects');

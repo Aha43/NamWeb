@@ -64,7 +64,7 @@ export type Intent =
   | { type: 'reorderChildren'; parentId: string; order: string[] }
   | { type: 'saveAsTemplate'; name: string; nodeId: string }
   | { type: 'deleteTemplate'; name: string }
-  | { type: 'applyTemplate'; parentId: string; nodes: ClonedTemplateNode[]; now: string }
+  | { type: 'applyTemplate'; parentId: string; nodes: SeedNode[]; now: string }
   | { type: 'seedProject'; parentId: string; nodes: SeedNode[]; now: string }
   | { type: 'groupIntoSubProject'; parentId: string; subProjectId: string; title: string; actionIds: string[]; now: string }
   | { type: 'deleteRecursive'; id: string }
@@ -173,17 +173,6 @@ function parentOf(doc: WorkspaceDocument, id: string): string | undefined {
 }
 
 /**
- * A template subtree resolved to concrete node ids, built in the UI (one `newId`
- * per template node) so `applyTemplate` stays pure and replayable.
- */
-export interface ClonedTemplateNode {
-  id: string;
-  title: string;
-  project: boolean;
-  children: ClonedTemplateNode[];
-}
-
-/**
  * A fully-resolved node subtree to seed (ids/dates pre-generated in the caller so `seedProject`
  * stays pure and replayable). Unlike a template it carries rich fields — status, tags, due, blockers
  * (by id, within the seed), resources, descriptions — so a seeded project can light up every view.
@@ -231,28 +220,71 @@ function insertSeed(doc: WorkspaceDocument, parentId: string, nodes: SeedNode[],
   }
 }
 
-/** Insert cloned template nodes (with their pre-assigned ids) under `parentId`. */
-function insertClones(
-  doc: WorkspaceDocument,
-  parentId: string,
-  clones: ClonedTemplateNode[],
-  now: string,
-): void {
-  for (const clone of clones) {
-    doc.nodes[clone.id] = { ...newNode(clone.id, clone.title, now), project: clone.project };
-    doc.nodes[parentId]?.childIds.push(clone.id);
-    insertClones(doc, clone.id, clone.children, now);
-  }
+/**
+ * Resolve a template subtree to concrete SeedNodes with FRESH ids (#863) — for `applyTemplate`, which
+ * reuses `insertSeed`, so a template reproduces the full project. Pure: `newId` is injected (one per
+ * node) so the result is replay-stable. Intra-template `blockedBy` refs are remapped from the captured
+ * ids to the new ids in a second pass (a blocker may reference a node later in the tree); refs that
+ * don't map (external / legacy) are dropped.
+ */
+export function cloneTemplateNodes(nodes: TemplateNode[], newId: () => string): SeedNode[] {
+  const assigned = new Map<TemplateNode, string>();
+  const oldToNew = new Map<string, string>();
+  const assign = (ns: TemplateNode[]): void => {
+    for (const n of ns) {
+      const id = newId();
+      assigned.set(n, id);
+      if (n.id) oldToNew.set(n.id, id);
+      assign(n.children);
+    }
+  };
+  assign(nodes);
+  const build = (n: TemplateNode): SeedNode => ({
+    id: assigned.get(n)!,
+    title: n.title,
+    project: n.project,
+    description: n.description,
+    status: n.status,
+    tags: n.tags,
+    dueAt: n.dueAt,
+    dueEndAt: n.dueEndAt,
+    dueTime: n.dueTime,
+    dueEndTime: n.dueEndTime,
+    deriveDue: n.deriveDue,
+    blockedBy: n.blockedBy?.map((b) => oldToNew.get(b)).filter((x): x is string => Boolean(x)),
+    resources: n.resources,
+    children: n.children.map(build),
+  });
+  return nodes.map(build);
 }
 
-/** Capture a node's children (recursively) as a template subtree. */
-function toTemplateNodes(doc: WorkspaceDocument, parentId: string): TemplateNode[] {
+/**
+ * Capture a node's children (recursively) as a template subtree (#863) — the full node, not just the
+ * title: status, tags, due, derive, resources, description, and intra-subtree prerequisites. Fields
+ * are omitted when default so a template stays lean and a legacy structure-only template is a subset.
+ * `captured` is the set of ids in the whole subtree, so `blockedBy` keeps only within-template refs.
+ */
+function toTemplateNodes(doc: WorkspaceDocument, parentId: string, captured: Set<string>): TemplateNode[] {
   const parent = doc.nodes[parentId];
   if (!parent) return [];
   return parent.childIds
     .map((id) => doc.nodes[id])
     .filter((n): n is NamNode => Boolean(n))
-    .map((n) => ({ title: n.title, project: n.project, children: toTemplateNodes(doc, n.id) }));
+    .map((n) => {
+      const t: TemplateNode = { id: n.id, title: n.title, project: n.project, children: toTemplateNodes(doc, n.id, captured) };
+      if (n.description) t.description = n.description;
+      if (n.status !== 'BACKLOG') t.status = n.status;
+      if (n.tags.length) t.tags = n.tags;
+      if (n.dueAt) t.dueAt = n.dueAt;
+      if (n.dueEndAt) t.dueEndAt = n.dueEndAt;
+      if (n.dueTime) t.dueTime = n.dueTime;
+      if (n.dueEndTime) t.dueEndTime = n.dueEndTime;
+      if (n.deriveDue) t.deriveDue = true;
+      const blockedBy = n.blockedBy.filter((b) => captured.has(b));
+      if (blockedBy.length) t.blockedBy = blockedBy;
+      if (n.resources.length) t.resources = n.resources;
+      return t;
+    });
 }
 
 /** The drain watermark for a resource — the highest applied guest-event id (0 if none). */
@@ -718,8 +750,12 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'saveAsTemplate': {
       if (!next.nodes[intent.nodeId]) return next;
+      // The template is the node's CHILDREN; capture the whole subtree's ids so within-template
+      // prerequisites survive (a blocker to the captured root itself drops on apply, #863).
+      const captured = subtreeIds(next, intent.nodeId);
+      captured.delete(intent.nodeId);
       next.templates = next.templates.filter((t) => t.name !== intent.name);
-      next.templates.push({ name: intent.name, children: toTemplateNodes(next, intent.nodeId) });
+      next.templates.push({ name: intent.name, children: toTemplateNodes(next, intent.nodeId, captured) });
       return next;
     }
     case 'deleteTemplate': {
@@ -728,7 +764,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'applyTemplate': {
       if (!next.nodes[intent.parentId]) return next;
-      insertClones(next, intent.parentId, intent.nodes, intent.now);
+      // #863: templates now carry rich nodes, so applying is exactly seeding (insertSeed reproduces
+      // status/tags/due/resources/description + remapped blockers).
+      insertSeed(next, intent.parentId, intent.nodes, intent.now);
       return next;
     }
     case 'seedProject': {

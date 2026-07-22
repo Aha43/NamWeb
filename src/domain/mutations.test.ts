@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { applyIntent, intentTargetExists, normalizeTags, type Intent } from './mutations';
+import { applyIntent, cloneTemplateNodes, intentTargetExists, normalizeTags, type Intent } from './mutations';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -477,41 +477,61 @@ describe('applyIntent', () => {
     expect('deriveDue' in doc.nodes['p']).toBe(false);
   });
 
-  it('templates: saveAsTemplate captures the subtree; deleteTemplate removes it', () => {
+  it('templates: saveAsTemplate captures the FULL subtree (#863); deleteTemplate removes it', () => {
     const doc = workspace([
       node('p', { project: true, title: 'Reno', childIds: ['s', 'a'] }),
       node('s', { project: true, title: 'Plumbing', childIds: ['b'] }),
-      node('a', { title: 'Measure' }),
+      node('a', { title: 'Measure', status: 'NEXT', tags: ['home'], dueAt: '2027-01-05', resources: [{ type: 'COUNT', value: '0/3', description: 'coats' }] }),
       node('b', { title: 'Fit pipe' }),
     ]);
     doc.nodes['projects'].childIds.push('p');
     const saved = applyIntent(doc, { type: 'saveAsTemplate', name: 'Reno', nodeId: 'p' });
+    // Rich fields captured; defaults (BACKLOG status, empty tags/resources, no due) omitted for leanness.
     expect(saved.templates).toEqual([
       {
         name: 'Reno',
         children: [
-          { title: 'Plumbing', project: true, children: [{ title: 'Fit pipe', project: false, children: [] }] },
-          { title: 'Measure', project: false, children: [] },
+          { id: 's', title: 'Plumbing', project: true, children: [{ id: 'b', title: 'Fit pipe', project: false, children: [] }] },
+          { id: 'a', title: 'Measure', project: false, status: 'NEXT', tags: ['home'], dueAt: '2027-01-05', resources: [{ type: 'COUNT', value: '0/3', description: 'coats' }], children: [] },
         ],
       },
     ]);
     expect(applyIntent(saved, { type: 'deleteTemplate', name: 'Reno' }).templates).toEqual([]);
   });
 
-  it('applyTemplate clones the provided subtree (with given ids) under the parent', () => {
+  it('applyTemplate reproduces the full node and remaps intra-template blockers (#863)', () => {
+    const doc = workspace([
+      node('p', { project: true, childIds: ['x', 'y'] }),
+      node('x', { title: 'Design', status: 'NEXT' }),
+      node('y', { title: 'Build', tags: ['t'], dueAt: '2027-02-02', resources: [{ type: 'URI', value: 'https://spec', description: null }], blockedBy: ['x'] }),
+    ]);
+    doc.nodes['projects'].childIds.push('p');
+    const saved = applyIntent(doc, { type: 'saveAsTemplate', name: 'Plan', nodeId: 'p' });
+    // Clone with deterministic fresh ids, then apply under a different fresh project.
+    const ids = ['nx', 'ny'];
+    let i = 0;
+    const nodes = cloneTemplateNodes(saved.templates[0].children, () => ids[i++]);
+    const target = workspace([node('q', { project: true })]);
+    target.nodes['projects'].childIds.push('q');
+    const next = applyIntent(target, { type: 'applyTemplate', parentId: 'q', nodes, now: NOW });
+    expect(next.nodes['q'].childIds).toEqual(['nx', 'ny']);
+    expect(next.nodes['nx']).toMatchObject({ title: 'Design', status: 'NEXT', createdAt: NOW });
+    expect(next.nodes['ny']).toMatchObject({
+      title: 'Build',
+      tags: ['t'],
+      dueAt: '2027-02-02',
+      resources: [{ type: 'URI', value: 'https://spec', description: null }],
+      blockedBy: ['nx'], // remapped from the captured 'x' to the fresh clone id
+    });
+  });
+
+  it('applyTemplate still applies a legacy structure-only template (defaults, no crash)', () => {
     const doc = workspace([node('p', { project: true })]);
     doc.nodes['projects'].childIds.push('p');
-    const next = applyIntent(doc, {
-      type: 'applyTemplate',
-      parentId: 'p',
-      now: NOW,
-      nodes: [
-        { id: 's1', title: 'Plumbing', project: true, children: [{ id: 'a1', title: 'Fit pipe', project: false, children: [] }] },
-      ],
-    });
-    expect(next.nodes['p'].childIds).toEqual(['s1']);
-    expect(next.nodes['s1']).toMatchObject({ title: 'Plumbing', project: true, childIds: ['a1'], createdAt: NOW });
-    expect(next.nodes['a1']).toMatchObject({ title: 'Fit pipe', project: false });
+    const nodes = cloneTemplateNodes([{ title: 'Old', project: false, children: [] }], () => 'leg');
+    const next = applyIntent(doc, { type: 'applyTemplate', parentId: 'p', nodes, now: NOW });
+    expect(next.nodes['p'].childIds).toEqual(['leg']);
+    expect(next.nodes['leg']).toMatchObject({ title: 'Old', status: 'BACKLOG', tags: [], resources: [], blockedBy: [] });
   });
 
   it('no-ops when a status/delete/edit target is missing (replay safety)', () => {

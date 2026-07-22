@@ -114,6 +114,27 @@ export interface TemplateNode {
   title: string;
   project: boolean;
   children: TemplateNode[];
+  /**
+   * Rich fields captured with the node (#863) so a template reproduces the real project — status,
+   * tags, due dates/times, derive-from-contents, resources, description, and prerequisites — not just
+   * titles. All ADDITIVE and absent-means-default: legacy structure-only templates (just
+   * title/project/children) still apply, gaining defaults. NamDesktop-contract-relevant (the
+   * `templates` field rides the workspace doc); additive-only.
+   */
+  /** Captured node id — kept only so intra-template `blockedBy` refs resolve on apply (remapped to
+   *  fresh ids). Absent on legacy templates (no blockers to resolve). */
+  id?: string;
+  description?: string | null;
+  status?: NodeStatus;
+  tags?: string[];
+  dueAt?: string | null;
+  dueEndAt?: string | null;
+  dueTime?: string | null;
+  dueEndTime?: string | null;
+  deriveDue?: boolean;
+  /** Prerequisite refs — template-node ids WITHIN this template (external blockers dropped at capture). */
+  blockedBy?: string[];
+  resources?: Resource[];
 }
 
 export interface ProjectTemplate {
