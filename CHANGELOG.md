@@ -15,6 +15,9 @@ minor = features (breaking changes allowed), patch = fixes.
   off by default, so the calendar stays focused on open work. Past days that carry only done work
   never turn red. The choice rides in the URL (`?done=1`), so back/forward and bookmarks remember
   it. Closes #868.
+- A subtle **current-view label** above each list surface (Inbox, Next, Projects, …) — the lists look
+  alike and you often land on one as a side-effect of navigating, so a quiet "you are here" helps.
+  Closes #869.
 - **Create a project from a template.** The Templates page now has a **Create project** button on
   each template — it spins up a new top-level project from the template and drops you into it. (Until
   now templates could only be saved and deleted, or merged into an already-open project via a buried
@@ -22,6 +25,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- Converting an action into a project now **opens that project** right away, instead of leaving you
+  in the list to hunt for where the new project landed. Closes #867.
 - **Project templates now capture the whole project, not just titles.** Saving a project as a
   template preserves each item's tags, due dates/times, resources, descriptions, and prerequisites;
   applying it reproduces them (with fresh ids and prerequisites remapped to the new copies), so a

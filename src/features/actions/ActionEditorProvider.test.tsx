@@ -6,6 +6,12 @@ import type { NamNode, WorkspaceDocument } from '@/domain/types';
 import { ActionEditorProvider } from './ActionEditorProvider';
 import { useActionEditor } from './action-editor-context';
 
+const navigate = vi.fn();
+vi.mock('react-router-dom', async (orig) => ({
+  ...(await orig<typeof import('react-router-dom')>()),
+  useNavigate: () => navigate,
+}));
+
 function node(id: string, p: Partial<NamNode> = {}): NamNode {
   return {
     id, title: id, description: null, status: 'BACKLOG', project: false,
@@ -67,5 +73,23 @@ describe('ActionEditorProvider', () => {
     // The same id comes back (undo, conflict replay) — the dialog must NOT pop back open.
     rerenderWith(doc({ a: node('a', { title: 'Buy milk' }) }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('converting an action into a project opens the new project (#867)', () => {
+    navigate.mockClear();
+    const dispatch = vi.fn();
+    render(
+      <WorkspaceContext.Provider value={{ document: doc({ a: node('a', { title: 'Plan trip' }) }), dispatch } as unknown as UseWorkspace}>
+        <ActionEditorProvider>
+          <OpenButton id="a" />
+        </ActionEditorProvider>
+      </WorkspaceContext.Provider>,
+    );
+    fireEvent.click(screen.getByText('open a'));
+    fireEvent.click(screen.getByRole('button', { name: 'Move / make project' })); // expand the section
+    fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
+    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: 'convertActionToProject', id: 'a' }));
+    expect(navigate).toHaveBeenCalledWith('/projects/a');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); // editor closed
   });
 });
