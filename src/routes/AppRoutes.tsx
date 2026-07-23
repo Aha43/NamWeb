@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { useGlobalShortcuts } from '@/shell/useGlobalShortcuts';
 import { ShellLayout } from './ShellLayout';
 import { InboxPage } from './InboxPage';
+import { LooseEndsPage } from './LooseEndsPage';
 import { NextActionsPage } from './NextActionsPage';
 import { BacklogPage } from './BacklogPage';
 import { ProjectsPage } from './ProjectsPage';
@@ -45,6 +46,7 @@ export function AppRoutes() {
       <Route element={<ShellLayout />}>
         <Route index element={<Navigate to="/inbox" replace />} />
         <Route path="inbox" element={<InboxPage />} />
+        <Route path="loose-ends" element={<LooseEndsPage />} />
         <Route path="next" element={<NextActionsPage />} />
         <Route path="backlog" element={<BacklogPage />} />
         <Route path="projects" element={<ProjectsPage />} />

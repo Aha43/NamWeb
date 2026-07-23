@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **"Loose ends" — an always-on status overview.** A new sidebar surface showing what's quietly
+  gone sideways whenever you glance at it: **stalled projects** (open, with no next action) and
+  actions that have **gone quiet** (open, untouched for a couple of weeks), plus quick counts for
+  Inbox / Overdue / Blocked that link to their homes. No cadence, no streaks, no score — a window,
+  not a chore. The first slice of the Review feature (GTD's Reflect phase, minus the jargon).
+  Closes #906.
+
 ## [2.2.0] - 2026-07-23
 
 **A second round of dogfooding polish.** Small frictions found in daily use, smoothed over: the

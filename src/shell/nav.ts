@@ -3,6 +3,7 @@ import {
   CalendarDays,
   CheckCircle2,
   Folders,
+  Gauge,
   Inbox,
   LayoutDashboard,
   Layers,
@@ -30,6 +31,9 @@ export interface NavItem {
 
 // Labels are i18n keys; the surface names live under `domain.*` (shareable vocab), hints under `nav.*`.
 const inbox: NavItem = { to: '/inbox', label: 'domain.inbox', icon: Inbox, hint: 'nav.inboxHint' };
+// "Loose ends" (#906): the always-on status overview. selfTitled — the page has its own heading, so
+// it opts out of the shell's current-view label (#878).
+const looseEnds: NavItem = { to: '/loose-ends', label: 'domain.looseEnds', icon: Gauge, hint: 'nav.looseEndsHint', selfTitled: true };
 export const next: NavItem = { to: '/next', label: 'domain.status.next', icon: ListTodo, hint: 'nav.nextHint' };
 const backlog: NavItem = { to: '/backlog', label: 'domain.status.backlog', icon: Layers, hint: 'nav.backlogHint' };
 const due: NavItem = { to: '/due', label: 'domain.due', icon: CalendarClock, hint: 'nav.dueHint' };
@@ -49,7 +53,7 @@ export const focus: NavItem = { to: '/focus', label: 'domain.focus', icon: Targe
 /** All routable surfaces, flat — the phone bottom bar foregrounds a subset (capture + execution) and
  *  the rest live in the More sheet. */
 export const SURFACES: NavItem[] = [
-  inbox, next, backlog, due, calendar, blocked, tags, search, projects, goals, templates, shared, done, focus,
+  inbox, looseEnds, next, backlog, due, calendar, blocked, tags, search, projects, goals, templates, shared, done, focus,
 ];
 
 export interface NavGroup {
@@ -63,7 +67,7 @@ export interface NavGroup {
  *  here. The list is short enough to scan whole now, so groups keep their spacing but drop the
  *  "Views"/"Organize" headings (things are what they are); the phone More sheet keeps its own. */
 export const SIDEBAR_GROUPS: NavGroup[] = [
-  { items: [inbox] },
+  { items: [inbox, looseEnds] },
   // Calendar lives in the toolbar command bar too (#763) — one home is enough on desktop;
   // the phone More sheet keeps it (no toolbar there).
   { items: [backlog, due, blocked, done] },
