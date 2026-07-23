@@ -13,6 +13,9 @@ minor = features (breaking changes allowed), patch = fixes.
 - **The app version is now on the Account page, with a copy button.** Previously the desktop
   version was only reachable by hovering the logo; the Account/settings page now stamps it
   (`NamWeb vX.Y.Z · <build>`) with one-click copy — handy for bug reports. Closes #893.
+- **In-progress actions now stand out in amber.** In the status-colored lists (where NEXT is blue,
+  DONE green, BACKLOG grey), a row tagged `#in-progress` tints amber — a strong "I'm working this"
+  cue that overrides the status tone. Closes #896.
 
 ### Changed
 

@@ -102,6 +102,47 @@ describe('ActionRow', () => {
     expect(screen.getByText('Buy tiles').className).toContain('text-muted-foreground');
   });
 
+  it('tints an in-progress row amber, overriding the status tone (#896)', () => {
+    const { rerender } = render(
+      <ul>
+        <ActionRow row={row({ status: 'NEXT', tags: ['#in-progress'] })} actions={null} />
+      </ul>,
+    );
+    const title = screen.getByText('Buy tiles');
+    expect(title.className).toContain('text-amber-600');
+    expect(title.className).not.toContain('text-primary'); // the NEXT tone is overridden
+
+    // Case/legacy spelling from a NamDesktop-written doc still counts.
+    rerender(
+      <ul>
+        <ActionRow row={row({ status: 'BACKLOG', tags: ['In Progress'] })} actions={null} />
+      </ul>,
+    );
+    expect(screen.getByText('Buy tiles').className).toContain('text-amber-600');
+  });
+
+  it('does not amber-tint a finished (DONE) row, even if tagged in-progress (#896)', () => {
+    render(
+      <ul>
+        <ActionRow row={row({ status: 'DONE', tags: ['#in-progress'] })} actions={null} />
+      </ul>,
+    );
+    const title = screen.getByText('Buy tiles');
+    expect(title.className).toContain('text-green-600');
+    expect(title.className).not.toContain('text-amber-600');
+  });
+
+  it('does not tint in-progress when colorByStatus is off (single-status views) (#896)', () => {
+    render(
+      <ul>
+        <ActionRow row={row({ status: 'NEXT', tags: ['#in-progress'] })} actions={null} colorByStatus={false} />
+      </ul>,
+    );
+    const title = screen.getByText('Buy tiles');
+    expect(title.className).toContain('text-foreground');
+    expect(title.className).not.toContain('text-amber-600');
+  });
+
   it('leaves the title uncolored when colorByStatus is off (single-status views) (#565)', () => {
     render(
       <ul>
