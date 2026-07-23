@@ -29,9 +29,10 @@ secret URLs — guests never become users) is the road to **2.0.0**.
   (#827) resource types — NamDesktop's Java `ResourceType` enum would throw on deserialize;
   extend the enum first, same rigidity that forced #658's `nam://` links to hide inside `URI`.
   Also (#837): **system tags now use a reserved `#` sigil** (`#in-progress`, `#shared-hide`,
-  `#shared-show`, `#shared-open`) — the web writes the sigiled forms and read-aliases the one
-  legacy spelling still on live docs (`in progress` → `#in-progress`); `private` was renamed to
-  `#shared-hide` with no alias. A revival must adopt the `#` namespace for system tags.
+  `#shared-show`, `#shared-open`, and `#not-stalled` — the last marks a project as intentionally
+  next-less so "Loose ends" won't flag it, #909) — the web writes the sigiled forms and read-aliases
+  the one legacy spelling still on live docs (`in progress` → `#in-progress`); `private` was renamed
+  to `#shared-hide` with no alias. A revival must adopt the `#` namespace for system tags.
 
 ## Tech stack
 

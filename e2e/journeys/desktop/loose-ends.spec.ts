@@ -33,3 +33,23 @@ test('Loose ends surfaces stalled projects + gone-quiet actions, with reference 
   await stalled.click();
   await expect(page).toHaveURL(/\/projects\/p$/);
 });
+
+test('marking a project #not-stalled drops it off; Show acknowledged brings it back to un-mark (#909)', async ({ page }) => {
+  await page.goto('/loose-ends');
+  const stalled = page.getByRole('button', { name: 'Open Paint the shed' });
+  await expect(stalled).toBeVisible();
+
+  // "Not stalled" tags it and it leaves the default list (respected by default).
+  await page.getByRole('button', { name: 'Mark Paint the shed as not stalled' }).click();
+  await expect(stalled).toHaveCount(0);
+
+  // The review toggle now appears; turning it on reveals the acknowledged project, badged.
+  await page.getByRole('button', { name: 'Show acknowledged' }).click();
+  await expect(page).toHaveURL(/acknowledged=1/);
+  await expect(page.getByRole('button', { name: 'Open Paint the shed' })).toBeVisible();
+  await expect(page.getByText('Acknowledged', { exact: true })).toBeVisible();
+
+  // The same control un-marks it from the review view.
+  await page.getByRole('button', { name: 'Undo not stalled for Paint the shed' }).click();
+  await expect(page.getByText('Acknowledged', { exact: true })).toHaveCount(0);
+});
