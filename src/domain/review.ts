@@ -31,7 +31,11 @@ function lastTouched(n: NamNode): string | null {
  * Open, non-archived projects whose subtree contains **no open `NEXT` action** — nothing you could
  * actually pick up next. The canonical GTD "every project needs a next action" in plain terms. The
  * subtree is checked whole, so a container project whose sub-projects each have a next action is NOT
- * stalled; an empty project, or one with only backlog/done children, IS. Title-sorted.
+ * stalled; an empty project, or one with only backlog/done children, IS.
+ *
+ * Ordered by a **DFS of the project tree** (parents before children, siblings in childIds order) so
+ * the list reflects structure — a stalled sub-project sits under its parent rather than in a flat
+ * alphabetical jumble (#909 nudge); pair with the ancestor path in the UI.
  *
  * `#not-stalled`-tagged projects are excluded by default (#909) — the user has said they're
  * intentionally next-less. Pass `includeAcknowledged` to surface them too (to review/un-mark the set).
@@ -46,11 +50,24 @@ export function stalledProjects(doc: WorkspaceDocument, includeAcknowledged = fa
     }
     return false;
   };
-  return Object.values(doc.nodes)
-    .filter((n) => n.project && !structural.has(n.id) && !archived.has(n.id) && isOpen(n))
-    .filter((p) => !hasOpenNext(p.id))
-    .filter((p) => includeAcknowledged || !isNotStalled(p))
-    .sort((a, b) => a.title.localeCompare(b.title));
+  const stalled = (n: NamNode): boolean =>
+    n.project &&
+    !structural.has(n.id) &&
+    !archived.has(n.id) &&
+    isOpen(n) &&
+    !hasOpenNext(n.id) &&
+    (includeAcknowledged || !isNotStalled(n));
+  const out: NamNode[] = [];
+  const walk = (parentId: string): void => {
+    for (const id of doc.nodes[parentId]?.childIds ?? []) {
+      const n = doc.nodes[id];
+      if (!n || !n.project) continue;
+      if (stalled(n)) out.push(n);
+      walk(id); // descend regardless — a stalled sub-project can live under a healthy parent
+    }
+  };
+  walk(doc.projectsNodeId);
+  return out;
 }
 
 /**

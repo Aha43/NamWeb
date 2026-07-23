@@ -16,8 +16,9 @@ minor = features (breaking changes allowed), patch = fixes.
   Inbox / Overdue / Blocked that link to their homes. No cadence, no streaks, no score — a window,
   not a chore. A project that's intentionally next-less (a sprint/handover project whose actions are
   drafts you delete) can be marked **Not stalled** in one click to drop it off the list, with a
-  **Show acknowledged** toggle to review the set. The first slice of the Review feature (GTD's
-  Reflect phase, minus the jargon). Closes #906, #909.
+  **Show acknowledged** toggle to review the set. Stalled projects list in tree (DFS) order and
+  show their ancestor path, so nested ones read in context. The first slice of the Review feature
+  (GTD's Reflect phase, minus the jargon). Closes #906, #909, #911.
 
 ## [2.2.0] - 2026-07-23
 
