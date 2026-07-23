@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **The toolbar logo moved to the far right.** After landing on the toolbar in 2.1.0 it sat at the
+  far left and pushed the sidebar toggle inward; it now lives at the right edge, out of the toggle's
+  way. Version/build still on its hover tooltip. Closes #892.
+
 ## [2.1.2] - 2026-07-22
 
 **Hotfix, take two — the inbox deck arrows now actually cycle.** 2.1.1 moved the ←/→ handler to a
