@@ -425,6 +425,23 @@ describe('applyIntent', () => {
     expect(next.nodes['actions'].childIds).toEqual(['p', 'existing']); // first, not appended
   });
 
+  it('convertProjectToAction floats the arrival to the head of viewOrders.next — /next order, not childIds (#902)', () => {
+    // /next renders from viewOrders.next (applyViewOrder appends missing ids at the END), so the
+    // childIds unshift alone would strand the arrival at the bottom. The saved order must lead with it.
+    const doc = workspace([node('p', { project: true }), node('a', { status: 'NEXT' }), node('b', { status: 'NEXT' })]);
+    doc.nodes['projects'].childIds.push('p');
+    doc.nodes['actions'].childIds.push('a', 'b');
+    doc.viewOrders = { next: ['a', 'b'] };
+    const next = applyIntent(doc, { type: 'convertProjectToAction', id: 'p', status: 'NEXT', now: NOW });
+    expect(next.viewOrders['next']).toEqual(['p', 'a', 'b']);
+
+    // No prior order → a lone [id] still sorts first (applyViewOrder appends the rest as "fresh").
+    const doc2 = workspace([node('p', { project: true })]);
+    doc2.nodes['projects'].childIds.push('p');
+    const next2 = applyIntent(doc2, { type: 'convertProjectToAction', id: 'p', status: 'NEXT', now: NOW });
+    expect(next2.viewOrders['next']).toEqual(['p']);
+  });
+
   it('deleteRecursive removes the subtree and sweeps blockedBy refs', () => {
     const doc = workspace([
       node('p', { project: true, childIds: ['c'] }),

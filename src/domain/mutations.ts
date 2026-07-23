@@ -152,8 +152,10 @@ function newNode(id: string, title: string, now: string): NamNode {
  *
  *  PRINCIPLE (#894): an item created or converted **outside** a top/bottom-aware list view — where the
  *  user isn't choosing where it lands — should land **first**, so it's findable without scrolling.
- *  List-view adds pass `atTop` from the preference; every other creation path (converts, template
- *  create, calendar's new-action) defaults to top. New "created-elsewhere" features should keep this. */
+ *  This governs the childIds-ordered surfaces (the projects list, a project workbench). NOTE the Next
+ *  view is ordered by `viewOrders.next`, NOT childIds (#902) — a path landing an item there must also
+ *  float it to the head of that saved order (see `convertProjectToAction`); the childIds unshift alone
+ *  is invisible to the Next view. New "created-elsewhere" features should honor both. */
 function placeChild(parent: NamNode, id: string, atTop?: boolean): void {
   if (atTop === false) parent.childIds.push(id);
   else parent.childIds.unshift(id);
@@ -590,6 +592,13 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
         detach(next, intent.id);
         const actions = next.nodes[next.nextActionsNodeId];
         if (actions) placeChild(actions, intent.id, true);
+        // /next renders from `viewOrders.next` + node order, NOT childIds — applyViewOrder appends
+        // ids missing from the saved order at the END, so the childIds unshift alone would leave the
+        // arrival at the bottom (#902). Float it to the head of that saved order too, like
+        // NextActionsPage pairs an add with a reorderView. A lone `[id]` still sorts first (the rest
+        // are appended as "fresh"), so this works whether or not a prior order existed.
+        const order = next.viewOrders['next'] ?? [];
+        next.viewOrders = { ...next.viewOrders, next: [intent.id, ...order.filter((x) => x !== intent.id)] };
       }
       return next;
     }
