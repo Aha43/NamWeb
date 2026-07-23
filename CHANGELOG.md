@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-07-23
+
+**A second round of dogfooding polish.** Small frictions found in daily use, smoothed over: the
+toolbar logo moved to the far right (out of the sidebar toggle's way), the app version is now a
+one-click copy on the Account page, in-progress actions stand out in amber, calendar day rows gained
+rename and status controls, and items created away from a list — converting an action into a project
+or back again — now land at the **top** of their list instead of the bottom, so you never have to
+hunt for what you just made.
+
 ### Added
 
 - **The app version is now on the Account page, with a copy button.** Previously the desktop
@@ -1844,7 +1853,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.1.2...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.2.0...HEAD
+[2.2.0]: https://github.com/Aha43/NamWeb/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/Aha43/NamWeb/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Aha43/NamWeb/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/Aha43/NamWeb/compare/v2.0.0...v2.1.0

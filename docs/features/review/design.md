@@ -131,7 +131,7 @@ useful on their own.** Sequencing matters:
   need a model to answer "which projects have no next action." They ship first and stand alone.
 - **AI is an amplifier layered on later** (the MCP-on-web / 2.0+ track): it reads the *same* computed
   signals and adds judgment — "these three stalled projects actually matter this week; that one's fine
-  to ignore," or a plain-language "here's how things stand." 
+  to ignore," or a plain-language "here's how things stand."
 - **Design consequence now:** shape the lenses as clean, structured, queryable signals (typed lists of
   nodes + why-flagged), so a future MCP tool consumes them directly. Build the views for humans; get
   the AI input surface for free.
