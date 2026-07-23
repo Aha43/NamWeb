@@ -166,6 +166,22 @@ test('Show done reveals completed actions in the grid + day list, off by default
   await expect(page.getByText('Due today A')).toBeVisible();
 });
 
+test('calendar day rows carry rename + status controls (#895)', async ({ page, doc }) => {
+  await page.goto('/calendar');
+  await expect(page.getByRole('grid')).toBeVisible();
+  await page.locator(`[aria-label^="${localDate(0)}:"]`).click();
+
+  // The added controls are present on a day action (delete/in-progress/copy already were).
+  await expect(page.getByRole('button', { name: 'Rename Due today A' })).toBeVisible();
+  const status = page.getByRole('button', { name: /Status of Due today A/ });
+  await expect(status).toBeVisible();
+
+  // Status change flows through to the doc (Backlog keeps it visible in the day list).
+  await status.click();
+  await page.getByRole('menuitem', { name: 'Backlog' }).click();
+  await expect.poll(() => doc.current().nodes['t1'].status).toBe('BACKLOG');
+});
+
 test('create an action from a day, due prefilled at noon (#681)', async ({ page, doc }) => {
   await page.goto('/calendar');
   await expect(page.getByRole('grid')).toBeVisible();

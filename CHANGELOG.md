@@ -10,9 +10,26 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **The app version is now on the Account page, with a copy button.** Previously the desktop
+  version was only reachable by hovering the logo; the Account/settings page now stamps it
+  (`NamWeb vX.Y.Z · <build>`) with one-click copy — handy for bug reports. Closes #893.
 - **In-progress actions now stand out in amber.** In the status-colored lists (where NEXT is blue,
   DONE green, BACKLOG grey), a row tagged `#in-progress` tints amber — a strong "I'm working this"
   cue that overrides the status tone. Closes #896.
+
+### Changed
+
+- **The toolbar logo moved to the far right.** After landing on the toolbar in 2.1.0 it sat at the
+  far left and pushed the sidebar toggle inward; it now lives at the right edge, out of the toggle's
+  way. Version/build still on its hover tooltip. Closes #892.
+- **Converting an action ⇄ project now lands the result at the top of its list.** Converting a
+  free action into a project (or a top-level project back into a free action) used to append it to
+  the bottom, where you'd have to hunt for it; it now lands first, matching the principle that items
+  created away from a list surface should be immediately findable. Closes #894.
+- **Calendar day rows gained rename and status controls.** Drilling into a calendar day, an action's
+  row now offers rename and a status menu alongside the existing delete / in-progress / copy — the
+  common tweaks without leaving the day. (Move stays out; reparenting doesn't fit a date-scoped
+  list.) Closes #895.
 
 ## [2.1.2] - 2026-07-22
 
