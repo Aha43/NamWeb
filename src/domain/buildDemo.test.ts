@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildDemo } from './buildDemo';
 import { blockedGroups, doneItems, dueGroups, effectiveTags, inboxItems, nextActions, projects } from './lenses';
+import { goneQuiet, stalledProjects } from './review';
 import { sortByDue } from '@/features/actions/sort';
 import type { NamNode } from './types';
 
@@ -36,6 +37,11 @@ describe('buildDemo', () => {
     expect(due.later.length).toBeGreaterThan(0); // Plan Q3 goals (+40)
     expect(blockedGroups(doc).length).toBeGreaterThan(0); // Pay the deposit ← Reserve a hotel
     expect(doneItems(doc).map((n) => n.title)).toContain('Pick the dates');
+  });
+
+  it('lights up Loose ends: a stalled project and a gone-quiet action (#906)', () => {
+    expect(stalledProjects(doc).map((p) => p.title)).toContain('Declutter the garage 🧹'); // no next action
+    expect(goneQuiet(doc, NOW).map((n) => n.title)).toContain('Renew passport 🛂'); // backdated ~3 weeks
   });
 
   it('seeds a few raw captures in the Inbox to clarify, in listed (oldest-first) order', () => {

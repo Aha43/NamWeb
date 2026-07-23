@@ -126,15 +126,31 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
     ],
   };
 
-  // Loose actions (no project) to fill Next/Backlog and the tag list.
+  // A project with no next action — stalled — so "Loose ends" (#906) has a real example to surface.
+  const garage: SeedNode = {
+    id: newId(),
+    title: 'Declutter the garage 🧹',
+    project: true,
+    tags: ['home'],
+    description: 'Been meaning to get to this — nothing marked Next yet.',
+    children: [
+      { id: newId(), title: 'Rent a skip', status: 'BACKLOG' },
+      { id: newId(), title: 'Sort the tool wall', status: 'BACKLOG' },
+    ],
+  };
+
+  // Loose actions (no project) to fill Next/Backlog and the tag list. `renewPassportId` is backdated
+  // below so it also shows in "Loose ends" as gone quiet (#906).
+  const renewPassportId = newId();
   const freeActions: SeedNode[] = [
     { id: newId(), title: 'Call the dentist', status: 'NEXT', tags: ['@phone'], dueAt: dueIn(-2) }, // overdue
     { id: newId(), title: 'Pick up dry cleaning', status: 'NEXT', tags: ['@errand'] },
+    { id: renewPassportId, title: 'Renew passport 🛂', status: 'NEXT', tags: ['@errand'] },
     { id: newId(), title: 'Plan Q3 goals', status: 'BACKLOG', dueAt: dueIn(40) }, // later
   ];
 
   let doc = createDefaultWorkspace();
-  doc = applyIntent(doc, { type: 'seedProject', parentId: doc.projectsNodeId, nodes: [vacation, dog, gardenBoard], now: nowIso });
+  doc = applyIntent(doc, { type: 'seedProject', parentId: doc.projectsNodeId, nodes: [vacation, dog, gardenBoard, garage], now: nowIso });
   // The Learn NAM project teaches the method, alongside the relatable sample projects.
   doc = applyIntent(doc, { type: 'seedProject', parentId: doc.projectsNodeId, nodes: [buildLearnNam(newId, now)], now: nowIso });
   doc = applyIntent(doc, { type: 'seedProject', parentId: doc.nextActionsNodeId, nodes: freeActions, now: nowIso });
@@ -150,6 +166,15 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
   ];
   for (const capture of inboxCaptures) {
     doc = applyIntent(doc, { type: 'addInboxItem', id: newId(), title: capture.title, atTop: false, now: agoIso(capture.ago) });
+  }
+
+  // Backdate one open action ~3 weeks so "Loose ends" (#906) shows a "gone quiet" example. Direct
+  // stamp edit: `insertSeed` stamps every seeded node with `now`, so age can't ride the seed itself.
+  const passport = doc.nodes[renewPassportId];
+  if (passport) {
+    passport.createdAt = agoIso(21);
+    passport.statusChangedAt = agoIso(21);
+    passport.updatedAt = agoIso(21);
   }
 
   // Two toolbar bookmarks to show the feature on load: a project, and a tag filter. (Colors inlined
