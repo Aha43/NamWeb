@@ -399,6 +399,14 @@ describe('applyIntent', () => {
     expect(next.nodes['projects'].childIds).toEqual(['a']);
   });
 
+  it('convertActionToProject lands the new project FIRST in the list, not appended (#894)', () => {
+    const doc = workspace([node('a', { status: 'NEXT' }), node('existing', { project: true })]);
+    doc.nodes['actions'].childIds.push('a');
+    doc.nodes['projects'].childIds.push('existing');
+    const next = applyIntent(doc, { type: 'convertActionToProject', id: 'a', now: NOW });
+    expect(next.nodes['projects'].childIds).toEqual(['a', 'existing']); // first — findable without scrolling
+  });
+
   it('convertProjectToAction only converts leaf projects', () => {
     const doc = workspace([node('p', { project: true, childIds: ['c'] }), node('c', { project: true })]);
     doc.nodes['projects'].childIds.push('p');
@@ -407,6 +415,14 @@ describe('applyIntent', () => {
     // leaf c converts
     const next = applyIntent(doc, { type: 'convertProjectToAction', id: 'c', status: 'NEXT', now: NOW });
     expect(next.nodes['c']).toMatchObject({ project: false, status: 'NEXT', updatedAt: NOW });
+  });
+
+  it('convertProjectToAction lands the new free action FIRST, not appended (#894)', () => {
+    const doc = workspace([node('p', { project: true }), node('existing', { status: 'NEXT' })]);
+    doc.nodes['projects'].childIds.push('p');
+    doc.nodes['actions'].childIds.push('existing');
+    const next = applyIntent(doc, { type: 'convertProjectToAction', id: 'p', status: 'NEXT', now: NOW });
+    expect(next.nodes['actions'].childIds).toEqual(['p', 'existing']); // first, not appended
   });
 
   it('deleteRecursive removes the subtree and sweeps blockedBy refs', () => {
