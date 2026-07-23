@@ -104,6 +104,17 @@ describe('AccountPage', () => {
     expect(await screen.findByText(/link copied/i)).toBeInTheDocument();
   });
 
+  it('shows a copyable version stamp on the Account tab (#893)', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    renderAt();
+    await screen.findByText('me@nam.local');
+    expect(screen.getByText('Version')).toBeInTheDocument(); // the section label
+    const copy = screen.getByRole('button', { name: /copy version/i });
+    fireEvent.click(copy);
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/^NamWeb v\d+\.\d+\.\d+ · /)));
+  });
+
   it('shows the date-format preference on the Preferences tab (deep-linked)', () => {
     renderAt('/account?tab=preferences');
     const select = screen.getByLabelText('Date format') as HTMLSelectElement;

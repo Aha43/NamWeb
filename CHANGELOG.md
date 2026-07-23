@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **The app version is now on the Account page, with a copy button.** Previously the desktop
+  version was only reachable by hovering the logo; the Account/settings page now stamps it
+  (`NamWeb vX.Y.Z · <build>`) with one-click copy — handy for bug reports. Closes #893.
+
 ## [2.1.2] - 2026-07-22
 
 **Hotfix, take two — the inbox deck arrows now actually cycle.** 2.1.1 moved the ←/→ handler to a
