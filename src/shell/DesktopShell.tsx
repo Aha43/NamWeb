@@ -90,14 +90,6 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
     <div className="flex h-dvh flex-col bg-background text-foreground">
       <header className="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-3">
         <div className="flex min-w-0 items-center gap-2">
-          {/* Brand moved here from the sidebar top (#870): it no longer eats a full sidebar row, and
-              the version/build stays one hover away via brandTooltip(). */}
-          <Tooltip label={brandTooltip()}>
-            <div className="flex shrink-0 items-center gap-1.5 pr-0.5">
-              <LogoMark className="h-6 w-6 text-foreground" />
-              {!dense && <span className="text-sm font-semibold tracking-tight">{APP_SHORT_NAME}</span>}
-            </div>
-          </Tooltip>
           <Tooltip label={collapsed ? t('nav.expandSidebar') : t('nav.collapseSidebar')}>
             <Button
               variant="ghost"
@@ -180,6 +172,14 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
         <div className="flex shrink-0 items-center gap-1">
           <ThemeToggle />
           <AccountMenu onSignOut={onSignOut} onOpenSettings={setSettingsTab} />
+          {/* Brand at the far right (#892): on the toolbar (not eating a sidebar row, #870) but out of
+              the way of the sidebar toggle at the far left. Version/build stays a hover away. */}
+          <Tooltip label={brandTooltip()}>
+            <div className="flex shrink-0 items-center gap-1.5 pl-1">
+              <LogoMark className="h-6 w-6 text-foreground" />
+              {!dense && <span className="text-sm font-semibold tracking-tight">{APP_SHORT_NAME}</span>}
+            </div>
+          </Tooltip>
         </div>
       </header>
 
