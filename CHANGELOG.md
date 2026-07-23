@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **The app version is now on the Account page, with a copy button.** Previously the desktop
+  version was only reachable by hovering the logo; the Account/settings page now stamps it
+  (`NamWeb vX.Y.Z · <build>`) with one-click copy — handy for bug reports. Closes #893.
+
 ### Changed
 
 - **The toolbar logo moved to the far right.** After landing on the toolbar in 2.1.0 it sat at the

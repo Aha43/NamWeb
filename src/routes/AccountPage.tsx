@@ -13,6 +13,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { CopyButton } from '@/components/ui/copy-button';
+import { VersionBadge } from '@/components/VersionBadge';
+import { APP_VERSION, BUILD_SHA } from '@/lib/env';
 import { supabase } from '@/lib/supabase';
 import { buildUserExport, downloadJson } from '@/lib/exportData';
 import { validateNewPassword } from '@/lib/password';
@@ -143,6 +146,24 @@ function AccountTab() {
       </Button>
 
       <DeleteAccount />
+
+      <AppVersion />
+    </div>
+  );
+}
+
+/** A copyable version stamp (#893): the desktop version was only reachable by hovering the logo —
+ *  handy for bug reports to have it selectable here, one click to the clipboard. */
+function AppVersion() {
+  const { t } = useTranslation();
+  const value = `NamWeb v${APP_VERSION} · ${BUILD_SHA ? BUILD_SHA.slice(0, 7) : 'dev'}`;
+  return (
+    <div className="space-y-1">
+      <Label>{t('account.version')}</Label>
+      <div className="flex items-center gap-1">
+        <VersionBadge />
+        <CopyButton value={value} label={t('account.version')} tooltip />
+      </div>
     </div>
   );
 }
