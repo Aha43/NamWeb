@@ -10,6 +10,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **The toolbar logo moved to the far right.** After landing on the toolbar in 2.1.0 it sat at the
+  far left and pushed the sidebar toggle inward; it now lives at the right edge, out of the toggle's
+  way. Version/build still on its hover tooltip. Closes #892.
 - **Converting an action ⇄ project now lands the result at the top of its list.** Converting a
   free action into a project (or a top-level project back into a free action) used to append it to
   the bottom, where you'd have to hunt for it; it now lands first, matching the principle that items
