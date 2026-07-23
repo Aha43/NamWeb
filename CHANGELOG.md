@@ -25,7 +25,7 @@ minor = features (breaking changes allowed), patch = fixes.
 - **Converting an action ⇄ project now lands the result at the top of its list.** Converting a
   free action into a project (or a top-level project back into a free action) used to append it to
   the bottom, where you'd have to hunt for it; it now lands first, matching the principle that items
-  created away from a list surface should be immediately findable. Closes #894.
+  created away from a list surface should be immediately findable. Closes #894, #902.
 - **Calendar day rows gained rename and status controls.** Drilling into a calendar day, an action's
   row now offers rename and a status menu alongside the existing delete / in-progress / copy — the
   common tweaks without leaving the day. (Move stays out; reparenting doesn't fit a date-scoped
