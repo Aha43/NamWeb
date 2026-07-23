@@ -6,7 +6,7 @@ import { formatAge } from '@/lib/dates';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { InProgressToggle } from '@/features/tags/InProgressToggle';
-import { isSystemTag } from '@/domain/systemTags';
+import { IN_PROGRESS_TAG, canonicalTag, isSystemTag } from '@/domain/systemTags';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { InlineRename } from './InlineRename';
@@ -69,7 +69,20 @@ export function ActionRow({
   // When a row has notes, hovering its title shows them (truncated). Use a plain truncating title
   // then (its own full-title tooltip would otherwise nest inside this one).
   const descTip = descriptionTooltip(row.description);
-  const titleTone = colorByStatus ? STATUS_TEXT_TONE[row.status] ?? 'text-foreground' : 'text-foreground';
+  // In-progress rows tint amber, overriding the status tone (#896) — a strong "I'm working this"
+  // cue in the same status-colored views where NEXT/DONE/BACKLOG are tinted. Not on finished rows
+  // (in-progress is meaningless there, and the toggle hides itself on DONE/CANCELLED). Case/legacy-
+  // tolerant like the toggle (canonicalTag). Single-status views (colorByStatus off) stay uncolored.
+  const inProgress =
+    colorByStatus &&
+    row.status !== 'DONE' &&
+    row.status !== 'CANCELLED' &&
+    row.tags.some((tag) => canonicalTag(tag) === IN_PROGRESS_TAG);
+  const titleTone = inProgress
+    ? 'text-amber-600 dark:text-amber-400'
+    : colorByStatus
+      ? STATUS_TEXT_TONE[row.status] ?? 'text-foreground'
+      : 'text-foreground';
   const titleInner = descTip ? (
     <span className={cn('block truncate text-sm', titleTone)}>{row.title}</span>
   ) : (

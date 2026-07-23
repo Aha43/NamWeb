@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **In-progress actions now stand out in amber.** In the status-colored lists (where NEXT is blue,
+  DONE green, BACKLOG grey), a row tagged `#in-progress` tints amber — a strong "I'm working this"
+  cue that overrides the status tone. Closes #896.
+
 ## [2.1.2] - 2026-07-22
 
 **Hotfix, take two — the inbox deck arrows now actually cycle.** 2.1.1 moved the ←/→ handler to a
