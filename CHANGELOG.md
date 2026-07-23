@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Converting an action ⇄ project now lands the result at the top of its list.** Converting a
+  free action into a project (or a top-level project back into a free action) used to append it to
+  the bottom, where you'd have to hunt for it; it now lands first, matching the principle that items
+  created away from a list surface should be immediately findable. Closes #894.
+
 ## [2.1.2] - 2026-07-22
 
 **Hotfix, take two — the inbox deck arrows now actually cycle.** 2.1.1 moved the ←/→ handler to a
