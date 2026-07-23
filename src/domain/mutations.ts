@@ -148,7 +148,12 @@ function newNode(id: string, title: string, now: string): NamNode {
 }
 
 /** Add `id` to a parent's children — at the top (default) or the bottom when `atTop === false`.
- *  Driven by the "add new items at the bottom" preference, carried on the intent so replay is stable. */
+ *  Driven by the "add new items at the bottom" preference, carried on the intent so replay is stable.
+ *
+ *  PRINCIPLE (#894): an item created or converted **outside** a top/bottom-aware list view — where the
+ *  user isn't choosing where it lands — should land **first**, so it's findable without scrolling.
+ *  List-view adds pass `atTop` from the preference; every other creation path (converts, template
+ *  create, calendar's new-action) defaults to top. New "created-elsewhere" features should keep this. */
 function placeChild(parent: NamNode, id: string, atTop?: boolean): void {
   if (atTop === false) parent.childIds.push(id);
   else parent.childIds.unshift(id);
@@ -563,10 +568,12 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!node) return next;
       node.project = true;
       node.updatedAt = intent.now;
-      // a free action becomes a top-level project
+      // a free action becomes a top-level project — land it first so it's findable (#894), since the
+      // convert happens away from the Projects list and you relate to it immediately after.
       if (parentOf(next, intent.id) === next.nextActionsNodeId) {
         detach(next, intent.id);
-        next.nodes[next.projectsNodeId]?.childIds.push(intent.id);
+        const projects = next.nodes[next.projectsNodeId];
+        if (projects) placeChild(projects, intent.id, true);
       }
       return next;
     }
@@ -578,10 +585,11 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       node.status = intent.status;
       node.updatedAt = intent.now;
       node.statusChangedAt = intent.now;
-      // a top-level project becomes a free action
+      // a top-level project becomes a free action — land it first so it's findable (#894).
       if (parentOf(next, intent.id) === next.projectsNodeId) {
         detach(next, intent.id);
-        next.nodes[next.nextActionsNodeId]?.childIds.push(intent.id);
+        const actions = next.nodes[next.nextActionsNodeId];
+        if (actions) placeChild(actions, intent.id, true);
       }
       return next;
     }
