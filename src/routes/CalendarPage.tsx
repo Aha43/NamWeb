@@ -9,10 +9,12 @@ import { calendarMonth, dayActions, dayProjects, isValidLocalDate, localDateStri
 import { effectiveDue } from '@/domain/derivedDue';
 import { MonthGrid } from '@/features/calendar/MonthGrid';
 import { ActionRow } from '@/features/actions/ActionRow';
+import { StatusMenu } from '@/features/actions/StatusMenu';
 import { DueHintLabel } from '@/features/actions/DueHintLabel';
 import { toActionRow } from '@/features/actions/rows';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
+import { useSetStatus } from '@/features/actions/useSetStatus';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { newId, nowIso } from '@/lib/local';
 
@@ -28,6 +30,7 @@ export function CalendarPage() {
   const { document, dispatch } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
+  const setStatus = useSetStatus();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
 
@@ -135,8 +138,20 @@ export function CalendarPage() {
                   <ActionRow
                     key={row.id}
                     row={row}
-                    actions={null}
+                    // Status + rename here (#895); move stays out — reparenting doesn't fit a
+                    // date-scoped list. Delete/in-progress/copy come built into the row.
+                    actions={
+                      <StatusMenu
+                        status={row.status}
+                        title={row.title}
+                        onSetStatus={(status) => setStatus(row.id, status)}
+                      />
+                    }
                     onEdit={() => openEditor(row.id)}
+                    onRename={(title) => {
+                      const n = document.nodes[row.id];
+                      if (n) dispatch({ type: 'updateNode', id: row.id, title, description: n.description, now: nowIso() });
+                    }}
                     onDelete={() => deleteNode(row.id)}
                   />
                 ))}

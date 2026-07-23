@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Calendar day rows gained rename and status controls.** Drilling into a calendar day, an action's
+  row now offers rename and a status menu alongside the existing delete / in-progress / copy — the
+  common tweaks without leaving the day. (Move stays out; reparenting doesn't fit a date-scoped
+  list.) Closes #895.
+
 ## [2.1.2] - 2026-07-22
 
 **Hotfix, take two — the inbox deck arrows now actually cycle.** 2.1.1 moved the ←/→ handler to a
