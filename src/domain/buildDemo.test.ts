@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildDemo } from './buildDemo';
-import { blockedGroups, doneItems, dueGroups, effectiveTags, inboxItems, nextActions, projects } from './lenses';
+import { blockedGroups, buildPath, doneItems, dueGroups, effectiveTags, inboxItems, nextActions, projects } from './lenses';
 import { goneQuiet, stalledProjects } from './review';
 import { sortByDue } from '@/features/actions/sort';
 import type { NamNode } from './types';
@@ -42,6 +42,12 @@ describe('buildDemo', () => {
   it('lights up Loose ends: a stalled project and a gone-quiet action (#906)', () => {
     expect(stalledProjects(doc).map((p) => p.title)).toContain('Declutter the garage 🧹'); // no next action
     expect(goneQuiet(doc, NOW).map((n) => n.title)).toContain('Renew passport 🛂'); // backdated ~3 weeks
+  });
+
+  it('includes a NESTED stalled project (Vet & insurance under Getting a dog) for the path/DFS view (#909)', () => {
+    const vet = stalledProjects(doc).find((p) => p.title === 'Vet & insurance');
+    expect(vet).toBeDefined();
+    expect(buildPath(doc, vet!.id).map((n) => n.title)).toEqual(['Getting a dog 🐶']); // has an ancestor path
   });
 
   it('seeds a few raw captures in the Inbox to clarify, in listed (oldest-first) order', () => {

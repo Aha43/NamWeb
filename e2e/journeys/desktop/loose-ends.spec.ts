@@ -6,8 +6,11 @@ import { DocBuilder } from '../../mocks/docBuilder';
 // action reads as "gone quiet"; an empty/next-less project reads as "stalled".
 test.use({
   seedDoc: new DocBuilder()
-    .project('p', 'Paint the shed') // no next action → stalled
+    .project('p', 'Paint the shed') // no next action → stalled (top-level)
     .action('a', 'Fix the gutter') // free NEXT action, old timestamp → gone quiet
+    .project('parent', 'Kitchen reno') // healthy parent (has a next)
+    .action('pn', 'Measure counters', { under: 'parent', status: 'NEXT' })
+    .project('nested', 'Tiling', { under: 'parent' }) // stalled sub-project → shown with its path
     .inbox('i', 'A raw capture') // reference count: Inbox 1
     .build(),
 });
@@ -24,6 +27,11 @@ test('Loose ends surfaces stalled projects + gone-quiet actions, with reference 
   // Gone quiet: the old open action is listed.
   await expect(page.getByRole('heading', { name: /Gone quiet/ })).toBeVisible();
   await expect(page.getByText('Fix the gutter')).toBeVisible();
+
+  // A nested stalled project shows with its ancestor path (a link to the parent) (#909).
+  const tilingRow = page.getByRole('listitem').filter({ hasText: 'Tiling' });
+  await expect(tilingRow.getByRole('button', { name: 'Open Tiling' })).toBeVisible();
+  await expect(tilingRow.getByRole('link', { name: 'Kitchen reno' })).toBeVisible();
 
   // Reference counts link to their own homes.
   await expect(page.getByRole('link', { name: 'Inbox 1' })).toBeVisible();

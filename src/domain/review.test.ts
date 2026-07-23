@@ -76,7 +76,20 @@ describe('stalledProjects (#906)', () => {
     ]);
     doc.nodes['projects'].childIds.push('sprint', 'reno');
     expect(stalledProjects(doc).map((n) => n.title)).toEqual(['Reno']); // Sprint intentionally hidden
-    expect(stalledProjects(doc, true).map((n) => n.title)).toEqual(['Reno', 'Sprint']); // both, to review
+    expect(stalledProjects(doc, true).map((n) => n.title)).toEqual(['Sprint', 'Reno']); // both, in DFS order
+  });
+
+  it('orders by DFS of the project tree, nesting a stalled sub-project under its parent (#909)', () => {
+    const doc = workspace([
+      node('alpha', { title: 'Alpha', project: true, childIds: [] }), // stalled top-level (empty)
+      node('healthy', { title: 'Healthy', project: true, childIds: ['h1', 'sub'] }),
+      node('h1', { title: 'Do it', status: 'NEXT' }), // parent has a next → not stalled itself
+      node('sub', { title: 'Sub', project: true, childIds: ['s1'] }), // stalled sub-project
+      node('s1', { title: 'Later', status: 'BACKLOG' }),
+    ]);
+    doc.nodes['projects'].childIds.push('alpha', 'healthy');
+    // DFS: Alpha (top), then descend into Healthy → its stalled Sub. Healthy itself is not listed.
+    expect(stalledProjects(doc).map((n) => n.title)).toEqual(['Alpha', 'Sub']);
   });
 });
 

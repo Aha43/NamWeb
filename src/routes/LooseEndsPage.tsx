@@ -6,11 +6,12 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { ActionRow } from '@/features/actions/ActionRow';
 import { DueHintLabel } from '@/features/actions/DueHintLabel';
+import { ProjectPathLinks } from '@/features/actions/ProjectPathLinks';
 import { toActionRow } from '@/features/actions/rows';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { goneQuiet, isNotStalled, stalledProjects } from '@/domain/review';
-import { blockedGroups, dueGroups, inboxItems } from '@/domain/lenses';
+import { blockedGroups, buildPath, dueGroups, inboxItems } from '@/domain/lenses';
 import { NOT_STALLED_TAG, canonicalTag } from '@/domain/systemTags';
 import { effectiveDue } from '@/domain/derivedDue';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -122,23 +123,29 @@ export function LooseEndsPage() {
               <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
                 {stalled.map((p) => {
                   const acknowledged = isNotStalled(p);
+                  // Ancestor path so a nested stalled project reads in context (#909). Rendered as a
+                  // sibling of the open-button (its links must not nest inside a <button>).
+                  const path = buildPath(document, p.id).map((n) => ({ id: n.id, title: n.title }));
                   return (
-                    <li key={p.id} className="flex items-center gap-1 pr-2 transition-colors hover:bg-accent">
-                      <button
-                        type="button"
-                        aria-label={t('column.openAria', { title: p.title })}
-                        onClick={() => navigate(`/projects/${p.id}`)}
-                        className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2 text-left"
-                      >
-                        <Folder className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
-                        <TruncatedTitle text={p.title} className="min-w-0 flex-1 text-sm text-foreground" />
-                        {acknowledged && (
-                          <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                            {t('review.acknowledged')}
-                          </span>
-                        )}
-                        <DueHintLabel {...effectiveDue(document, p.id)} />
-                      </button>
+                    <li key={p.id} className="flex items-center gap-1 px-3 py-2 transition-colors hover:bg-accent">
+                      <Folder className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
+                      <div className="min-w-0 flex-1">
+                        <ProjectPathLinks path={path} className="truncate text-xs text-muted-foreground" />
+                        <button
+                          type="button"
+                          aria-label={t('column.openAria', { title: p.title })}
+                          onClick={() => navigate(`/projects/${p.id}`)}
+                          className="flex w-full items-center gap-2 text-left"
+                        >
+                          <TruncatedTitle text={p.title} className="min-w-0 flex-1 text-sm text-foreground" />
+                          {acknowledged && (
+                            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                              {t('review.acknowledged')}
+                            </span>
+                          )}
+                          <DueHintLabel {...effectiveDue(document, p.id)} />
+                        </button>
+                      </div>
                       {/* One-click "this is fine" — tags the project #not-stalled (drops it off the
                           default list). While reviewing acknowledged, the same control un-marks. */}
                       <Tooltip label={acknowledged ? t('review.notStalledUndo') : t('review.markNotStalled')}>

@@ -77,6 +77,17 @@ export function buildDemo(newId: () => string, now: Date): WorkspaceDocument {
       { id: newId(), title: 'Research breeds', status: 'NEXT' },
       { id: newId(), title: 'Visit the shelter', status: 'NEXT', dueAt: dueIn(0) }, // today
       { id: newId(), title: 'Puppy-proof the house', status: 'BACKLOG' },
+      // A nested sub-project with no next action → shows in "Loose ends" as stalled, WITH its
+      // ancestor path (#909), while the parent (which has next actions) stays clear.
+      {
+        id: newId(),
+        title: 'Vet & insurance',
+        project: true,
+        children: [
+          { id: newId(), title: 'Compare pet insurance', status: 'BACKLOG' },
+          { id: newId(), title: 'Find a local vet', status: 'BACKLOG' },
+        ],
+      },
     ],
   };
 
