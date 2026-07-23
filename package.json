@@ -47,7 +47,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-i18next": "^17.0.8",
-    "react-router-dom": "^6.30.4",
+    "react-router-dom": "^7.18.1",
     "tailwind-merge": "^3.6.0",
     "tailwindcss-animate": "^1.0.7"
   },
