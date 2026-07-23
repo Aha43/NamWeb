@@ -42,6 +42,20 @@ test('Loose ends surfaces stalled projects + gone-quiet actions, with reference 
   await expect(page).toHaveURL(/\/projects\/p$/);
 });
 
+test('a stalled project row carries copy + inline rename — fix a typo right there (#911)', async ({ page, doc }) => {
+  await page.goto('/loose-ends');
+  // Copy the name is available on the row.
+  await expect(page.getByRole('button', { name: 'Copy name "Paint the shed"' })).toBeVisible();
+
+  // Rename inline: pencil → edit field → Enter commits, and the doc updates.
+  await page.getByRole('button', { name: 'Rename Paint the shed' }).click();
+  const input = page.getByRole('textbox', { name: 'Rename Paint the shed' });
+  await input.fill('Paint the fence');
+  await input.press('Enter');
+  await expect(page.getByRole('button', { name: 'Open Paint the fence' })).toBeVisible();
+  await expect.poll(() => doc.current().nodes['p'].title).toBe('Paint the fence');
+});
+
 test('marking a project #not-stalled drops it off; Show acknowledged brings it back to un-mark (#909)', async ({ page }) => {
   await page.goto('/loose-ends');
   const stalled = page.getByRole('button', { name: 'Open Paint the shed' });
