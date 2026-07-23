@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, Folder } from 'lucide-react';
+import { Eye, Folder, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { ActionRow } from '@/features/actions/ActionRow';
+import { InlineRename } from '@/features/actions/InlineRename';
 import { DueHintLabel } from '@/features/actions/DueHintLabel';
 import { ProjectPathLinks } from '@/features/actions/ProjectPathLinks';
 import { toActionRow } from '@/features/actions/rows';
@@ -33,6 +36,8 @@ export function LooseEndsPage() {
   const deleteNode = useDeleteNode();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  // Which stalled row is being inline-renamed (only one at a time).
+  const [renamingId, setRenamingId] = useState<string | null>(null);
 
   if (!document) return null;
 
@@ -68,6 +73,12 @@ export function LooseEndsPage() {
       tags: on ? p.tags.filter((tag) => canonicalTag(tag) !== NOT_STALLED_TAG) : [...p.tags, NOT_STALLED_TAG],
       now: nowIso(),
     });
+  }
+
+  function renameProject(id: string, title: string) {
+    const n = document?.nodes[id];
+    if (n) dispatch({ type: 'updateNode', id, title, description: n.description, now: nowIso() });
+    setRenamingId(null);
   }
 
   return (
@@ -123,6 +134,7 @@ export function LooseEndsPage() {
               <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
                 {stalled.map((p) => {
                   const acknowledged = isNotStalled(p);
+                  const renaming = renamingId === p.id;
                   // Ancestor path so a nested stalled project reads in context (#909). Rendered as a
                   // sibling of the open-button (its links must not nest inside a <button>).
                   const path = buildPath(document, p.id).map((n) => ({ id: n.id, title: n.title }));
@@ -131,21 +143,43 @@ export function LooseEndsPage() {
                       <Folder className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
                       <div className="min-w-0 flex-1">
                         <ProjectPathLinks path={path} className="truncate text-xs text-muted-foreground" />
+                        {renaming ? (
+                          <InlineRename
+                            title={p.title}
+                            onCommit={(title) => renameProject(p.id, title)}
+                            onCancel={() => setRenamingId(null)}
+                          />
+                        ) : (
+                          <button
+                            type="button"
+                            aria-label={t('column.openAria', { title: p.title })}
+                            onClick={() => navigate(`/projects/${p.id}`)}
+                            className="flex w-full items-center gap-2 text-left"
+                          >
+                            <TruncatedTitle text={p.title} className="min-w-0 flex-1 text-sm text-foreground" />
+                            {acknowledged && (
+                              <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                {t('review.acknowledged')}
+                              </span>
+                            )}
+                            <DueHintLabel {...effectiveDue(document, p.id)} />
+                          </button>
+                        )}
+                      </div>
+                      {/* Fix a typo right here, and copy the name — the ergonomics from the action
+                          lists, on the project rows too (#911 nudge). */}
+                      <CopyButton value={p.title} label={t('copy.name', { title: p.title })} className="p-2" tooltip />
+                      <Tooltip label={t('actions.renameAria', { title: p.title })}>
                         <button
                           type="button"
-                          aria-label={t('column.openAria', { title: p.title })}
-                          onClick={() => navigate(`/projects/${p.id}`)}
-                          className="flex w-full items-center gap-2 text-left"
+                          aria-label={t('actions.renameAria', { title: p.title })}
+                          disabled={renaming}
+                          onClick={() => setRenamingId(p.id)}
+                          className="shrink-0 rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40"
                         >
-                          <TruncatedTitle text={p.title} className="min-w-0 flex-1 text-sm text-foreground" />
-                          {acknowledged && (
-                            <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
-                              {t('review.acknowledged')}
-                            </span>
-                          )}
-                          <DueHintLabel {...effectiveDue(document, p.id)} />
+                          <Pencil className="h-3.5 w-3.5" />
                         </button>
-                      </div>
+                      </Tooltip>
                       {/* One-click "this is fine" — tags the project #not-stalled (drops it off the
                           default list). While reviewing acknowledged, the same control un-marks. */}
                       <Tooltip label={acknowledged ? t('review.notStalledUndo') : t('review.markNotStalled')}>
