@@ -16,6 +16,7 @@ describe('systemTags (#837/#842)', () => {
     expect(isSystemTag('#shared-hide')).toBe(true);
     expect(isSystemTag('#shared-show')).toBe(true);
     expect(isSystemTag('#shared-open')).toBe(true);
+    expect(isSystemTag('#not-stalled')).toBe(true); // #909
     // An unregistered #… tag a user's doc predates the reservation with is NOT system — it must
     // render/behave as an ordinary tag, not masquerade (bold/protected) then get destroyed.
     expect(isSystemTag('#foo')).toBe(false);

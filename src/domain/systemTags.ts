@@ -32,10 +32,14 @@ export const SHARED_SHOW_TAG = '#shared-show';
 /** A section that renders EXPANDED on arrival, overriding the collapsed-by-default (#838). */
 export const SHARED_OPEN_TAG = '#shared-open';
 
+/** On a PROJECT: it intentionally has no next action, so "Loose ends" must not flag it as stalled
+ *  (#909) — e.g. a sprint/handover project whose actions are drafts you delete when done. */
+export const NOT_STALLED_TAG = '#not-stalled';
+
 /** The registry of MEANINGFUL system tags — drives suggestions and the enforcement allowlist.
  *  Membership is otherwise structural (any `#…` tag is system); this list is which ones the app
  *  knows about and lets users apply. */
-export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG];
+export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG, NOT_STALLED_TAG];
 
 /** The canonical form of a tag: the legacy `in progress` maps to `#in-progress`; any `#…` tag is
  *  lowercased to its canonical sigil form (NamDesktop may write case variants); a user tag is

@@ -5,6 +5,12 @@
 
 import type { NamNode, WorkspaceDocument } from './types';
 import { archivedNodeIds, structuralNodeIds, subtreeIds } from './lenses';
+import { NOT_STALLED_TAG, canonicalTag } from './systemTags';
+
+/** A project the user has explicitly marked "intentionally no next action" (#909). */
+export function isNotStalled(n: NamNode): boolean {
+  return n.tags.some((t) => canonicalTag(t) === NOT_STALLED_TAG);
+}
 
 /** Not DONE / CANCELLED — the item is still live. */
 function isOpen(n: NamNode): boolean {
@@ -26,8 +32,11 @@ function lastTouched(n: NamNode): string | null {
  * actually pick up next. The canonical GTD "every project needs a next action" in plain terms. The
  * subtree is checked whole, so a container project whose sub-projects each have a next action is NOT
  * stalled; an empty project, or one with only backlog/done children, IS. Title-sorted.
+ *
+ * `#not-stalled`-tagged projects are excluded by default (#909) — the user has said they're
+ * intentionally next-less. Pass `includeAcknowledged` to surface them too (to review/un-mark the set).
  */
-export function stalledProjects(doc: WorkspaceDocument): NamNode[] {
+export function stalledProjects(doc: WorkspaceDocument, includeAcknowledged = false): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   const hasOpenNext = (projectId: string): boolean => {
@@ -40,6 +49,7 @@ export function stalledProjects(doc: WorkspaceDocument): NamNode[] {
   return Object.values(doc.nodes)
     .filter((n) => n.project && !structural.has(n.id) && !archived.has(n.id) && isOpen(n))
     .filter((p) => !hasOpenNext(p.id))
+    .filter((p) => includeAcknowledged || !isNotStalled(p))
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 

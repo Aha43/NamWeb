@@ -66,6 +66,18 @@ describe('stalledProjects (#906)', () => {
     doc.nodes['projects'].childIds.push('arch');
     expect(stalledProjects(doc)).toEqual([]);
   });
+
+  it('hides #not-stalled-tagged projects by default; includeAcknowledged surfaces them (#909)', () => {
+    const doc = workspace([
+      node('sprint', { title: 'Sprint', project: true, tags: ['#not-stalled'], childIds: ['a'] }),
+      node('a', { title: 'Draft handover', status: 'BACKLOG' }), // no next → would be stalled, but tagged
+      node('reno', { title: 'Reno', project: true, childIds: ['b'] }),
+      node('b', { title: 'Pick tiles', status: 'BACKLOG' }),
+    ]);
+    doc.nodes['projects'].childIds.push('sprint', 'reno');
+    expect(stalledProjects(doc).map((n) => n.title)).toEqual(['Reno']); // Sprint intentionally hidden
+    expect(stalledProjects(doc, true).map((n) => n.title)).toEqual(['Reno', 'Sprint']); // both, to review
+  });
 });
 
 describe('goneQuiet (#906)', () => {
