@@ -109,6 +109,15 @@ describe('applyIntent', () => {
     expect(next.nodes['a']).toMatchObject({ project: true, updatedAt: NOW });
   });
 
+  it('convertInboxToAction/Project apply clarify-time tags additively (#920)', () => {
+    const doc = workspace([node('a', { tags: ['existing'] })]);
+    doc.nodes['inbox'].childIds.push('a');
+    const act = applyIntent(doc, { type: 'convertInboxToAction', id: 'a', status: 'NEXT', tags: ['house-cleaning'], now: NOW });
+    expect(act.nodes['a'].tags).toEqual(['existing', 'house-cleaning']); // added to what was there, normalized
+    const proj = applyIntent(doc, { type: 'convertInboxToProject', id: 'a', tags: ['Home', 'home'], now: NOW });
+    expect(proj.nodes['a'].tags).toEqual(['existing', 'home']); // normalized (lowercased, deduped)
+  });
+
   it('convertInboxToAction files the action under the chosen project', () => {
     const doc = workspace([node('p', { project: true }), node('a')]);
     doc.nodes['projects'].childIds.push('p');
