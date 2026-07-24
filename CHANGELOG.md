@@ -10,6 +10,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Tag items while processing them.** Clarifying an inbox item — or a batch — the process flow
+  now has a tag field alongside the what/where choices, so you can classify (e.g. `house-cleaning`)
+  in the same step instead of opening the editor afterward. Works on the one-at-a-time deck, the
+  bulk "Process selected" wizard, and capture-sheet processing; tags are added to whatever the
+  item already had. Closes #920.
 - **Multi-select and bulk actions in the list views.** Next, Backlog, Due, and Tag-filter now
   have a select mode (the ☑ toggle) — tick several actions and **tag / set status / move / delete**
   the whole selection in one go from a shared bar, instead of one at a time. (Blocked and Search

@@ -30,6 +30,8 @@ export interface InboxPanelProps {
   onBulkDelete?: (ids: string[]) => void;
   /** Projects the bulk "File under" picker can target (breadcrumb-labeled). */
   projectTargets?: ProjectTarget[];
+  /** Tag suggestions for the wizard's clarify-time tag field (#920). */
+  availableTags?: string[];
   /** Create a project under `parentId` (null = top level) and return its id — powers the bulk
    *  "File under" picker's "New project here". */
   onCreateProject?: (parentId: string | null, title: string) => string;
@@ -46,6 +48,7 @@ export function InboxPanel({
   onBulkResolve,
   onBulkDelete,
   projectTargets = [],
+  availableTags = [],
   onCreateProject,
 }: InboxPanelProps) {
   const { t } = useTranslation();
@@ -218,6 +221,7 @@ export function InboxPanel({
         <ProcessWizard
           count={selected.size}
           projectTargets={projectTargets}
+          availableTags={availableTags}
           initialTargetId={bulkTarget}
           onCreateProject={onCreateProject}
           onResolve={(resolution) => {

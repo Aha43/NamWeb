@@ -11,7 +11,7 @@ import { InlineRename } from '@/features/actions/InlineRename';
 import { useDeleteNode, useDeleteNodes } from '@/features/actions/useDeleteNode';
 import { ProcessWizard } from '@/features/inbox/ProcessWizard';
 import type { ProcessResolution, ProjectTarget } from '@/features/inbox/InboxProcessDialog';
-import { archivedProjectIds, projectPath } from '@/domain/lenses';
+import { allTags, archivedProjectIds, projectPath } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
@@ -262,9 +262,9 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
     });
     for (const id of ids) {
       if (resolution.kind === 'project') {
-        dispatch({ type: 'convertInboxToProject', id, parentId: validTarget, now });
+        dispatch({ type: 'convertInboxToProject', id, parentId: validTarget, tags: resolution.tags, now });
       } else {
-        dispatch({ type: 'convertInboxToAction', id, status: resolution.status, parentId: validTarget, now });
+        dispatch({ type: 'convertInboxToAction', id, status: resolution.status, parentId: validTarget, tags: resolution.tags, now });
       }
     }
     setSelected(new Set());
@@ -367,6 +367,7 @@ export function CaptureSheet({ open, onOpenChange }: { open: boolean; onOpenChan
           <ProcessWizard
             count={selected.size}
             projectTargets={projectTargets}
+            availableTags={document ? allTags(document) : []}
             initialTargetId={bulkTarget}
             onCreateProject={createProject}
             onResolve={(resolution) => {
