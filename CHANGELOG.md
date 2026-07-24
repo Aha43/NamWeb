@@ -8,6 +8,17 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-07-24
+
+**The Reflect phase arrives — "Loose ends."** NAM covered capture, clarify, organize, and engage; the
+missing GTD pillar was *reflect*, the step people skip and then feel they've failed the whole system.
+This release fills it — not with a scheduled ritual, but with an **always-on status overview** you
+glance at whenever: it surfaces **stalled projects** (nothing to do next) and actions that have **gone
+quiet**, with quick counts for Inbox / Overdue / Blocked. No streaks, no score, no "you haven't
+reviewed" — a window, not a chore. Shaped over a day of real-use dogfooding: intentionally next-less
+projects can be marked *Not stalled*, the list reads in tree order with ancestor paths, and rows carry
+copy + inline rename.
+
 ### Added
 
 - **"Loose ends" — an always-on status overview.** A new sidebar surface showing what's quietly
@@ -1866,7 +1877,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.2.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.3.0...HEAD
+[2.3.0]: https://github.com/Aha43/NamWeb/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Aha43/NamWeb/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/Aha43/NamWeb/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Aha43/NamWeb/compare/v2.1.0...v2.1.1
