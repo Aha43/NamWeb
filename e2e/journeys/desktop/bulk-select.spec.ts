@@ -23,7 +23,7 @@ test('Next view: select rows, then bulk-tag and bulk-set-status from the bar', a
 
   // Bulk tag the selection (the tag popover commits on Enter).
   await page.getByRole('button', { name: 'Add a tag to the selected items' }).click();
-  const tagInput = page.getByPlaceholder('Tag name…');
+  const tagInput = page.getByPlaceholder('Add a tag…');
   // Suggestions from the workspace show (typing a prefix surfaces the existing 'home' tag) — the
   // popover has its own list, so the browser's autofill never gets a look-in (#921 fix).
   await tagInput.fill('ho');

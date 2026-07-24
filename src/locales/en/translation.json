@@ -440,7 +440,7 @@
   "inbox.topLevel": "Top level",
   "list.bulkTag": "Tag",
   "list.bulkTagAria": "Add a tag to the selected items",
-  "list.bulkTagPlaceholder": "Tag name…",
+  "list.bulkTagPlaceholder": "Add a tag…",
   "list.deleteSelectedAria": "Delete selected items",
   "list.exitSelect": "Exit select",
   "list.filteredEmpty": "{count} item(s) hidden by the status filter",
