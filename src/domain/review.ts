@@ -4,7 +4,7 @@
 // signals so a future AI layer can read exactly what a human sees.
 
 import type { NamNode, WorkspaceDocument } from './types';
-import { archivedNodeIds, structuralNodeIds, subtreeIds } from './lenses';
+import { archivedNodeIds, isBlocked, structuralNodeIds, subtreeIds } from './lenses';
 import { NOT_STALLED_TAG, canonicalTag } from './systemTags';
 
 /** A project the user has explicitly marked "intentionally no next action" (#909). */
@@ -28,8 +28,9 @@ function lastTouched(n: NamNode): string | null {
 }
 
 /**
- * Open, non-archived projects whose subtree contains **no open `NEXT` action** — nothing you could
- * actually pick up next. The canonical GTD "every project needs a next action" in plain terms. The
+ * Open, non-archived projects whose subtree contains **no open, unblocked `NEXT` action** — nothing
+ * you could actually pick up next (a NEXT action waiting on an unfinished prerequisite doesn't count
+ * — there's nothing to do). The canonical GTD "every project needs a next action" in plain terms. The
  * subtree is checked whole, so a container project whose sub-projects each have a next action is NOT
  * stalled; an empty project, or one with only backlog/done children, IS.
  *
@@ -46,7 +47,9 @@ export function stalledProjects(doc: WorkspaceDocument, includeAcknowledged = fa
   const hasOpenNext = (projectId: string): boolean => {
     for (const id of subtreeIds(doc, projectId)) {
       const n = doc.nodes[id];
-      if (n && !n.project && n.status === 'NEXT') return true;
+      // Unblocked required (#915): a NEXT action waiting on an unfinished prerequisite isn't
+      // actionable, so it doesn't rescue the project from "stalled".
+      if (n && !n.project && n.status === 'NEXT' && !isBlocked(doc, n.id)) return true;
     }
     return false;
   };
@@ -87,7 +90,8 @@ export function goneQuiet(doc: WorkspaceDocument, now: Date = new Date()): NamNo
     )
     .filter((n) => {
       const t = lastTouched(n);
-      return t !== null && new Date(t).getTime() < cutoff;
+      // `<=`: touched exactly GONE_QUIET_DAYS ago counts as quiet (the "+", #915).
+      return t !== null && new Date(t).getTime() <= cutoff;
     })
     .sort((a, b) => a.title.localeCompare(b.title));
 }

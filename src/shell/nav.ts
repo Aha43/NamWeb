@@ -78,7 +78,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
  *  grouped, and rendered with their `hint` as a subtitle — tooltips don't fire on touch, so this is
  *  how the per-surface descriptions reach mobile. Tags + Search live here too (no toolbar on phone). */
 export const MORE_GROUPS: NavGroup[] = [
-  { label: 'nav.groupViews', items: [backlog, due, calendar, blocked, done] },
+  { label: 'nav.groupViews', items: [looseEnds, backlog, due, calendar, blocked, done] },
   { label: 'nav.groupOrganize', items: [projects, goals, templates, shared] },
   { label: 'nav.groupFind', items: [tags, search] },
 ];

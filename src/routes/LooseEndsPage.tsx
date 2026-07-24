@@ -53,7 +53,9 @@ export function LooseEndsPage() {
   const refs = [
     { to: '/inbox', label: t('domain.inbox'), count: inboxItems(document).length },
     { to: '/due', label: t('review.overdue'), count: dueGroups(document).overdue.length },
-    { to: '/blocked', label: t('domain.blocked'), count: blockedGroups(document).reduce((n, g) => n + g.actions.length, 0) },
+    // Distinct blocked actions — blockedGroups repeats an action once per blocker (#915), so sum the
+    // unique ids, not the group lengths.
+    { to: '/blocked', label: t('domain.blocked'), count: new Set(blockedGroups(document).flatMap((g) => g.actions.map((a) => a.id))).size },
   ];
 
   const allClear = stalled.length === 0 && quiet.length === 0;

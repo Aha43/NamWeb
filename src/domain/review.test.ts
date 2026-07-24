@@ -79,6 +79,20 @@ describe('stalledProjects (#906)', () => {
     expect(stalledProjects(doc, true).map((n) => n.title)).toEqual(['Sprint', 'Reno']); // both, in DFS order
   });
 
+  it('a project whose only NEXT action is blocked is stalled — nothing actionable (#915)', () => {
+    const doc = workspace([
+      node('p', { title: 'Waiting', project: true, childIds: ['a', 'b'] }),
+      node('a', { title: 'Do it', status: 'NEXT', blockedBy: ['b'] }), // NEXT but blocked
+      node('b', { title: 'Prereq', status: 'BACKLOG' }), // unfinished prerequisite
+    ]);
+    doc.nodes['projects'].childIds.push('p');
+    expect(stalledProjects(doc).map((n) => n.title)).toEqual(['Waiting']);
+
+    // Unblock it (prereq done) → the project has an actionable next → no longer stalled.
+    doc.nodes['b'].status = 'DONE';
+    expect(stalledProjects(doc)).toEqual([]);
+  });
+
   it('orders by DFS of the project tree, nesting a stalled sub-project under its parent (#909)', () => {
     const doc = workspace([
       node('alpha', { title: 'Alpha', project: true, childIds: [] }), // stalled top-level (empty)

@@ -11,6 +11,10 @@ test.use({
     .project('parent', 'Kitchen reno') // healthy parent (has a next)
     .action('pn', 'Measure counters', { under: 'parent', status: 'NEXT' })
     .project('nested', 'Tiling', { under: 'parent' }) // stalled sub-project → shown with its path
+    // A single action blocked by TWO prerequisites — the Blocked count must still say 1, not 2 (#915).
+    .action('b1', 'Prereq one', { status: 'BACKLOG' })
+    .action('b2', 'Prereq two', { status: 'BACKLOG' })
+    .action('blk', 'Waiting on two things', { status: 'NEXT', blockedBy: ['b1', 'b2'] })
     .inbox('i', 'A raw capture') // reference count: Inbox 1
     .build(),
 });
@@ -33,8 +37,9 @@ test('Loose ends surfaces stalled projects + gone-quiet actions, with reference 
   await expect(tilingRow.getByRole('button', { name: 'Open Tiling' })).toBeVisible();
   await expect(tilingRow.getByRole('link', { name: 'Kitchen reno' })).toBeVisible();
 
-  // Reference counts link to their own homes.
+  // Reference counts link to their own homes; the blocked action with two prerequisites counts once.
   await expect(page.getByRole('link', { name: 'Inbox 1' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Blocked 1' })).toBeVisible();
 
   // Reachable from the sidebar, and drilling a stalled project opens its workbench.
   await expect(page.getByRole('link', { name: 'Loose ends' })).toBeVisible();
