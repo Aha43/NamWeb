@@ -70,7 +70,7 @@ function renderAt(path: string, overrides: Partial<UseWorkspace> = {}) {
     <WithAuthUser>
       <ThemeProvider>
         <WorkspaceContext.Provider value={ws}>
-          <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <MemoryRouter initialEntries={[path]}>
             <CaptureProvider>
               <ActionEditorProvider>
                 <AppRoutes />

@@ -368,7 +368,7 @@ describe('capture from the shell', () => {
       <WithAuthUser>
         <ThemeProvider>
           <WorkspaceContext.Provider value={workspace()}>
-            <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <MemoryRouter initialEntries={['/inbox']}>
               <CaptureProvider>
                 <ActionEditorProvider>
                   <AppRoutes />

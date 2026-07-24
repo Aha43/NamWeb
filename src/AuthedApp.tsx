@@ -13,7 +13,7 @@ import { ShareEventDrain } from './features/sharing/ShareEventDrain';
 export function AuthedApp({ user }: { user: User }) {
   return (
     <AuthUserContext.Provider value={user}>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter>
         <WorkspaceProvider>
           <ShareEventDrain />
           <ToastProvider>

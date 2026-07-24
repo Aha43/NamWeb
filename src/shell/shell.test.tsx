@@ -63,7 +63,7 @@ function renderShell(isDesktop: boolean, inboxChildren: string[] = []) {
     <WithAuthUser>
       <ThemeProvider>
         <WorkspaceContext.Provider value={workspace(inboxChildren)}>
-          <MemoryRouter initialEntries={['/inbox']} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <MemoryRouter initialEntries={['/inbox']}>
             <CaptureProvider>
               <ActionEditorProvider>
                 <AppRoutes />

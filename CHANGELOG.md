@@ -20,6 +20,11 @@ minor = features (breaking changes allowed), patch = fixes.
   the whole selection in one go from a shared bar, instead of one at a time. Also on **Blocked**
   and **Search**. Closes #921.
 
+### Changed
+
+- Upgraded **react-router** 6 → 7 (`7.18.1`). No behavioural change — the app already ran with the
+  v7 `future` flags, which are now the default; the upgrade just drops the opt-in. Closes #926.
+
 ## [2.3.0] - 2026-07-24
 
 **The Reflect phase arrives — "Loose ends."** NAM covered capture, clarify, organize, and engage; the
