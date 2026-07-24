@@ -16,7 +16,7 @@ import { DEMO_USER } from './demoUser';
 export function DemoApp({ onSignUp }: { onSignUp: () => void }) {
   return (
     <AuthUserContext.Provider value={DEMO_USER}>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter>
         <DemoWorkspaceProvider onSignUp={onSignUp}>
           <ToastProvider>
             <CaptureProvider>

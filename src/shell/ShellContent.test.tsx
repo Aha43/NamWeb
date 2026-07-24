@@ -19,7 +19,6 @@ function renderContent(value: UseWorkspace) {
     <WorkspaceContext.Provider value={value}>
       <MemoryRouter
         initialEntries={['/']}
-        future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
       >
         <Routes>
           <Route element={<ShellContent />}>
@@ -63,7 +62,7 @@ describe('ShellContent — no workspace yet', () => {
     const at = (path: string, routePath: string) =>
       render(
         <WorkspaceContext.Provider value={ws()}>
-          <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <MemoryRouter initialEntries={[path]}>
             <Routes>
               <Route element={<ShellContent />}>
                 <Route path={routePath} element={<div>surface</div>} />
