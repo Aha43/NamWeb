@@ -14,8 +14,8 @@ import { makeActionLink, parseActionLink } from './actionLinks';
 export type Intent =
   | { type: 'addInboxItem'; id: string; title: string; atTop?: boolean; now: string }
   | { type: 'convertInboxToNext'; id: string; now: string }
-  | { type: 'convertInboxToAction'; id: string; status: NodeStatus; parentId?: string; now: string }
-  | { type: 'convertInboxToProject'; id: string; parentId?: string; now: string }
+  | { type: 'convertInboxToAction'; id: string; status: NodeStatus; parentId?: string; tags?: string[]; now: string }
+  | { type: 'convertInboxToProject'; id: string; parentId?: string; tags?: string[]; now: string }
   | {
       type: 'setStatus';
       id: string;
@@ -393,6 +393,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       next.nodes[target]?.childIds.push(intent.id);
       node.project = false;
       node.status = intent.status;
+      // Tags chosen during clarification (#920) — additive, so any tag already on the capture stays.
+      if (intent.tags?.length) node.tags = normalizeTags([...node.tags, ...intent.tags]);
       node.updatedAt = intent.now;
       node.statusChangedAt = intent.now;
       return next;
@@ -409,6 +411,7 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       detach(next, intent.id);
       next.nodes[target]?.childIds.push(intent.id);
       node.project = true;
+      if (intent.tags?.length) node.tags = normalizeTags([...node.tags, ...intent.tags]); // #920
       node.updatedAt = intent.now;
       return next;
     }

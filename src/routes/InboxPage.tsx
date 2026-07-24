@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { archivedProjectIds, inboxItems, projectPath, structuralNodeIds, subtreeIds } from '@/domain/lenses';
+import { allTags, archivedProjectIds, inboxItems, projectPath, structuralNodeIds, subtreeIds } from '@/domain/lenses';
 import { buildLearnNam } from '@/domain/learnNam';
 import { newId, nowIso } from '@/lib/local';
 import { InboxPanel } from '@/features/inbox/InboxPanel';
@@ -101,9 +101,9 @@ export function InboxPage() {
     const now = nowIso();
     for (const id of ids) {
       if (resolution.kind === 'project') {
-        dispatch({ type: 'convertInboxToProject', id, parentId: resolution.parentId, now });
+        dispatch({ type: 'convertInboxToProject', id, parentId: resolution.parentId, tags: resolution.tags, now });
       } else {
-        dispatch({ type: 'convertInboxToAction', id, status: resolution.status, parentId: resolution.parentId, now });
+        dispatch({ type: 'convertInboxToAction', id, status: resolution.status, parentId: resolution.parentId, tags: resolution.tags, now });
       }
     }
   }
@@ -149,13 +149,14 @@ export function InboxPage() {
     if (!current) return;
     const now = nowIso();
     if (resolution.kind === 'project') {
-      dispatch({ type: 'convertInboxToProject', id: current.id, parentId: resolution.parentId, now });
+      dispatch({ type: 'convertInboxToProject', id: current.id, parentId: resolution.parentId, tags: resolution.tags, now });
     } else {
       dispatch({
         type: 'convertInboxToAction',
         id: current.id,
         status: resolution.status,
         parentId: resolution.parentId,
+        tags: resolution.tags,
         now,
       });
     }
@@ -185,6 +186,7 @@ export function InboxPage() {
         onBulkResolve={bulkResolve}
         onBulkDelete={(ids) => deleteNodes(ids)}
         projectTargets={bulkProjectTargets}
+        availableTags={document ? allTags(document) : []}
         onCreateProject={createProject}
       />
       {current && (
@@ -200,6 +202,7 @@ export function InboxPage() {
           }}
           onResolve={resolve}
           projectTargets={projectTargets}
+          availableTags={document ? allTags(document) : []}
           onCreateProject={createProject}
           {...(inDeck
             ? {

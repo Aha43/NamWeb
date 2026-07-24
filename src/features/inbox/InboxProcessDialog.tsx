@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useIsDesktop } from '@/shell/useIsDesktop';
+import { TagsInput } from '@/features/actions/TagsInput';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
 import type { NamNode } from '@/domain/types';
 
@@ -21,8 +22,8 @@ export interface ProjectTarget {
 
 /** The outcome of processing an inbox item. `parentId` files it under a project; omit for the default location. */
 export type ProcessResolution =
-  | { kind: 'project'; parentId?: string }
-  | { kind: 'action'; status: 'NEXT' | 'BACKLOG'; parentId?: string };
+  | { kind: 'project'; parentId?: string; tags?: string[] }
+  | { kind: 'action'; status: 'NEXT' | 'BACKLOG'; parentId?: string; tags?: string[] };
 
 /**
  * Clarify an inbox item: is it one action or does it need planning (a project)?
@@ -36,6 +37,7 @@ export function InboxProcessDialog({
   onOpenChange,
   onResolve,
   projectTargets = [],
+  availableTags = [],
   onCreateProject,
   onDelete,
   onSkip,
@@ -49,6 +51,8 @@ export function InboxProcessDialog({
   onResolve: (resolution: ProcessResolution) => void;
   /** Existing projects the item can be filed/nested under (breadcrumb-labeled). */
   projectTargets?: ProjectTarget[];
+  /** Tag suggestions for the clarify-time tag field (#920). */
+  availableTags?: string[];
   /** Create a project under `parentId` (null = top level) and return its id — powers the picker's
    *  "New project here". */
   onCreateProject?: (parentId: string | null, title: string) => string;
@@ -68,17 +72,22 @@ export function InboxProcessDialog({
   // '' = the default location (Free actions for an action, Top level for a project).
   const [targetId, setTargetId] = useState('');
   const [pickerOpen, setPickerOpen] = useState(false);
+  // Tags to apply while clarifying (#920) — a comma-separated string (TagsInput's shape), split at
+  // resolve time; additive, so the classification lands with the convert.
+  const [tags, setTags] = useState('');
   const isDesktop = useIsDesktop();
   const deck = Boolean(onSkip); // process-all flow: parent swaps in the next item
   const parentId = targetId || undefined;
 
   function resolve(resolution: ProcessResolution) {
-    onResolve(resolution);
+    const tagList = tags.split(',').map((s) => s.trim()).filter(Boolean);
+    onResolve({ ...resolution, tags: tagList.length ? tagList : undefined });
     if (!deck) onOpenChange(false);
   }
 
   function back() {
     setTargetId('');
+    setTags('');
     setStep('kind');
   }
 
@@ -210,6 +219,10 @@ export function InboxProcessDialog({
         ) : step === 'action' ? (
           <div className="flex flex-col gap-2">
             {picker(t('inbox.freeActionsLabel'), t('inbox.fileUnder'))}
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-muted-foreground">{t('inbox.tagsLabel')}</span>
+              <TagsInput id="process-tags" value={tags} onChange={setTags} suggestions={availableTags} />
+            </label>
             <Button className="justify-start" onClick={() => resolve({ kind: 'action', status: 'NEXT', parentId })}>
               {t('inbox.doItNext')}
             </Button>
@@ -227,6 +240,10 @@ export function InboxProcessDialog({
         ) : (
           <div className="flex flex-col gap-2">
             {picker(t('inbox.topLevel'), t('inbox.nestUnder'))}
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-muted-foreground">{t('inbox.tagsLabel')}</span>
+              <TagsInput id="process-tags" value={tags} onChange={setTags} suggestions={availableTags} />
+            </label>
             <Button className="justify-start" onClick={() => resolve({ kind: 'project', parentId })}>
               {t('inbox.makeProject')}
             </Button>

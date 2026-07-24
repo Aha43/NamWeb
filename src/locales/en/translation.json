@@ -437,6 +437,7 @@
   "inbox.selectItemAria": "Select {title}",
   "inbox.selectItems": "Select items",
   "inbox.skip": "Skip",
+  "inbox.tagsLabel": "Tags (optional)",
   "inbox.topLevel": "Top level",
   "list.bulkTag": "Tag",
   "list.bulkTagAria": "Add a tag to the selected items",

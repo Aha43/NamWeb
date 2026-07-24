@@ -437,6 +437,7 @@
   "inbox.selectItemAria": "Velg {title}",
   "inbox.selectItems": "Velg elementer",
   "inbox.skip": "Hopp over",
+  "inbox.tagsLabel": "Etiketter (valgfritt)",
   "inbox.topLevel": "Toppnivå",
   "list.bulkTag": "Etikett",
   "list.bulkTagAria": "Legg til en etikett på de valgte elementene",
