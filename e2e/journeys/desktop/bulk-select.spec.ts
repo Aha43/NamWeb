@@ -5,7 +5,7 @@ import { DocBuilder } from '../../mocks/docBuilder';
 // then tag / set-status / delete the whole selection from the shared bulk bar.
 test.use({
   seedDoc: new DocBuilder()
-    .action('a1', 'Task one', { status: 'NEXT' })
+    .action('a1', 'Task one', { status: 'NEXT', tags: ['home'] }) // an existing tag → a suggestion
     .action('a2', 'Task two', { status: 'NEXT' })
     .action('a3', 'Task three', { status: 'NEXT' })
     .build(),
@@ -24,6 +24,10 @@ test('Next view: select rows, then bulk-tag and bulk-set-status from the bar', a
   // Bulk tag the selection (the tag popover commits on Enter).
   await page.getByRole('button', { name: 'Add a tag to the selected items' }).click();
   const tagInput = page.getByPlaceholder('Tag name…');
+  // Suggestions from the workspace show (typing a prefix surfaces the existing 'home' tag) — the
+  // popover has its own list, so the browser's autofill never gets a look-in (#921 fix).
+  await tagInput.fill('ho');
+  await expect(page.getByRole('option', { name: 'home' })).toBeVisible();
   await tagInput.fill('sprint');
   await tagInput.press('Enter');
   await expect.poll(() => doc.current().nodes['a1'].tags).toContain('sprint');
