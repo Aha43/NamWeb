@@ -6,6 +6,9 @@ import { EmptyState } from '../actions/ActionRow';
 import { SortButton } from '../actions/SortButton';
 import { CompactRowsToggle } from '../actions/CompactRowsToggle';
 import { ListHeaderControls } from '../actions/ListHeaderControls';
+import { SelectToggle } from '../actions/SelectToggle';
+import { BulkActionsBar } from '../actions/BulkActionsBar';
+import { useMultiSelect } from '../actions/useMultiSelect';
 import { StatusMenu } from '../actions/StatusMenu';
 import { ReorderControls } from '../actions/ReorderControls';
 import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
@@ -79,6 +82,8 @@ export function NextActionsPanel({
 }: NextActionsPanelProps) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
+  const { selectMode, selected, toggle, clear, selectAll, enter, exit } = useMultiSelect();
+  const rowIds = rows.map((r) => r.id);
 
   function submitAdd(event: FormEvent) {
     event.preventDefault();
@@ -105,14 +110,18 @@ export function NextActionsPanel({
             <Button type="submit">{t('common.add')}</Button>
           </form>
         )}
-        {(focusSlot || statusSlot || (sortMode && onCycleSort && rows.length > 0)) && (
+        {(focusSlot || statusSlot || rows.length > 0) && (
           <ListHeaderControls
             filtered={!boxesDefault}
             statusSlot={statusSlot}
             rowsToggle={rows.length > 0 ? <CompactRowsToggle /> : undefined}
             focusSlot={focusSlot}
             sortSlot={sortMode && onCycleSort && rows.length > 0 ? <SortButton mode={sortMode} onCycle={onCycleSort} /> : undefined}
+            selectSlot={rows.length > 0 ? <SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} /> : undefined}
           />
+        )}
+        {selectMode && (
+          <BulkActionsBar ids={[...selected]} allIds={rowIds} onSelectAll={() => selectAll(rowIds)} onClear={clear} />
         )}
       </div>
       {rows.length === 0 ? (
@@ -125,12 +134,15 @@ export function NextActionsPanel({
         <ReorderableActionList
           rows={rows}
           colorByStatus={false} // every row is NEXT here — status color adds nothing
-          onEdit={onEdit}
-          onDelete={onDelete}
-          onRename={onRename}
-          onReorder={reorderable ? onReorder : undefined}
-          dndEnabled={dndEnabled}
-          renderActions={(row, index) => (
+          onEdit={selectMode ? undefined : onEdit}
+          onDelete={selectMode ? undefined : onDelete}
+          onRename={selectMode ? undefined : onRename}
+          onReorder={reorderable && !selectMode ? onReorder : undefined}
+          dndEnabled={dndEnabled && !selectMode}
+          selectedIds={selectMode ? selected : undefined}
+          onToggleSelect={selectMode ? toggle : undefined}
+          renderActions={(row, index) =>
+            selectMode ? null : (
             <>
               {reorderable && onMove && (
                 <ReorderControls
@@ -154,7 +166,8 @@ export function NextActionsPanel({
                 onSetStatus={(status) => onSetStatus(row.id, status)}
               />
             </>
-          )}
+            )
+          }
         />
       )}
     </section>

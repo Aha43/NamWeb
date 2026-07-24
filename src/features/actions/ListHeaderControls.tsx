@@ -16,12 +16,15 @@ export function ListHeaderControls({
   rowsToggle,
   focusSlot,
   sortSlot,
+  selectSlot,
   filtered = false,
 }: {
   statusSlot?: ReactNode;
   rowsToggle?: ReactNode;
   focusSlot?: ReactNode;
   sortSlot?: ReactNode;
+  /** The multi-select toggle (#921) — stays visible beside Focus like a primary action. */
+  selectSlot?: ReactNode;
   /** Non-default box state (#786/F3): the closed chip must not hide that the list is narrower
    *  than reality — it wears a dot. */
   filtered?: boolean;
@@ -38,6 +41,7 @@ export function ListHeaderControls({
         {rowsToggle}
         {focusSlot}
         {sortSlot}
+        {selectSlot}
       </div>
     );
   }
@@ -63,6 +67,7 @@ export function ListHeaderControls({
             {filtered && <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-primary" />}
           </button>
         )}
+        {selectSlot}
         {focusSlot}
       </div>
       <div id={stripId} className={cn('space-y-2 rounded-md border border-border bg-card p-2', !open && 'hidden')}>

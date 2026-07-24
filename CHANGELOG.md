@@ -15,6 +15,10 @@ minor = features (breaking changes allowed), patch = fixes.
   in the same step instead of opening the editor afterward. Works on the one-at-a-time deck, the
   bulk "Process selected" wizard, and capture-sheet processing; tags are added to whatever the
   item already had. Closes #920.
+- **Multi-select and bulk actions in the list views.** Next, Backlog, Due, and Tag-filter now
+  have a select mode (the ☑ toggle) — tick several actions and **tag / set status / move / delete**
+  the whole selection in one go from a shared bar, instead of one at a time. (Blocked and Search
+  follow.) Part of #921.
 
 ## [2.3.0] - 2026-07-24
 
