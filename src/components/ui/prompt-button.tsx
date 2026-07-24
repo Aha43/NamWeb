@@ -91,6 +91,7 @@ export function PromptButton({
           className="z-50 w-64 rounded-md border border-border bg-popover p-3 text-popover-foreground shadow-md outline-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
         >
           <form
+            autoComplete="off"
             onSubmit={(e) => {
               e.preventDefault();
               // Radix portals keep React-tree bubbling: without this, a PromptButton hosted
