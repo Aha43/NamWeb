@@ -1,5 +1,8 @@
 import { ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { SelectToggle } from '../actions/SelectToggle';
+import { BulkActionsBar } from '../actions/BulkActionsBar';
+import { useMultiSelect } from '../actions/useMultiSelect';
 
 export interface SearchResultRow {
   id: string;
@@ -18,6 +21,8 @@ export interface SearchPanelProps {
 /** Workspace search across titles and tags. Presentational. */
 export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPanelProps) {
   const { t } = useTranslation();
+  const { selectMode, selected, toggle, clear, selectAll, enter, exit } = useMultiSelect();
+  const allRowIds = results.map((r) => r.id);
   return (
     <section className="space-y-4">
       <input
@@ -28,6 +33,17 @@ export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPan
         className="w-full rounded-md border border-input bg-background px-3 py-2 text-base outline-hidden focus:border-ring"
       />
 
+      {results.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-end">
+            <SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} />
+          </div>
+          {selectMode && (
+            <BulkActionsBar ids={[...selected]} allIds={allRowIds} onSelectAll={() => selectAll(allRowIds)} onClear={clear} />
+          )}
+        </div>
+      )}
+
       {query.trim() === '' ? (
         <p className="py-8 text-center text-sm text-muted-foreground">{t('search.typeToSearch')}</p>
       ) : results.length === 0 ? (
@@ -35,11 +51,20 @@ export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPan
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border bg-card">
           {results.map((row) => (
-            <li key={row.id}>
+            <li key={row.id} className="flex items-center">
+              {selectMode && (
+                <input
+                  type="checkbox"
+                  aria-label={t('actions.selectAria', { title: row.title })}
+                  checked={selected.has(row.id)}
+                  onChange={() => toggle(row.id)}
+                  className="ml-3 shrink-0"
+                />
+              )}
               <button
                 type="button"
-                aria-label={t('column.openAria', { title: row.title })}
-                onClick={() => onOpen(row)}
+                aria-label={selectMode ? t('actions.selectAria', { title: row.title }) : t('column.openAria', { title: row.title })}
+                onClick={() => (selectMode ? toggle(row.id) : onOpen(row))}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-accent"
               >
                 <span className="min-w-0 flex-1">
