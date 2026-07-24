@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
 import { StatusMenu } from '../actions/StatusMenu';
 import { CompactRowsToggle } from '../actions/CompactRowsToggle';
+import { SelectToggle } from '../actions/SelectToggle';
+import { BulkActionsBar } from '../actions/BulkActionsBar';
+import { useMultiSelect } from '../actions/useMultiSelect';
 import { Button } from '@/components/ui/button';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { PromptButton } from '@/components/ui/prompt-button';
@@ -81,6 +84,8 @@ export function TagFilterPanel({
 }: TagFilterPanelProps) {
   const { t } = useTranslation();
   const selectedSet = new Set(selected);
+  // `selected` here is the selected *tags* (the filter); the multi-select's picked *rows* is `picked`.
+  const { selectMode, selected: picked, toggle, clear, selectAll, enter, exit } = useMultiSelect();
   const [newTag, setNewTag] = useState('');
   // Manage (create / rename / delete) is collapsed by default so it's out of the way when filtering.
   const [manageOpen, setManageOpen] = useState(false);
@@ -279,6 +284,7 @@ export function TagFilterPanel({
               <span>{t('tags.matchCount', { count: rows.length })}</span>
               <div className="flex items-center gap-1.5">
                 <CompactRowsToggle />
+                {rows.length > 0 && <SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} />}
                 {bookmarkSlot}
                 {onFocus && rows.length > 0 && (
                   <button
@@ -305,6 +311,14 @@ export function TagFilterPanel({
             </div>
           )}
 
+          {selected.length > 0 && rows.length > 0 && selectMode && (
+            <BulkActionsBar
+              ids={[...picked]}
+              allIds={rows.map((r) => r.id)}
+              onSelectAll={() => selectAll(rows.map((r) => r.id))}
+              onClear={clear}
+            />
+          )}
           {selected.length > 0 && rows.length > 0 && (
             <ActionList>
               {rows.map((row) => (
@@ -312,15 +326,20 @@ export function TagFilterPanel({
                   key={row.id}
                   row={row}
                   colorByStatus={!nextOnly} // next-only = all NEXT; otherwise the list mixes statuses
-                  onEdit={onEdit && (() => onEdit(row.id))}
-                  onDelete={onDeleteAction && (() => onDeleteAction(row.id))}
-                  onRename={onRename && ((title) => onRename(row.id, title))}
+                  selectable={selectMode}
+                  selected={picked.has(row.id)}
+                  onSelectedChange={() => toggle(row.id)}
+                  onEdit={selectMode ? undefined : onEdit && (() => onEdit(row.id))}
+                  onDelete={selectMode ? undefined : onDeleteAction && (() => onDeleteAction(row.id))}
+                  onRename={selectMode ? undefined : onRename && ((title) => onRename(row.id, title))}
                   actions={
-                    <StatusMenu
-                      status={row.status}
-                      title={row.title}
-                      onSetStatus={(status) => onSetStatus(row.id, status)}
-                    />
+                    selectMode ? null : (
+                      <StatusMenu
+                        status={row.status}
+                        title={row.title}
+                        onSetStatus={(status) => onSetStatus(row.id, status)}
+                      />
+                    )
                   }
                 />
               ))}

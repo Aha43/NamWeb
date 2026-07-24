@@ -1,5 +1,8 @@
 import { CompactRowsToggle } from '../actions/CompactRowsToggle';
 import { ListHeaderControls } from '../actions/ListHeaderControls';
+import { SelectToggle } from '../actions/SelectToggle';
+import { BulkActionsBar } from '../actions/BulkActionsBar';
+import { useMultiSelect } from '../actions/useMultiSelect';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
@@ -40,7 +43,9 @@ const SECTIONS: { key: keyof DueRowGroups; label: string; tone: string }[] = [
 /** Due actions grouped by urgency; empty sections are hidden. Presentational. */
 export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focusSlot, statusSlot, boxesDefault = true }: DuePanelProps) {
   const { t } = useTranslation();
+  const { selectMode, selected, toggle, clear, selectAll, enter, exit } = useMultiSelect();
   const total = SECTIONS.reduce((n, s) => n + groups[s.key].length, 0);
+  const allRowIds = SECTIONS.flatMap((s) => groups[s.key].map((r) => r.id));
   if (total === 0) {
     return (
       <section>
@@ -51,12 +56,19 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focu
 
   return (
     <section className="space-y-4">
-      {/* Pin the Focus entry point so it stays reachable while the groups scroll under. */}
-      {(focusSlot || statusSlot) && (
-        <div className="sticky top-0 z-10 bg-background pt-1">
-          <ListHeaderControls filtered={!boxesDefault} statusSlot={statusSlot} rowsToggle={<CompactRowsToggle />} focusSlot={focusSlot} />
-        </div>
-      )}
+      {/* Pin the Focus entry point + select toggle so they stay reachable while the groups scroll. */}
+      <div className="sticky top-0 z-10 space-y-2 bg-background pt-1">
+        <ListHeaderControls
+          filtered={!boxesDefault}
+          statusSlot={statusSlot}
+          rowsToggle={<CompactRowsToggle />}
+          focusSlot={focusSlot}
+          selectSlot={<SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} />}
+        />
+        {selectMode && (
+          <BulkActionsBar ids={[...selected]} allIds={allRowIds} onSelectAll={() => selectAll(allRowIds)} onClear={clear} />
+        )}
+      </div>
       {SECTIONS.map((section) => {
         const rows = groups[section.key];
         if (rows.length === 0) return null;
@@ -68,15 +80,20 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focu
                 <ActionRow
                   key={row.id}
                   row={row}
-                  onEdit={onEdit && (() => onEdit(row.id))}
-                  onDelete={onDelete && (() => onDelete(row.id))}
-                  onRename={onRename && ((title) => onRename(row.id, title))}
+                  selectable={selectMode}
+                  selected={selected.has(row.id)}
+                  onSelectedChange={() => toggle(row.id)}
+                  onEdit={selectMode ? undefined : onEdit && (() => onEdit(row.id))}
+                  onDelete={selectMode ? undefined : onDelete && (() => onDelete(row.id))}
+                  onRename={selectMode ? undefined : onRename && ((title) => onRename(row.id, title))}
                   actions={
-                    <StatusMenu
-                      status={row.status}
-                      title={row.title}
-                      onSetStatus={(status) => onSetStatus(row.id, status)}
-                    />
+                    selectMode ? null : (
+                      <StatusMenu
+                        status={row.status}
+                        title={row.title}
+                        onSetStatus={(status) => onSetStatus(row.id, status)}
+                      />
+                    )
                   }
                 />
               ))}

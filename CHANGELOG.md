@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Multi-select and bulk actions in the list views.** Next, Backlog, Due, and Tag-filter now
+  have a select mode (the ☑ toggle) — tick several actions and **tag / set status / move / delete**
+  the whole selection in one go from a shared bar, instead of one at a time. (Blocked and Search
+  follow.) Part of #921.
+
 ## [2.3.0] - 2026-07-24
 
 **The Reflect phase arrives — "Loose ends."** NAM covered capture, clarify, organize, and engage; the
