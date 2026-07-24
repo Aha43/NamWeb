@@ -440,7 +440,7 @@
   "inbox.topLevel": "Toppnivå",
   "list.bulkTag": "Etikett",
   "list.bulkTagAria": "Legg til en etikett på de valgte elementene",
-  "list.bulkTagPlaceholder": "Etikettnavn…",
+  "list.bulkTagPlaceholder": "Legg til en etikett…",
   "list.deleteSelectedAria": "Slett valgte elementer",
   "list.exitSelect": "Avslutt valg",
   "list.filteredEmpty": "{count} element(er) skjult av statusfilteret",

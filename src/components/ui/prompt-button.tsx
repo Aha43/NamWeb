@@ -38,6 +38,10 @@ export function PromptButton({
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState(initialValue);
   const [highlight, setHighlight] = useState(0);
+  // The input renders read-only and flips editable on focus — a field the browser sees as read-only
+  // when the popover opens won't get a native autofill dropdown (contacts/addresses) over our own
+  // suggestion list. autoFocus focuses it, onFocus makes it editable immediately, so it's seamless.
+  const [editable, setEditable] = useState(false);
   // Label the (icon) trigger from its own aria-label; hidden while the input popover is open.
   const tip = !open ? (trigger['aria-label'] ?? undefined) : undefined;
 
@@ -73,6 +77,7 @@ export function PromptButton({
         if (o) {
           setValue(initialValue); // reset to the latest initial each time it opens
           setHighlight(0);
+          setEditable(false); // re-arm the autofill guard for the next open
         }
       }}
     >
@@ -110,11 +115,16 @@ export function PromptButton({
               aria-label={label}
               autoFocus
               autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              readOnly={!editable}
               role="combobox"
               aria-expanded={showList}
               aria-autocomplete="list"
               value={value}
               placeholder={placeholder}
+              onFocus={() => setEditable(true)}
               onChange={(e) => {
                 setValue(e.target.value);
                 setHighlight(0);
