@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Tag items while processing them.** Clarifying an inbox item — or a batch — the process flow
+  now has a tag field alongside the what/where choices, so you can classify (e.g. `house-cleaning`)
+  in the same step instead of opening the editor afterward. Works on the one-at-a-time deck, the
+  bulk "Process selected" wizard, and capture-sheet processing; tags are added to whatever the
+  item already had. Closes #920.
+
 ## [2.3.0] - 2026-07-24
 
 **The Reflect phase arrives — "Loose ends."** NAM covered capture, clarify, organize, and engage; the

@@ -12,6 +12,19 @@ test.use({
     .build(),
 });
 
+test('tag an item while clarifying it in the deck (#920)', async ({ page, doc }) => {
+  await page.goto('/inbox');
+  await page.getByRole('button', { name: 'Process inbox (3)' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Process inbox' });
+  await dialog.getByRole('button', { name: 'It’s one action' }).click();
+  // The clarify-time tag field (no project targets seeded → the only combobox in the step).
+  await dialog.getByRole('combobox').fill('house-cleaning');
+  await dialog.getByRole('button', { name: 'Do it next' }).click();
+  // The resolved action is Next AND carries the tag applied during processing.
+  await expect.poll(() => doc.current().nodes['i1'].status).toBe('NEXT');
+  await expect.poll(() => doc.current().nodes['i1'].tags).toContain('house-cleaning');
+});
+
 test('the deck cycles: skipped items come around again until resolved', async ({ page, doc }) => {
   await page.goto('/inbox');
   await page.getByRole('button', { name: 'Process inbox (3)' }).click();

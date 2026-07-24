@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ProjectPickerColumns } from '@/features/projects/picker/ProjectPickerColumns';
+import { TagsInput } from '@/features/actions/TagsInput';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { cn } from '@/lib/utils';
 import type { ProcessResolution, ProjectTarget } from './InboxProcessDialog';
@@ -20,6 +21,7 @@ import type { ProcessResolution, ProjectTarget } from './InboxProcessDialog';
 export function ProcessWizard({
   count,
   projectTargets,
+  availableTags = [],
   initialTargetId = '',
   onCreateProject,
   onResolve,
@@ -28,6 +30,8 @@ export function ProcessWizard({
   /** How many items the resolution will apply to (the summary line). */
   count: number;
   projectTargets: ProjectTarget[];
+  /** Tag suggestions for the clarify-time tag field (#920). */
+  availableTags?: string[];
   /** Preselected destination ('' = default location). */
   initialTargetId?: string;
   onCreateProject?: (parentId: string | null, title: string) => string;
@@ -40,6 +44,9 @@ export function ProcessWizard({
   const [step, setStep] = useState<'destination' | 'status'>('destination');
   const [target, setTarget] = useState(initialTargetId);
   const [choice, setChoice] = useState<'NEXT' | 'BACKLOG' | 'PROJECT' | null>(null);
+  // Tags to apply to all processed items (#920) — a comma-separated string (TagsInput's shape),
+  // split at finish; additive, chosen at the status step.
+  const [tags, setTags] = useState('');
   // The embedded columns' current confirmable destination (desktop; phone's select always is).
   const [confirmable, setConfirmable] = useState<string | null>(null);
 
@@ -50,8 +57,12 @@ export function ProcessWizard({
   const finish = () => {
     if (choice === null) return;
     const parentId = target || undefined;
+    const tagList = tags.split(',').map((s) => s.trim()).filter(Boolean);
+    const tagged = tagList.length ? { tags: tagList } : {};
     onResolve(
-      choice === 'PROJECT' ? { kind: 'project', parentId } : { kind: 'action', status: choice, parentId },
+      choice === 'PROJECT'
+        ? { kind: 'project', parentId, ...tagged }
+        : { kind: 'action', status: choice, parentId, ...tagged },
     );
   };
 
@@ -140,6 +151,10 @@ export function ProcessWizard({
           </button>
         ))}
       </div>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-muted-foreground">{t('inbox.tagsLabel')}</span>
+        <TagsInput id="process-wizard-tags" value={tags} onChange={setTags} suggestions={availableTags} />
+      </label>
       <div className="mt-1 flex justify-end gap-2">
         <Button type="button" variant="ghost" size="sm" onClick={() => setStep('destination')}>
           {t('common.back')}
