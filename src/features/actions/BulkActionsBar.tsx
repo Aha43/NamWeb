@@ -10,7 +10,7 @@ import {
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
-import { actionMoveTargetsAll } from '@/domain/lenses';
+import { actionMoveTargetsAll, allTags } from '@/domain/lenses';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useSetStatuses } from './useSetStatus';
 import { useDeleteNodes } from './useDeleteNode';
@@ -70,6 +70,9 @@ export function BulkActionsBar({
   // The move destinations are the same set every action can go to (all projects + Free actions);
   // moveNode guards a nonsensical target, so the first selected item's targets stand in for all.
   const moveTargets = document && ids[0] ? actionMoveTargetsAll(document, ids[0]) : [];
+  // Tag suggestions from the workspace — WITHOUT these the tag popover has no list, and the browser's
+  // own autofill (contacts!) fills the void (#921 fix).
+  const tagSuggestions = document ? allTags(document) : [];
 
   const opClass =
     'rounded-md px-2 py-0.5 font-medium text-foreground hover:bg-accent disabled:pointer-events-none disabled:opacity-40';
@@ -83,6 +86,7 @@ export function BulkActionsBar({
         label={t('list.bulkTag')}
         placeholder={t('list.bulkTagPlaceholder')}
         submitLabel={t('common.add')}
+        suggestions={tagSuggestions}
         onSubmit={bulkTag}
         disabled={none}
         className={opClass}
