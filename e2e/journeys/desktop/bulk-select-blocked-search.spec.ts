@@ -19,7 +19,7 @@ test('Blocked view: select a blocked action and bulk-tag it', async ({ page, doc
   await expect(page.getByText('1 selected')).toBeVisible();
 
   await page.getByRole('button', { name: 'Add a tag to the selected items' }).click();
-  const tagInput = page.getByPlaceholder('Tag name…');
+  const tagInput = page.getByPlaceholder('Add a tag…');
   await tagInput.fill('errand');
   await tagInput.press('Enter');
   await expect.poll(() => doc.current().nodes['a'].tags).toContain('errand');
@@ -35,7 +35,7 @@ test('Search view: select a result and bulk-tag it', async ({ page, doc }) => {
   await expect(page.getByText('1 selected')).toBeVisible();
 
   await page.getByRole('button', { name: 'Add a tag to the selected items' }).click();
-  const tagInput = page.getByPlaceholder('Tag name…');
+  const tagInput = page.getByPlaceholder('Add a tag…');
   await tagInput.fill('supplies');
   await tagInput.press('Enter');
   await expect.poll(() => doc.current().nodes['b'].tags).toContain('supplies');
