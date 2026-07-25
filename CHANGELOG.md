@@ -30,6 +30,13 @@ minor = features (breaking changes allowed), patch = fixes.
 - Bulk-select no longer traps you: emptying a Next/Backlog list while in select mode (bulk-move or
   delete everything) kept select mode on but hid the exit toggle — the toggle now stays put whenever
   select mode is active. Closes #928.
+- Bulk-select now acts only on items still on screen: if you selected some, then changed a search
+  query or tag filter so they scrolled out of view, a later tag / move / delete could still hit the
+  now-hidden items. The bulk bar reconciles the selection with the visible rows before every op.
+  Closes #930.
+- Search bulk-select is restricted to actions. Search results mix actions and projects, and bulk
+  "Move" could reparent a project under an action destination, corrupting the tree — projects are no
+  longer selectable there (they still open on click). Closes #930.
 
 ## [2.3.0] - 2026-07-24
 
