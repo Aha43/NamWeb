@@ -8,6 +8,19 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-07-25
+
+**Finish where you are.** A friction sprint straight from a day of heavy dogfooding — six small "I can
+do it, but in two steps" annoyances, each closed where the work happens. Inbox **Process selected** now
+opens as a centered dialog instead of off-screen above a scrolled list (a genuine new-user trap). Bulk
+**Tag** and **Set status** keep your selection so you can do several ops in a row — in the list views
+*and* on a project's actions. Long descriptions gained a **chevron peek** (read the whole thing without
+opening the item), **Loose ends** learned to list **unused tags** for cleanup, a deleted-project
+**bookmark** can finally be removed from the Focus dial, and **Help** got a home in the sidebar. The
+second-vendor review earned its keep again — it caught two real bugs an inline pass had waved through
+(an off-screen bulk-op on the workbench, and an "unused" tag that still backed a saved view), fixed
+before the cut.
+
 ### Added
 
 - **Help** now has a home in the left sidebar, not just the account menu (and the `?` shortcut) —
@@ -1944,7 +1957,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.4.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.5.0...HEAD
+[2.5.0]: https://github.com/Aha43/NamWeb/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Aha43/NamWeb/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Aha43/NamWeb/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Aha43/NamWeb/compare/v2.1.2...v2.2.0
