@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Inbox "Process selected" now opens as a centered dialog. When you scrolled down a long inbox to
+  tick items, the wizard used to open inline above the fold — off-screen — so pressing Process looked
+  like it did nothing. Closes #935.
+
 ## [2.4.0] - 2026-07-25
 
 **Work in bulk, and tag as you clarify.** This sprint closes two dogfooding friction points where NAM
