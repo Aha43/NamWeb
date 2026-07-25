@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- Removed the focus-bookmark **▾ dial** from the toolbar. Jumping straight into a scoped Focus deck
+  skipped the "what am I focusing on?" moment you get when you enter Focus from a filtered list you can
+  see first. The plain **Focus** button stays (it self-describes what you're focusing on); scoped
+  focus is still one step away — open the list, then hit Focus. Closes #950.
+
 ## [2.5.0] - 2026-07-25
 
 **Finish where you are.** A friction sprint straight from a day of heavy dogfooding — six small "I can

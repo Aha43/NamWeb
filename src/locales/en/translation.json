@@ -91,7 +91,6 @@
   "blocked.openBlockerAria": "Open blocker {title}",
   "bookmarks.browseFromAria": "Browse from {label}",
   "bookmarks.contextMenuAria": "Context bookmarks",
-  "bookmarks.focusMenuAria": "Focus bookmarks",
   "bookmarks.focusRowAria": "Focus: {label}",
   "bookmarks.goToAria": "Go to bookmark: {label}",
   "bookmarks.nameLabel": "Name",
