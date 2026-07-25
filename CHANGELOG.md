@@ -14,6 +14,9 @@ minor = features (breaking changes allowed), patch = fixes.
   it was too easy to miss. Closes #938.
 - **Loose ends** now surfaces **unused tags** — registered tags no item uses — as one-click deletion
   candidates, so tag clutter is easy to spot and clear. System (`#`) tags are excluded. Closes #939.
+- Read a long description without opening the item: when a row's description is longer than the hover
+  preview shows, a small chevron beside the title opens the full text in a popover. The hover preview
+  (truncated) is unchanged; title-click still opens the editor. Closes #940.
 
 ### Fixed
 

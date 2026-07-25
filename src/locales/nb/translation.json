@@ -45,6 +45,7 @@
   "actions.deleteConfirm": "Slette \"{title}\"?",
   "actions.deleteConfirmWithChildren": "{count, plural, one {Slette \"{title}\" og dens # element?} other {Slette \"{title}\" og dens # elementer?}}",
   "actions.derivedFromContents": "Avledet fra innholdet",
+  "actions.descriptionMore": "Vis mer",
   "actions.dueLabel": "Forfaller {label}",
   "actions.editAria": "Rediger {title}",
   "actions.fromProject": "Fra prosjekt",

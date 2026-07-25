@@ -45,6 +45,7 @@
   "actions.deleteConfirm": "Delete \"{title}\"?",
   "actions.deleteConfirmWithChildren": "{count, plural, one {Delete \"{title}\" and its # item?} other {Delete \"{title}\" and its # items?}}",
   "actions.derivedFromContents": "Derived from contents",
+  "actions.descriptionMore": "Show more",
   "actions.dueLabel": "Due {label}",
   "actions.editAria": "Edit {title}",
   "actions.fromProject": "From project",
