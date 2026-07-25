@@ -22,7 +22,11 @@ export interface SearchPanelProps {
 export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPanelProps) {
   const { t } = useTranslation();
   const { selectMode, selected, toggle, clear, selectAll, enter, exit } = useMultiSelect();
-  const allRowIds = results.map((r) => r.id);
+  // Bulk ops are action-only: the shared bar's move targets are action destinations, and moveNode will
+  // happily reparent a project under them (it only blocks the 4 system containers) — so a mixed
+  // action+project selection could misplace a project. Restrict selection here to actions (#921 review,
+  // P1); projects stay open-on-click even in select mode.
+  const allRowIds = results.filter((r) => r.type === 'Action').map((r) => r.id);
   return (
     <section className="space-y-4">
       <input
@@ -50,9 +54,12 @@ export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPan
         <p className="py-8 text-center text-sm text-muted-foreground">{t('search.noResults', { query })}</p>
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-          {results.map((row) => (
+          {results.map((row) => {
+            // Only actions are selectable; a project row stays a plain "open" button even in select mode.
+            const selectable = selectMode && row.type === 'Action';
+            return (
             <li key={row.id} className="flex items-center">
-              {selectMode && (
+              {selectable && (
                 <input
                   type="checkbox"
                   aria-label={t('actions.selectAria', { title: row.title })}
@@ -63,8 +70,8 @@ export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPan
               )}
               <button
                 type="button"
-                aria-label={selectMode ? t('actions.selectAria', { title: row.title }) : t('column.openAria', { title: row.title })}
-                onClick={() => (selectMode ? toggle(row.id) : onOpen(row))}
+                aria-label={selectable ? t('actions.selectAria', { title: row.title }) : t('column.openAria', { title: row.title })}
+                onClick={() => (selectable ? toggle(row.id) : onOpen(row))}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-accent"
               >
                 <span className="min-w-0 flex-1">
@@ -79,7 +86,8 @@ export function SearchPanel({ query, results, onQueryChange, onOpen }: SearchPan
                 <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
               </button>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>

@@ -41,35 +41,40 @@ export function BulkActionsBar({
   const setStatuses = useSetStatuses();
   const deleteNodes = useDeleteNodes();
   const [moveOpen, setMoveOpen] = useState(false);
-  const none = ids.length === 0;
+  // Act only on selections that are still on screen. A query / tag-filter / realtime change can leave
+  // picked ids that have dropped out of the list, and we must never tag/move/delete an off-screen node
+  // (#921 review, P1). `allIds` is exactly the currently-rendered set for whichever view hosts us.
+  const visible = new Set(allIds);
+  const targetIds = ids.filter((id) => visible.has(id));
+  const none = targetIds.length === 0;
 
   const bulkTag = (tag: string) => {
     const clean = tag.trim();
     if (!clean) return;
     const now = nowIso();
-    for (const id of ids) {
+    for (const id of targetIds) {
       const node = document?.nodes[id];
       if (node) dispatch({ type: 'updateTags', id, tags: [...node.tags, clean], now }); // normalized in the reducer
     }
     onClear();
   };
   const bulkStatus = (status: NodeStatus) => {
-    setStatuses(ids, status);
+    setStatuses(targetIds, status);
     onClear();
   };
   const bulkMove = (targetId: string) => {
     const now = nowIso();
-    for (const id of ids) dispatch({ type: 'moveNode', id, newParentId: targetId, now });
+    for (const id of targetIds) dispatch({ type: 'moveNode', id, newParentId: targetId, now });
     onClear();
   };
   const bulkDelete = () => {
-    deleteNodes(ids);
+    deleteNodes(targetIds);
     onClear();
   };
 
   // The move destinations are the same set every action can go to (all projects + Free actions);
   // moveNode guards a nonsensical target, so the first selected item's targets stand in for all.
-  const moveTargets = document && ids[0] ? actionMoveTargetsAll(document, ids[0]) : [];
+  const moveTargets = document && targetIds[0] ? actionMoveTargetsAll(document, targetIds[0]) : [];
   // Tag suggestions from the workspace — WITHOUT these the tag popover has no list, and the browser's
   // own autofill (contacts!) fills the void (#921 fix).
   const tagSuggestions = document ? allTags(document) : [];
@@ -79,7 +84,7 @@ export function BulkActionsBar({
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
-      <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: ids.length })}</span>
+      <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: targetIds.length })}</span>
 
       <PromptButton
         aria-label={t('list.bulkTagAria')}
@@ -120,7 +125,7 @@ export function BulkActionsBar({
 
       <ConfirmButton
         aria-label={t('list.deleteSelectedAria')}
-        message={t('inbox.deleteSelectedConfirm', { count: ids.length })}
+        message={t('inbox.deleteSelectedConfirm', { count: targetIds.length })}
         onConfirm={bulkDelete}
         disabled={none}
         className="rounded-md px-2 py-0.5 font-medium text-destructive hover:bg-accent disabled:pointer-events-none disabled:opacity-40"
@@ -131,7 +136,7 @@ export function BulkActionsBar({
       <button
         type="button"
         onClick={onSelectAll}
-        disabled={ids.length === allIds.length}
+        disabled={targetIds.length === allIds.length}
         className="ml-auto rounded-md px-2 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
       >
         {t('common.selectAll')}
