@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- Read a long description without opening the item: when a row's description is longer than the hover
+  preview shows, a small chevron beside the title opens the full text in a popover. The hover preview
+  (truncated) is unchanged; title-click still opens the editor. Closes #940.
+
 ## [2.4.0] - 2026-07-25
 
 **Work in bulk, and tag as you clarify.** This sprint closes two dogfooding friction points where NAM

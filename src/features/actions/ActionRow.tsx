@@ -19,6 +19,7 @@ import { STATUS_TEXT_TONE } from './status';
 import { ProjectPathLinks } from './ProjectPathLinks';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { descriptionTooltip, type ActionRowData } from './rows';
+import { DescriptionPeek } from './DescriptionPeek';
 
 /** One action row: project path, title, tags, due hint, and a slot for actions. */
 export function ActionRow({
@@ -69,6 +70,8 @@ export function ActionRow({
   // When a row has notes, hovering its title shows them (truncated). Use a plain truncating title
   // then (its own full-title tooltip would otherwise nest inside this one).
   const descTip = descriptionTooltip(row.description);
+  // The preview tooltip caps at 200 chars; past that it's cut, so offer a peek to the full text (#940).
+  const peekable = (row.description?.trim().length ?? 0) > 200;
   // In-progress rows tint amber, overriding the status tone (#896) — a strong "I'm working this"
   // cue in the same status-colored views where NEXT/DONE/BACKLOG are tinted. Not on finished rows
   // (in-progress is meaningless there, and the toggle hides itself on DONE/CANCELLED). Case/legacy-
@@ -115,7 +118,18 @@ export function ActionRow({
         onCancel={() => setRenaming(false)}
       />
     ) : descTip ? (
-      <Tooltip label={descTip}>{titleEl}</Tooltip>
+      // Hover previews the description (truncated). When it's cut, a chevron opens the full text in a
+      // popover (#940) — sits beside the title so the title-click still opens the editor.
+      peekable ? (
+        <div className="flex items-center gap-1">
+          <div className="min-w-0 flex-1">
+            <Tooltip label={descTip}>{titleEl}</Tooltip>
+          </div>
+          <DescriptionPeek description={row.description ?? ''} />
+        </div>
+      ) : (
+        <Tooltip label={descTip}>{titleEl}</Tooltip>
+      )
     ) : (
       titleEl
     );
