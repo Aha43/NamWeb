@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Help** now has a home in the left sidebar, not just the account menu (and the `?` shortcut) —
+  it was too easy to miss. Closes #938.
+
 ### Fixed
 
 - Inbox "Process selected" now opens as a centered dialog. When you scrolled down a long inbox to
