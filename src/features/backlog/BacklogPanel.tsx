@@ -110,14 +110,14 @@ export function BacklogPanel({
             <Button type="submit">{t('common.add')}</Button>
           </form>
         )}
-        {(focusSlot || statusSlot || rows.length > 0) && (
+        {(focusSlot || statusSlot || rows.length > 0 || selectMode) && (
           <ListHeaderControls
             filtered={!boxesDefault}
             statusSlot={statusSlot}
             rowsToggle={rows.length > 0 ? <CompactRowsToggle /> : undefined}
             focusSlot={focusSlot}
             sortSlot={sortMode && onCycleSort && rows.length > 0 ? <SortButton mode={sortMode} onCycle={onCycleSort} /> : undefined}
-            selectSlot={rows.length > 0 ? <SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} /> : undefined}
+            selectSlot={rows.length > 0 || selectMode ? <SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} /> : undefined}
           />
         )}
         {selectMode && (
