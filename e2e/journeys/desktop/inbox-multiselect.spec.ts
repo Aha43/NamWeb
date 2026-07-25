@@ -18,9 +18,10 @@ test('bulk-file selected inbox items as Next actions under a project (wizard)', 
   await page.getByRole('button', { name: 'Select all' }).click();
   await page.getByRole('button', { name: 'Process…' }).click();
 
-  // Destination step: the columns embedded on the page — no popup dialog.
+  // Destination step: the wizard opens in a modal dialog (#935 — an inline panel opened off-screen
+  // when the inbox was scrolled), with the embedded Miller columns inside it.
   await expect(page.getByText('File selected items under…')).toBeVisible();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('dialog')).toHaveCount(1);
   await page.getByRole('button', { name: 'Home', exact: true }).click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
 
