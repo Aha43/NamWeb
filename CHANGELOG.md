@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Loose ends** now surfaces **unused tags** — registered tags no item uses — as one-click deletion
+  candidates, so tag clutter is easy to spot and clear. System (`#`) tags are excluded. Closes #939.
+
 ## [2.4.0] - 2026-07-25
 
 **Work in bulk, and tag as you clarify.** This sprint closes two dogfooding friction points where NAM
