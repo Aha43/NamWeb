@@ -7,7 +7,7 @@
 // appear in action lists.
 
 import type { NodeStatus, NamNode, WorkspaceDocument } from './types';
-import { SYSTEM_TAGS, canonicalTag } from './systemTags';
+import { SYSTEM_TAGS, canonicalTag, isSystemTag } from './systemTags';
 
 /** The container node ids that should never show up as actions. */
 export function structuralNodeIds(doc: WorkspaceDocument): Set<string> {
@@ -471,6 +471,20 @@ export function allTags(doc: WorkspaceDocument): string[] {
   const set = new Set<string>([...SYSTEM_TAGS, ...doc.registeredTags.map(canonicalTag)]);
   for (const node of Object.values(doc.nodes)) for (const tag of node.tags) set.add(canonicalTag(tag));
   return [...set].sort();
+}
+
+/** Registered tags that no node actually carries — candidates for cleanup (#939). Own-tags only: a
+ *  tag inherited from an ancestor project is "used" on that ancestor (which owns it). Excludes the
+ *  system `#` tags, which are implementation artifacts, not user vocabulary. Sorted, de-duplicated. */
+export function unusedTags(doc: WorkspaceDocument): string[] {
+  const inUse = new Set<string>();
+  for (const node of Object.values(doc.nodes)) for (const tag of node.tags) inUse.add(canonicalTag(tag));
+  const unused = new Set<string>();
+  for (const raw of doc.registeredTags) {
+    const tag = canonicalTag(raw);
+    if (!inUse.has(tag) && !isSystemTag(tag)) unused.add(tag);
+  }
+  return [...unused].sort();
 }
 
 /**

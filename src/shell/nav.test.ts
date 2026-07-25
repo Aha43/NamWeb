@@ -11,4 +11,9 @@ describe('nav', () => {
     expect(has(SIDEBAR_GROUPS, '/loose-ends')).toBe(true);
     expect(has(MORE_GROUPS, '/loose-ends')).toBe(true);
   });
+
+  // #938: Help was only in the avatar menu (too easy to miss) — it now has a sidebar home too.
+  it('Help is reachable from the desktop sidebar', () => {
+    expect(has(SIDEBAR_GROUPS, '/help')).toBe(true);
+  });
 });
