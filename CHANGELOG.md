@@ -18,6 +18,13 @@ minor = features (breaking changes allowed), patch = fixes.
   preview shows, a small chevron beside the title opens the full text in a popover. The hover preview
   (truncated) is unchanged; title-click still opens the editor. Closes #940.
 
+### Changed
+
+- Bulk **Tag** and **Set status** now keep your selection instead of clearing it, so you can tag then
+  set status (or apply several tags) to the same items without reselecting — in the list views and on
+  a project's actions (the workbench). Move, group, and delete still clear, since those items leave the
+  list. Closes #936.
+
 ### Fixed
 
 - Inbox "Process selected" now opens as a centered dialog. When you scrolled down a long inbox to

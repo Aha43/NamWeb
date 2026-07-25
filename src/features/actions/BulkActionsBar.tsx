@@ -48,6 +48,9 @@ export function BulkActionsBar({
   const targetIds = ids.filter((id) => visible.has(id));
   const none = targetIds.length === 0;
 
+  // Tag and status KEEP the selection (#936): the rows stay put, so you can tag then set status, or
+  // apply several tags, without reselecting. (In a status-filtered list a status change removes the
+  // rows from view — they then intersect out of `targetIds` on the next render, which is correct.)
   const bulkTag = (tag: string) => {
     const clean = tag.trim();
     if (!clean) return;
@@ -56,12 +59,11 @@ export function BulkActionsBar({
       const node = document?.nodes[id];
       if (node) dispatch({ type: 'updateTags', id, tags: [...node.tags, clean], now }); // normalized in the reducer
     }
-    onClear();
   };
   const bulkStatus = (status: NodeStatus) => {
     setStatuses(targetIds, status);
-    onClear();
   };
+  // Move and delete DO clear — the items leave the current list, so keeping them selected is meaningless.
   const bulkMove = (targetId: string) => {
     const now = nowIso();
     for (const id of targetIds) dispatch({ type: 'moveNode', id, newParentId: targetId, now });
