@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { PromptButton } from '@/components/ui/prompt-button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { isTypingTarget } from '@/shell/useGlobalShortcuts';
 import { buildPath, projectPath, structuralNodeIds } from '@/domain/lenses';
@@ -249,9 +250,13 @@ export function ProjectPickerColumns({
         ))}
       </div>
       <div className="flex items-center gap-2 border-t border-border px-3 py-2">
-        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
-          {crumb ?? t('picker.nothingSelected')}
-        </span>
+        {/* A deep path outgrows one line: let it scroll horizontally, and hover for the whole thing —
+            fiddling with the picker's width is pointless, paths just get long (#951). */}
+        <Tooltip label={crumb ?? undefined}>
+          <span className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-xs text-muted-foreground">
+            {crumb ?? t('picker.nothingSelected')}
+          </span>
+        </Tooltip>
         {canCreateHere && (
           <PromptButton
             label={t('picker.newProjectName')}
