@@ -25,6 +25,12 @@ minor = features (breaking changes allowed), patch = fixes.
 - Upgraded **react-router** 6 → 7 (`7.18.1`). No behavioural change — the app already ran with the
   v7 `future` flags, which are now the default; the upgrade just drops the opt-in. Closes #926.
 
+### Fixed
+
+- Bulk-select no longer traps you: emptying a Next/Backlog list while in select mode (bulk-move or
+  delete everything) kept select mode on but hid the exit toggle — the toggle now stays put whenever
+  select mode is active. Closes #928.
+
 ## [2.3.0] - 2026-07-24
 
 **The Reflect phase arrives — "Loose ends."** NAM covered capture, clarify, organize, and engage; the
