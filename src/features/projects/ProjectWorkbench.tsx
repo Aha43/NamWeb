@@ -261,6 +261,23 @@ export function ProjectWorkbench({
   // Multi-select on the project's actions (session-only) for bulk delete.
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Keep the selection reconciled with the visible actions (#936 review, P1). The status include-boxes
+  // filter `actions`, so a bulk status change (e.g. NEXT → DONE with the DONE box off) can drop a
+  // selected row out of view; without pruning, its id lingers in `selected` and a later tag/move/
+  // group/delete would act on the now-invisible action. Pruning here keeps the count and every bulk
+  // handler honest — the same guarantee BulkActionsBar gets from intersecting with its visible ids.
+  useEffect(() => {
+    const visible = new Set(actions.map((a) => a.id));
+    setSelected((cur) => {
+      let changed = false;
+      const next = new Set<string>();
+      for (const id of cur) {
+        if (visible.has(id)) next.add(id);
+        else changed = true;
+      }
+      return changed ? next : cur;
+    });
+  }, [actions]);
   const toggleSelect = (id: string) =>
     setSelected((cur) => {
       const next = new Set(cur);
