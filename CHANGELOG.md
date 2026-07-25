@@ -15,6 +15,11 @@ minor = features (breaking changes allowed), patch = fixes.
   see first. The plain **Focus** button stays (it self-describes what you're focusing on); scoped
   focus is still one step away — open the list, then hit Focus. Closes #950.
 
+### Fixed
+
+- The project **explorer** now copes with a long path: a deep `A › B › C…` breadcrumb used to be cut
+  off on one line — it now scrolls horizontally, and hovering shows the full path. Closes #951.
+
 ## [2.5.0] - 2026-07-25
 
 **Finish where you are.** A friction sprint straight from a day of heavy dogfooding — six small "I can
