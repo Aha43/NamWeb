@@ -8,6 +8,17 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-07-25
+
+**Work in bulk, and tag as you clarify.** This sprint closes two dogfooding friction points where NAM
+made you finish a job in two steps. Every list view — Next, Backlog, Due, Contexts, Blocked, and
+Search — now has a **select mode**: tick several actions and tag, set status, move, or delete the
+whole selection in one pass. And the inbox **process flow gains a tag field**, so you classify an item
+(or a batch) while clarifying it instead of reopening the editor afterward. Under the hood, react-router
+moved to 7. A second-vendor review then hardened bulk-select — it no longer acts on selections that
+have scrolled out of view, and Search (which mixes actions and projects) is bulk-selectable for actions
+only, so a project can't be misplaced by a bulk move.
+
 ### Added
 
 - **Tag items while processing them.** Clarifying an inbox item — or a batch — the process flow
@@ -1907,7 +1918,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.3.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.4.0...HEAD
+[2.4.0]: https://github.com/Aha43/NamWeb/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Aha43/NamWeb/compare/v2.2.0...v2.3.0
 [2.2.0]: https://github.com/Aha43/NamWeb/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/Aha43/NamWeb/compare/v2.1.1...v2.1.2
