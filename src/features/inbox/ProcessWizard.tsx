@@ -26,6 +26,7 @@ export function ProcessWizard({
   onCreateProject,
   onResolve,
   onCancel,
+  bare = false,
 }: {
   /** How many items the resolution will apply to (the summary line). */
   count: number;
@@ -38,6 +39,8 @@ export function ProcessWizard({
   /** Done: commit the chosen kind/status at the chosen destination. */
   onResolve: (resolution: ProcessResolution) => void;
   onCancel: () => void;
+  /** Drop the wizard's own card border/padding — for a host (a Dialog) that already provides it (#935). */
+  bare?: boolean;
 }) {
   const { t } = useTranslation();
   const isDesktop = useIsDesktop();
@@ -68,7 +71,7 @@ export function ProcessWizard({
 
   if (step === 'destination') {
     return (
-      <div className="flex min-h-0 flex-col rounded-md border border-border">
+      <div className={cn('flex min-h-0 flex-col', !bare && 'rounded-md border border-border')}>
         <p className="border-b border-border px-3 py-2 text-sm font-medium">{t('inbox.fileUnderTitle')}</p>
         {isDesktop ? (
           // Mounted fresh per wizard entry, so its navigation initializes then (the #607 class).
@@ -122,7 +125,7 @@ export function ProcessWizard({
   }
 
   return (
-    <div className="flex min-h-0 flex-col gap-2 rounded-md border border-border p-3">
+    <div className={cn('flex min-h-0 flex-col gap-2', !bare && 'rounded-md border border-border p-3')}>
       <p className="text-sm font-medium">{t('capture.statusStepTitle')}</p>
       <p className="truncate text-xs text-muted-foreground">
         {t('actions.selectedCount', { count })} → {targetLabel}
