@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +26,7 @@ import { bookmarkTooltip } from './bookmarkTooltip';
 export function FocusBookmarkMenu({ className }: { className?: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { document } = useWorkspaceContext();
+  const { document, dispatch } = useWorkspaceContext();
   const bookmarks = document ? bookmarksOf(document) : [];
   if (!document || bookmarks.length === 0) return null;
   const aria = t('bookmarks.focusMenuAria');
@@ -43,24 +43,39 @@ export function FocusBookmarkMenu({ className }: { className?: string }) {
       <DropdownMenuContent align="start">
         {bookmarks.map((bookmark) => {
           const stale = isBookmarkStale(document, bookmark);
+          // A stale bookmark (its project was deleted) can't be focused — but you must be able to clear
+          // it from here rather than hunt for the bookmark bar (#937). The row becomes a remove action.
+          if (stale) {
+            return (
+              <Tooltip key={bookmark.id} label={t('bookmarks.removeAria', { label: bookmark.label })} side="bottom">
+                <DropdownMenuItem
+                  aria-label={t('bookmarks.removeAria', { label: bookmark.label })}
+                  className="min-w-0 text-muted-foreground"
+                  onClick={() => dispatch({ type: 'removeBookmark', id: bookmark.id })}
+                >
+                  <X aria-hidden className="mr-2 h-3.5 w-3.5 shrink-0" />
+                  <span className="max-w-[14rem] truncate">
+                    {bookmark.label}
+                    <span>{t('bookmarks.staleSuffix')}</span>
+                  </span>
+                </DropdownMenuItem>
+              </Tooltip>
+            );
+          }
           return (
             // side=bottom, as in the kind-scoped menus (#732) — a right-side tooltip intercepts.
             <Tooltip key={bookmark.id} label={bookmarkTooltip(document, bookmark, t)} side="bottom">
               <DropdownMenuItem
                 aria-label={t('bookmarks.focusRowAria', { label: bookmark.label })}
-                className={cn('min-w-0', stale && 'text-muted-foreground')}
-                disabled={stale}
+                className="min-w-0"
                 onClick={() => navigate(bookmarkFocusTarget(bookmark))}
               >
                 <span
                   aria-hidden
                   className="mr-2 h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={stale ? undefined : { backgroundColor: bookmark.color }}
+                  style={{ backgroundColor: bookmark.color }}
                 />
-                <span className="max-w-[14rem] truncate">
-                  {bookmark.label}
-                  {stale && <span className="text-muted-foreground">{t('bookmarks.staleSuffix')}</span>}
-                </span>
+                <span className="max-w-[14rem] truncate">{bookmark.label}</span>
               </DropdownMenuItem>
             </Tooltip>
           );

@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- A bookmark whose project was deleted can now be removed from the **Focus ▾** menu: the stale row
+  (marked "no longer exists") is a one-click **remove** instead of a dead, unremovable entry. Closes #937.
+
 ## [2.4.0] - 2026-07-25
 
 **Work in bulk, and tag as you clarify.** This sprint closes two dogfooding friction points where NAM
