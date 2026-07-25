@@ -10,8 +10,18 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Help** now has a home in the left sidebar, not just the account menu (and the `?` shortcut) —
+  it was too easy to miss. Closes #938.
 - **Loose ends** now surfaces **unused tags** — registered tags no item uses — as one-click deletion
   candidates, so tag clutter is easy to spot and clear. System (`#`) tags are excluded. Closes #939.
+
+### Fixed
+
+- Inbox "Process selected" now opens as a centered dialog. When you scrolled down a long inbox to
+  tick items, the wizard used to open inline above the fold — off-screen — so pressing Process looked
+  like it did nothing. Closes #935.
+- A bookmark whose project was deleted can now be removed from the **Focus ▾** menu: the stale row
+  (marked "no longer exists") is a one-click **remove** instead of a dead, unremovable entry. Closes #937.
 
 ## [2.4.0] - 2026-07-25
 
