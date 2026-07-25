@@ -34,9 +34,11 @@ test('Next view: select rows, then bulk-tag and bulk-set-status from the bar', a
   await expect.poll(() => doc.current().nodes['a2'].tags).toContain('sprint');
   await expect.poll(() => doc.current().nodes['a3'].tags ?? []).not.toContain('sprint'); // unselected untouched
 
-  // Selection clears after the op (still in select mode) — pick again and bulk set-status to Backlog.
-  await page.getByRole('checkbox', { name: 'Select Task one' }).check();
+  // #936: the selection PERSISTS after tagging (rows stay put) — no reselect needed. Set status on the
+  // still-selected pair directly.
+  await expect(page.getByText('2 selected')).toBeVisible();
   await page.getByRole('button', { name: 'Status ▾' }).click();
   await page.getByRole('menuitem', { name: 'Backlog' }).click();
   await expect.poll(() => doc.current().nodes['a1'].status).toBe('BACKLOG');
+  await expect.poll(() => doc.current().nodes['a2'].status).toBe('BACKLOG'); // both, still selected after tag
 });

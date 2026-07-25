@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- Bulk **Tag** and **Set status** now keep your selection instead of clearing it, so you can tag then
+  set status (or apply several tags) to the same rows without reselecting. Move and delete still
+  clear, since those items leave the list. Closes #936.
+
 ## [2.4.0] - 2026-07-25
 
 **Work in bulk, and tag as you clarify.** This sprint closes two dogfooding friction points where NAM
