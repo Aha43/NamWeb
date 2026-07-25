@@ -6,6 +6,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { AddPositionToggle } from '@/components/settings/AddPositionToggle';
 import { ConfirmButton } from '@/components/ui/confirm-button';
 import { Tooltip } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
 import { formatAge } from '@/lib/dates';
@@ -217,22 +218,33 @@ export function InboxPanel({
         )}
       </div>
 
-      {wizardOpen && (
-        <ProcessWizard
-          count={selected.size}
-          projectTargets={projectTargets}
-          availableTags={availableTags}
-          initialTargetId={bulkTarget}
-          onCreateProject={onCreateProject}
-          onResolve={(resolution) => {
-            // Remember the destination for the next run (the wizard's own state is per-mount).
-            setBulkTarget(resolution.parentId ?? '');
-            resolveSelected(resolution);
-            setWizardOpen(false);
-          }}
-          onCancel={() => setWizardOpen(false)}
-        />
-      )}
+      {/* A modal dialog, not an inline panel: with a long inbox you select items after scrolling down,
+          and an inline wizard would open off-screen above the fold — it looked like nothing happened
+          until you scrolled up (#935). A centered dialog is always in view. */}
+      <Dialog open={wizardOpen} onOpenChange={setWizardOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('inbox.processSelectedTitle', { count: selected.size })}</DialogTitle>
+          </DialogHeader>
+          {wizardOpen && (
+            <ProcessWizard
+              bare
+              count={selected.size}
+              projectTargets={projectTargets}
+              availableTags={availableTags}
+              initialTargetId={bulkTarget}
+              onCreateProject={onCreateProject}
+              onResolve={(resolution) => {
+                // Remember the destination for the next run (the wizard's own state is per-mount).
+                setBulkTarget(resolution.parentId ?? '');
+                resolveSelected(resolution);
+                setWizardOpen(false);
+              }}
+              onCancel={() => setWizardOpen(false)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       {items.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted-foreground">{t('inbox.empty')}</p>

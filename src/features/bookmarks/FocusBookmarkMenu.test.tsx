@@ -88,10 +88,20 @@ describe('FocusBookmarkMenu (#738)', () => {
     expect(navigate).toHaveBeenCalledWith('/focus?tags=daily&next=1&bm=b3');
   });
 
-  it('a stale project bookmark is greyed and not dealable', () => {
-    renderMenu([staleBm]);
-    const row = screen.getByRole('menuitem', { name: 'Focus: Old plans' });
-    expect(row).toBeDisabled();
+  it('a stale project bookmark becomes a remove action (its project is gone) — #937', () => {
+    navigate.mockClear(); // shared across tests in this file
+    const dispatch = vi.fn();
+    render(
+      <MemoryRouter>
+        <WorkspaceContext.Provider value={{ document: doc([staleBm]), dispatch } as unknown as UseWorkspace}>
+          <FocusBookmarkMenu />
+        </WorkspaceContext.Provider>
+      </MemoryRouter>,
+    );
     expect(screen.getByText('(no longer exists)')).toBeInTheDocument();
+    const row = screen.getByRole('menuitem', { name: 'Remove bookmark: Old plans' });
+    fireEvent.click(row);
+    expect(dispatch).toHaveBeenCalledWith({ type: 'removeBookmark', id: 'b2' });
+    expect(navigate).not.toHaveBeenCalled(); // stale rows never navigate
   });
 });

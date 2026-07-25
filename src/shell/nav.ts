@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Folders,
   Gauge,
+  HelpCircle,
   Inbox,
   LayoutDashboard,
   Layers,
@@ -49,6 +50,9 @@ const templates: NavItem = { to: '/templates', label: 'domain.templates', icon: 
 const shared: NavItem = { to: '/shared', label: 'shared.title', icon: Share2, hint: 'nav.sharedHint' };
 const done: NavItem = { to: '/done', label: 'domain.status.done', icon: CheckCircle2, hint: 'nav.doneHint' };
 export const focus: NavItem = { to: '/focus', label: 'domain.focus', icon: Target, hint: 'nav.focusHint' };
+// Help also lives in the account menu (and the `?` shortcut), but that was too easy to miss (#938);
+// give it a home in the sidebar too. selfTitled — HelpPage renders its own heading.
+const help: NavItem = { to: '/help', label: 'nav.help', icon: HelpCircle, hint: 'nav.helpHint', selfTitled: true };
 
 /** All routable surfaces, flat — the phone bottom bar foregrounds a subset (capture + execution) and
  *  the rest live in the More sheet. */
@@ -72,6 +76,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   // the phone More sheet keeps it (no toolbar there).
   { items: [backlog, due, blocked, done] },
   { items: [goals, templates, shared] },
+  { items: [help] },
 ];
 
 /** Phone "More" sheet: the surfaces that aren't on the bottom bar (Inbox / Next / Focus + Capture),
