@@ -431,6 +431,7 @@
   "inbox.processDeckTitle": "Behandle innboks",
   "inbox.processItemTitle": "Behandle element",
   "inbox.processSelected": "Behandle valgte ({count})",
+  "inbox.processSelectedTitle": "Behandle valgte ({count})",
   "inbox.processSelectedTooltip": "Behandle bare de valgte elementene, ett om gangen",
   "inbox.quickAddAria": "Hurtiglegg til",
   "inbox.renameAria": "Gi nytt navn til {title}",
