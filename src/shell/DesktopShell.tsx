@@ -9,7 +9,6 @@ import { AccountMenu } from './AccountMenu';
 import { SettingsPanel } from './SettingsPanel';
 import type { SettingsTab } from '@/routes/AccountPage';
 import { SidebarBookmarkMenu } from '@/features/bookmarks/SidebarBookmarkMenu';
-import { FocusBookmarkMenu } from '@/features/bookmarks/FocusBookmarkMenu';
 import { ProjectExplorerButton } from '@/features/projects/picker/ProjectExplorerButton';
 import { CalendarDays } from 'lucide-react';
 import { useCapture } from '@/capture/capture-context';
@@ -136,17 +135,14 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
               </Tooltip>
               <SidebarBookmarkMenu kind="tagFilter" />
             </div>
-            <div className="flex items-center">
-              <Tooltip label={t(focus.hint!)}>
-                <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
-                  <NavLink to="/focus" aria-label={t('domain.focus')}>
-                    <Target className="focus-glow" />
-                    {!dense && <span className="hidden lg:inline">{t('domain.focus')}</span>}
-                  </NavLink>
-                </Button>
-              </Tooltip>
-              <FocusBookmarkMenu />
-            </div>
+            <Tooltip label={t(focus.hint!)}>
+              <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
+                <NavLink to="/focus" aria-label={t('domain.focus')}>
+                  <Target className="focus-glow" />
+                  {!dense && <span className="hidden lg:inline">{t('domain.focus')}</span>}
+                </NavLink>
+              </Button>
+            </Tooltip>
             <Tooltip label={t(calendar.hint!)}>
               <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                 <NavLink to={calendar.to} aria-label={t(calendar.label)}>
