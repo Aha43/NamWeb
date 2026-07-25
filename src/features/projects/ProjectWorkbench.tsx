@@ -276,10 +276,12 @@ export function ProjectWorkbench({
     if (onDeleteAction) for (const id of selected) onDeleteAction(id);
     setSelected(new Set());
   };
+  // Tag and status KEEP the selection (#936): the actions stay in the workbench, so you can tag then
+  // set status (or apply several tags) without reselecting. Move/group/delete still clear — those take
+  // the actions out of this list.
   const bulkSetStatus = (status: NodeStatus) => {
     if (onSetStatusMany) onSetStatusMany([...selected], status);
     else for (const id of selected) onSetStatus(id, status);
-    setSelected(new Set());
   };
   const bulkGroup = (title: string) => {
     onGroupSelected?.([...selected], title);
@@ -287,7 +289,6 @@ export function ProjectWorkbench({
   };
   const bulkAddTag = (tag: string) => {
     onAddTagToActions?.([...selected], tag);
-    setSelected(new Set());
   };
   const bulkMove = (targetId: string) => {
     for (const id of selected) onMoveActionInto?.(id, targetId);

@@ -398,6 +398,27 @@ describe('ProjectWorkbench', () => {
     expect(onAddTagToActions).toHaveBeenCalledWith(['a'], 'home');
   });
 
+  it('keeps the selection after bulk tag and bulk status (#936)', () => {
+    const onAddTagToActions = vi.fn();
+    const onSetStatus = vi.fn();
+    setup({ actions: [actionRow('a', 'Get quotes')], onDeleteAction: vi.fn(), onAddTagToActions, onSetStatus });
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByLabelText('Select Get quotes'));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+
+    // Tag keeps the selection (the action stays in the workbench).
+    fireEvent.click(screen.getByRole('button', { name: 'Add tag to selected' }));
+    fireEvent.change(screen.getByLabelText('Tag'), { target: { value: 'home' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Add tag' }));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+
+    // And status keeps it too — no reselect between ops.
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Status ▾' }), { key: 'Enter' });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Backlog' }));
+    expect(onSetStatus).toHaveBeenCalledWith('a', 'BACKLOG');
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+  });
+
   it('exiting select mode clears the selection and hides checkboxes', () => {
     setup({ actions: [actionRow('a', 'Get quotes')], onDeleteAction: vi.fn() });
     fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
