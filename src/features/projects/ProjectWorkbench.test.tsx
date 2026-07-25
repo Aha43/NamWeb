@@ -398,6 +398,28 @@ describe('ProjectWorkbench', () => {
     expect(onAddTagToActions).toHaveBeenCalledWith(['a'], 'home');
   });
 
+  it('reconciles the selection when an action leaves the visible list (#936 review, P1)', () => {
+    const props = {
+      project: pnode('p', 'Kitchen reno'),
+      breadcrumb: [pnode('home', 'Home')],
+      subProjects: [],
+      onOpenProject: vi.fn(), onOpenProjects: vi.fn(), onAddAction: vi.fn(),
+      onAddSubProject: vi.fn(), onSetStatus: vi.fn(), onEdit: vi.fn(), onRename: vi.fn(),
+      onDeleteAction: vi.fn(),
+    };
+    const { rerender } = render(
+      <ProjectWorkbench {...props} actions={[actionRow('a', 'Get quotes'), actionRow('b', 'Buy paint')]} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByLabelText('Select Get quotes'));
+    expect(screen.getByText('1 selected')).toBeInTheDocument();
+
+    // 'a' is filtered out of the visible actions (e.g. bulk-set DONE with the DONE include-box off);
+    // the selection prunes it so no later op targets the now-invisible action.
+    rerender(<ProjectWorkbench {...props} actions={[actionRow('b', 'Buy paint')]} />);
+    expect(screen.getByText('0 selected')).toBeInTheDocument();
+  });
+
   it('keeps the selection after bulk tag and bulk status (#936)', () => {
     const onAddTagToActions = vi.fn();
     const onSetStatus = vi.fn();

@@ -479,6 +479,14 @@ export function allTags(doc: WorkspaceDocument): string[] {
 export function unusedTags(doc: WorkspaceDocument): string[] {
   const inUse = new Set<string>();
   for (const node of Object.values(doc.nodes)) for (const tag of node.tags) inUse.add(canonicalTag(tag));
+  // A tag that backs a tag-filter bookmark, saved view, or mission control is in use too — deleting it
+  // would rewrite or remove that bookmark (deleteTag cascades to tag-filter bookmarks), so it must
+  // never read as "safe to delete" (#939 review, P2).
+  for (const bm of doc.bookmarks ?? []) {
+    if (bm.kind === 'tagFilter') for (const tag of bm.tags ?? []) inUse.add(canonicalTag(tag));
+  }
+  for (const view of doc.savedViews ?? []) for (const tag of view.tags) inUse.add(canonicalTag(tag));
+  for (const mc of doc.missionControls ?? []) for (const tag of mc.tags) inUse.add(canonicalTag(tag));
   const unused = new Set<string>();
   for (const raw of doc.registeredTags) {
     const tag = canonicalTag(raw);

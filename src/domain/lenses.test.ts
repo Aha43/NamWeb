@@ -704,4 +704,15 @@ describe('unusedTags (#939)', () => {
     });
     expect(unusedTags(doc)).toEqual([]);
   });
+
+  it('does not flag a tag that only a tag-filter bookmark / saved view uses (#939 review, P2)', () => {
+    const doc = workspace([], (d) => {
+      d.registeredTags = ['home', 'weekly', 'errand'];
+      // 'home' backs a tag-filter bookmark; 'weekly' backs a saved view — deleting either would
+      // rewrite/orphan that saved surface, so neither is "unused". Only 'errand' is truly unused.
+      d.bookmarks = [{ id: 'b', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#000' }];
+      d.savedViews = [{ name: 'Weekly', tags: ['weekly'], nextOnly: false }];
+    });
+    expect(unusedTags(doc)).toEqual(['errand']);
+  });
 });
