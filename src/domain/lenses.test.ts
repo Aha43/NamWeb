@@ -4,6 +4,7 @@ import {
   actionsWithStatuses,
   allOpenableActions,
   allTags,
+  unusedTags,
   applyViewOrder,
   archivedNodeIds,
   archivedProjectIds,
@@ -679,5 +680,28 @@ describe('status-box lenses (#766)', () => {
     // Contexts: same opt-in.
     expect(contextItems(doc, ['home']).map((n) => n.id)).toEqual(['n1']);
     expect(contextItems(doc, ['home'], false, true).map((n) => n.id).sort()).toEqual(['d1', 'n1']);
+  });
+});
+
+describe('unusedTags (#939)', () => {
+  it('lists registered tags no node uses, excluding system tags', () => {
+    const a = node('a', { tags: ['home'] });
+    const doc = workspace([a], (d) => {
+      d.registeredTags = ['home', 'errand', '#in-progress'];
+      addChild(d, 'actions', 'a');
+    });
+    // 'home' is used (on a); '#in-progress' is a system tag → excluded; only 'errand' is unused.
+    expect(unusedTags(doc)).toEqual(['errand']);
+  });
+
+  it('treats a tag owned by an ancestor project as used (own-tags, not inherited emptiness)', () => {
+    const p = node('p', { title: 'Proj', project: true, tags: ['work'] });
+    const c = node('c', { tags: [] });
+    const doc = workspace([p, c], (d) => {
+      d.registeredTags = ['work'];
+      addChild(d, 'projects', 'p');
+      addChild(d, 'p', 'c');
+    });
+    expect(unusedTags(doc)).toEqual([]);
   });
 });

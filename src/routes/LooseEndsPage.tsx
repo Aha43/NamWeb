@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Eye, Folder, Pencil } from 'lucide-react';
+import { Eye, Folder, Pencil, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CopyButton } from '@/components/ui/copy-button';
 import { Tooltip } from '@/components/ui/tooltip';
@@ -14,7 +14,7 @@ import { toActionRow } from '@/features/actions/rows';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { goneQuiet, isNotStalled, stalledProjects } from '@/domain/review';
-import { blockedGroups, buildPath, dueGroups, inboxItems } from '@/domain/lenses';
+import { blockedGroups, buildPath, dueGroups, inboxItems, unusedTags } from '@/domain/lenses';
 import { NOT_STALLED_TAG, canonicalTag } from '@/domain/systemTags';
 import { effectiveDue } from '@/domain/derivedDue';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -49,6 +49,10 @@ export function LooseEndsPage() {
 
   const quiet = goneQuiet(document);
   const quietRows = quiet.map((n) => toActionRow(document, n));
+
+  // Registered tags no item uses — cleanup candidates (#939). Shown regardless of the all-clear state
+  // (tag hygiene is optional housekeeping, not a mess to reflect on), so it doesn't gate "all clear".
+  const unused = unusedTags(document);
 
   const refs = [
     { to: '/inbox', label: t('domain.inbox'), count: inboxItems(document).length },
@@ -227,6 +231,35 @@ export function LooseEndsPage() {
             </section>
           )}
         </>
+      )}
+
+      {unused.length > 0 && (
+        <section className="space-y-1.5">
+          <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('review.unusedTags')} · {unused.length}
+          </h3>
+          <p className="px-1 text-xs text-muted-foreground">{t('review.unusedTagsHint')}</p>
+          <ul className="flex flex-wrap gap-1.5">
+            {unused.map((tag) => (
+              <li
+                key={tag}
+                className="flex items-center gap-1 rounded-full border border-border bg-card py-0.5 pl-2.5 pr-1 text-sm"
+              >
+                <span className="text-foreground">{tag}</span>
+                <Tooltip label={t('review.deleteTagAria', { tag })}>
+                  <button
+                    type="button"
+                    aria-label={t('review.deleteTagAria', { tag })}
+                    onClick={() => dispatch({ type: 'deleteTag', tag })}
+                    className="rounded-full p-0.5 text-muted-foreground hover:bg-accent hover:text-destructive"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </Tooltip>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

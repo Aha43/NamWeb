@@ -12,6 +12,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **Help** now has a home in the left sidebar, not just the account menu (and the `?` shortcut) —
   it was too easy to miss. Closes #938.
+- **Loose ends** now surfaces **unused tags** — registered tags no item uses — as one-click deletion
+  candidates, so tag clutter is easy to spot and clear. System (`#`) tags are excluded. Closes #939.
 
 ### Fixed
 
