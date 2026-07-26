@@ -7,6 +7,7 @@ import { IN_PROGRESS_TAG, canonicalTag } from '@/domain/systemTags';
 import { nowIso } from '@/lib/local';
 import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
+import { useCompactRows } from '@/features/actions/useCompactRows';
 
 /**
  * One-click "working on it" toggle (#651): flips the built-in **in progress** system tag on an
@@ -15,6 +16,7 @@ import { TOUCH_TARGET } from '@/lib/touch';
  */
 export function InProgressToggle({ id, title }: { id: string; title: string }) {
   const { t } = useTranslation();
+  const compact = useCompactRows();
   // Optional context: presentational hosts (and their tests) render rows without a workspace
   // provider — the toggle simply doesn't appear there.
   const workspace = useContext(WorkspaceContext);
@@ -42,7 +44,8 @@ export function InProgressToggle({ id, title }: { id: string; title: string }) {
           })
         }
         className={cn(
-          'rounded-md p-2 hover:bg-accent',
+          'rounded-md hover:bg-accent',
+          compact ? 'p-1' : 'p-2',
           TOUCH_TARGET,
           on ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
         )}
