@@ -42,8 +42,8 @@ const CONTENT_MAX_W: Record<ContentWidth, string> = {
 };
 const DENSITY_MAIN_PY: Record<Density, string> = {
   comfortable: 'py-8',
-  cozy: 'py-4',
-  compact: 'py-2',
+  cozy: 'py-3',
+  compact: 'py-1', // near-zero outer band; Compact also tightens the rows themselves (ActionRow)
 };
 
 /** Laptop/desktop: a top toolbar (search + command bar + theme + account) over a resizable,
