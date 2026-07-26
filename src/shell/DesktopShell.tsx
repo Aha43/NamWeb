@@ -12,7 +12,7 @@ import { SidebarBookmarkMenu } from '@/features/bookmarks/SidebarBookmarkMenu';
 import { ProjectExplorerButton } from '@/features/projects/picker/ProjectExplorerButton';
 import { CalendarDays } from 'lucide-react';
 import { useCapture } from '@/capture/capture-context';
-import { useSettings } from '@/components/settings/settings-context';
+import { useSettings, type ContentWidth, type Density } from '@/components/settings/settings-context';
 import { LogoMark } from '@/components/brand/LogoMark';
 import { cn } from '@/lib/utils';
 import { APP_SHORT_NAME, brandTooltip } from '@/lib/app';
@@ -33,12 +33,25 @@ import {
 const NAV_BUTTON =
   'gap-1.5 aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground';
 
+// Display presets (#958): cap the central width, and set the page-level vertical rhythm. First-cut
+// numbers — tuned by use.
+const CONTENT_MAX_W: Record<ContentWidth, string> = {
+  comfortable: 'max-w-6xl', // ~1152px — comfortable to scan without a screen-wide sweep
+  wide: 'max-w-screen-2xl', // ~1536px
+  full: '', // edge-to-edge (the old behaviour)
+};
+const DENSITY_MAIN_PY: Record<Density, string> = {
+  comfortable: 'py-8',
+  cozy: 'py-4',
+  compact: 'py-2',
+};
+
 /** Laptop/desktop: a top toolbar (search + command bar + theme + account) over a resizable,
  *  collapsible view-list sidebar (grouped) and the workspace. */
 export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
   const { t } = useTranslation();
   const { openCapture } = useCapture();
-  const { dense } = useSettings();
+  const { dense, contentWidth, density } = useSettings();
   const { width, collapsed, setWidth, toggleCollapsed } = useSidebarLayout();
   // Sidebar counts (#764): the inbox count is the in-your-face cue (badge + red/green glow);
   // backlog/due/done keep theirs in the tooltip — inspectable without stealing the light.
@@ -260,10 +273,10 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
 
         <div className="flex min-w-0 flex-1 flex-col">
           <SyncNotice />
-          <main className="min-h-0 flex-1 overflow-auto px-6 py-8">
-            {/* Single width knob for all workspace content: full-width fill. Cap here (e.g.
-                max-w-6xl) if a wide screen ever feels too roomy — panels no longer cap themselves. */}
-            <div className="mx-auto w-full">
+          <main className={cn('min-h-0 flex-1 overflow-auto px-6', DENSITY_MAIN_PY[density])}>
+            {/* Width + density are user presets now (#958): cap the central area so lists aren't a
+                screen wide, and set the vertical rhythm. `full` keeps the old edge-to-edge fill. */}
+            <div className={cn('mx-auto w-full', CONTENT_MAX_W[contentWidth])}>
               <ShellContent />
             </div>
           </main>

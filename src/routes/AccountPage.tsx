@@ -20,7 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { buildUserExport, downloadJson } from '@/lib/exportData';
 import { validateNewPassword } from '@/lib/password';
 import { formatDate, type DateFormat } from '@/lib/dates';
-import { useSettings } from '@/components/settings/settings-context';
+import { useSettings, type ContentWidth, type Density } from '@/components/settings/settings-context';
 import { useTranslation } from 'react-i18next';
 import { LOCALES, type Locale } from '@/lib/i18n';
 
@@ -369,6 +369,40 @@ function ChangePassword() {
   );
 }
 
+/** A compact segmented preset picker (Display settings, #958). */
+function Segmented<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: T;
+  onChange: (value: T) => void;
+  options: { value: T; label: string }[];
+}) {
+  return (
+    <div className="inline-flex rounded-md border border-input p-0.5" role="group" aria-label={label}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          aria-pressed={value === o.value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            'rounded px-2.5 py-1 text-sm transition-colors',
+            value === o.value
+              ? 'bg-accent font-medium text-accent-foreground'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function PreferencesTab() {
   const {
     dateFormat,
@@ -381,6 +415,10 @@ function PreferencesTab() {
     setLabs,
     addToBottomDefault,
     setAddToBottomDefault,
+    contentWidth,
+    setContentWidth,
+    density,
+    setDensity,
   } = useSettings();
   const { t, i18n } = useTranslation();
   return (
@@ -421,6 +459,35 @@ function PreferencesTab() {
         </p>
       </div>
 
+      <div className="space-y-1.5">
+        <Label>{t('settings.contentWidth')}</Label>
+        <Segmented<ContentWidth>
+          label={t('settings.contentWidth')}
+          value={contentWidth}
+          onChange={setContentWidth}
+          options={[
+            { value: 'comfortable', label: t('settings.widthComfortable') },
+            { value: 'wide', label: t('settings.widthWide') },
+            { value: 'full', label: t('settings.widthFull') },
+          ]}
+        />
+        <p className="text-xs text-muted-foreground">{t('settings.contentWidthHelp')}</p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>{t('settings.density')}</Label>
+        <Segmented<Density>
+          label={t('settings.density')}
+          value={density}
+          onChange={setDensity}
+          options={[
+            { value: 'comfortable', label: t('settings.densityComfortable') },
+            { value: 'cozy', label: t('settings.densityCozy') },
+            { value: 'compact', label: t('settings.densityCompact') },
+          ]}
+        />
+        <p className="text-xs text-muted-foreground">{t('settings.densityHelp')}</p>
+      </div>
 
       <div className="space-y-1.5">
         <label className="flex items-start gap-2 text-sm text-foreground">

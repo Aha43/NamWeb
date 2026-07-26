@@ -6,9 +6,13 @@ import {
   DATE_FORMAT_STORAGE_KEY,
   DENSE_STORAGE_KEY,
   COMPACT_ROWS_STORAGE_KEY,
+  CONTENT_WIDTH_STORAGE_KEY,
+  DENSITY_STORAGE_KEY,
   LABS_STORAGE_KEY,
   LANGUAGE_STORAGE_KEY,
   SettingsContext,
+  type ContentWidth,
+  type Density,
 } from './settings-context';
 
 const DATE_FORMATS: DateFormat[] = ['medium', 'iso', 'dmy', 'mdy'];
@@ -39,6 +43,26 @@ function initialDense(): boolean {
   }
 }
 
+function initialContentWidth(): ContentWidth {
+  try {
+    const stored = localStorage.getItem(CONTENT_WIDTH_STORAGE_KEY);
+    if (stored === 'comfortable' || stored === 'wide' || stored === 'full') return stored;
+  } catch {
+    // localStorage unavailable — fall back to the default.
+  }
+  return 'comfortable'; // default: a capped, comfortable width
+}
+
+function initialDensity(): Density {
+  try {
+    const stored = localStorage.getItem(DENSITY_STORAGE_KEY);
+    if (stored === 'comfortable' || stored === 'cozy' || stored === 'compact') return stored;
+  } catch {
+    // localStorage unavailable — fall back to the default.
+  }
+  return 'comfortable'; // default: today's rhythm
+}
+
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dateFormat, setDateFormat] = useState<DateFormat>(initialDateFormat);
   // The i18n runtime already initialized with this detected locale (first paint is translated,
@@ -47,6 +71,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [dense, setDense] = useState<boolean>(initialDense);
   const [labs, setLabs] = useState<boolean>(() => localStorage.getItem(LABS_STORAGE_KEY) === '1');
   const [compactRows, setCompactRows] = useState<boolean>(() => localStorage.getItem(COMPACT_ROWS_STORAGE_KEY) === '1');
+  const [contentWidth, setContentWidth] = useState<ContentWidth>(initialContentWidth);
+  const [density, setDensity] = useState<Density>(initialDensity);
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
   const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
@@ -90,6 +116,20 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       // Private-mode storage failures are non-fatal.
     }
   }, [compactRows]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(CONTENT_WIDTH_STORAGE_KEY, contentWidth);
+    } catch {
+      // best-effort persistence
+    }
+  }, [contentWidth]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(DENSITY_STORAGE_KEY, density);
+    } catch {
+      // best-effort persistence
+    }
+  }, [density]);
 
   // Only the default persists; the effective `addToBottom` is here-and-now (resets on reload).
   useEffect(() => {
@@ -118,6 +158,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setLabs,
         compactRows,
         setCompactRows,
+        contentWidth,
+        setContentWidth,
+        density,
+        setDensity,
         setDense,
         addToBottom,
         setAddToBottom,
