@@ -12,8 +12,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **Display settings** (Preferences): **Content width** (Comfortable / Wide / Full) caps the central
   area so lists aren't a whole screen wide, and **Density** (Comfortable / Cozy / Compact) tightens the
-  page's vertical spacing so you see more of a list per screen. Presets, applied live and persisted per
-  device; default is a comfortable capped width. Closes #958.
+  page's vertical rhythm — **Compact also tightens the rows themselves** — so you see more of a list per
+  screen. Presets, applied live and persisted per device; default is a comfortable capped width.
+  Closes #958.
 
 ### Changed
 

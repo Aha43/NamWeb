@@ -135,7 +135,10 @@ export function ActionRow({
     );
 
   // Compact rows (#765): name + controls only — the meta line and path go, padding tightens.
-  const { compactRows } = useSettings();
+  // Compact density implies compact rows — the biggest "see more list" lever (#958 tuning). The
+  // per-list compact toggle still forces it at the other densities.
+  const { compactRows: compactRowsSetting, density } = useSettings();
+  const compactRows = compactRowsSetting || density === 'compact';
   // Phone rows reclaim their width (#776): the control strip hides behind a per-row "…" —
   // seven always-on icons were eating half of 390px and truncating every title.
   const isDesktop = useIsDesktop();
