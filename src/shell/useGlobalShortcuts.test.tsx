@@ -58,6 +58,10 @@ describe('useGlobalShortcuts', () => {
     labs: false,
     compactRows: false,
     setCompactRows: vi.fn(),
+    contentWidth: 'comfortable',
+    setContentWidth: vi.fn(),
+    density: 'comfortable',
+    setDensity: vi.fn(),
     setLabs: vi.fn(),
     };
     render(
