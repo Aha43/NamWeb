@@ -28,14 +28,18 @@ test('content-width and density presets apply live and persist', async ({ page }
   await expect(page.locator('main')).toHaveCSS('padding-top', '4px');
 });
 
-test('Compact density also tightens the rows themselves (#958 tuning)', async ({ page }) => {
-  await page.goto('/next');
-  const row = page.locator('li').filter({ hasText: 'Book flights' }).first();
-  await expect(row).toHaveCSS('padding-top', '8px'); // py-2, comfortable default
+test('Compact density shortens the rows (padding + controls shrink together) (#958 tuning)', async ({ page }) => {
+  const rowSel = () => page.locator('li').filter({ hasText: 'Book flights' }).first();
 
-  // Choose Compact → the row tightens (py-0.5), so more list fits per screen.
+  await page.goto('/next');
+  const before = (await rowSel().boundingBox())!.height;
+  await expect(rowSel()).toHaveCSS('padding-top', '8px'); // py-2, comfortable default
+
+  // Choose Compact → the row padding AND its control buttons shrink, so the whole row is shorter.
   await page.goto('/account?tab=preferences');
   await page.getByRole('button', { name: 'Compact' }).click();
   await page.goto('/next');
-  await expect(page.locator('li').filter({ hasText: 'Book flights' }).first()).toHaveCSS('padding-top', '2px');
+  await expect(rowSel()).toHaveCSS('padding-top', '2px'); // py-0.5
+  const after = (await rowSel().boundingBox())!.height;
+  expect(after).toBeLessThan(before); // genuinely shorter, not just less padding
 });

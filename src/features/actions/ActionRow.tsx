@@ -13,7 +13,7 @@ import { InlineRename } from './InlineRename';
 import { DueHintLabel } from './DueHintLabel';
 import { CountPill } from './CountPill';
 import { QuestionPill } from './QuestionPill';
-import { useSettings } from '@/components/settings/settings-context';
+import { useCompactRows } from './useCompactRows';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { STATUS_TEXT_TONE } from './status';
 import { ProjectPathLinks } from './ProjectPathLinks';
@@ -135,10 +135,10 @@ export function ActionRow({
     );
 
   // Compact rows (#765): name + controls only — the meta line and path go, padding tightens.
-  // Compact density implies compact rows — the biggest "see more list" lever (#958 tuning). The
-  // per-list compact toggle still forces it at the other densities.
-  const { compactRows: compactRowsSetting, density } = useSettings();
-  const compactRows = compactRowsSetting || density === 'compact';
+  const compactRows = useCompactRows();
+  // In compact the row height is set by its control buttons, not the row padding — so the buttons
+  // shrink too (#958 tuning): p-1 icons instead of p-2, letting a row approach the text height.
+  const iconPad = compactRows ? 'p-1' : 'p-2';
   // Phone rows reclaim their width (#776): the control strip hides behind a per-row "…" —
   // seven always-on icons were eating half of 390px and truncating every title.
   const isDesktop = useIsDesktop();
@@ -194,7 +194,7 @@ export function ActionRow({
   const actionsNode = (
     <>
       <InProgressToggle id={row.id} title={row.title} />
-      <CopyButton value={row.title} label={t('copy.name', { title: row.title })} className="p-2" tooltip />
+      <CopyButton value={row.title} label={t('copy.name', { title: row.title })} className={iconPad} tooltip />
       {onRename && (
         /* Stays RENDERED (disabled) while renaming (#786/F2): hiding it reflowed the strip at
            the exact blur-commit moment, and the tap that ended the edit died on shifted ground. */
@@ -205,7 +205,8 @@ export function ActionRow({
             disabled={renaming}
             onClick={() => setRenaming(true)}
             className={cn(
-              'rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40',
+              'rounded-md text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-40',
+              iconPad,
               TOUCH_TARGET,
             )}
           >
@@ -223,7 +224,7 @@ export function ActionRow({
               : t('actions.deleteConfirm', { title: row.title })
           }
           onConfirm={onDelete}
-          className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-destructive"
+          className={cn('rounded-md text-muted-foreground hover:bg-accent hover:text-destructive', iconPad)}
         >
           <Trash2 className="h-3.5 w-3.5" />
         </ConfirmButton>
