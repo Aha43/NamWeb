@@ -193,7 +193,7 @@ export function ActionRow({
 
   const actionsNode = (
     <>
-      <InProgressToggle id={row.id} title={row.title} />
+      <InProgressToggle id={row.id} title={row.title} compact={compactRows} />
       <CopyButton value={row.title} label={t('copy.name', { title: row.title })} className={iconPad} tooltip />
       {onRename && (
         /* Stays RENDERED (disabled) while renaming (#786/F2): hiding it reflowed the strip at
@@ -285,7 +285,8 @@ export function ActionRow({
             aria-controls={`row-controls-${row.id}`}
             onClick={() => setControlsOpen((o) => !o)}
             className={cn(
-              'shrink-0 rounded-md p-2 hover:text-foreground',
+              'shrink-0 rounded-md hover:text-foreground',
+              iconPad, // the phone row's in-flow control sets its height — shrink it in compact too (#958 review)
               controlsOpen ? 'text-foreground' : 'text-muted-foreground',
             )}
           >

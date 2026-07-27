@@ -8,7 +8,6 @@ import {
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { STATUS_OPTIONS, STATUS_TEXT_TONE, statusLabel } from './status';
-import { useCompactRows } from './useCompactRows';
 import type { NodeStatus } from '@/domain/types';
 
 // The badge = the shared text tone + a matching border.
@@ -29,7 +28,6 @@ export function StatusMenu({
   onSetStatus: (status: NodeStatus) => void;
 }) {
   const { t } = useTranslation();
-  const compact = useCompactRows();
   // Locale-aware single-letter badge (en N/B/D, nb N/E/F); unknown statuses fall back to the initial.
   const short = t(`domain.statusShort.${status.toLowerCase()}`, { defaultValue: status[0] });
   // The tooltip/aria show the translated status name, not the raw enum (which leaked into nb).
@@ -40,8 +38,7 @@ export function StatusMenu({
         <DropdownMenuTrigger
           aria-label={t('list.statusAria', { title, status: statusName })}
           className={cn(
-            'inline-flex items-center justify-center rounded-md border text-xs font-semibold outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
-            compact ? 'h-5 w-5' : 'h-6 w-6',
+            'inline-flex h-6 w-6 items-center justify-center rounded-md border text-xs font-semibold outline-hidden hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring',
             TONE[status] ?? 'text-muted-foreground border-border',
           )}
         >

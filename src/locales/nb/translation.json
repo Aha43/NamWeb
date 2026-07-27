@@ -549,6 +549,7 @@
   "resourceType.URI": "Lenke",
   "rows.comfortable": "Komfortable rader",
   "rows.compact": "Kompakte rader",
+  "rows.setByDensity": "Radtetthet styres av visningstetthet (Kompakt)",
   "rows.stateComfortable": "Luftig",
   "rows.stateCompact": "Kompakt",
   "search.noResults": "Ingen treff for “{query}”.",
