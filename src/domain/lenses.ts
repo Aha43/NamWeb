@@ -268,11 +268,23 @@ export function projectQuickMoveTargets(doc: WorkspaceDocument, id: string): Qui
       ? [{ id: doc.projectsNodeId, label: 'Top level', kind: 'toplevel' }]
       : [];
   const parent = parentId ? doc.nodes[parentId] : undefined;
+  // "Level up" (#962): move to the enclosing project one level out — become a sibling of the current
+  // parent — matching the action quick-move's `parent` option. Only when the grandparent is itself a
+  // project; if it's the projects root, "Top level" above already covers it. (Ancestors are never in
+  // the moved node's own subtree, so no cycle.)
+  const grandParentId = parentId
+    ? Object.values(doc.nodes).find((n) => n.childIds.includes(parentId))?.id
+    : undefined;
+  const grandParent = grandParentId ? doc.nodes[grandParentId] : undefined;
+  const levelUp: QuickMoveTarget[] =
+    grandParent?.project && !archived.has(grandParent.id)
+      ? [{ id: grandParent.id, label: [...projectPath(doc, grandParent.id), grandParent.title].join(' › '), kind: 'parent' }]
+      : [];
   const siblings = (parent?.childIds ?? [])
     .filter((cid) => Boolean(doc.nodes[cid]?.project) && !excluded.has(cid) && !archived.has(cid))
     .map((cid) => doc.nodes[cid]!)
     .map((n): QuickMoveTarget => ({ id: n.id, label: [...projectPath(doc, n.id), n.title].join(' › '), kind: 'sibling' }));
-  return [...topLevel, ...siblings];
+  return [...levelUp, ...topLevel, ...siblings];
 }
 
 /** Every openable (non-archived) project as a picker target — the whole tree is selectable in the
