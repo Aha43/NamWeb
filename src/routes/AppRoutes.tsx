@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router';
 import { useGlobalShortcuts } from '@/shell/useGlobalShortcuts';
 import { ShellLayout } from './ShellLayout';
 import { InboxPage } from './InboxPage';

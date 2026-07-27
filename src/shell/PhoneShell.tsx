@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router';
 import { HelpCircle, Inbox, ListTodo, MoreHorizontal, Plus, Settings, Target, User, type LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useCapture } from '@/capture/capture-context';

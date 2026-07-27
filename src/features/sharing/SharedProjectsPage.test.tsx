@@ -1,5 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { User } from '@supabase/supabase-js';
 import type { NamNode, WorkspaceDocument } from '@/domain/types';
@@ -17,8 +17,8 @@ vi.mock('./shares', async (orig) => ({
 }));
 
 const navigate = vi.fn();
-vi.mock('react-router-dom', async (orig) => ({
-  ...(await orig<typeof import('react-router-dom')>()),
+vi.mock('react-router', async (orig) => ({
+  ...(await orig<typeof import('react-router')>()),
   useNavigate: () => navigate,
 }));
 

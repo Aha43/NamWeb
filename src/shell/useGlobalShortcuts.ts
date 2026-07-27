@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useCapture } from '@/capture/capture-context';
 import { useSettings } from '@/components/settings/settings-context';
 

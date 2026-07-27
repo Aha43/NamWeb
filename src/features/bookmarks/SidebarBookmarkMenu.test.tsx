@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import type { ReactNode } from 'react';
 import type { Bookmark, NamNode, WorkspaceDocument } from '@/domain/types';
@@ -7,8 +7,8 @@ import type { UseWorkspace } from '@/store/useWorkspace';
 import { WorkspaceContext } from '@/store/workspace-context';
 
 const navigate = vi.fn();
-vi.mock('react-router-dom', async (orig) => ({
-  ...(await orig<typeof import('react-router-dom')>()),
+vi.mock('react-router', async (orig) => ({
+  ...(await orig<typeof import('react-router')>()),
   useNavigate: () => navigate,
 }));
 

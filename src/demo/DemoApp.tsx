@@ -1,4 +1,4 @@
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import { AuthUserContext } from '@/auth/auth-context';
 import { CaptureProvider } from '@/capture/CaptureProvider';
 import { ActionEditorProvider } from '@/features/actions/ActionEditorProvider';

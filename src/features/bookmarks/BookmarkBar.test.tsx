@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { MemoryRouter, Routes, Route, useLocation } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { WorkspaceContext } from '@/store/workspace-context';
 import type { UseWorkspace } from '@/store/useWorkspace';
