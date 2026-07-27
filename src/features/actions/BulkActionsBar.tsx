@@ -14,7 +14,8 @@ import { actionMoveTargetsAll, allTags } from '@/domain/lenses';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { useSetStatuses } from './useSetStatus';
 import { useDeleteNodes } from './useDeleteNode';
-import { nowIso } from '@/lib/local';
+import { useSettings } from '@/components/settings/settings-context';
+import { newId, nowIso } from '@/lib/local';
 import type { NodeStatus } from '@/domain/types';
 
 /**
@@ -38,9 +39,18 @@ export function BulkActionsBar({
 }) {
   const { t } = useTranslation();
   const { document, dispatch } = useWorkspaceContext();
+  const { addToBottom } = useSettings();
   const setStatuses = useSetStatuses();
   const deleteNodes = useDeleteNodes();
   const [moveOpen, setMoveOpen] = useState(false);
+  // Create a project on the spot from the move picker (#970) — same as the editor/workbench pickers;
+  // the new id is returned and the picker moves the selection into it.
+  const createProject = (parentId: string | null, title: string): string => {
+    if (!document) return '';
+    const id = newId();
+    dispatch({ type: 'addSubProject', parentId: parentId ?? document.projectsNodeId, id, title, atTop: !addToBottom, now: nowIso() });
+    return id;
+  };
   // Act only on selections that are still on screen. A query / tag-filter / realtime change can leave
   // picked ids that have dropped out of the list, and we must never tag/move/delete an off-screen node
   // (#921 review, P1). `allIds` is exactly the currently-rendered set for whichever view hosts us.
@@ -123,6 +133,7 @@ export function BulkActionsBar({
         confirmLabel={t('common.choose')}
         targets={moveTargets}
         onConfirm={bulkMove}
+        onCreateProject={createProject}
       />
 
       <ConfirmButton
