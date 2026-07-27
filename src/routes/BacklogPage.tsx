@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { actionMoveTargets, actionMoveTargetsAll, applyViewOrder, actionsWithStatuses } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
@@ -6,6 +7,8 @@ import { useSortMode } from '@/features/actions/useSortMode';
 import { BacklogPanel } from '@/features/backlog/BacklogPanel';
 import { FocusButton } from '@/features/focus/FocusButton';
 import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { InProgressFilterToggle } from '@/features/actions/InProgressFilterToggle';
+import { isInProgress } from '@/features/tags/inProgress';
 import { checkedStatuses, useStatusBoxes } from '@/features/actions/statusBoxes';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
@@ -28,7 +31,11 @@ export function BacklogPage() {
   // In "Unsorted" mode the saved manual order applies; oldest/newest are computed.
   // Status include-boxes (#766): default = this view exactly as it always was (Backlog only).
   const [boxes, toggleBox, boxesDefault] = useStatusBoxes({ BACKLOG: true });
-  const base = document ? actionsWithStatuses(document, checkedStatuses(boxes)) : [];
+  // "In-progress only" filter (#968).
+  const [inProgressOnly, setInProgressOnly] = useState(false);
+  const baseAll = document ? actionsWithStatuses(document, checkedStatuses(boxes)) : [];
+  const hasInProgress = baseAll.some(isInProgress);
+  const base = inProgressOnly ? baseAll.filter(isInProgress) : baseAll;
   const ordered =
     sortMode === 'none' ? applyViewOrder(base, document?.viewOrders[VIEW]) : sortNodes(base, sortMode);
 
@@ -46,7 +53,14 @@ export function BacklogPage() {
       <BacklogPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
       focusSlot={ordered.length > 0 ? <FocusButton to="/focus?source=backlog" label="Focus your Backlog" /> : undefined}
-      statusSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
+      statusSlot={
+        <div className="flex items-center gap-1.5">
+          <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />
+          {(hasInProgress || inProgressOnly) && (
+            <InProgressFilterToggle active={inProgressOnly} onToggle={() => setInProgressOnly((v) => !v)} />
+          )}
+        </div>
+      }
       boxesDefault={boxesDefault}
       hiddenByFilter={boxesDefault || !document ? 0 : actionsWithStatuses(document, ['BACKLOG']).length}
       sortMode={sortMode}
