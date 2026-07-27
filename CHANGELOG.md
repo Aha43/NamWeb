@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- The list views (**Next, Backlog, Due, Contexts**) can now filter to **in-progress only** — a quick
+  chip beside the status boxes that shows just the items you've marked `#in-progress`. Appears only
+  when there's something in progress to filter. Closes #968.
+
 ## [2.6.0] - 2026-07-27
 
 **Make the layout yours.** The headline is **Display settings** — you now control the two things that

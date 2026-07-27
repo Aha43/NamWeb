@@ -1,9 +1,12 @@
+import { useState } from 'react';
 import { dueGroups } from '@/domain/lenses';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { DuePanel, type DueRowGroups } from '@/features/due/DuePanel';
 import { FocusButton } from '@/features/focus/FocusButton';
 import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { InProgressFilterToggle } from '@/features/actions/InProgressFilterToggle';
+import { isInProgress } from '@/features/tags/inProgress';
 import { useStatusBoxes } from '@/features/actions/statusBoxes';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
@@ -21,11 +24,16 @@ export function DuePage() {
   // Status include-boxes (#766): due's natural set is open work (Next + Backlog); ticking
   // Done shows what was due AND got done — the satisfying view.
   const [boxes, toggleBox, boxesDefault] = useStatusBoxes({ NEXT: true, BACKLOG: true });
+  // "In-progress only" filter (#968).
+  const [inProgressOnly, setInProgressOnly] = useState(false);
   let groups = EMPTY;
+  let hasInProgress = false;
   if (document) {
     const g = dueGroups(document, new Date(), boxes.DONE);
-    const keep = (n: (typeof g.overdue)[number]) =>
+    const statusKeep = (n: (typeof g.overdue)[number]) =>
       n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE' ? boxes[n.status as 'NEXT' | 'BACKLOG' | 'DONE'] : true;
+    const keep = (n: (typeof g.overdue)[number]) => statusKeep(n) && (!inProgressOnly || isInProgress(n));
+    hasInProgress = [...g.overdue, ...g.today, ...g.thisWeek, ...g.later].filter(statusKeep).some(isInProgress);
     const rows = (ns: typeof g.overdue) => ns.filter(keep).map((n) => toActionRow(document, n));
     groups = { overdue: rows(g.overdue), today: rows(g.today), thisWeek: rows(g.thisWeek), later: rows(g.later) };
   }
@@ -38,7 +46,14 @@ export function DuePage() {
       <DuePanel
       groups={groups}
       focusSlot={hasDueNow ? <FocusButton to="/focus?source=due" label="Focus what's due now" /> : undefined}
-      statusSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
+      statusSlot={
+        <div className="flex items-center gap-1.5">
+          <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />
+          {(hasInProgress || inProgressOnly) && (
+            <InProgressFilterToggle active={inProgressOnly} onToggle={() => setInProgressOnly((v) => !v)} />
+          )}
+        </div>
+      }
       boxesDefault={boxesDefault}
       onSetStatus={setStatus}
       onEdit={openEditor}
