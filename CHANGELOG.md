@@ -8,11 +8,19 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
-### Fixed
+## [2.6.0] - 2026-07-27
 
-- A sub-project's quick-move menu now offers **"level up"** — hop into the enclosing project one level
-  out — the same neighbourhood move actions already had. A nested sub-project with no sibling projects
-  is no longer stuck with only "Top level" + Browse. Closes #962.
+**Make the layout yours.** The headline is **Display settings** — you now control the two things that
+make the desktop feel roomy or dense: a **content-width** cap so lists aren't a whole screen wide, and
+a **density** preset (Comfortable / Cozy / Compact) that tightens the page's vertical rhythm *and* the
+rows so you see more per screen. Presets, not sliders; applied live, persisted per device. Shaped over
+several rounds of dogfooding (a literal ruler was involved) and then hardened by the second-vendor
+review, which caught the row controls leaking their compact state into the calendar and Focus deck.
+Around it, three smaller consistency wins: the confusing focus-bookmark **▾ dial** left the toolbar
+(enter Focus from a list you can see first), the project **explorer** copes with a long nested path
+(scroll + full-path tooltip), and a sub-project's quick-move gained **"level up"** — the same
+neighbourhood move actions already had, because both are just tree nodes. Squarely **polishing** — no
+new domain, just making the surface fit the hand.
 
 ### Added
 
@@ -33,6 +41,9 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - The project **explorer** now copes with a long path: a deep `A › B › C…` breadcrumb used to be cut
   off on one line — it now scrolls horizontally, and hovering shows the full path. Closes #951.
+- A sub-project's quick-move menu now offers **"level up"** — hop into the enclosing project one level
+  out — the same neighbourhood move actions already had. A nested sub-project with no sibling projects
+  is no longer stuck with only "Top level" + Browse. Closes #962.
 
 ## [2.5.0] - 2026-07-25
 
@@ -1983,7 +1994,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.6.0...HEAD
+[2.6.0]: https://github.com/Aha43/NamWeb/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Aha43/NamWeb/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Aha43/NamWeb/compare/v2.3.0...v2.4.0
 [2.3.0]: https://github.com/Aha43/NamWeb/compare/v2.2.0...v2.3.0
