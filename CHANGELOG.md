@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- Bulk **Move** can now **create a project** on the spot to move the selected actions into — the same
+  "New project here" the editor and workbench move pickers already had. Closes #970.
+
 ## [2.6.0] - 2026-07-27
 
 **Make the layout yours.** The headline is **Display settings** — you now control the two things that
