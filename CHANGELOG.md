@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- A sub-project's quick-move menu now offers **"level up"** — hop into the enclosing project one level
+  out — the same neighbourhood move actions already had. A nested sub-project with no sibling projects
+  is no longer stuck with only "Top level" + Browse. Closes #962.
+
 ### Added
 
 - **Display settings** (Preferences): **Content width** (Comfortable / Wide / Full) caps the central

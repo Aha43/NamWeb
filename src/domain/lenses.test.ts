@@ -178,6 +178,24 @@ describe('projectQuickMoveTargets', () => {
   it('top-level project: sibling top-level projects only, no Top level entry', () => {
     expect(projectQuickMoveTargets(tree(), 'A').map((t) => t.id)).toEqual(['B']);
   });
+
+  it('deeply-nested project: offers "level up" to the grandparent (#962)', () => {
+    // projects/ B / A / X — X is two levels deep, with no sibling projects beside it.
+    const doc = workspace(
+      [
+        node('B', { project: true, childIds: ['A'] }),
+        node('A', { project: true, childIds: ['X'] }),
+        node('X', { project: true }),
+      ],
+      (d) => addChild(d, 'projects', 'B'),
+    );
+    const targets = projectQuickMoveTargets(doc, 'X');
+    // "Level up" to B (become a sibling of A) — the gap that used to leave only Top level.
+    expect(targets).toContainEqual({ id: 'B', label: 'B', kind: 'parent' });
+    // Top level is still offered (X is nested); no phantom siblings (X is A's only child project).
+    expect(targets.some((t) => t.kind === 'toplevel' && t.id === 'projects')).toBe(true);
+    expect(targets.some((t) => t.kind === 'sibling')).toBe(false);
+  });
 });
 
 describe('actionMoveTargetsAll', () => {
