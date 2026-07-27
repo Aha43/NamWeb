@@ -7,16 +7,16 @@ import { IN_PROGRESS_TAG, canonicalTag } from '@/domain/systemTags';
 import { nowIso } from '@/lib/local';
 import { cn } from '@/lib/utils';
 import { TOUCH_TARGET } from '@/lib/touch';
-import { useCompactRows } from '@/features/actions/useCompactRows';
 
 /**
  * One-click "working on it" toggle (#651): flips the built-in **in progress** system tag on an
  * action. Self-contained (reads the live tags and dispatches itself), so any row/card can drop it
  * in without new plumbing — marking progress happens mid-work and must be friction-free.
  */
-export function InProgressToggle({ id, title }: { id: string; title: string }) {
+/** `compact` is passed by the host row (ActionRow) when it's rendering compact — the control doesn't
+ *  read global row state itself, so it stays full-size in non-row hosts like the Focus deck (#958 review). */
+export function InProgressToggle({ id, title, compact = false }: { id: string; title: string; compact?: boolean }) {
   const { t } = useTranslation();
-  const compact = useCompactRows();
   // Optional context: presentational hosts (and their tests) render rows without a workspace
   // provider — the toggle simply doesn't appear there.
   const workspace = useContext(WorkspaceContext);

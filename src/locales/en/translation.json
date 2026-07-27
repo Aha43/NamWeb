@@ -549,6 +549,7 @@
   "resourceType.URI": "Link",
   "rows.comfortable": "Comfortable rows",
   "rows.compact": "Compact rows",
+  "rows.setByDensity": "Row density is set by Display density (Compact)",
   "rows.stateComfortable": "Cozy",
   "rows.stateCompact": "Compact",
   "search.noResults": "No results for “{query}”.",
