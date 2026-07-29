@@ -23,7 +23,7 @@ describe('the filter honesty pair (#786/F3)', () => {
         onAdd={vi.fn()}
         onSetStatus={vi.fn()}
         onEdit={vi.fn()}
-        boxesDefault={false}
+        filtered
         hiddenByFilter={12}
         statusSlot={<div />}
       />,

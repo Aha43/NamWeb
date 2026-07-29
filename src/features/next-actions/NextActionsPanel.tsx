@@ -47,11 +47,11 @@ export interface NextActionsPanelProps {
   dndEnabled?: boolean;
   /** The Focus entry point (a FocusButton) — pinned in the sticky header so it stays reachable. */
   focusSlot?: ReactNode;
-  /** The status include-boxes (#766), pinned with Focus/Sort. */
+  /** The in-progress filter chip (#968), pinned with Focus/Sort. */
   statusSlot?: ReactNode;
-  /** Whether the boxes match the view's defaults (#786/F3) — false puts a dot on the chip. */
-  boxesDefault?: boolean;
-  /** How many items the view's DEFAULT lens holds when the current boxes hide them all —
+  /** A filter is active (#786/F3) — puts a dot on the phone Filter chip. */
+  filtered?: boolean;
+  /** How many items the view's DEFAULT lens holds when the current filter hides them all —
    *  the empty state must not claim "all clear" over a filtered-out list (#786/F3). */
   hiddenByFilter?: number;
 }
@@ -77,7 +77,7 @@ export function NextActionsPanel({
   dndEnabled,
   focusSlot,
   statusSlot,
-  boxesDefault = true,
+  filtered = false,
   hiddenByFilter = 0,
 }: NextActionsPanelProps) {
   const { t } = useTranslation();
@@ -112,7 +112,7 @@ export function NextActionsPanel({
         )}
         {(focusSlot || statusSlot || rows.length > 0 || selectMode) && (
           <ListHeaderControls
-            filtered={!boxesDefault}
+            filtered={filtered}
             statusSlot={statusSlot}
             rowsToggle={rows.length > 0 ? <CompactRowsToggle /> : undefined}
             focusSlot={focusSlot}

@@ -20,6 +20,9 @@ minor = features (breaking changes allowed), patch = fixes.
   pill — on the execution decks (Next, Backlog, Due, tag, project). Most everyday cards get deleted on
   completion rather than archived, so Delete earns equal billing; it still asks for confirmation. The
   Done re-triage deck is unchanged (its primary is "restore to Next"). Closes #978.
+- The **Next** view no longer shows the NEXT/BACKLOG/DONE status include-boxes — Next is the focused
+  "do next" list, not a cross-status browser. The **in-progress** filter chip stays. The boxes remain
+  where cross-status filtering earns its place (**Contexts**, **Backlog**, **Due**). Closes #981.
 
 ### Fixed
 

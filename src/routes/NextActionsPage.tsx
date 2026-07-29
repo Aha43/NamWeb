@@ -6,10 +6,8 @@ import { sortNodes } from '@/features/actions/sort';
 import { useSortMode } from '@/features/actions/useSortMode';
 import { NextActionsPanel } from '@/features/next-actions/NextActionsPanel';
 import { FocusButton } from '@/features/focus/FocusButton';
-import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
 import { InProgressFilterToggle } from '@/features/actions/InProgressFilterToggle';
 import { isInProgress } from '@/features/tags/inProgress';
-import { checkedStatuses, useStatusBoxes } from '@/features/actions/statusBoxes';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
 import { useSetStatus } from '@/features/actions/useSetStatus';
@@ -29,12 +27,12 @@ export function NextActionsPage() {
   const isDesktop = useIsDesktop();
 
   // In "Unsorted" mode the saved manual order applies; oldest/newest are computed.
-  // Status include-boxes (#766): default = this view exactly as it always was (Next only).
-  const [boxes, toggleBox, boxesDefault] = useStatusBoxes({ NEXT: true });
-  // "In-progress only" filter (#968) — a #in-progress counterpart to the status boxes. Offered only
-  // when there's something to filter (or it's already on, so you can switch it back off).
+  // Next is just Next — the NEXT-status actions. No status include-boxes here (#981): the view is the
+  // focused "do next" list, not a cross-status browser (those boxes live on Contexts/Backlog/Due).
+  // "In-progress only" filter (#968) — offered only when there's something to filter (or it's already
+  // on, so you can switch it back off).
   const [inProgressOnly, setInProgressOnly] = useState(false);
-  const baseAll = document ? actionsWithStatuses(document, checkedStatuses(boxes)) : [];
+  const baseAll = document ? actionsWithStatuses(document, ['NEXT']) : [];
   const hasInProgress = baseAll.some(isInProgress);
   const base = inProgressOnly ? baseAll.filter(isInProgress) : baseAll;
   const ordered =
@@ -62,15 +60,12 @@ export function NextActionsPage() {
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
       focusSlot={ordered.length > 0 ? <FocusButton to={inProgressOnly ? '/focus?inProgress=1' : '/focus'} label="Focus your Next actions" /> : undefined}
       statusSlot={
-        <div className="flex items-center gap-1.5">
-          <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />
-          {(hasInProgress || inProgressOnly) && (
-            <InProgressFilterToggle active={inProgressOnly} onToggle={() => setInProgressOnly((v) => !v)} />
-          )}
-        </div>
+        hasInProgress || inProgressOnly ? (
+          <InProgressFilterToggle active={inProgressOnly} onToggle={() => setInProgressOnly((v) => !v)} />
+        ) : undefined
       }
-      boxesDefault={boxesDefault}
-      hiddenByFilter={boxesDefault || !document ? 0 : actionsWithStatuses(document, ['NEXT']).length}
+      filtered={inProgressOnly}
+      hiddenByFilter={inProgressOnly ? baseAll.length : 0}
       onAdd={
         document
           ? (title) => {
