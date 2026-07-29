@@ -8,13 +8,27 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-07-29
+
+**Surface the work in progress.** The headline is a new **in-progress filter** on every list view —
+Next, Backlog, Due, and Contexts each gain a chip beside the status boxes that narrows to just the
+items you've marked `#in-progress`, appearing only when there's something in progress to show. It's the
+`#in-progress` counterpart to the status include-boxes, and it travels the whole way: into the **Focus**
+deck, through manual **reordering** (hidden rows keep their place), and it resets cleanly when you switch
+context. Around it, bulk **Move** learned to **create a project** on the spot — the same "new project
+here" the editor and workbench pickers already had — and the app moved onto **react-router 8** (which
+drops the separate `react-router-dom` package). Squarely **dogfooding polish**: no new domain, just
+making the list surface and bulk actions fit the hand — then hardened by a four-finding second-vendor
+review that pincered the filter's order-preservation and cross-view state leaks before they shipped.
+
 ### Added
 
 - Bulk **Move** can now **create a project** on the spot to move the selected actions into — the same
   "New project here" the editor and workbench move pickers already had. Closes #970.
 - The list views (**Next, Backlog, Due, Contexts**) can now filter to **in-progress only** — a quick
   chip beside the status boxes that shows just the items you've marked `#in-progress`. Appears only
-  when there's something in progress to filter. Closes #968.
+  when there's something in progress to filter. The filter carries into the Focus deck, survives manual
+  reordering without disturbing the hidden rows, and resets when you move to another context. Closes #968.
 
 ### Changed
 
@@ -2008,7 +2022,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.6.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.7.0...HEAD
+[2.7.0]: https://github.com/Aha43/NamWeb/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Aha43/NamWeb/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Aha43/NamWeb/compare/v2.4.0...v2.5.0
 [2.4.0]: https://github.com/Aha43/NamWeb/compare/v2.3.0...v2.4.0
