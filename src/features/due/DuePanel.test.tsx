@@ -15,6 +15,17 @@ describe('DuePanel', () => {
     expect(screen.getByText('Nothing due')).toBeInTheDocument();
   });
 
+  it('keeps the filter controls and shows a filtered-empty message when a filter empties the list (#980)', () => {
+    render(
+      <DuePanel groups={EMPTY} onSetStatus={vi.fn()} filtered statusSlot={<div>status boxes</div>} />,
+    );
+    // The controls stay reachable (so you can un-filter), and the message says it's the filter's doing.
+    expect(screen.getByText('status boxes')).toBeInTheDocument();
+    expect(screen.getByText('Nothing due matches the current filter')).toBeInTheDocument();
+    // Not the bare "nothing has a due date" state.
+    expect(screen.queryByText('Nothing due')).not.toBeInTheDocument();
+  });
+
   it('pins the Focus entry point in a sticky header (#687)', () => {
     render(
       <DuePanel

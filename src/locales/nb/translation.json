@@ -212,6 +212,8 @@
   "done.selectActions": "Velg handlinger",
   "due.empty": "Ingenting forfaller",
   "due.emptyHint": "Gi en handling en forfallsdato, så vises den her, gruppert etter hvor det haster — forfalt, i dag, denne uken, senere.",
+  "due.filteredEmpty": "Ingenting som forfaller passer det gjeldende filteret",
+  "due.filteredEmptyHint": "Ingen forfallende handlinger passer statusboksene eller «pågår»-filteret — juster dem over for å se flere.",
   "due.later": "Senere",
   "due.overdue": "Forfalt",
   "due.thisWeek": "Denne uken",
