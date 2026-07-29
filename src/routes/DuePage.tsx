@@ -45,7 +45,7 @@ export function DuePage() {
     <div className="space-y-3">
       <DuePanel
       groups={groups}
-      focusSlot={hasDueNow ? <FocusButton to="/focus?source=due" label="Focus what's due now" /> : undefined}
+      focusSlot={hasDueNow ? <FocusButton to={`/focus?source=due${inProgressOnly ? '&inProgress=1' : ''}`} label="Focus what's due now" /> : undefined}
       statusSlot={
         <div className="flex items-center gap-1.5">
           <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />

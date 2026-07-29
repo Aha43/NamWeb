@@ -52,6 +52,25 @@ describe('focusCards — tag source', () => {
   });
 });
 
+describe('focusCards — inProgressOnly (#968 review, P1-a)', () => {
+  function ipDoc(): WorkspaceDocument {
+    const d = doc();
+    d.nodes.a3 = node('a3', { title: 'Later', status: 'NEXT', tags: ['home', '#in-progress'] });
+    return d;
+  }
+
+  it('narrows the queue to #in-progress actions when the option is set', () => {
+    const all = focusCards(ipDoc(), 'next');
+    expect(all.map((c) => c.id)).toEqual(['a1', 'a3']);
+    const filtered = focusCards(ipDoc(), 'next', { inProgressOnly: true });
+    expect(filtered.map((c) => c.id)).toEqual(['a3']);
+  });
+
+  it('is a no-op when the option is absent or false', () => {
+    expect(focusCards(ipDoc(), 'next', { inProgressOnly: false }).map((c) => c.id)).toEqual(['a1', 'a3']);
+  });
+});
+
 describe('focusCards — due source', () => {
   // Date-only, local — matches how dueGroups parses dueAt (focusCards calls dueGroups with today).
   function localDate(offsetDays: number): string {

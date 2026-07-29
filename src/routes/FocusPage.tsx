@@ -31,6 +31,8 @@ export function FocusPage() {
   const tags = useMemo(() => (tagsParam ? tagsParam.split(',').filter(Boolean) : []), [tagsParam]);
   const isTag = !projectId && tags.length > 0;
   const sourceParam = params.get('source');
+  // The in-progress filter rides the URL from the list view so the deck works the same subset (P1-a).
+  const inProgressOnly = params.get('inProgress') === '1';
   const isDue = !projectId && !isTag && sourceParam === 'due';
   const isDone = !projectId && !isTag && sourceParam === 'done';
   // Memoized so the object sources are stable across renders (keeps the cards useMemo honest).
@@ -60,6 +62,7 @@ export function FocusPage() {
           : sourceParam === 'done'
             ? 'done'
             : 'next';
+  const inProgressKey = inProgressOnly ? ':ip' : '';
   const projectTitle = projectId && document ? document.nodes[projectId]?.title : undefined;
   const scopedLabel = projectId
     ? (projectTitle ?? t('focus.scopeProject'))
@@ -71,7 +74,10 @@ export function FocusPage() {
   // A scoped deck (project / tags / due / done) mixes statuses, so no flat Next↔Backlog re-triage flip.
   const flat = !projectId && !isTag && !isDue && !isDone;
 
-  const cards = useMemo(() => (document ? focusCards(document, source) : []), [document, source]);
+  const cards = useMemo(
+    () => (document ? focusCards(document, source, { inProgressOnly }) : []),
+    [document, source, inProgressOnly],
+  );
   const exit = () => {
     if (projectId) navigate(`/projects/${projectId}`);
     // Return to Tags with the same selection/Next-only that launched Focus, not a bare /tags —
@@ -104,7 +110,7 @@ export function FocusPage() {
               <button
                 key={s}
                 type="button"
-                onClick={() => setParams({ source: s })}
+                onClick={() => setParams(inProgressOnly ? { source: s, inProgress: '1' } : { source: s })}
                 className={cn(
                   'rounded px-3 py-1 text-sm font-medium capitalize transition-colors',
                   source === s ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground',
@@ -120,7 +126,7 @@ export function FocusPage() {
       </div>
 
       <FocusDeck
-        key={sourceKey}
+        key={sourceKey + inProgressKey}
         cards={cards}
         // Done-focus is re-triage: the primary action restores the card to Next (it wasn't done after
         // all); otherwise the deck marks the card Done.

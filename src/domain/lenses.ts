@@ -73,6 +73,21 @@ export function applyViewOrder(nodes: NamNode[], order: string[] | undefined): N
 }
 
 /**
+ * Merge a reordered *visible subset* back into the full saved order, preserving the positions of
+ * the rows that were hidden by a filter. `fullOrder` is the complete (unfiltered) node order;
+ * `visibleReorderedIds` is the new order of just the visible rows. Each slot that held a visible
+ * row is refilled from the reordered sequence in turn; hidden rows keep their exact slots. When
+ * nothing is filtered (every row visible) this is the identity — the result equals
+ * `visibleReorderedIds`. Pure. Without this, persisting only the filtered ids would let
+ * `applyViewOrder` push every hidden row to the bottom once the filter clears (#968 review, P1-b).
+ */
+export function mergeVisibleOrder(fullOrder: NamNode[], visibleReorderedIds: string[]): string[] {
+  const visible = new Set(visibleReorderedIds);
+  const queue = [...visibleReorderedIds];
+  return fullOrder.map((n) => (visible.has(n.id) ? queue.shift()! : n.id));
+}
+
+/**
  * Ancestor nodes for a node, top-most first, excluding structural containers
  * (root/inbox/projects/actions) — the enclosing project chain, for breadcrumbs.
  * Empty when the node sits directly under a structural container. Mirrors
