@@ -42,3 +42,28 @@ test('Next view: select rows, then bulk-tag and bulk-set-status from the bar', a
   await expect.poll(() => doc.current().nodes['a1'].status).toBe('BACKLOG');
   await expect.poll(() => doc.current().nodes['a2'].status).toBe('BACKLOG'); // both, still selected after tag
 });
+
+// #970 — the bulk Move picker can create a project on the spot (like the editor/workbench pickers),
+// then move the selection into it.
+test('Next view: bulk-move can create a project and move the selection into it', async ({ page, doc }) => {
+  await page.goto('/next');
+  await page.getByRole('button', { name: 'Select' }).click();
+  await page.getByRole('checkbox', { name: 'Select Task one' }).check();
+
+  await page.getByRole('button', { name: 'Move to…' }).click();
+  const picker = page.getByRole('dialog', { name: /Move to/ });
+  await expect(picker).toBeVisible();
+
+  // Create a new top-level project from the picker and move into it.
+  await picker.getByRole('button', { name: /New project/ }).click();
+  await page.getByLabel('New project name').fill('Trip');
+  await page.getByLabel('New project name').press('Enter');
+
+  await expect
+    .poll(() => {
+      const d = doc.current();
+      const trip = Object.values(d.nodes).find((n) => n.title === 'Trip' && n.project);
+      return trip?.childIds ?? [];
+    })
+    .toContain('a1');
+});

@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- Bulk **Move** can now **create a project** on the spot to move the selected actions into — the same
+  "New project here" the editor and workbench move pickers already had. Closes #970.
+- The list views (**Next, Backlog, Due, Contexts**) can now filter to **in-progress only** — a quick
+  chip beside the status boxes that shows just the items you've marked `#in-progress`. Appears only
+  when there's something in progress to filter. Closes #968.
+
 ### Changed
 
 - Upgraded **react-router** 7 → 8 (`8.3.0`). v8 drops the separate `react-router-dom` package — all

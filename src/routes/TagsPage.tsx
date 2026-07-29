@@ -7,6 +7,8 @@ import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
 import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
 import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { InProgressFilterToggle } from '@/features/actions/InProgressFilterToggle';
+import { isInProgress } from '@/features/tags/inProgress';
 import { type StatusBoxes } from '@/features/actions/statusBoxes';
 import { tagFilterParams, parseTagFilter } from '@/features/tags/tagFilterParams';
 import { useActionEditor } from '@/features/actions/action-editor-context';
@@ -40,6 +42,7 @@ export function TagsPage() {
   // (so bookmarks/saved views/Focus keep their contract); DONE — and combos the URL can't
   // express (Backlog alone) — are session overrides, reset when the visit identity changes.
   const [boxOverride, setBoxOverride] = useState<Partial<StatusBoxes>>({});
+  const [inProgressOnly, setInProgressOnly] = useState(false); // "in-progress only" filter (#968)
   // Overrides die with the visit they belonged to (#772/F4): any URL change this page did not
   // itself write — a saved view, a bookmark re-click, a Focus exit — is a fresh landing and
   // must not inherit a previous session's box state. setFilter records what it writes; the
@@ -90,12 +93,15 @@ export function TagsPage() {
     }
   }
   // Only filter once at least one tag is chosen — an empty selection matches everything.
-  const rows =
+  const contextNodes =
     document && selected.length > 0
-      ? contextItems(document, selected, false, boxes.DONE)
-          .filter((n) => (n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE' ? boxes[n.status] : true))
-          .map((n) => toActionRow(document, n))
+      ? contextItems(document, selected, false, boxes.DONE).filter((n) =>
+          n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE' ? boxes[n.status] : true,
+        )
       : [];
+  const hasInProgress = contextNodes.some(isInProgress);
+  const shown = inProgressOnly ? contextNodes.filter(isInProgress) : contextNodes;
+  const rows = document ? shown.map((n) => toActionRow(document, n)) : [];
 
   return (
     <TagFilterPanel
@@ -124,7 +130,14 @@ export function TagsPage() {
         dispatch({ type: 'deleteTag', tag });
         setFilter(selected.filter((t) => t !== tag), effectiveNextOnly);
       }}
-      statusBoxesSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
+      statusBoxesSlot={
+        <div className="flex items-center gap-1.5">
+          <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />
+          {(hasInProgress || inProgressOnly) && (
+            <InProgressFilterToggle active={inProgressOnly} onToggle={() => setInProgressOnly((v) => !v)} />
+          )}
+        </div>
+      }
       onSetStatus={setStatus}
       onEdit={openEditor}
       onDeleteAction={deleteNode}
