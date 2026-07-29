@@ -14,6 +14,13 @@ minor = features (breaking changes allowed), patch = fixes.
   elsewhere): click the last component to jump straight to the project the action lives in, instead
   of only being able to open the edit dialog. Closes #979.
 
+### Changed
+
+- The **Focus** deck now offers **Delete** as a primary action beside Done — a green-Done / red-Delete
+  pill — on the execution decks (Next, Backlog, Due, tag, project). Most everyday cards get deleted on
+  completion rather than archived, so Delete earns equal billing; it still asks for confirmation. The
+  Done re-triage deck is unchanged (its primary is "restore to Next"). Closes #978.
+
 ## [2.7.0] - 2026-07-29
 
 **Surface the work in progress.** The headline is a new **in-progress filter** on every list view —
