@@ -93,6 +93,20 @@ describe('FocusDeck', () => {
     expect(onDeleteCard).toHaveBeenCalledWith('a');
   });
 
+  it('promotes Delete beside Done when promoteDelete is set, folding away the top-right trash (#978)', () => {
+    const onDeleteCard = vi.fn();
+    render(
+      <FocusDeck cards={three} onDone={vi.fn()} onExit={vi.fn()} onDeleteCard={onDeleteCard} promoteDelete />,
+    );
+    // Exactly one delete trigger — the promoted pill, not the pill AND the top-right trash.
+    const triggers = screen.getAllByRole('button', { name: 'Delete Do A' });
+    expect(triggers).toHaveLength(1);
+    // It still confirms before deleting.
+    fireEvent.click(triggers[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // the confirm (exact name)
+    expect(onDeleteCard).toHaveBeenCalledWith('a');
+  });
+
   it('keyboard: e edits, r renames, f flips, Delete opens the confirm for the current card', () => {
     const onEditCard = vi.fn();
     const onRenameCard = vi.fn();

@@ -156,6 +156,9 @@ export function FocusPage() {
           if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
         }}
         onDeleteCard={(id) => deleteNode(id)}
+        // Promote Delete beside Done on the execution decks; the Done re-triage deck keeps its small
+        // trash (its primary is "restore to Next", not "done") (#978).
+        promoteDelete={!isDone}
       />
     </div>
   );
