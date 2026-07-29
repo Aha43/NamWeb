@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- The **Next** view no longer shows the NEXT/BACKLOG/DONE status include-boxes — Next is the focused
+  "do next" list, not a cross-status browser. The **in-progress** filter chip stays. The boxes remain
+  where cross-status filtering earns its place (**Contexts**, **Backlog**, **Due**). Closes #981.
+
 ## [2.7.0] - 2026-07-29
 
 **Surface the work in progress.** The headline is a new **in-progress filter** on every list view —
