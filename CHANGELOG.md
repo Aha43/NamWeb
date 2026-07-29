@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Search** result rows now show the action's **project path as live links** (like the paths
+  elsewhere): click the last component to jump straight to the project the action lives in, instead
+  of only being able to open the edit dialog. Closes #979.
+
 ## [2.7.0] - 2026-07-29
 
 **Surface the work in progress.** The headline is a new **in-progress filter** on every list view —
