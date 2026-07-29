@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- The **Due** view no longer hides its filter controls when a filter empties the list. Previously,
+  narrowing the status boxes to zero matches dropped straight to a bare empty state — removing the
+  boxes themselves, so you couldn't un-filter without leaving the view. It now keeps the controls on
+  screen with a "nothing matches the current filter" message, matching Next/Backlog. Closes #980.
+
 ## [2.7.0] - 2026-07-29
 
 **Surface the work in progress.** The headline is a new **in-progress filter** on every list view —

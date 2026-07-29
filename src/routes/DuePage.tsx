@@ -54,7 +54,7 @@ export function DuePage() {
           )}
         </div>
       }
-      boxesDefault={boxesDefault}
+      filtered={!boxesDefault || inProgressOnly}
       onSetStatus={setStatus}
       onEdit={openEditor}
       onDelete={deleteNode}
