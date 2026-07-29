@@ -1,5 +1,5 @@
 import { useNavigate, useSearchParams } from 'react-router';
-import { searchResults } from '@/domain/lenses';
+import { buildPath, searchResults } from '@/domain/lenses';
 import { SearchPanel, type SearchResultRow } from '@/features/search/SearchPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -18,7 +18,8 @@ export function SearchPage() {
         id: r.node.id,
         title: r.node.title,
         type: r.node.project ? 'Project' : 'Action',
-        path: r.path,
+        // Ancestor projects as {id,title} segments so the row can link each to /projects/:id (#979).
+        path: buildPath(document, r.node.id).map((n) => ({ id: n.id, title: n.title })),
       }))
     : [];
 
