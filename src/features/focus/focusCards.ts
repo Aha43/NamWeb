@@ -1,4 +1,5 @@
 import { backlogItems, contextItems, doneItems, dueGroups, nextActions, projectActions, projectPath } from '@/domain/lenses';
+import { isInProgress } from '@/features/tags/inProgress';
 import type { WorkspaceDocument } from '@/domain/types';
 
 /** What to work through: the global Next/Backlog queues, the due-now set (overdue + today), the Done
@@ -12,9 +13,15 @@ export interface FocusCard {
   path: string[];
 }
 
-/** Build the execution queue for a source, in the source's order. */
-export function focusCards(doc: WorkspaceDocument, source: FocusSource): FocusCard[] {
-  const nodes =
+/** Build the execution queue for a source, in the source's order. When `inProgressOnly` is set the
+ *  queue is narrowed to #in-progress actions, so the filter the list view launched with travels
+ *  into the deck instead of the deck rebuilding the full queue (#968 review, P1-a). */
+export function focusCards(
+  doc: WorkspaceDocument,
+  source: FocusSource,
+  opts?: { inProgressOnly?: boolean },
+): FocusCard[] {
+  let nodes =
     typeof source === 'object'
       ? 'project' in source
         ? // A project's direct actions, excluding done — mirrors NamDesktop's focusableDirectActions.
@@ -29,6 +36,7 @@ export function focusCards(doc: WorkspaceDocument, source: FocusSource): FocusCa
           : source === 'done'
             ? doneItems(doc)
             : nextActions(doc);
+  if (opts?.inProgressOnly) nodes = nodes.filter(isInProgress);
   return nodes.map((n) => ({
     id: n.id,
     title: n.title,

@@ -50,7 +50,12 @@ export function TagsPage() {
   const selfWroteRef = useRef<string | null>(null);
   useEffect(() => {
     const now = params.toString();
-    if (selfWroteRef.current !== now) setBoxOverride({});
+    // A fresh landing (bookmark, saved view, Focus exit, external nav) resets the session filters —
+    // the in-progress toggle rides along with boxOverride so it can't leak into the next context (P2).
+    if (selfWroteRef.current !== now) {
+      setBoxOverride({});
+      setInProgressOnly(false);
+    }
     selfWroteRef.current = null;
   }, [params]);
   const boxes: StatusBoxes = {
@@ -149,10 +154,12 @@ export function TagsPage() {
       onFocus={() => {
         const search = tagFilterParams(selected, effectiveNextOnly);
         if (bookmark) search.set('bm', bookmark.id); // the deck's exit comes home to the bookmark view (#750/F2)
+        if (inProgressOnly) search.set('inProgress', '1'); // the filter travels into the deck (P1-a)
         navigate({ pathname: '/focus', search: search.toString() });
       }}
       onOpenView={(view) => {
         setBoxOverride({}); // a saved view is a fresh landing — its nextOnly must win (#772/F4)
+        setInProgressOnly(false); // …and it must not inherit the previous view's in-progress filter (P2)
         setFilter(view.tags, view.nextOnly);
       }}
       onRenameView={(oldName, newName) => {

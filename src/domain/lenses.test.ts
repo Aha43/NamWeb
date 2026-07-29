@@ -10,6 +10,7 @@ import {
   archivedProjectIds,
   backlogItems,
   blockedGroups,
+  mergeVisibleOrder,
   buildParentIndex,
   buildPath,
   canAddPrerequisite,
@@ -639,6 +640,25 @@ describe('applyViewOrder', () => {
 
   it('ignores saved ids that are no longer present', () => {
     expect(ids(applyViewOrder(list, ['gone', 'c', 'a', 'b']))).toEqual(['c', 'a', 'b']);
+  });
+});
+
+describe('mergeVisibleOrder (#968 review, P1-b)', () => {
+  const full = [node('a'), node('b'), node('c')];
+
+  it('is the identity when every row is visible', () => {
+    expect(mergeVisibleOrder(full, ['c', 'a', 'b'])).toEqual(['c', 'a', 'b']);
+  });
+
+  it('keeps hidden rows in place while reordering the visible ones', () => {
+    // b is hidden by the filter; swapping visible a and c must not move b from the middle.
+    expect(mergeVisibleOrder(full, ['c', 'a'])).toEqual(['c', 'b', 'a']);
+  });
+
+  it('preserves multiple hidden rows at their original slots', () => {
+    const list = [node('a'), node('b'), node('c'), node('d'), node('e')];
+    // visible = a, c, e; hidden b (slot 1) and d (slot 3). Reorder visible to e, a, c.
+    expect(mergeVisibleOrder(list, ['e', 'a', 'c'])).toEqual(['e', 'b', 'a', 'd', 'c']);
   });
 });
 

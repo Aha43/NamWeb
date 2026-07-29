@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { actionMoveTargets, actionMoveTargetsAll, applyViewOrder, actionsWithStatuses } from '@/domain/lenses';
+import { actionMoveTargets, actionMoveTargetsAll, applyViewOrder, actionsWithStatuses, mergeVisibleOrder } from '@/domain/lenses';
 import { newId, nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { sortNodes } from '@/features/actions/sort';
@@ -50,14 +50,16 @@ export function BacklogPage() {
     const j = direction === 'up' ? i - 1 : i + 1;
     if (i < 0 || j < 0 || j >= ids.length) return;
     [ids[i], ids[j]] = [ids[j], ids[i]];
-    dispatch({ type: 'reorderView', view: VIEW, order: ids });
+    // Merge the reordered visible rows back into the FULL order so a move while the in-progress
+    // filter is on doesn't strand the hidden rows at the bottom on filter-clear (#968 review, P1-b).
+    dispatch({ type: 'reorderView', view: VIEW, order: mergeVisibleOrder(orderedAll, ids) });
   }
 
   return (
     <div className="space-y-3">
       <BacklogPanel
       rows={document ? ordered.map((n) => toActionRow(document, n)) : []}
-      focusSlot={ordered.length > 0 ? <FocusButton to="/focus?source=backlog" label="Focus your Backlog" /> : undefined}
+      focusSlot={ordered.length > 0 ? <FocusButton to={`/focus?source=backlog${inProgressOnly ? '&inProgress=1' : ''}`} label="Focus your Backlog" /> : undefined}
       statusSlot={
         <div className="flex items-center gap-1.5">
           <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />
@@ -72,7 +74,7 @@ export function BacklogPage() {
       onCycleSort={cycleSort}
       reorderable={sortMode === 'none'}
       onMove={move}
-      onReorder={(ids) => dispatch({ type: 'reorderView', view: VIEW, order: ids })}
+      onReorder={(ids) => dispatch({ type: 'reorderView', view: VIEW, order: mergeVisibleOrder(orderedAll, ids) })}
       dndEnabled={isDesktop}
       onAdd={
         document

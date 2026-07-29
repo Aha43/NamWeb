@@ -48,3 +48,77 @@ test('Next view: adding while in-progress-filtered preserves the full saved orde
     })
     .toBe(true);
 });
+
+// #968 review (P1-a): the in-progress filter must travel into the Focus deck — otherwise clicking
+// Focus while filtered rebuilds the FULL queue.
+test('Next view: Focus while in-progress-filtered scopes the deck to in-progress', async ({ page }) => {
+  await page.goto('/next');
+  await page.getByRole('button', { name: 'Show in-progress only' }).click();
+
+  await page.getByRole('button', { name: 'Focus your Next actions' }).click();
+
+  await expect(page).toHaveURL(/\/focus\?inProgress=1/);
+  await expect(page.getByLabel('Progress')).toHaveText('1 / 1'); // only the in-progress card
+  await expect(page.getByRole('heading', { name: 'Wash the car' })).toBeVisible();
+  await expect(page.getByText('Buy soap')).toHaveCount(0);
+});
+
+// #968 review (P1-b): a manual reorder while filtered must merge back into the FULL saved order,
+// leaving the hidden (non-in-progress) rows in their original slots.
+test.describe('filtered reorder preserves hidden rows', () => {
+  test.use({
+    seedDoc: new DocBuilder()
+      .action('h1', 'Mow lawn', { status: 'NEXT' })
+      .action('p1', 'Call bank', { status: 'NEXT', tags: ['#in-progress'] })
+      .action('h2', 'Buy soap', { status: 'NEXT' })
+      .action('p2', 'Email Sam', { status: 'NEXT', tags: ['#in-progress'] })
+      .action('h3', 'Water plants', { status: 'NEXT' })
+      .build(),
+  });
+
+  test('moving a visible row does not strand the hidden rows on filter-clear', async ({ page, doc }) => {
+    await page.goto('/next');
+    await page.getByRole('button', { name: 'Show in-progress only' }).click();
+
+    // Visible = [Call bank, Email Sam]. Move the second one up.
+    await page.getByRole('button', { name: 'Move Email Sam up' }).click();
+
+    // The full saved order keeps the hidden rows in place (h1 first, h2 middle, h3 last) while the
+    // two in-progress rows swap. The buggy path would drop h1/h2/h3 to the bottom.
+    await expect
+      .poll(() => doc.current().viewOrders.next ?? [])
+      .toEqual(['h1', 'p2', 'h2', 'p1', 'h3']);
+  });
+});
+
+// #968 review (P2): the Tags in-progress filter is session state — a fresh landing (a different
+// context bookmark) must not inherit it, or the second context shows an empty/partial list.
+test.describe('Tags in-progress filter does not leak across context visits', () => {
+  const seed = new DocBuilder()
+    .action('h1', 'Mow lawn', { status: 'NEXT', tags: ['home'] })
+    .action('h2', 'Trim hedge', { status: 'NEXT', tags: ['home', '#in-progress'] })
+    .action('w1', 'Email client', { status: 'NEXT', tags: ['work'] })
+    .build();
+  seed.bookmarks = [
+    { id: 'bmh', label: '#home', kind: 'tagFilter' as const, tags: ['home'], nextOnly: false, color: '#10b981' },
+    { id: 'bmw', label: '#work', kind: 'tagFilter' as const, tags: ['work'], nextOnly: false, color: '#3b82f6' },
+  ];
+  test.use({ seedDoc: seed });
+
+  test('switching to another context bookmark resets the in-progress filter', async ({ page }) => {
+    await page.goto('/next');
+
+    // Land in the #home context via its bookmark, then filter to in-progress (hides Mow lawn).
+    await page.getByRole('button', { name: 'Context bookmarks' }).click();
+    await page.getByRole('menu').getByText('#home').click();
+    await expect(page.getByText('Trim hedge')).toBeVisible();
+    await page.getByRole('button', { name: 'Show in-progress only' }).click();
+    await expect(page.getByText('Mow lawn')).toHaveCount(0);
+
+    // Switch to the #work context — a fresh landing. #work has no in-progress item, so a leaked
+    // filter would hide Email client entirely. It must be visible (filter reset).
+    await page.getByRole('button', { name: 'Context bookmarks' }).click();
+    await page.getByRole('menu').getByText('#work').click();
+    await expect(page.getByText('Email client')).toBeVisible();
+  });
+});
