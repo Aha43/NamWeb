@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router';
 import { actionMoveTargets, actionMoveTargetsAll, allTags, buildParentIndex, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
 import { effectiveDue } from '@/domain/derivedDue';
 import { newId, nowIso } from '@/lib/local';

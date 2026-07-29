@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { projectMoveTargets, projectQuickMoveTargets, projects, reorderKindWithinChildren } from '@/domain/lenses';
 import { effectiveDue } from '@/domain/derivedDue';
 import { buildLearnNam } from '@/domain/learnNam';

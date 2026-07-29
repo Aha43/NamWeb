@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { normalizeTags } from '@/domain/mutations';
 import { GoalBoardsPanel } from '@/features/goals/GoalBoardsPanel';
 import { missionControlStations } from '@/features/goals/goalBoards';

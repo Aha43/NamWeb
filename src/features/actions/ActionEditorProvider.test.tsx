@@ -7,8 +7,8 @@ import { ActionEditorProvider } from './ActionEditorProvider';
 import { useActionEditor } from './action-editor-context';
 
 const navigate = vi.fn();
-vi.mock('react-router-dom', async (orig) => ({
-  ...(await orig<typeof import('react-router-dom')>()),
+vi.mock('react-router', async (orig) => ({
+  ...(await orig<typeof import('react-router')>()),
   useNavigate: () => navigate,
 }));
 

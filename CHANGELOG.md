@@ -16,6 +16,12 @@ minor = features (breaking changes allowed), patch = fixes.
   chip beside the status boxes that shows just the items you've marked `#in-progress`. Appears only
   when there's something in progress to filter. Closes #968.
 
+### Changed
+
+- Upgraded **react-router** 7 → 8 (`8.3.0`). v8 drops the separate `react-router-dom` package — all
+  imports move to `react-router` — and requires React 19 (already in use). No behavioural change to the
+  app's declarative routing. Closes #933.
+
 ## [2.6.0] - 2026-07-27
 
 **Make the layout yours.** The headline is **Display settings** — you now control the two things that

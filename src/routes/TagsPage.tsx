@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { allTags, contextItems, effectiveTags } from '@/domain/lenses';
 import { canonicalTag } from '@/domain/systemTags';
 import { nowIso } from '@/lib/local';

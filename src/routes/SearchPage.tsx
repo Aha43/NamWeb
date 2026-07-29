@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import { searchResults } from '@/domain/lenses';
 import { SearchPanel, type SearchResultRow } from '@/features/search/SearchPanel';
 import { useActionEditor } from '@/features/actions/action-editor-context';

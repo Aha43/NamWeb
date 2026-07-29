@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { newId, nowIso } from '@/lib/local';
 import { cloneTemplateNodes } from '@/domain/mutations';
 import { TemplatesPanel } from '@/features/templates/TemplatesPanel';

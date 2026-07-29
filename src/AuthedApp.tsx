@@ -1,4 +1,4 @@
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter } from 'react-router';
 import type { User } from '@supabase/supabase-js';
 import { AuthUserContext } from './auth/auth-context';
 import { WorkspaceProvider } from './store/WorkspaceProvider';
