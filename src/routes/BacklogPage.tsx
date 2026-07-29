@@ -38,6 +38,11 @@ export function BacklogPage() {
   const base = inProgressOnly ? baseAll.filter(isInProgress) : baseAll;
   const ordered =
     sortMode === 'none' ? applyViewOrder(base, document?.viewOrders[VIEW]) : sortNodes(base, sortMode);
+  // The FULL (unfiltered) view order — what `onAdd` writes to, so adding while the in-progress filter
+  // is on doesn't drop the hidden items to the bottom of the saved order (#968 review, F1).
+  const orderedAll = inProgressOnly
+    ? (sortMode === 'none' ? applyViewOrder(baseAll, document?.viewOrders[VIEW]) : sortNodes(baseAll, sortMode))
+    : ordered;
 
   function move(id: string, direction: 'up' | 'down') {
     const ids = ordered.map((n) => n.id);
@@ -82,8 +87,9 @@ export function BacklogPage() {
                 atTop: !addToBottom,
                 now: nowIso(),
               });
-              // Place it in this view's saved order — top by default, bottom when preferred.
-              const existing = ordered.map((n) => n.id);
+              // Place it in this view's saved order — top by default, bottom when preferred. Use the
+              // FULL order (not the filtered view) so an in-progress filter doesn't reshuffle the rest.
+              const existing = orderedAll.map((n) => n.id);
               dispatch({ type: 'reorderView', view: VIEW, order: addToBottom ? [...existing, id] : [id, ...existing] });
             }
           : undefined
