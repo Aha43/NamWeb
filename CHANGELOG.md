@@ -8,11 +8,28 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Search** result rows now show the action's **project path as live links** (like the paths
+  elsewhere): click the last component to jump straight to the project the action lives in, instead
+  of only being able to open the edit dialog. Closes #979.
+
 ### Changed
 
+- The **Focus** deck now offers **Delete** as a primary action beside Done — a green-Done / red-Delete
+  pill — on the execution decks (Next, Backlog, Due, tag, project). Most everyday cards get deleted on
+  completion rather than archived, so Delete earns equal billing; it still asks for confirmation. The
+  Done re-triage deck is unchanged (its primary is "restore to Next"). Closes #978.
 - The **Next** view no longer shows the NEXT/BACKLOG/DONE status include-boxes — Next is the focused
   "do next" list, not a cross-status browser. The **in-progress** filter chip stays. The boxes remain
   where cross-status filtering earns its place (**Contexts**, **Backlog**, **Due**). Closes #981.
+
+### Fixed
+
+- The **Due** view no longer hides its filter controls when a filter empties the list. Previously,
+  narrowing the status boxes to zero matches dropped straight to a bare empty state — removing the
+  boxes themselves, so you couldn't un-filter without leaving the view. It now keeps the controls on
+  screen with a "nothing matches the current filter" message, matching Next/Backlog. Closes #980.
 
 ## [2.7.0] - 2026-07-29
 

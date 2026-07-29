@@ -28,8 +28,9 @@ export interface DuePanelProps {
   focusSlot?: ReactNode;
   /** The status include-boxes (#766). */
   statusSlot?: ReactNode;
-  /** False puts the filtered-dot on the phone chip (#786/F3). */
-  boxesDefault?: boolean;
+  /** A filter is active (status boxes off-default or the in-progress filter on). Drives the phone
+   *  chip's dot AND keeps the filter controls on screen when the filter empties the list (#980). */
+  filtered?: boolean;
 }
 
 // Labels are i18n keys, translated at render.
@@ -41,12 +42,25 @@ const SECTIONS: { key: keyof DueRowGroups; label: string; tone: string }[] = [
 ];
 
 /** Due actions grouped by urgency; empty sections are hidden. Presentational. */
-export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focusSlot, statusSlot, boxesDefault = true }: DuePanelProps) {
+export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focusSlot, statusSlot, filtered = false }: DuePanelProps) {
   const { t } = useTranslation();
   const { selectMode, selected, toggle, clear, selectAll, enter, exit } = useMultiSelect();
   const total = SECTIONS.reduce((n, s) => n + groups[s.key].length, 0);
   const allRowIds = SECTIONS.flatMap((s) => groups[s.key].map((r) => r.id));
   if (total === 0) {
+    // A filter emptied the list: keep the controls on screen so you can adjust the filter back —
+    // otherwise the status boxes vanish and you're stranded (only route out is leaving the view)
+    // (#980). Only the genuine "nothing due" state (no filter active) drops to the bare empty state.
+    if (filtered) {
+      return (
+        <section className="space-y-4">
+          <div className="sticky top-0 z-10 space-y-2 bg-background pt-1">
+            <ListHeaderControls filtered statusSlot={statusSlot} />
+          </div>
+          <EmptyState hint={t('due.filteredEmptyHint')}>{t('due.filteredEmpty')}</EmptyState>
+        </section>
+      );
+    }
     return (
       <section>
         <EmptyState hint={t('due.emptyHint')}>{t('due.empty')}</EmptyState>
@@ -59,7 +73,7 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focu
       {/* Pin the Focus entry point + select toggle so they stay reachable while the groups scroll. */}
       <div className="sticky top-0 z-10 space-y-2 bg-background pt-1">
         <ListHeaderControls
-          filtered={!boxesDefault}
+          filtered={filtered}
           statusSlot={statusSlot}
           rowsToggle={<CompactRowsToggle />}
           focusSlot={focusSlot}

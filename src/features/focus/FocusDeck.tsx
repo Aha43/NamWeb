@@ -33,6 +33,13 @@ export interface FocusDeckProps {
   onDeleteCard?: (id: string) => void;
   /** Label for the primary advance action. Omit for the default ("Done"); Done-focus passes e.g. "To Next". */
   doneLabel?: string;
+  /**
+   * Promote Delete to a primary action beside Done — the green-Done / red-Delete "pill" (#978).
+   * On for the execution queues (Next/Backlog/Due/tag/project), where most cards get deleted on
+   * completion, not archived. Off for the Done re-triage deck (its primary is "restore to Next", and
+   * the small top-right trash stays). When on, the top-right trash folds into the primary Delete.
+   */
+  promoteDelete?: boolean;
 }
 
 /**
@@ -50,6 +57,7 @@ export function FocusDeck({
   onRenameCard,
   onDeleteCard,
   doneLabel,
+  promoteDelete = false,
 }: FocusDeckProps) {
   const { t } = useTranslation();
   const doneText = doneLabel ?? t('domain.status.done');
@@ -191,7 +199,7 @@ export function FocusDeck({
               )}
               <InProgressToggle id={current.id} title={current.title} />
               <CopyButton value={current.title} label={t('copy.name', { title: current.title })} tooltip />
-              {onDeleteCard && (
+              {onDeleteCard && !promoteDelete && (
                 <ConfirmButton
                   id={DELETE_TRIGGER_ID}
                   aria-label={t('actions.deleteAria', { title: current.title })}
@@ -238,10 +246,31 @@ export function FocusDeck({
         <Button variant="outline" size="icon" aria-label={t('focus.previous')} onClick={prev}>
           <ChevronLeft />
         </Button>
-        <Button size="lg" className="gap-2 px-8" aria-label={doneAria} onClick={done}>
-          <Check />
-          {doneText}
-        </Button>
+        {promoteDelete && onDeleteCard ? (
+          // Done | Delete "pill": most execution cards get deleted on completion, so Delete earns a
+          // primary slot right beside Done — still guarded by the confirm popover (#978).
+          <div className="flex items-stretch overflow-hidden rounded-md shadow-xs">
+            <Button size="lg" className="gap-2 rounded-none px-8" aria-label={doneAria} onClick={done}>
+              <Check />
+              {doneText}
+            </Button>
+            <ConfirmButton
+              id={DELETE_TRIGGER_ID}
+              aria-label={t('actions.deleteAria', { title: current.title })}
+              message={t('focus.deleteConfirm', { title: current.title })}
+              onConfirm={() => onDeleteCard(current.id)}
+              className="flex items-center gap-2 border-l border-background/25 bg-destructive px-6 text-base font-medium text-destructive-foreground hover:bg-destructive/90"
+            >
+              <Trash2 className="h-5 w-5" />
+              {t('common.delete')}
+            </ConfirmButton>
+          </div>
+        ) : (
+          <Button size="lg" className="gap-2 px-8" aria-label={doneAria} onClick={done}>
+            <Check />
+            {doneText}
+          </Button>
+        )}
         <Button variant="outline" size="icon" aria-label={t('focus.next')} onClick={next}>
           <ChevronRight />
         </Button>

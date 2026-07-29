@@ -212,6 +212,8 @@
   "done.selectActions": "Select actions",
   "due.empty": "Nothing due",
   "due.emptyHint": "Give an action a due date and it shows here, grouped by urgency — overdue, today, this week, later.",
+  "due.filteredEmpty": "Nothing due matches the current filter",
+  "due.filteredEmptyHint": "No due actions match the status boxes or in-progress filter — adjust them above to see more.",
   "due.later": "Later",
   "due.overdue": "Overdue",
   "due.thisWeek": "This week",
