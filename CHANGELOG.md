@@ -8,25 +8,26 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
-### Changed
-
-- The project **summary** now includes **Done** actions by default. The summary doubles as sprint
-  input, and actions are often marked Done once their description is ready — so excluding them dropped
-  the described work. The Done toggle still lets you leave them out. Closes #987.
-
 ### Added
 
 - **Jump a due date into the future** — the due editor (actions and projects) gains quick **+1 week /
   +1 month / +1 year** presets, plus a **+N years** stepper. They shift from the current due date (or
   today if there's none) using plain calendar arithmetic, and when the action has an end date they move
   it too, preserving the span. Land where the math puts it and tweak after. Closes #986.
-
 - **Search** result rows now show the action's **project path as live links** (like the paths
   elsewhere): click the last component to jump straight to the project the action lives in, instead
   of only being able to open the edit dialog. Closes #979.
 
 ### Changed
 
+- The project **summary** now includes **Done** actions by default. The summary doubles as sprint
+  input, and actions are often marked Done once their description is ready — so excluding them dropped
+  the described work. The Done toggle still lets you leave them out. Closes #987.
+- The inbox **Process** deck's navigation now mirrors the Focus deck: **‹ prev · Delete · next ›**
+  chevron icons replace the "Prev"/"Skip" text buttons (the ←/→ keys already cycled). The centered
+  **Delete** carries a tooltip naming its dual meaning in the inbox — *nothing to do, or you've already
+  handled it* — since an inbox item has no other terminal state until it becomes an action or project.
+  Closes #988.
 - The **Focus** deck now offers **Delete** as a primary action beside Done — a green-Done / red-Delete
   pill — on the execution decks (Next, Backlog, Due, tag, project). Most everyday cards get deleted on
   completion rather than archived, so Delete earns equal billing; it still asks for confirmation. The

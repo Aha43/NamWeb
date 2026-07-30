@@ -61,7 +61,7 @@ describe('InboxProcessDialog', () => {
     expect(screen.queryByRole('combobox', { name: 'File under' })).not.toBeInTheDocument();
   });
 
-  it('deck mode shows the "X of N" position + Delete/Prev/Skip and does not self-close on resolve', () => {
+  it('deck mode shows the "X of N" position + chevron nav / Delete and does not self-close on resolve (#988)', () => {
     const onOpenChange = vi.fn();
     const onDelete = vi.fn();
     const onSkip = vi.fn();
@@ -81,9 +81,10 @@ describe('InboxProcessDialog', () => {
       />,
     );
     expect(screen.getByText(/2 of 3/)).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Skip →' }));
+    // Chevron nav (no "Skip"/"Prev" wording) flanks a centered Delete, like the Focus deck.
+    fireEvent.click(screen.getByRole('button', { name: 'Next item' }));
     expect(onSkip).toHaveBeenCalled();
-    fireEvent.click(screen.getByRole('button', { name: '← Prev' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Previous item' }));
     expect(onPrev).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
     expect(onDelete).toHaveBeenCalled();

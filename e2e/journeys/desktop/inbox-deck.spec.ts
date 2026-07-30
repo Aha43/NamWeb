@@ -40,11 +40,11 @@ test('the deck cycles: skipped items come around again until resolved', async ({
   await page.keyboard.press('ArrowLeft'); // back to the first
   await expect(dialog.getByText(/First thought · 1 of 3/)).toBeVisible();
 
-  // Skip past the end — the deck wraps instead of slamming shut, and the position rolls to 1.
-  await dialog.getByRole('button', { name: /Skip/ }).click();
-  await dialog.getByRole('button', { name: /Skip/ }).click();
+  // Advance past the end (the › chevron, #988) — the deck wraps instead of slamming shut.
+  await dialog.getByRole('button', { name: 'Next item' }).click();
+  await dialog.getByRole('button', { name: 'Next item' }).click();
   await expect(dialog.getByText(/Third thought · 3 of 3/)).toBeVisible();
-  await dialog.getByRole('button', { name: /Skip/ }).click(); // wrap
+  await dialog.getByRole('button', { name: 'Next item' }).click(); // wrap
   await expect(dialog).toBeVisible();
   await expect(dialog.getByText(/First thought · 1 of 3/)).toBeVisible();
 
@@ -53,6 +53,10 @@ test('the deck cycles: skipped items come around again until resolved', async ({
   await dialog.getByRole('button', { name: 'Do it next' }).click();
   await expect(dialog.getByText(/Second thought · 1 of 2/)).toBeVisible();
   await expect.poll(() => doc.current().nodes['i1'].status).toBe('NEXT');
+
+  // The Delete carries a tooltip naming its dual meaning — nothing to do, or already handled (#988).
+  await dialog.getByRole('button', { name: 'Delete', exact: true }).hover();
+  await expect(page.getByRole('tooltip')).toContainText(/already handled it/);
 
   // Deleting also removes it; resolving the last one ends the deck.
   await dialog.getByRole('button', { name: 'Delete', exact: true }).click();

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
   Dialog,
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Tooltip } from '@/components/ui/tooltip';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { TagsInput } from '@/features/actions/TagsInput';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
@@ -197,21 +198,26 @@ export function InboxProcessDialog({
               {t('inbox.kindProject')}
             </Button>
             {deck && (
-              <div className="mt-1 flex gap-2">
-                <Button variant="ghost" size="sm" className="flex-1 text-destructive" onClick={onDelete}>
-                  {t('common.delete')}
-                </Button>
-                {/* ←/→ mirror these; both roll (wrap past the ends), and the "X of N" above shows
-                    where you are so the wrap is visible (#866). */}
+              // Navigate the deck like the Focus deck: ‹ prev · Delete · next › (#988). ←/→ mirror
+              // the chevrons; both roll past the ends, and the "X of N" above shows the wrap (#866).
+              <div className="mt-1 flex items-center justify-center gap-4">
                 {remaining && remaining > 1 && (
-                  <>
-                    <Button variant="ghost" size="sm" className="flex-1" onClick={onPrev}>
-                      ← {t('inbox.prev')}
-                    </Button>
-                    <Button variant="ghost" size="sm" className="flex-1" onClick={onSkip}>
-                      {t('inbox.skip')} →
-                    </Button>
-                  </>
+                  <Button variant="outline" size="icon" aria-label={t('inbox.prevItem')} onClick={onPrev}>
+                    <ChevronLeft />
+                  </Button>
+                )}
+                {/* Delete in the inbox means two things — "nothing to do" OR "already handled" —
+                    because an inbox item has no other terminal state yet. The tooltip names that (#988). */}
+                <Tooltip label={t('inbox.deleteMeaning')}>
+                  <Button variant="ghost" size="sm" className="gap-1.5 text-destructive" onClick={onDelete}>
+                    <Trash2 className="h-4 w-4" />
+                    {t('common.delete')}
+                  </Button>
+                </Tooltip>
+                {remaining && remaining > 1 && (
+                  <Button variant="outline" size="icon" aria-label={t('inbox.nextItem')} onClick={onSkip}>
+                    <ChevronRight />
+                  </Button>
                 )}
               </div>
             )}
