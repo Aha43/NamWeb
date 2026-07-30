@@ -16,6 +16,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Jump a due date into the future** — the due editor (actions and projects) gains quick **+1 week /
+  +1 month / +1 year** presets, plus a **+N years** stepper. They shift from the current due date (or
+  today if there's none) using plain calendar arithmetic, and when the action has an end date they move
+  it too, preserving the span. Land where the math puts it and tweak after. Closes #986.
+
 - **Search** result rows now show the action's **project path as live links** (like the paths
   elsewhere): click the last component to jump straight to the project the action lives in, instead
   of only being able to open the edit dialog. Closes #979.

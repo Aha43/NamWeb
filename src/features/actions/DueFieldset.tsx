@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tooltip } from '@/components/ui/tooltip';
 import { DatePickerPopover } from '@/components/ui/date-picker';
-import { parseFlexibleDate, parseFlexibleTime } from '@/lib/dates';
+import { parseFlexibleDate, parseFlexibleTime, addDays, addMonths, addYears, jumpDue } from '@/lib/dates';
 
 /** The four due fields a node can carry (#438/#493/#500) — what `onCommit` reports. */
 export interface DueFields {
@@ -51,6 +51,8 @@ export function DueFieldset({
   const [dueEndError, setDueEndError] = useState(false);
   const [dueTimeError, setDueTimeError] = useState(false);
   const [dueEndTimeError, setDueEndTimeError] = useState(false);
+  // "+N years" jump amount (#986).
+  const [jumpYears, setJumpYears] = useState(2);
   // The scheduling extras collapse by default; open when the node already carries any (#559) —
   // or when a derived end has a ghost to show (#706).
   const [showExtras, setShowExtras] = useState(
@@ -141,6 +143,23 @@ export function DueFieldset({
     onCommit({ dueAt: null, dueEndAt: null, dueTime: null, dueEndTime: null });
   };
 
+  // Jump the due date into the future (#986): shift the start by `shift` (from the current start, or
+  // today if none), and — when there's an end date — move it too, preserving the span length in days.
+  // Land where the math puts it (a "+1 month" may hit a weekend); the user tweaks after.
+  const jump = (shift: (iso: string) => string) => {
+    const hadEnd = parseFlexibleDate(dueEnd) !== null;
+    const { dueAt, dueEndAt } = jumpDue(parseFlexibleDate(due), parseFlexibleDate(dueEnd), shift);
+    dirtyRef.current = true;
+    setDue(dueAt);
+    setDueError(false);
+    if (dueEndAt) {
+      setDueEnd(dueEndAt);
+      setDueEndError(false);
+    }
+    commitIfValid({ due: dueAt, ...(hadEnd ? { dueEnd: dueEndAt! } : {}) });
+  };
+  const jumpChip = 'rounded-md border border-input px-2 py-0.5 text-xs text-foreground hover:bg-accent';
+
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -187,6 +206,33 @@ export function DueFieldset({
           onSelect={(isoDate) => { dirtyRef.current = true; setDue(isoDate); setDueError(false); commitIfValid({ due: isoDate }); }}
           label={t('editor.pickDueDate')}
         />
+      </div>
+      {/* Quick "jump ahead" presets (#986) — shift the due date (and the end, preserving the span)
+          into the future by a week / month / year / N years. */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-xs text-muted-foreground">{t('editor.jumpAhead')}</span>
+        <button type="button" className={jumpChip} onClick={() => jump((d) => addDays(d, 7))}>
+          {t('editor.jumpWeek')}
+        </button>
+        <button type="button" className={jumpChip} onClick={() => jump((d) => addMonths(d, 1))}>
+          {t('editor.jumpMonth')}
+        </button>
+        <button type="button" className={jumpChip} onClick={() => jump((d) => addYears(d, 1))}>
+          {t('editor.jumpYear')}
+        </button>
+        <span className="ml-1 inline-flex items-center gap-1">
+          <Input
+            type="number"
+            min={1}
+            aria-label={t('editor.jumpYearsAria')}
+            value={jumpYears}
+            onChange={(e) => setJumpYears(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+            className="h-6 w-12 px-1.5 py-0 text-xs"
+          />
+          <button type="button" className={jumpChip} onClick={() => jump((d) => addYears(d, jumpYears))}>
+            {t('editor.jumpYears')}
+          </button>
+        </span>
       </div>
       {!showExtras && (
         <button
