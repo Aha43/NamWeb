@@ -155,3 +155,67 @@ export function formatAge(iso: string, now: Date = new Date(), t?: Translate): A
   else label = t ? t('dates.years', { count: Math.floor(days / 365) }) : `${Math.floor(days / 365)}y`;
   return { label, stale };
 }
+
+// ── ISO date arithmetic (#986: jump a due date into the future) ───────────────────────────────
+// All operate on ISO `yyyy-MM-dd` strings and stay in the local calendar. Month/year adds clamp the
+// day to the target month's length (Jan 31 +1mo → Feb 28/29; Feb 29 +1yr → Feb 28).
+
+function isoParts(iso: string): [number, number, number] {
+  const [y, m, d] = iso.split('-').map(Number);
+  return [y, m, d];
+}
+function toIso(y: number, m: number, d: number): string {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+function daysInMonth(y: number, m: number): number {
+  return new Date(y, m, 0).getDate(); // day 0 of month m+1 (m is 1-based) = last day of month m
+}
+
+/** Today in the local calendar as ISO `yyyy-MM-dd`. */
+export function todayIso(): string {
+  const d = new Date();
+  return toIso(d.getFullYear(), d.getMonth() + 1, d.getDate());
+}
+
+/** Add `days` (may be negative) to an ISO date, returning ISO. */
+export function addDays(iso: string, days: number): string {
+  const [y, m, d] = isoParts(iso);
+  const dt = new Date(y, m - 1, d + days);
+  return toIso(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+}
+
+/** Add `months` calendar months to an ISO date, clamping the day to the target month's length. */
+export function addMonths(iso: string, months: number): string {
+  const [y, m, d] = isoParts(iso);
+  const total = m - 1 + months;
+  const ty = y + Math.floor(total / 12);
+  const tm = ((total % 12) + 12) % 12 + 1; // 1-based target month
+  return toIso(ty, tm, Math.min(d, daysInMonth(ty, tm)));
+}
+
+/** Add `years` to an ISO date (via months, so Feb 29 clamps to Feb 28 on non-leap targets). */
+export function addYears(iso: string, years: number): string {
+  return addMonths(iso, years * 12);
+}
+
+/** Whole days from `isoStart` to `isoEnd` (negative if end precedes start). DST-safe (UTC math). */
+export function daysBetween(isoStart: string, isoEnd: string): number {
+  const [y1, m1, d1] = isoParts(isoStart);
+  const [y2, m2, d2] = isoParts(isoEnd);
+  return Math.round((Date.UTC(y2, m2 - 1, d2) - Date.UTC(y1, m1 - 1, d1)) / 86_400_000);
+}
+
+/**
+ * Jump a due date into the future (#986): apply `shift` to the start (or to today when there's no
+ * start), and — when there's an end date — move it too, preserving the span length in days. Pure;
+ * the caller writes the result into its own draft state. Times are the caller's business.
+ */
+export function jumpDue(
+  start: string | null,
+  end: string | null,
+  shift: (iso: string) => string,
+): { dueAt: string; dueEndAt: string | null } {
+  const dueAt = shift(start ?? todayIso());
+  const dueEndAt = start && end ? addDays(dueAt, Math.max(0, daysBetween(start, end))) : null;
+  return { dueAt, dueEndAt };
+}

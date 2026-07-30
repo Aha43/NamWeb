@@ -20,6 +20,25 @@ describe('DueFieldset', () => {
     expect(due).toHaveValue('2026-08-15');
   });
 
+  it('jumps the due date a month ahead from an existing date (#986)', () => {
+    const onCommit = setup({ dueAt: '2026-07-15', dueEndAt: null, dueTime: null, dueEndTime: null });
+    fireEvent.click(screen.getByRole('button', { name: '+1 month' }));
+    expect(onCommit).toHaveBeenCalledWith({ dueAt: '2026-08-15', dueEndAt: null, dueTime: null, dueEndTime: null });
+    expect(screen.getByLabelText('Due')).toHaveValue('2026-08-15');
+  });
+
+  it('jumping a dated range shifts the end too, preserving the span (#986)', () => {
+    // A 3-day span; +1 year keeps it a 3-day span.
+    const onCommit = setup({ dueAt: '2026-07-04', dueEndAt: '2026-07-07', dueTime: null, dueEndTime: null });
+    fireEvent.click(screen.getByRole('button', { name: '+1 year' }));
+    expect(onCommit).toHaveBeenCalledWith({
+      dueAt: '2027-07-04',
+      dueEndAt: '2027-07-07',
+      dueTime: null,
+      dueEndTime: null,
+    });
+  });
+
   it('blurring untouched inputs commits nothing (#711)', () => {
     const onCommit = setup({ dueAt: '2026-08-10', dueEndAt: null, dueTime: null, dueEndTime: null });
     fireEvent.blur(screen.getByLabelText('Due'));
