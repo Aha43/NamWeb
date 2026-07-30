@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- The inbox **Process** deck's navigation now mirrors the Focus deck: **‹ prev · Delete · next ›**
+  chevron icons replace the "Prev"/"Skip" text buttons (the ←/→ keys already cycled). The centered
+  **Delete** carries a tooltip naming its dual meaning in the inbox — *nothing to do, or you've already
+  handled it* — since an inbox item has no other terminal state until it becomes an action or project.
+  Closes #988.
+
 ### Added
 
 - **Search** result rows now show the action's **project path as live links** (like the paths
