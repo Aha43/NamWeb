@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- The project **summary** now includes **Done** actions by default. The summary doubles as sprint
+  input, and actions are often marked Done once their description is ready — so excluding them dropped
+  the described work. The Done toggle still lets you leave them out. Closes #987.
+
 ### Added
 
 - **Jump a due date into the future** — the due editor (actions and projects) gains quick **+1 week /

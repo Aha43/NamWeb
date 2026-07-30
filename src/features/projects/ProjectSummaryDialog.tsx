@@ -33,7 +33,9 @@ export function ProjectSummaryDialog({
   const { t } = useTranslation();
   const [next, setNext] = useState(true);
   const [backlog, setBacklog] = useState(true);
-  const [done, setDone] = useState(false);
+  // Done is included by default (#987): the summary doubles as sprint input, and actions are often
+  // marked Done once their description is ready — excluding them would drop the described work.
+  const [done, setDone] = useState(true);
   const [includeSubProjects, setIncludeSubProjects] = useState(true);
   // In-place edits before copying (#729): null = live generated view; a string = the user's
   // draft, seeded from the generated Markdown by Edit. While a draft exists the include-filters
