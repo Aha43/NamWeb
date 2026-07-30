@@ -1,5 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import { formatAge, formatDate, formatDueHint, parseFlexibleDate, parseFlexibleTime } from './dates';
+import { addDays, addMonths, addYears, daysBetween, formatAge, formatDate, formatDueHint, parseFlexibleDate, parseFlexibleTime } from './dates';
+
+describe('ISO date arithmetic (#986)', () => {
+  it('addDays shifts across month/year boundaries', () => {
+    expect(addDays('2026-07-04', 7)).toBe('2026-07-11');
+    expect(addDays('2026-07-28', 7)).toBe('2026-08-04');
+    expect(addDays('2026-12-31', 1)).toBe('2027-01-01');
+  });
+
+  it('addMonths clamps the day to the target month length', () => {
+    expect(addMonths('2026-07-15', 1)).toBe('2026-08-15');
+    expect(addMonths('2026-01-31', 1)).toBe('2026-02-28'); // no Feb 31
+    expect(addMonths('2024-01-31', 1)).toBe('2024-02-29'); // leap year
+    expect(addMonths('2026-12-15', 1)).toBe('2027-01-15'); // year rolls over
+  });
+
+  it('addYears clamps Feb 29 to Feb 28 on non-leap targets', () => {
+    expect(addYears('2026-07-04', 1)).toBe('2027-07-04');
+    expect(addYears('2024-02-29', 1)).toBe('2025-02-28');
+    expect(addYears('2026-07-04', 5)).toBe('2031-07-04');
+  });
+
+  it('daysBetween counts whole days, signed', () => {
+    expect(daysBetween('2026-07-04', '2026-07-07')).toBe(3);
+    expect(daysBetween('2026-07-04', '2026-07-04')).toBe(0);
+    expect(daysBetween('2026-07-07', '2026-07-04')).toBe(-3);
+    expect(daysBetween('2026-02-27', '2026-03-02')).toBe(3);
+  });
+});
 
 describe('parseFlexibleTime (#493)', () => {
   it('treats a bare number as the hour', () => {

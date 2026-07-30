@@ -31,7 +31,7 @@ import { cn } from '@/lib/utils';
 
 // Mac shows ⌘; everyone else Ctrl. Best-effort platform sniff for the shortcut hint.
 const IS_MAC = typeof navigator !== 'undefined' && /Mac|iP(hone|ad|od)/.test(navigator.platform);
-import { parseFlexibleDate, parseFlexibleTime } from '@/lib/dates';
+import { parseFlexibleDate, parseFlexibleTime, addDays, addMonths, addYears, jumpDue } from '@/lib/dates';
 import { DatePickerPopover } from '@/components/ui/date-picker';
 import { CollapsedDue } from './CollapsedDue';
 import type { NamNode, NodeStatus, Resource } from '@/domain/types';
@@ -161,7 +161,21 @@ export function ActionDialog({
   const [showDueExtras, setShowDueExtras] = useState(
     Boolean(node.dueTime || node.dueEndAt || node.dueEndTime),
   );
+  const [jumpYears, setJumpYears] = useState(2);
   const isDesktop = useIsDesktop();
+
+  // Jump the due date into the future (#986): shift the start (or today if none) and move the end
+  // too, preserving the span. Writes the draft state; the dialog's Save commits as usual.
+  const jumpDueBy = (shift: (iso: string) => string) => {
+    const { dueAt, dueEndAt } = jumpDue(parseFlexibleDate(due), parseFlexibleDate(dueEnd), shift);
+    setDue(dueAt);
+    setDueError(false);
+    if (dueEndAt) {
+      setDueEnd(dueEndAt);
+      setDueEndError(false);
+    }
+  };
+  const jumpChip = 'rounded-md border border-input px-2 py-0.5 text-xs text-foreground hover:bg-accent';
 
   function doSave(): boolean {
     const trimmedTitle = title.trim();
@@ -353,6 +367,33 @@ export function ActionDialog({
                   onSelect={(isoDate) => { setDue(isoDate); setDueError(false); }}
                   label={t('editor.pickDueDate')}
                 />
+              </div>
+              {/* Quick "jump ahead" presets (#986) — shift the due date (and the end, preserving the
+                  span) into the future by a week / month / year / N years. */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs text-muted-foreground">{t('editor.jumpAhead')}</span>
+                <button type="button" className={jumpChip} onClick={() => jumpDueBy((d) => addDays(d, 7))}>
+                  {t('editor.jumpWeek')}
+                </button>
+                <button type="button" className={jumpChip} onClick={() => jumpDueBy((d) => addMonths(d, 1))}>
+                  {t('editor.jumpMonth')}
+                </button>
+                <button type="button" className={jumpChip} onClick={() => jumpDueBy((d) => addYears(d, 1))}>
+                  {t('editor.jumpYear')}
+                </button>
+                <span className="ml-1 inline-flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min={1}
+                    aria-label={t('editor.jumpYearsAria')}
+                    value={jumpYears}
+                    onChange={(e) => setJumpYears(Math.max(1, Math.floor(Number(e.target.value) || 1)))}
+                    className="h-6 w-12 px-1.5 py-0 text-xs"
+                  />
+                  <button type="button" className={jumpChip} onClick={() => jumpDueBy((d) => addYears(d, jumpYears))}>
+                    {t('editor.jumpYears')}
+                  </button>
+                </span>
               </div>
               {/* Time-of-day + a date range are optional precision — tucked away until asked for (#559). */}
               {!showDueExtras && (

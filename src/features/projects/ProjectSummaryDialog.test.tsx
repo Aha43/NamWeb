@@ -10,7 +10,7 @@ afterEach(async () => {
 });
 
 describe('ProjectSummaryDialog', () => {
-  it('builds with Next+Backlog by default, regenerates when toggling Done, and copies', async () => {
+  it('builds with Next+Backlog+Done by default (#987), regenerates when toggling Done, and copies', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     const buildSummary = vi.fn(
@@ -21,20 +21,20 @@ describe('ProjectSummaryDialog', () => {
     render(<ProjectSummaryDialog open onOpenChange={vi.fn()} title="P" buildSummary={buildSummary} />);
 
     const area = screen.getByLabelText('Project summary (Markdown)');
-    // Default: Next + Backlog, Done off, sub-projects on.
-    expect(area).toHaveValue('# P (NEXT,BACKLOG) +subs');
-
-    // Toggling Done regenerates with DONE included.
-    fireEvent.click(screen.getByLabelText('Done'));
+    // Default: Next + Backlog + Done (#987 — the summary doubles as sprint input), sub-projects on.
     expect(area).toHaveValue('# P (NEXT,BACKLOG,DONE) +subs');
+
+    // Toggling Done off regenerates without DONE.
+    fireEvent.click(screen.getByLabelText('Done'));
+    expect(area).toHaveValue('# P (NEXT,BACKLOG) +subs');
 
     // Toggling off sub-projects drops them.
     fireEvent.click(screen.getByLabelText('Include sub-projects'));
-    expect(area).toHaveValue('# P (NEXT,BACKLOG,DONE)');
+    expect(area).toHaveValue('# P (NEXT,BACKLOG)');
 
     // Copy writes the current markdown.
     fireEvent.click(screen.getByRole('button', { name: /Copy/ }));
-    expect(writeText).toHaveBeenCalledWith('# P (NEXT,BACKLOG,DONE)');
+    expect(writeText).toHaveBeenCalledWith('# P (NEXT,BACKLOG)');
     await waitFor(() => expect(screen.getByRole('button', { name: /Copied/ })).toBeInTheDocument());
   });
 
@@ -59,9 +59,9 @@ describe('ProjectSummaryDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /Copy/ }));
     expect(writeText).toHaveBeenCalledWith('# P (NEXT,BACKLOG) +subs\n\nOne extra remark.');
 
-    // Regenerate discards the draft: generated text is back, filters live again.
+    // Regenerate discards the draft: generated text is back (Done on by default, #987), filters live again.
     fireEvent.click(screen.getByRole('button', { name: 'Regenerate' }));
-    expect(area).toHaveValue('# P (NEXT,BACKLOG) +subs');
+    expect(area).toHaveValue('# P (NEXT,BACKLOG,DONE) +subs');
     expect(area).toHaveAttribute('readonly');
     expect(screen.getByLabelText('Done')).toBeEnabled();
   });
