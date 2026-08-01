@@ -8,6 +8,22 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.9.0] - 2026-08-01
+
+**A second way to see the calendar, and a better way to grow a project.** Two meatier dogfooding
+features this cut (a step up from the recent tweak sweeps). The **agenda (list) calendar view** sits
+beside the classic month grid — a Google-Calendar-mobile-style scroll of dated **projects + actions**
+with month titles as dividers, an **Overdue** group up top (open work only), then today onward, filtered
+by the usual **Next / Backlog / Done** boxes (past completed items land in a neutral "Earlier" group, not
+under the red Overdue heading). And **converting an action to a project now seeds its first actions** in
+the moment — that "this is bigger than one thing" realization is when the sub-actions are top of mind, so
+Make project opens a lean brain-dump for their names (each copy/rename/removable), with the project name
+itself editable (copy the original to re-add it as an action, rename the project fresh). The now-mandatory
+Codex gate earned its keep again: it caught a stale-rename-on-⌘Enter and completed-items-shown-as-overdue,
+both hardened before release. Also this stretch: **#613** (recurring "bouncing" actions) was closed
+won't-do — v2.8.0's manual **jump-a-due-date** turned out to be enough, and the elaborate recurrence
+engine (plus its NamDesktop contract change) would have over-complicated. YAGNI vindicated.
+
 ### Added
 
 - **Converting an action to a project can seed its first actions.** That "oh, this is bigger than one
@@ -2092,7 +2108,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.8.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.9.0...HEAD
+[2.9.0]: https://github.com/Aha43/NamWeb/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Aha43/NamWeb/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Aha43/NamWeb/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Aha43/NamWeb/compare/v2.5.0...v2.6.0
