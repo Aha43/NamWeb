@@ -158,11 +158,14 @@ export interface AgendaDay {
   date: string;
   entries: AgendaEntry[];
 }
-/** The agenda's two buckets: open items whose start day is in the past (Overdue), then today and
- *  every future day that carries items — no empty days. */
+/** The agenda's buckets: OPEN items whose start day is in the past (Overdue, the red warning), then
+ *  today and every future day (upcoming), then past items that are done/cancelled (a neutral "Earlier"
+ *  group — only when the status boxes include them). No empty days. Overdue stays open-only so a
+ *  completed past item never wears the overdue warning (matching the grid, #868). */
 export interface Agenda {
   overdue: AgendaDay[];
   upcoming: AgendaDay[];
+  past: AgendaDay[];
 }
 
 function compareAgendaEntries(a: AgendaEntry, b: AgendaEntry): number {
@@ -180,30 +183,38 @@ function compareAgendaEntries(a: AgendaEntry, b: AgendaEntry): number {
 /**
  * The agenda (list) view's read model (#995): every dated action + dated project, placed **once on
  * its start day** (a span's later days are conveyed by the row's due-hint label, not repeated rows —
- * repeating a long span down the list would be noise). Days with no items are omitted. Split into
- * `overdue` (start day before today) and `upcoming` (today onward), each chronological. `statuses` is
+ * repeating a long span down the list would be noise). Days with no items are omitted. `statuses` is
  * the agenda's own status-box set (NEXT/BACKLOG/DONE) — an item shows only when its status is kept.
+ * Classified into: `overdue` (past + OPEN — the red warning), `upcoming` (today onward), and `past`
+ * (before today + done/cancelled — a neutral group, only when those statuses are shown). Keeping
+ * overdue open-only means a completed past item never wears the overdue warning (#1000 review, P2).
  */
 export function agenda(doc: WorkspaceDocument, now: Date = new Date(), statuses: readonly NodeStatus[] = ['NEXT', 'BACKLOG']): Agenda {
   const keep: StatusKeep = (s) => statuses.includes(s);
+  const isOpen = (s: NodeStatus) => s !== 'DONE' && s !== 'CANCELLED';
   const today = localDateString(now);
-  const byDay = new Map<string, AgendaEntry[]>();
-  const add = (date: string, entry: AgendaEntry) => {
-    const list = byDay.get(date);
+  const overdueByDay = new Map<string, AgendaEntry[]>();
+  const upcomingByDay = new Map<string, AgendaEntry[]>();
+  const pastByDay = new Map<string, AgendaEntry[]>();
+  const add = (map: Map<string, AgendaEntry[]>, date: string, entry: AgendaEntry) => {
+    const list = map.get(date);
     if (list) list.push(entry);
-    else byDay.set(date, [entry]);
+    else map.set(date, [entry]);
   };
-  for (const d of datedActions(doc, keep)) add(d.start, { node: d.node, kind: 'action' });
-  for (const d of datedProjects(doc, keep)) add(d.start, { node: d.node, kind: 'project' });
-
-  const days: AgendaDay[] = [...byDay.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, entries]) => ({ date, entries: entries.sort(compareAgendaEntries) }));
-
-  return {
-    overdue: days.filter((d) => d.date < today),
-    upcoming: days.filter((d) => d.date >= today),
+  const place = (start: string, entry: AgendaEntry) => {
+    if (start >= today) add(upcomingByDay, start, entry);
+    else if (isOpen(entry.node.status)) add(overdueByDay, start, entry);
+    else add(pastByDay, start, entry);
   };
+  for (const d of datedActions(doc, keep)) place(d.start, { node: d.node, kind: 'action' });
+  for (const d of datedProjects(doc, keep)) place(d.start, { node: d.node, kind: 'project' });
+
+  const build = (map: Map<string, AgendaEntry[]>): AgendaDay[] =>
+    [...map.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, entries]) => ({ date, entries: entries.sort(compareAgendaEntries) }));
+
+  return { overdue: build(overdueByDay), upcoming: build(upcomingByDay), past: build(pastByDay) };
 }
 
 /** ISO 8601 week number (Monday-start; week 1 holds the year's first Thursday) — the Norwegian

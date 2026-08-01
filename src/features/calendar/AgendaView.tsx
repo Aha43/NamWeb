@@ -80,7 +80,7 @@ export function AgendaView({
     </div>
   );
 
-  if (agenda.overdue.length === 0 && agenda.upcoming.length === 0) {
+  if (agenda.overdue.length === 0 && agenda.upcoming.length === 0 && agenda.past.length === 0) {
     return <p className="px-1 py-8 text-center text-sm text-muted-foreground">{t('calendar.agendaEmpty')}</p>;
   }
 
@@ -106,6 +106,13 @@ export function AgendaView({
           </section>
         );
       })}
+      {agenda.past.length > 0 && (
+        <section className="space-y-2">
+          {/* Completed/cancelled past items — neutral, never the red overdue warning (#1000 review, P2). */}
+          <h3 className="px-1 text-sm font-semibold text-muted-foreground">{t('calendar.agendaEarlier')}</h3>
+          {agenda.past.map((day) => dayGroup(day, true))}
+        </section>
+      )}
     </div>
   );
 }

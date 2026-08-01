@@ -38,6 +38,18 @@ describe('ConvertToProjectDialog (#999/#1000)', () => {
     expect(onConfirm).toHaveBeenCalledWith('Summer trip', []);
   });
 
+  it('does not create via ⌘/Ctrl+Enter while an inline rename is active (#1000 review, P1)', () => {
+    const onConfirm = vi.fn();
+    render(<ConvertToProjectDialog open onOpenChange={vi.fn()} actionTitle="Plan trip" onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rename the project' }));
+    const nameInput = screen.getByRole('textbox', { name: 'Rename Plan trip' });
+    fireEvent.change(nameInput, { target: { value: 'Summer trip' } });
+    // The rename commits (InlineRename's Enter), but the parent shortcut must NOT create from stale
+    // state — it waits for the next ⌘/Ctrl+Enter once editing is done.
+    fireEvent.keyDown(nameInput, { key: 'Enter', metaKey: true });
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it('creates an empty project (keeping the action title) when nothing is entered', () => {
     const onConfirm = vi.fn();
     render(<ConvertToProjectDialog open onOpenChange={vi.fn()} actionTitle="Plan trip" onConfirm={onConfirm} />);

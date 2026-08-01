@@ -65,6 +65,11 @@ export function ConvertToProjectDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         onKeyDown={(e) => {
+          // Don't create from ⌘/Ctrl+Enter while an inline rename is active: the InlineRename commits
+          // during the same bubbling keydown, so create() would still read the pre-commit project/
+          // action name and silently drop the edit (#1000 review, P1). Let the rename commit; the next
+          // ⌘/Ctrl+Enter creates. (Normal button/click commits via blur first, so it's unaffected.)
+          if (editingName || editingId !== null) return;
           if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.nativeEvent.isComposing) {
             e.preventDefault();
             create();
