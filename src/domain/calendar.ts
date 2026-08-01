@@ -5,9 +5,16 @@
 // ranges are for; projects mark their full span the same way (#703). All dates are local-date
 // strings (YYYY-MM-DD), compared as strings (ISO order == chronological order).
 
-import type { NamNode, WorkspaceDocument } from './types';
+import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 import { archivedNodeIds, structuralNodeIds } from './lenses';
 import { effectiveDue } from './derivedDue';
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+/** Which statuses a gather keeps. The grid's "Show done" is the binary open-vs-all form; the agenda
+ *  passes an explicit set from its status boxes (#995 tweak). */
+type StatusKeep = (status: NodeStatus) => boolean;
+const openKeep = (includeDone: boolean): StatusKeep => (s) =>
+  includeDone || (s !== 'DONE' && s !== 'CANCELLED');
 
 export interface CalendarDay {
   /** Local date, YYYY-MM-DD. */
@@ -42,23 +49,14 @@ export function isValidLocalDate(s: string): boolean {
   return !Number.isNaN(d.getTime()) && localDateString(d) === s;
 }
 
-// `includeDone` lifts the DONE/CANCELLED filter (the "Show done" toggle, #868) — archived subtrees
-// and structural containers stay excluded regardless. Default off, so the calendar shows only open
-// work as before.
-function openNodes(doc: WorkspaceDocument, projects: boolean, includeDone: boolean): NamNode[] {
+// Gather non-structural, non-archived nodes of the given kind (action/project) whose status the
+// caller keeps. The grid keeps "open" (`openKeep`); the agenda keeps its status-box set.
+function nodesWhere(doc: WorkspaceDocument, projects: boolean, keep: StatusKeep): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   return Object.values(doc.nodes).filter(
-    (n) =>
-      n.project === projects &&
-      !structural.has(n.id) &&
-      !archived.has(n.id) &&
-      (includeDone || (n.status !== 'DONE' && n.status !== 'CANCELLED')),
+    (n) => n.project === projects && !structural.has(n.id) && !archived.has(n.id) && keep(n.status),
   );
-}
-
-function openDatedActions(doc: WorkspaceDocument, includeDone: boolean): NamNode[] {
-  return openNodes(doc, false, includeDone).filter((n) => !!n.dueAt && /^\d{4}-\d{2}-\d{2}$/.test(n.dueAt));
 }
 
 /** A dated node with its resolved [start, end] span — for projects the *effective* span, so a
@@ -69,19 +67,21 @@ interface Dated {
   end: string;
 }
 
-function datedActions(doc: WorkspaceDocument, includeDone: boolean): Dated[] {
-  return openDatedActions(doc, includeDone).map((n) => ({
-    node: n,
-    start: n.dueAt!,
-    end: n.dueEndAt && n.dueEndAt >= n.dueAt! ? n.dueEndAt : n.dueAt!,
-  }));
+function datedActions(doc: WorkspaceDocument, keep: StatusKeep): Dated[] {
+  return nodesWhere(doc, false, keep)
+    .filter((n) => !!n.dueAt && DATE.test(n.dueAt))
+    .map((n) => ({
+      node: n,
+      start: n.dueAt!,
+      end: n.dueEndAt && n.dueEndAt >= n.dueAt! ? n.dueEndAt : n.dueAt!,
+    }));
 }
 
-function datedProjects(doc: WorkspaceDocument, includeDone: boolean): Dated[] {
+function datedProjects(doc: WorkspaceDocument, keep: StatusKeep): Dated[] {
   const out: Dated[] = [];
-  for (const n of openNodes(doc, true, includeDone)) {
+  for (const n of nodesWhere(doc, true, keep)) {
     const eff = effectiveDue(doc, n.id);
-    if (!eff.dueAt || !/^\d{4}-\d{2}-\d{2}$/.test(eff.dueAt)) continue;
+    if (!eff.dueAt || !DATE.test(eff.dueAt)) continue;
     out.push({ node: n, start: eff.dueAt, end: eff.dueEndAt && eff.dueEndAt >= eff.dueAt ? eff.dueEndAt : eff.dueAt });
   }
   return out;
@@ -106,11 +106,11 @@ export function calendarMonth(
   now: Date = new Date(),
   includeDone = false,
 ): CalendarDay[] {
-  const actions = datedActions(doc, includeDone);
-  const projects = datedProjects(doc, includeDone);
+  const actions = datedActions(doc, openKeep(includeDone));
+  const projects = datedProjects(doc, openKeep(includeDone));
   // Overdue red is about *open* work waiting in the past — a day carrying only done actions must
   // not glow red just because "Show done" is on (#868). When done is hidden the two sets coincide.
-  const openActions = includeDone ? datedActions(doc, false) : actions;
+  const openActions = includeDone ? datedActions(doc, openKeep(false)) : actions;
   const today = localDateString(now);
   const daysInMonth = new Date(year, month, 0).getDate();
   const days: CalendarDay[] = [];
@@ -131,7 +131,7 @@ export function calendarMonth(
 /** The actions due on `date` (range-aware), title-sorted for a stable list (#676). Open only unless
  *  `includeDone` is set (the "Show done" toggle, #868). */
 export function dayActions(doc: WorkspaceDocument, date: string, includeDone = false): NamNode[] {
-  return datedActions(doc, includeDone)
+  return datedActions(doc, openKeep(includeDone))
     .filter((d) => d.start <= date && date <= d.end)
     .map((d) => d.node)
     .sort((a, b) => a.title.localeCompare(b.title));
@@ -140,7 +140,7 @@ export function dayActions(doc: WorkspaceDocument, date: string, includeDone = f
 /** The dated projects covering `date` (full effective span, #706), title-sorted — the day
  *  drill-in's Projects section (#703). Open only unless `includeDone` is set (#868). */
 export function dayProjects(doc: WorkspaceDocument, date: string, includeDone = false): NamNode[] {
-  return datedProjects(doc, includeDone)
+  return datedProjects(doc, openKeep(includeDone))
     .filter((d) => d.start <= date && date <= d.end)
     .map((d) => d.node)
     .sort((a, b) => a.title.localeCompare(b.title));
@@ -181,10 +181,11 @@ function compareAgendaEntries(a: AgendaEntry, b: AgendaEntry): number {
  * The agenda (list) view's read model (#995): every dated action + dated project, placed **once on
  * its start day** (a span's later days are conveyed by the row's due-hint label, not repeated rows —
  * repeating a long span down the list would be noise). Days with no items are omitted. Split into
- * `overdue` (start day before today) and `upcoming` (today onward), each chronological. `includeDone`
- * mirrors the grid's "Show done" toggle.
+ * `overdue` (start day before today) and `upcoming` (today onward), each chronological. `statuses` is
+ * the agenda's own status-box set (NEXT/BACKLOG/DONE) — an item shows only when its status is kept.
  */
-export function agenda(doc: WorkspaceDocument, now: Date = new Date(), includeDone = false): Agenda {
+export function agenda(doc: WorkspaceDocument, now: Date = new Date(), statuses: readonly NodeStatus[] = ['NEXT', 'BACKLOG']): Agenda {
+  const keep: StatusKeep = (s) => statuses.includes(s);
   const today = localDateString(now);
   const byDay = new Map<string, AgendaEntry[]>();
   const add = (date: string, entry: AgendaEntry) => {
@@ -192,8 +193,8 @@ export function agenda(doc: WorkspaceDocument, now: Date = new Date(), includeDo
     if (list) list.push(entry);
     else byDay.set(date, [entry]);
   };
-  for (const d of datedActions(doc, includeDone)) add(d.start, { node: d.node, kind: 'action' });
-  for (const d of datedProjects(doc, includeDone)) add(d.start, { node: d.node, kind: 'project' });
+  for (const d of datedActions(doc, keep)) add(d.start, { node: d.node, kind: 'action' });
+  for (const d of datedProjects(doc, keep)) add(d.start, { node: d.node, kind: 'project' });
 
   const days: AgendaDay[] = [...byDay.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
