@@ -47,43 +47,41 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focu
   const { selectMode, selected, toggle, clear, selectAll, enter, exit } = useMultiSelect();
   const total = SECTIONS.reduce((n, s) => n + groups[s.key].length, 0);
   const allRowIds = SECTIONS.flatMap((s) => groups[s.key].map((r) => r.id));
-  if (total === 0) {
-    // A filter emptied the list: keep the controls on screen so you can adjust the filter back —
-    // otherwise the status boxes vanish and you're stranded (only route out is leaving the view)
-    // (#980). Only the genuine "nothing due" state (no filter active) drops to the bare empty state.
-    if (filtered) {
-      return (
-        <section className="space-y-4">
-          <div className="sticky top-0 z-10 space-y-2 bg-background pt-1">
-            <ListHeaderControls filtered statusSlot={statusSlot} />
-          </div>
-          <EmptyState hint={t('due.filteredEmptyHint')}>{t('due.filteredEmpty')}</EmptyState>
-        </section>
-      );
-    }
-    return (
-      <section>
-        <EmptyState hint={t('due.emptyHint')}>{t('due.empty')}</EmptyState>
-      </section>
-    );
-  }
+  const empty = total === 0;
+  // Keep the header on screen when there are rows, a filter is active (so you can adjust it back,
+  // #980), OR a selection is active — a bulk status change can empty the visible rows while select
+  // mode is still on, and dropping the select toggle / bulk bar would trap you with no way to clear
+  // or exit (#988 review, P2). Mirrors how Next/Backlog keep their controls.
+  const showHeader = !empty || filtered || selectMode;
 
   return (
     <section className="space-y-4">
-      {/* Pin the Focus entry point + select toggle so they stay reachable while the groups scroll. */}
-      <div className="sticky top-0 z-10 space-y-2 bg-background pt-1">
-        <ListHeaderControls
-          filtered={filtered}
-          statusSlot={statusSlot}
-          rowsToggle={<CompactRowsToggle />}
-          focusSlot={focusSlot}
-          selectSlot={<SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} />}
-        />
-        {selectMode && (
-          <BulkActionsBar ids={[...selected]} allIds={allRowIds} onSelectAll={() => selectAll(allRowIds)} onClear={clear} />
-        )}
-      </div>
-      {SECTIONS.map((section) => {
+      {showHeader && (
+        <div className="sticky top-0 z-10 space-y-2 bg-background pt-1">
+          <ListHeaderControls
+            filtered={filtered}
+            statusSlot={statusSlot}
+            rowsToggle={empty ? undefined : <CompactRowsToggle />}
+            focusSlot={focusSlot}
+            selectSlot={
+              !empty || selectMode ? (
+                <SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} />
+              ) : undefined
+            }
+          />
+          {selectMode && (
+            <BulkActionsBar ids={[...selected]} allIds={allRowIds} onSelectAll={() => selectAll(allRowIds)} onClear={clear} />
+          )}
+        </div>
+      )}
+      {empty ? (
+        filtered ? (
+          <EmptyState hint={t('due.filteredEmptyHint')}>{t('due.filteredEmpty')}</EmptyState>
+        ) : (
+          <EmptyState hint={t('due.emptyHint')}>{t('due.empty')}</EmptyState>
+        )
+      ) : (
+        SECTIONS.map((section) => {
         const rows = groups[section.key];
         if (rows.length === 0) return null;
         return (
@@ -114,7 +112,8 @@ export function DuePanel({ groups, onSetStatus, onEdit, onDelete, onRename, focu
             </ActionList>
           </div>
         );
-      })}
+        })
+      )}
     </section>
   );
 }

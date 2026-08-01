@@ -27,3 +27,26 @@ test('Due: filtering to empty keeps the status boxes reachable', async ({ page }
   await nextBox.check();
   await expect(page.getByText('Pay the rent')).toBeVisible();
 });
+
+// #988 review (P2) — a bulk status change that empties the visible Due rows (setting them Done, which
+// the default boxes exclude) must NOT trap you in select mode: the select toggle / bulk bar stay.
+test('Due: a bulk set-to-Done that empties the list leaves select mode escapable', async ({ page }) => {
+  await page.goto('/due');
+  await expect(page.getByText('Pay the rent')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Select' }).click();
+  await page.getByRole('checkbox', { name: 'Select Pay the rent' }).check();
+
+  // Set the only visible row to Done → it leaves the Due set (Done off by default) → zero rows.
+  await page.getByRole('button', { name: 'Status ▾' }).click();
+  await page.getByRole('menuitem', { name: 'Done' }).click();
+  // The list is now empty (the row's title lingers only in the status-change undo toast).
+  await expect(page.getByText('Nothing due', { exact: true })).toBeVisible();
+
+  // Not trapped: the select toggle stays, so you can leave select mode.
+  const exit = page.getByRole('button', { name: 'Exit select' });
+  await expect(exit).toBeVisible();
+  await exit.click();
+  // Left select mode cleanly (the empty view then drops to its bare state, no controls — #980).
+  await expect(page.getByRole('button', { name: 'Exit select' })).toHaveCount(0);
+});
