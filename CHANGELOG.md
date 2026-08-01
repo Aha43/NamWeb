@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Calendar agenda (list) view** — a second calendar view beside the classic month grid, à la Google
+  Calendar's mobile agenda: a continuous scroll of dated **projects + actions** with month titles as
+  dividers. Open past-due items surface in an **Overdue** group at the top, then today onward; days
+  with nothing are skipped, and there's no add box or empty-space clicking — it's for scanning what's
+  coming up. Each item shows once on its start day (its due-hint carries the range). A **Grid ⇄ List**
+  toggle in the header switches views, honoring **Show done**; acting-in-place (status / open / rename
+  / delete on actions, open-workbench on projects) is kept. Closes #995.
+
 ## [2.8.0] - 2026-08-01
 
 **Two rounds of dogfooding — seven everyday surfaces made to fit the hand.** No new domain, just the

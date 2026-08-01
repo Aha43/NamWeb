@@ -1,16 +1,16 @@
 import { useNavigate, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Folder, Plus } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, LayoutGrid, List, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { TruncatedTitle } from '@/components/ui/truncated-title';
-import { calendarMonth, dayActions, dayProjects, isValidLocalDate, localDateString } from '@/domain/calendar';
+import { agenda, calendarMonth, dayActions, dayProjects, isValidLocalDate, localDateString } from '@/domain/calendar';
 import { effectiveDue } from '@/domain/derivedDue';
 import { MonthGrid } from '@/features/calendar/MonthGrid';
+import { AgendaView } from '@/features/calendar/AgendaView';
+import { CalendarProjectRow } from '@/features/calendar/CalendarProjectRow';
 import { ActionRow } from '@/features/actions/ActionRow';
 import { StatusMenu } from '@/features/actions/StatusMenu';
-import { DueHintLabel } from '@/features/actions/DueHintLabel';
 import { toActionRow } from '@/features/actions/rows';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
@@ -49,6 +49,8 @@ export function CalendarPage() {
   // "Show done" (#868): opt-in via ?done=1, so it's off by default and survives back/forward and
   // bookmarks like the month/day params. Preserved across month/day navigation below.
   const includeDone = params.get('done') === '1';
+  // Which view (#995): the classic month grid (default) or the agenda list. `?view=list`.
+  const view = params.get('view') === 'list' ? 'list' : 'grid';
 
   function show(y: number, mo: number) {
     // Normalize (month 0 → Dec of prev year, 13 → Jan of next).
@@ -81,7 +83,69 @@ export function CalendarPage() {
     </Tooltip>
   );
 
+  // Grid ⇄ list toggle (#995). Switching to list drops the month/day params (an agenda is
+  // continuous, not month-bound); switching to grid keeps the shown month. Show-done rides along.
+  function setView(v: 'grid' | 'list') {
+    const next = new URLSearchParams();
+    if (v === 'list') next.set('view', 'list');
+    else if (params.get('m')) next.set('m', params.get('m')!);
+    if (includeDone) next.set('done', '1');
+    setParams(next);
+  }
+  const viewToggle = (
+    <div className="flex gap-0.5 rounded-md bg-muted p-0.5">
+      {(['grid', 'list'] as const).map((v) => {
+        const label = t(v === 'grid' ? 'calendar.viewGrid' : 'calendar.viewList');
+        const Icon = v === 'grid' ? LayoutGrid : List;
+        return (
+          <button
+            key={v}
+            type="button"
+            aria-label={label}
+            aria-pressed={view === v}
+            onClick={() => setView(v)}
+            className={cn(
+              'flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition-colors',
+              view === v ? 'bg-background text-foreground shadow-xs' : 'text-muted-foreground',
+            )}
+          >
+            <Icon className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">{label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+
   if (!document) return null;
+
+  if (view === 'list') {
+    const ag = agenda(document, now, includeDone);
+    return (
+      <div className="mx-auto max-w-3xl space-y-3">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2">
+            <h2 className="truncate text-lg font-semibold">{t('calendar.agendaTitle')}</h2>
+            {doneToggle}
+          </div>
+          {viewToggle}
+        </div>
+        <AgendaView
+          document={document}
+          agenda={ag}
+          today={localDateString(now)}
+          onEdit={openEditor}
+          onSetStatus={setStatus}
+          onRename={(id, title) => {
+            const n = document.nodes[id];
+            if (n) dispatch({ type: 'updateNode', id, title, description: n.description, now: nowIso() });
+          }}
+          onDelete={deleteNode}
+          onOpenProject={(id) => navigate(`/projects/${id}`)}
+        />
+      </div>
+    );
+  }
 
   if (day) {
     const rows = dayActions(document, day, includeDone).map((n) => toActionRow(document, n));
@@ -164,21 +228,14 @@ export function CalendarPage() {
                 <h3 className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   {t('domain.projects')}
                 </h3>
-                <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+                <ul className="flex flex-col gap-1">
                   {projects.map((p) => (
-                    <li key={p.id}>
-                      <button
-                        type="button"
-                        aria-label={t('column.openAria', { title: p.title })}
-                        onClick={() => navigate(`/projects/${p.id}`)}
-                        className="flex w-full items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-accent"
-                      >
-                        <Folder className="h-4 w-4 shrink-0 text-violet-600 dark:text-violet-400" />
-                        <TruncatedTitle text={p.title} className="min-w-0 flex-1 text-sm text-foreground" />
-                        <DueHintLabel {...effectiveDue(document, p.id)} />
-                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                      </button>
-                    </li>
+                    <CalendarProjectRow
+                      key={p.id}
+                      title={p.title}
+                      due={effectiveDue(document, p.id)}
+                      onOpen={() => navigate(`/projects/${p.id}`)}
+                    />
                   ))}
                 </ul>
               </div>
@@ -200,6 +257,7 @@ export function CalendarPage() {
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-lg font-semibold capitalize">{title}</h2>
           {doneToggle}
+          {viewToggle}
         </div>
         <div className="flex items-center gap-0.5">
           <Tooltip label={t('calendar.prevYear')}>

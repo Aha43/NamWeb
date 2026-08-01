@@ -146,6 +146,65 @@ export function dayProjects(doc: WorkspaceDocument, date: string, includeDone = 
     .sort((a, b) => a.title.localeCompare(b.title));
 }
 
+/** One dated item in the agenda list (#995) — an action or a project, kept as the node so the view
+ *  renders each with the right row. */
+export interface AgendaEntry {
+  node: NamNode;
+  kind: 'action' | 'project';
+}
+/** A day that carries at least one dated item, with its items ordered (timed actions first, then
+ *  untimed actions, then projects — all title-tie-broken). */
+export interface AgendaDay {
+  date: string;
+  entries: AgendaEntry[];
+}
+/** The agenda's two buckets: open items whose start day is in the past (Overdue), then today and
+ *  every future day that carries items — no empty days. */
+export interface Agenda {
+  overdue: AgendaDay[];
+  upcoming: AgendaDay[];
+}
+
+function compareAgendaEntries(a: AgendaEntry, b: AgendaEntry): number {
+  // Actions (things to do) before projects (context) within a day.
+  if (a.kind !== b.kind) return a.kind === 'action' ? -1 : 1;
+  if (a.kind === 'action') {
+    // Timed actions in clock order; untimed sink below them (sort key past any real HH:MM).
+    const ta = a.node.dueTime ?? '99:99';
+    const tb = b.node.dueTime ?? '99:99';
+    if (ta !== tb) return ta.localeCompare(tb);
+  }
+  return a.node.title.localeCompare(b.node.title);
+}
+
+/**
+ * The agenda (list) view's read model (#995): every dated action + dated project, placed **once on
+ * its start day** (a span's later days are conveyed by the row's due-hint label, not repeated rows —
+ * repeating a long span down the list would be noise). Days with no items are omitted. Split into
+ * `overdue` (start day before today) and `upcoming` (today onward), each chronological. `includeDone`
+ * mirrors the grid's "Show done" toggle.
+ */
+export function agenda(doc: WorkspaceDocument, now: Date = new Date(), includeDone = false): Agenda {
+  const today = localDateString(now);
+  const byDay = new Map<string, AgendaEntry[]>();
+  const add = (date: string, entry: AgendaEntry) => {
+    const list = byDay.get(date);
+    if (list) list.push(entry);
+    else byDay.set(date, [entry]);
+  };
+  for (const d of datedActions(doc, includeDone)) add(d.start, { node: d.node, kind: 'action' });
+  for (const d of datedProjects(doc, includeDone)) add(d.start, { node: d.node, kind: 'project' });
+
+  const days: AgendaDay[] = [...byDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, entries]) => ({ date, entries: entries.sort(compareAgendaEntries) }));
+
+  return {
+    overdue: days.filter((d) => d.date < today),
+    upcoming: days.filter((d) => d.date >= today),
+  };
+}
+
 /** ISO 8601 week number (Monday-start; week 1 holds the year's first Thursday) — the Norwegian
  *  convention, used by the month grid's week gutter (#680). */
 export function isoWeek(date: Date): number {
