@@ -206,9 +206,19 @@ describe('agenda (#995)', () => {
     expect(day.entries.map((e) => e.kind)).toEqual(['action', 'action', 'action', 'project']);
   });
 
-  it('hides DONE by default; includeDone surfaces it', () => {
-    const doc = workspace([node('d', { dueAt: '2026-07-20', status: 'DONE' })]);
-    expect(agenda(doc, NOW).upcoming).toHaveLength(0);
-    expect(agenda(doc, NOW, true).upcoming.map((d) => d.date)).toEqual(['2026-07-20']);
+  it('filters by the status-box set: DONE hidden by default, shown when DONE is included', () => {
+    const doc = workspace([
+      node('next', { dueAt: '2026-07-20' }),
+      node('done', { dueAt: '2026-07-20', status: 'DONE' }),
+    ]);
+    // Default set (Next + Backlog): only the open action.
+    expect(agenda(doc, NOW).upcoming[0].entries.map((e) => e.node.id)).toEqual(['next']);
+    // Add DONE: both.
+    expect(agenda(doc, NOW, ['NEXT', 'BACKLOG', 'DONE']).upcoming[0].entries.map((e) => e.node.id)).toEqual([
+      'done',
+      'next',
+    ]);
+    // Only DONE: just the done one.
+    expect(agenda(doc, NOW, ['DONE']).upcoming[0].entries.map((e) => e.node.id)).toEqual(['done']);
   });
 });

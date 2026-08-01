@@ -14,9 +14,10 @@ minor = features (breaking changes allowed), patch = fixes.
   Calendar's mobile agenda: a continuous scroll of dated **projects + actions** with month titles as
   dividers. Open past-due items surface in an **Overdue** group at the top, then today onward; days
   with nothing are skipped, and there's no add box or empty-space clicking — it's for scanning what's
-  coming up. Each item shows once on its start day (its due-hint carries the range). A **Grid ⇄ List**
-  toggle in the header switches views, honoring **Show done**; acting-in-place (status / open / rename
-  / delete on actions, open-workbench on projects) is kept. Closes #995.
+  coming up. Each item shows once on its start day (its due-hint carries the range). The list filters
+  by the usual **Next / Backlog / Done** status boxes (the grid keeps its big **Show done** toggle). A
+  **Grid ⇄ List** toggle in the header switches views; acting-in-place (status / open / rename / delete
+  on actions, open-workbench on projects) is kept. Closes #995, #997.
 
 ## [2.8.0] - 2026-08-01
 

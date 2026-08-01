@@ -37,14 +37,15 @@ test('switch to the agenda list: Overdue + today onward, no empty days, Show don
   await expect(page.getByText('Later thing')).toBeVisible();
   await expect(page.getByText('Launch v2')).toBeVisible();
 
-  // Undated items never appear; DONE is hidden by default.
+  // Undated items never appear; DONE is hidden by default (the Done box is off).
   await expect(page.getByText('Someday maybe')).toHaveCount(0);
   await expect(page.getByText('Finished')).toHaveCount(0);
 
-  // Show done surfaces the completed item, then hides it again.
-  await page.getByRole('button', { name: 'Show done' }).click();
+  // The agenda uses the usual Next/Backlog/Done status boxes: check Done to surface the completed
+  // item, uncheck to hide it again.
+  await page.getByRole('checkbox', { name: 'Done' }).check();
   await expect(page.getByText('Finished')).toBeVisible();
-  await page.getByRole('button', { name: 'Show done' }).click();
+  await page.getByRole('checkbox', { name: 'Done' }).uncheck();
   await expect(page.getByText('Finished')).toHaveCount(0);
 
   // Back to the classic grid.

@@ -11,6 +11,8 @@ import { AgendaView } from '@/features/calendar/AgendaView';
 import { CalendarProjectRow } from '@/features/calendar/CalendarProjectRow';
 import { ActionRow } from '@/features/actions/ActionRow';
 import { StatusMenu } from '@/features/actions/StatusMenu';
+import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { checkedStatuses, useStatusBoxes } from '@/features/actions/statusBoxes';
 import { toActionRow } from '@/features/actions/rows';
 import { useActionEditor } from '@/features/actions/action-editor-context';
 import { useDeleteNode } from '@/features/actions/useDeleteNode';
@@ -33,6 +35,9 @@ export function CalendarPage() {
   const setStatus = useSetStatus();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  // The agenda (list) view filters by the usual Next/Backlog/Done status boxes (#995 tweak) — the
+  // grid keeps its big "Show done" toggle. Default open work (Next + Backlog); session-local.
+  const [agendaBoxes, toggleAgendaBox] = useStatusBoxes({ NEXT: true, BACKLOG: true });
 
   const now = new Date();
   // Validate beyond shape — `?m=2026-99` / `?d=2026-99-99` otherwise reach date math and
@@ -87,9 +92,13 @@ export function CalendarPage() {
   // continuous, not month-bound); switching to grid keeps the shown month. Show-done rides along.
   function setView(v: 'grid' | 'list') {
     const next = new URLSearchParams();
-    if (v === 'list') next.set('view', 'list');
-    else if (params.get('m')) next.set('m', params.get('m')!);
-    if (includeDone) next.set('done', '1');
+    if (v === 'list') {
+      // The agenda filters via its own status boxes, not ?done — keep the URL clean.
+      next.set('view', 'list');
+    } else {
+      if (params.get('m')) next.set('m', params.get('m')!);
+      if (includeDone) next.set('done', '1');
+    }
     setParams(next);
   }
   const viewToggle = (
@@ -120,13 +129,13 @@ export function CalendarPage() {
   if (!document) return null;
 
   if (view === 'list') {
-    const ag = agenda(document, now, includeDone);
+    const ag = agenda(document, now, checkedStatuses(agendaBoxes));
     return (
       <div className="mx-auto max-w-3xl space-y-3">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="truncate text-lg font-semibold">{t('calendar.agendaTitle')}</h2>
-            {doneToggle}
+            <StatusFilterBoxes boxes={agendaBoxes} onToggle={toggleAgendaBox} />
           </div>
           {viewToggle}
         </div>
