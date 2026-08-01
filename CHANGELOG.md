@@ -8,6 +8,22 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-08-01
+
+**Two rounds of dogfooding — seven everyday surfaces made to fit the hand.** No new domain, just the
+daily friction sanded off across the app. The meatiest new capability is **jumping a due date into the
+future** (+1 week / month / year / +N years, moving a dated range as a block) — deliberately calendar-
+arithmetic simple, tweak-after if it lands on a weekend. Around it: the **Focus** deck promotes
+**Delete** to a green-Done / red-Delete pill (most cards get binned on completion, not archived);
+**Search** rows link their **project path** so you can click through to the project you were hunting for;
+the project **summary** includes **Done** by default (it doubles as sprint input); the inbox **Process**
+deck's navigation mirrors the Focus deck (chevrons + a centered Delete whose tooltip names its dual
+meaning — "nothing to do, or already handled"); the **Next** view sheds its status boxes (Next is just
+Next); and **Due** stops stranding you when a filter — or a bulk set-to-Done — empties the list. Squarely
+**polishing**, but the compounding kind. The now-mandatory dual review earned its keep again: Codex caught
+a select-mode trap in Due (the empty-list controls-vanish bug's selection-controls cousin) that the inline
+pass missed.
+
 ### Added
 
 - **Jump a due date into the future** — the due editor (actions and projects) gains quick **+1 week /
@@ -2057,7 +2073,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.7.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.8.0...HEAD
+[2.8.0]: https://github.com/Aha43/NamWeb/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Aha43/NamWeb/compare/v2.6.0...v2.7.0
 [2.6.0]: https://github.com/Aha43/NamWeb/compare/v2.5.0...v2.6.0
 [2.5.0]: https://github.com/Aha43/NamWeb/compare/v2.4.0...v2.5.0
