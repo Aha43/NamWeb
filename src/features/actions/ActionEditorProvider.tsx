@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { ActionEditorContext } from './action-editor-context';
 import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog';
+import { ConvertToProjectDialog } from './ConvertToProjectDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
 import { allOpenableActions, allTags, archivedProjectIds, canAddPrerequisite, effectiveTags, projectPath, subtreeIds, unblocks } from '@/domain/lenses';
@@ -28,6 +29,8 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const { document, dispatch } = useWorkspaceContext();
   const [editingId, setEditingId] = useState<string | null>(null);
+  // The action being converted to a project while its brain-dump dialog is open (#999).
+  const [converting, setConverting] = useState<{ id: string; title: string } | null>(null);
   // Fire-time state for the link-back toast (#663): the toast can fire up to 6s after save, so its
   // action must re-read the *current* document/editing state, never the ones captured at save.
   const docRef = useRef(document);
@@ -88,13 +91,29 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     return unblocks(document, node.id).map((n) => n.title);
   }, [node, document]);
 
+  // Converting is a "this is bigger than an action" moment — often when the sub-actions are top of
+  // mind. So instead of converting straight away, open a lean brain-dump dialog to seed action names
+  // (#999); the editor closes while it's up. `converting` remembers the node (the editor's `node`
+  // clears once the editor closes).
   function makeProject() {
     if (!node) return;
-    dispatch({ type: 'convertActionToProject', id: node.id, now: nowIso() });
+    setConverting({ id: node.id, title: node.title });
     setEditingId(null);
-    // Open the new project right away (#867): converting is a "this is bigger than an action" moment
-    // — you want to work it as a project, not hunt for where it landed back in the list.
-    navigate(`/projects/${node.id}`);
+  }
+
+  function confirmConvert(actionNames: string[]) {
+    if (!converting) return;
+    const now = nowIso();
+    dispatch({ type: 'convertActionToProject', id: converting.id, now });
+    // Seed the jotted actions under the new project, in typed order, as NEXT work. `atTop: false`
+    // appends each so the list reads top-to-bottom as typed (the default prepends).
+    for (const title of actionNames) {
+      dispatch({ type: 'addAction', parentId: converting.id, id: newId(), title, status: 'NEXT', atTop: false, now });
+    }
+    const projectId = converting.id;
+    setConverting(null);
+    // Open the new project right away (#867): you want to work it as a project, not hunt for it.
+    navigate(`/projects/${projectId}`);
   }
 
   // Count-aware confirm message for the dialog's inline delete confirm.
@@ -241,6 +260,16 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           onRemovePrerequisite={node.project ? undefined : removePrerequisite}
           onDelete={remove}
           deleteConfirmMessage={deleteMessage}
+        />
+      )}
+      {converting && (
+        <ConvertToProjectDialog
+          open
+          onOpenChange={(open) => {
+            if (!open) setConverting(null); // cancel/Escape aborts the conversion — stays an action
+          }}
+          title={converting.title}
+          onConfirm={confirmConvert}
         />
       )}
     </ActionEditorContext.Provider>

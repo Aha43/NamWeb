@@ -162,6 +162,8 @@ test.describe('reshape', () => {
     await page.getByRole('button', { name: 'Edit Plan trip' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Move / make project' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Make project', exact: true }).click();
+    // "Make project" now opens a brain-dump dialog (#999); create it empty here.
+    await page.getByRole('button', { name: 'Create project' }).click();
 
     // Navigate in-app (no full reload) so the optimistic change is observed deterministically.
     await page.getByRole('link', { name: 'Projects' }).click(); // toolbar command bar (#590)

@@ -10,6 +10,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **Converting an action to a project can seed its first actions.** That "oh, this is bigger than one
+  thing" moment is when the sub-actions are top of mind — so **Make project** now opens a lean dialog
+  to jot the first action **names** (just names — quick-add, Enter to add each), then creates the
+  project with those actions under it and lands you on its workbench. Zero names creates an empty
+  project as before; Cancel keeps it an action. Closes #999.
+
 - **Calendar agenda (list) view** — a second calendar view beside the classic month grid, à la Google
   Calendar's mobile agenda: a continuous scroll of dated **projects + actions** with month titles as
   dividers. Open past-due items surface in an **Overdue** group at the top, then today onward; days
