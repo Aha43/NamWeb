@@ -75,7 +75,7 @@ describe('ActionEditorProvider', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('converting an action into a project opens the new project (#867)', () => {
+  it('converting an action into a project seeds jotted actions and opens the new project (#867/#999)', () => {
     navigate.mockClear();
     const dispatch = vi.fn();
     render(
@@ -87,9 +87,44 @@ describe('ActionEditorProvider', () => {
     );
     fireEvent.click(screen.getByText('open a'));
     fireEvent.click(screen.getByRole('button', { name: 'Move / make project' })); // expand the section
+    // "Make project" now opens the brain-dump dialog instead of converting straight away (#999).
     fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
+    expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'convertActionToProject' }));
+
+    // Jot two first actions, then create.
+    const input = screen.getByLabelText('Add an action');
+    fireEvent.change(input, { target: { value: 'Book flights' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.change(input, { target: { value: 'Pack bags' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.click(screen.getByRole('button', { name: 'Create project' }));
+
+    // Converts, seeds the two NEXT actions under the new project (in typed order), then navigates.
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: 'convertActionToProject', id: 'a' }));
+    const added = dispatch.mock.calls
+      .map((c) => c[0])
+      .filter((i) => i.type === 'addAction' && i.parentId === 'a');
+    expect(added.map((i) => i.title)).toEqual(['Book flights', 'Pack bags']);
+    expect(added.every((i) => i.status === 'NEXT')).toBe(true);
     expect(navigate).toHaveBeenCalledWith('/projects/a');
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); // editor closed
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument(); // both dialogs closed
+  });
+
+  it('cancelling the make-project dialog aborts the conversion (#999)', () => {
+    navigate.mockClear();
+    const dispatch = vi.fn();
+    render(
+      <WorkspaceContext.Provider value={{ document: doc({ a: node('a', { title: 'Plan trip' }) }), dispatch } as unknown as UseWorkspace}>
+        <ActionEditorProvider>
+          <OpenButton id="a" />
+        </ActionEditorProvider>
+      </WorkspaceContext.Provider>,
+    );
+    fireEvent.click(screen.getByText('open a'));
+    fireEvent.click(screen.getByRole('button', { name: 'Move / make project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: 'convertActionToProject' }));
+    expect(navigate).not.toHaveBeenCalled();
   });
 });
