@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { calendarMonth, dayActions, dayProjects, isValidLocalDate, isoWeek } from './calendar';
+import { agenda, calendarMonth, dayActions, dayProjects, isValidLocalDate, isoWeek } from './calendar';
 
 function node(id: string, p: Partial<NamNode> = {}): NamNode {
   return {
@@ -170,5 +170,45 @@ describe('isoWeek (#680)', () => {
     expect(isoWeek(new Date(2026, 0, 1))).toBe(1); // Thu 2026-01-01 → week 1
     expect(isoWeek(new Date(2021, 0, 1))).toBe(53); // Fri 2021-01-01 → week 53 of 2020
     expect(isoWeek(new Date(2024, 11, 30))).toBe(1); // Mon 2024-12-30 → week 1 of 2025
+  });
+});
+
+describe('agenda (#995)', () => {
+  it('splits into overdue (before today) and upcoming, chronological, no empty days', () => {
+    const doc = workspace([
+      node('past', { dueAt: '2026-07-10' }),
+      node('today', { dueAt: '2026-07-15' }),
+      node('future', { dueAt: '2026-07-20' }),
+      node('undated'),
+    ]);
+    const ag = agenda(doc, NOW);
+    expect(ag.overdue.map((d) => d.date)).toEqual(['2026-07-10']);
+    expect(ag.upcoming.map((d) => d.date)).toEqual(['2026-07-15', '2026-07-20']);
+    expect(ag.upcoming[0].entries.map((e) => e.node.id)).toEqual(['today']);
+  });
+
+  it('places a span once on its start day (not every covered day)', () => {
+    const doc = workspace([node('trip', { dueAt: '2026-07-18', dueEndAt: '2026-07-25' })]);
+    const ag = agenda(doc, NOW);
+    expect(ag.upcoming.map((d) => d.date)).toEqual(['2026-07-18']);
+    expect(ag.upcoming[0].entries).toHaveLength(1);
+  });
+
+  it('orders a day: timed actions first (clock order), then untimed, then projects', () => {
+    const doc = workspace([
+      node('proj', { dueAt: '2026-07-20', project: true }),
+      node('untimed', { dueAt: '2026-07-20' }),
+      node('at14', { dueAt: '2026-07-20', dueTime: '14:00' }),
+      node('at9', { dueAt: '2026-07-20', dueTime: '09:00' }),
+    ]);
+    const day = agenda(doc, NOW).upcoming.find((d) => d.date === '2026-07-20')!;
+    expect(day.entries.map((e) => e.node.id)).toEqual(['at9', 'at14', 'untimed', 'proj']);
+    expect(day.entries.map((e) => e.kind)).toEqual(['action', 'action', 'action', 'project']);
+  });
+
+  it('hides DONE by default; includeDone surfaces it', () => {
+    const doc = workspace([node('d', { dueAt: '2026-07-20', status: 'DONE' })]);
+    expect(agenda(doc, NOW).upcoming).toHaveLength(0);
+    expect(agenda(doc, NOW, true).upcoming.map((d) => d.date)).toEqual(['2026-07-20']);
   });
 });
