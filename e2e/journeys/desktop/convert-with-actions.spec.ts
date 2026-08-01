@@ -16,7 +16,12 @@ test('convert an action to a project, seeding first actions', async ({ page, doc
   await dialog.getByRole('button', { name: 'Move / make project' }).click(); // expand the section
   await dialog.getByRole('button', { name: 'Make project', exact: true }).click();
 
-  // The brain-dump dialog: jot two first actions, then create.
+  // The brain-dump dialog: rename the project (it wants a fresh name), then jot two first actions.
+  await page.getByRole('button', { name: 'Rename the project' }).click();
+  const nameInput = page.getByRole('textbox', { name: 'Rename Plan the trip' });
+  await nameInput.fill('Summer holiday');
+  await nameInput.press('Enter');
+
   const input = page.getByRole('textbox', { name: 'Add an action' });
   await input.fill('Book flights');
   await input.press('Enter');
@@ -24,9 +29,10 @@ test('convert an action to a project, seeding first actions', async ({ page, doc
   await input.press('Enter');
   await page.getByRole('button', { name: 'Create project' }).click();
 
-  // Land on the new project's workbench; expand to see its actions (collapsed by default).
+  // Land on the new project's workbench; it carries the fresh name; expand to see its actions.
   await expect(page).toHaveURL(/\/projects\/a$/);
   await expect.poll(() => doc.current().nodes['a'].project).toBe(true);
+  await expect.poll(() => doc.current().nodes['a'].title).toBe('Summer holiday');
   await expandWorkbench(page);
   await expect(page.getByText('Book flights')).toBeVisible();
   await expect(page.getByText('Pack bags')).toBeVisible();

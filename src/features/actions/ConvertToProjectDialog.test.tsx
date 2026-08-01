@@ -2,28 +2,46 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ConvertToProjectDialog } from './ConvertToProjectDialog';
 
-describe('ConvertToProjectDialog (#999)', () => {
-  it('collects names via Enter, removes one, includes a trailing draft, and confirms', () => {
+describe('ConvertToProjectDialog (#999/#1000)', () => {
+  it('collects names via Enter, renames one, removes one, includes a trailing draft, and confirms', () => {
     const onConfirm = vi.fn();
-    render(<ConvertToProjectDialog open onOpenChange={vi.fn()} title="Plan trip" onConfirm={onConfirm} />);
+    render(<ConvertToProjectDialog open onOpenChange={vi.fn()} actionTitle="Plan trip" onConfirm={onConfirm} />);
     const input = screen.getByLabelText('Add an action');
     fireEvent.change(input, { target: { value: 'Book flights' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     fireEvent.change(input, { target: { value: 'Pack bags' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
-    // Remove the first, leave a trailing un-added draft — it's included on create.
-    fireEvent.click(screen.getByRole('button', { name: 'Remove Book flights' }));
+    // Rename the first row (fix a typo before the project exists).
+    fireEvent.click(screen.getByRole('button', { name: 'Rename Book flights' }));
+    const rowInput = screen.getByRole('textbox', { name: 'Rename Book flights' });
+    fireEvent.change(rowInput, { target: { value: 'Book the flights' } });
+    fireEvent.keyDown(rowInput, { key: 'Enter' });
+
+    // Remove the second, leave a trailing un-added draft — it's included on create.
+    fireEvent.click(screen.getByRole('button', { name: 'Remove Pack bags' }));
     fireEvent.change(input, { target: { value: 'Book hotel' } });
     fireEvent.click(screen.getByRole('button', { name: 'Create project' }));
 
-    expect(onConfirm).toHaveBeenCalledWith(['Pack bags', 'Book hotel']);
+    // Project title defaults to the action title (unchanged), with the edited action list.
+    expect(onConfirm).toHaveBeenCalledWith('Plan trip', ['Book the flights', 'Book hotel']);
   });
 
-  it('creates an empty project when nothing is entered', () => {
+  it('lets you rename the project (seeded from the action) before creating', () => {
     const onConfirm = vi.fn();
-    render(<ConvertToProjectDialog open onOpenChange={vi.fn()} title="X" onConfirm={onConfirm} />);
+    render(<ConvertToProjectDialog open onOpenChange={vi.fn()} actionTitle="Plan trip" onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Rename the project' }));
+    const nameInput = screen.getByRole('textbox', { name: 'Rename Plan trip' });
+    fireEvent.change(nameInput, { target: { value: 'Summer trip' } });
+    fireEvent.keyDown(nameInput, { key: 'Enter' });
     fireEvent.click(screen.getByRole('button', { name: 'Create project' }));
-    expect(onConfirm).toHaveBeenCalledWith([]);
+    expect(onConfirm).toHaveBeenCalledWith('Summer trip', []);
+  });
+
+  it('creates an empty project (keeping the action title) when nothing is entered', () => {
+    const onConfirm = vi.fn();
+    render(<ConvertToProjectDialog open onOpenChange={vi.fn()} actionTitle="Plan trip" onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Create project' }));
+    expect(onConfirm).toHaveBeenCalledWith('Plan trip', []);
   });
 });

@@ -1,40 +1,51 @@
 import { useEffect, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Pencil, Plus, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { CopyButton } from '@/components/ui/copy-button';
+import { Tooltip } from '@/components/ui/tooltip';
+import { InlineRename } from './InlineRename';
 import { newId } from '@/lib/local';
 
 /**
  * The "make this a project" moment (#999): converting an action to a project is often when the
- * sub-actions are top of mind, so let people jot their **names** right then — no tags/dates/etc.
- * Quick-add (type, Enter) builds a list; Create converts + seeds those actions. Zero names creates
- * an empty project (today's behaviour); Cancel aborts the conversion. Presentational — reports the
- * names via `onConfirm`.
+ * sub-actions are top of mind, so let people jot their **names** right then. The **project name**
+ * (seeded from the action) is editable up top — often the project wants a fresh name while the
+ * original action becomes one of its actions (copy helps you re-add it). Each jotted name has copy /
+ * rename / remove (#1000 follow-up). Create converts + seeds the actions; empty creates an empty
+ * project; Cancel aborts. Presentational — reports `(projectTitle, actionNames)` via `onConfirm`.
  */
 export function ConvertToProjectDialog({
   open,
   onOpenChange,
-  title,
+  actionTitle,
   onConfirm,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  title: string;
-  onConfirm: (actionNames: string[]) => void;
+  /** The action being converted — seeds the project name and is offered to copy as a first action. */
+  actionTitle: string;
+  onConfirm: (projectTitle: string, actionNames: string[]) => void;
 }) {
   const { t } = useTranslation();
+  const [projectTitle, setProjectTitle] = useState(actionTitle);
+  const [editingName, setEditingName] = useState(false);
   const [draft, setDraft] = useState('');
   const [names, setNames] = useState<{ id: string; name: string }[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // The provider keeps this dialog mounted; reset its brain-dump each time it opens.
+  // The provider keeps this dialog mounted; reset it each time it opens.
   useEffect(() => {
     if (open) {
+      setProjectTitle(actionTitle);
+      setEditingName(false);
       setDraft('');
       setNames([]);
+      setEditingId(null);
     }
-  }, [open]);
+  }, [open, actionTitle]);
 
   const addDraft = () => {
     const name = draft.trim();
@@ -45,8 +56,10 @@ export function ConvertToProjectDialog({
 
   const create = () => {
     const trailing = draft.trim();
-    onConfirm([...names.map((n) => n.name), ...(trailing ? [trailing] : [])]);
+    onConfirm(projectTitle.trim() || actionTitle, [...names.map((n) => n.name), ...(trailing ? [trailing] : [])]);
   };
+
+  const iconBtn = 'rounded-md p-1 text-muted-foreground hover:text-foreground';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -59,9 +72,35 @@ export function ConvertToProjectDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>{t('convert.title', { title })}</DialogTitle>
+          <DialogTitle>{t('convert.title')}</DialogTitle>
           <DialogDescription>{t('convert.description')}</DialogDescription>
         </DialogHeader>
+
+        {/* Project name — seeded from the action, editable (the project often wants a fresh name);
+            copy grabs it so the original action can be re-added as one of the project's actions. */}
+        <div className="space-y-1">
+          <span className="text-xs text-muted-foreground">{t('convert.projectName')}</span>
+          {editingName ? (
+            <InlineRename
+              title={projectTitle}
+              onCommit={(v) => {
+                setProjectTitle(v);
+                setEditingName(false);
+              }}
+              onCancel={() => setEditingName(false)}
+            />
+          ) : (
+            <div className="flex items-center gap-1 rounded-md border border-border bg-card/60 px-3 py-1.5">
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{projectTitle}</span>
+              <Tooltip label={t('common.rename')}>
+                <button type="button" aria-label={t('convert.renameProjectAria')} onClick={() => setEditingName(true)} className={iconBtn}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+              </Tooltip>
+              <CopyButton value={projectTitle} label={t('copy.name', { title: projectTitle })} tooltip />
+            </div>
+          )}
+        </div>
 
         <div className="space-y-2">
           <div className="flex gap-1.5">
@@ -84,22 +123,41 @@ export function ConvertToProjectDialog({
           </div>
           {names.length > 0 && (
             <ul className="flex flex-col gap-1">
-              {names.map((n) => (
-                <li
-                  key={n.id}
-                  className="flex items-center gap-2 rounded-md border border-border bg-card/60 px-3 py-1.5 text-sm"
-                >
-                  <span className="min-w-0 flex-1 truncate text-foreground">{n.name}</span>
-                  <button
-                    type="button"
-                    aria-label={t('convert.removeAria', { name: n.name })}
-                    onClick={() => setNames((xs) => xs.filter((x) => x.id !== n.id))}
-                    className="rounded-md p-0.5 text-muted-foreground hover:text-destructive"
+              {names.map((n) =>
+                editingId === n.id ? (
+                  <li key={n.id}>
+                    <InlineRename
+                      title={n.name}
+                      onCommit={(v) => {
+                        setNames((xs) => xs.map((x) => (x.id === n.id ? { ...x, name: v } : x)));
+                        setEditingId(null);
+                      }}
+                      onCancel={() => setEditingId(null)}
+                    />
+                  </li>
+                ) : (
+                  <li
+                    key={n.id}
+                    className="flex items-center gap-1 rounded-md border border-border bg-card/60 px-3 py-1.5 text-sm"
                   >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </li>
-              ))}
+                    <span className="min-w-0 flex-1 truncate text-foreground">{n.name}</span>
+                    <Tooltip label={t('common.rename')}>
+                      <button type="button" aria-label={t('convert.renameAria', { name: n.name })} onClick={() => setEditingId(n.id)} className={iconBtn}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </Tooltip>
+                    <CopyButton value={n.name} label={t('copy.name', { title: n.name })} tooltip />
+                    <button
+                      type="button"
+                      aria-label={t('convert.removeAria', { name: n.name })}
+                      onClick={() => setNames((xs) => xs.filter((x) => x.id !== n.id))}
+                      className="rounded-md p-1 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ),
+              )}
             </ul>
           )}
         </div>

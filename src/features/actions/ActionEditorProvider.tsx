@@ -101,10 +101,17 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     setEditingId(null);
   }
 
-  function confirmConvert(actionNames: string[]) {
+  function confirmConvert(projectTitle: string, actionNames: string[]) {
     if (!converting) return;
     const now = nowIso();
     dispatch({ type: 'convertActionToProject', id: converting.id, now });
+    // The project often wants a fresh name (the original action becomes one of its actions) — rename
+    // if the user changed it. Convert keeps the action's title otherwise.
+    const renamed = projectTitle.trim();
+    if (renamed && renamed !== converting.title) {
+      const description = document?.nodes[converting.id]?.description ?? null;
+      dispatch({ type: 'updateNode', id: converting.id, title: renamed, description, now });
+    }
     // Seed the jotted actions under the new project, in typed order, as NEXT work. `atTop: false`
     // appends each so the list reads top-to-bottom as typed (the default prepends).
     for (const title of actionNames) {
@@ -268,7 +275,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           onOpenChange={(open) => {
             if (!open) setConverting(null); // cancel/Escape aborts the conversion — stays an action
           }}
-          title={converting.title}
+          actionTitle={converting.title}
           onConfirm={confirmConvert}
         />
       )}
