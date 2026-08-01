@@ -149,7 +149,7 @@ describe('InboxProcessDialog', () => {
     }
   });
 
-  it('single-item deck hides Prev/Skip (nothing to cycle to)', () => {
+  it('single-item deck hides the prev/next chevrons (nothing to cycle to) (#988)', () => {
     render(
       <InboxProcessDialog
         node={node()}
@@ -163,7 +163,9 @@ describe('InboxProcessDialog', () => {
         position={1}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'Skip →' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '← Prev' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next item' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Previous item' })).not.toBeInTheDocument();
+    // …but Delete stays — you can still bin the single item.
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeInTheDocument();
   });
 });
