@@ -147,16 +147,17 @@ export function DueFieldset({
   // today if none), and — when there's an end date — move it too, preserving the span length in days.
   // Land where the math puts it (a "+1 month" may hit a weekend); the user tweaks after.
   const jump = (shift: (iso: string) => string) => {
-    const hadEnd = parseFlexibleDate(dueEnd) !== null;
     const { dueAt, dueEndAt } = jumpDue(parseFlexibleDate(due), parseFlexibleDate(dueEnd), shift);
     dirtyRef.current = true;
     setDue(dueAt);
     setDueError(false);
+    // Override the end only when the jump produced one (a dated range) — a bare end with no valid
+    // start yields no shifted end, so we must not push a null into the string-typed commit override.
     if (dueEndAt) {
       setDueEnd(dueEndAt);
       setDueEndError(false);
     }
-    commitIfValid({ due: dueAt, ...(hadEnd ? { dueEnd: dueEndAt! } : {}) });
+    commitIfValid({ due: dueAt, ...(dueEndAt ? { dueEnd: dueEndAt } : {}) });
   };
   const jumpChip = 'rounded-md border border-input px-2 py-0.5 text-xs text-foreground hover:bg-accent';
 
