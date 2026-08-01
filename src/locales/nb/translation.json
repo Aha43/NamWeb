@@ -102,6 +102,7 @@
   "bookmarks.staleSuffix": " (finnes ikke lenger)",
   "bookmarks.tagsTooltipNext": "{tags} · bare Neste",
   "bookmarks.useProjectName": "Bruk prosjektnavnet",
+  "calendar.agendaEarlier": "Tidligere",
   "calendar.agendaEmpty": "Ingenting datert. Gi en handling eller et prosjekt en forfallsdato, så vises den her.",
   "calendar.agendaOverdue": "Forfalt",
   "calendar.agendaTitle": "Agenda",

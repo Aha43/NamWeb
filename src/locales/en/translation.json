@@ -102,6 +102,7 @@
   "bookmarks.staleSuffix": " (no longer exists)",
   "bookmarks.tagsTooltipNext": "{tags} · Next only",
   "bookmarks.useProjectName": "Use project name",
+  "calendar.agendaEarlier": "Earlier",
   "calendar.agendaEmpty": "Nothing dated. Give an action or project a due date and it shows here.",
   "calendar.agendaOverdue": "Overdue",
   "calendar.agendaTitle": "Agenda",

@@ -206,6 +206,18 @@ describe('agenda (#995)', () => {
     expect(day.entries.map((e) => e.kind)).toEqual(['action', 'action', 'action', 'project']);
   });
 
+  it('keeps Overdue open-only; past done/cancelled items go to a neutral Past group (#1000 review, P2)', () => {
+    const doc = workspace([
+      node('openPast', { dueAt: '2026-07-10' }), // past + NEXT → overdue (red)
+      node('donePast', { dueAt: '2026-07-08', status: 'DONE' }), // past + DONE → past (neutral)
+      node('cxPast', { dueAt: '2026-07-09', status: 'CANCELLED' }), // past + CANCELLED → past
+    ]);
+    const ag = agenda(doc, NOW, ['NEXT', 'BACKLOG', 'DONE', 'CANCELLED']);
+    expect(ag.overdue.flatMap((d) => d.entries.map((e) => e.node.id))).toEqual(['openPast']);
+    expect(ag.past.map((d) => d.date)).toEqual(['2026-07-08', '2026-07-09']);
+    expect(ag.past.flatMap((d) => d.entries.map((e) => e.node.id))).toEqual(['donePast', 'cxPast']);
+  });
+
   it('filters by the status-box set: DONE hidden by default, shown when DONE is included', () => {
     const doc = workspace([
       node('next', { dueAt: '2026-07-20' }),
