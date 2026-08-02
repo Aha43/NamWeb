@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- The per-row **move-to** menu now groups its proximate destinations under quiet section headers —
+  **Parent**, **Sibling**, **Sub-project**, **Top level · Free actions** — so the fast-move targets
+  read as categories at a glance instead of a seemingly random list. Per-item tooltips and **Browse
+  all projects…** stay. Closes #1009.
+
 ### Fixed
 
 - The **inbox count** now shows on the **dense**-mode sidebar too — a small corner badge on the icon
