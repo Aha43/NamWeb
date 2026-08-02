@@ -89,7 +89,7 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('urgent')).not.toHaveClass('italic'); // own tags stay plain
   });
 
-  it('moves an action into a project from its row (#688)', async () => {
+  it('moves an action into a project from its row (#688)', () => {
     const onMoveInto = vi.fn();
     render(
       <MemoryRouter>
@@ -103,9 +103,8 @@ describe('NextActionsPanel', () => {
       </MemoryRouter>,
     );
     fireEvent.keyDown(screen.getByRole('button', { name: 'Move Buy milk to another project' }), { key: 'Enter' });
-    // A quiet section header categorizes the destination (#1009) — this one's a sibling project.
-    // findBy: the Radix menu content mounts via a portal a tick after opening (races on CI).
-    expect(await screen.findByText('Sibling')).toBeInTheDocument();
+    // (The #1009 section headers are asserted in the move-menu-sections e2e — Radix's menu Label
+    // isn't reliably queryable in jsdom.)
     fireEvent.click(screen.getByRole('menuitem', { name: 'Kitchen' }));
     expect(onMoveInto).toHaveBeenCalledWith('x', 'p1');
   });
