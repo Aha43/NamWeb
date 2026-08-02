@@ -171,7 +171,13 @@ export function ActionRow({
           {tag}
         </span>
       ))}
-      <DueHintLabel dueAt={row.dueAt} dueEndAt={row.dueEndAt} dueTime={row.dueTime} dueEndTime={row.dueEndTime} />
+      <DueHintLabel
+        dueAt={row.dueAt}
+        dueEndAt={row.dueEndAt}
+        dueTime={row.dueTime}
+        dueEndTime={row.dueEndTime}
+        muteTone={row.status === 'DONE' || row.status === 'CANCELLED'}
+      />
       {row.counts?.map((c) => (
         <CountPill key={c.index} nodeId={row.id} index={c.index} current={c.current} target={c.target} unlimited={c.unlimited} rawValue={c.raw} label={c.label} />
       ))}
