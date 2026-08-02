@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- The **inbox count** now shows on the **dense**-mode sidebar too — a small corner badge on the icon
+  (capped at `9+`), not just the red glow. Non-dense keeps its inline badge. Closes #1008.
+
 ## [2.9.0] - 2026-08-01
 
 **A second way to see the calendar, and a better way to grow a project.** Two meatier dogfooding

@@ -232,7 +232,23 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                               'aria-[current=page]:bg-accent aria-[current=page]:text-accent-foreground',
                             )}
                           >
-                            <Icon className={cn('h-4 w-4', isInbox && (counts.inbox > 0 ? 'inbox-glow-attention' : 'inbox-glow-clear'))} />
+                            {isInbox ? (
+                              <span className="relative flex">
+                                <Icon className={cn('h-4 w-4', counts.inbox > 0 ? 'inbox-glow-attention' : 'inbox-glow-clear')} />
+                                {/* Dense rail has no room for the inline badge, so the count rides the
+                                    icon as a corner bubble (#1008) — capped so it fits. */}
+                                {counts.inbox > 0 && dense && (
+                                  <span
+                                    aria-label={t('nav.inboxCountAria', { count: counts.inbox })}
+                                    className="absolute -right-2 -top-1.5 min-w-[1rem] rounded-full bg-red-500 px-1 text-center text-[10px] font-semibold leading-4 text-white"
+                                  >
+                                    {counts.inbox > 9 ? '9+' : counts.inbox}
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <Icon className="h-4 w-4" />
+                            )}
                             {!dense && t(label)}
                             {isInbox && counts.inbox > 0 && !dense && (
                               <span
