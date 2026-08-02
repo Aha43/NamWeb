@@ -103,6 +103,8 @@ describe('NextActionsPanel', () => {
       </MemoryRouter>,
     );
     fireEvent.keyDown(screen.getByRole('button', { name: 'Move Buy milk to another project' }), { key: 'Enter' });
+    // A quiet section header categorizes the destination (#1009) — this one's a sibling project.
+    expect(screen.getByText('Sibling')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Kitchen' }));
     expect(onMoveInto).toHaveBeenCalledWith('x', 'p1');
   });

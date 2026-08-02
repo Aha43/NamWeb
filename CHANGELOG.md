@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- The per-row **move-to** menu now groups its proximate destinations under quiet section headers —
+  **Parent**, **Sibling**, **Sub-project**, **Top level · Free actions** — so the fast-move targets
+  read as categories at a glance instead of a seemingly random list. Per-item tooltips and **Browse
+  all projects…** stay. Closes #1009.
+
 ## [2.9.0] - 2026-08-01
 
 **A second way to see the calendar, and a better way to grow a project.** Two meatier dogfooding
