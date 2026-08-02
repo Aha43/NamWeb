@@ -16,6 +16,20 @@ minor = features (breaking changes allowed), patch = fixes.
   A two-button footer decides what happens next: **Create & open project** (go work it) or **Create &
   keep processing** (convert + seed, then carry on with the inbox — the deck advances). Closes #1007.
 
+### Changed
+
+- The per-row **move-to** menu now groups its proximate destinations under quiet section headers —
+  **Parent**, **Sibling**, **Sub-project**, **Top level · Free actions** — so the fast-move targets
+  read as categories at a glance instead of a seemingly random list. Per-item tooltips and **Browse
+  all projects…** stay. Closes #1009.
+
+### Fixed
+
+- The **inbox count** now shows on the **dense**-mode sidebar too — a small corner badge on the icon
+  (capped at `9+`), not just the red glow. Non-dense keeps its inline badge. Closes #1008.
+- A **done** (or cancelled) action no longer shows its due date/time in **red** — a finished item
+  isn't overdue, so its due hint now renders in the neutral tone. Closes #1010.
+
 ## [2.9.0] - 2026-08-01
 
 **A second way to see the calendar, and a better way to grow a project.** Two meatier dogfooding

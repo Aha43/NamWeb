@@ -103,6 +103,8 @@ describe('NextActionsPanel', () => {
       </MemoryRouter>,
     );
     fireEvent.keyDown(screen.getByRole('button', { name: 'Move Buy milk to another project' }), { key: 'Enter' });
+    // (The #1009 section headers are asserted in the move-menu-sections e2e — Radix's menu Label
+    // isn't reliably queryable in jsdom.)
     fireEvent.click(screen.getByRole('menuitem', { name: 'Kitchen' }));
     expect(onMoveInto).toHaveBeenCalledWith('x', 'p1');
   });

@@ -5,6 +5,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -30,11 +31,10 @@ function tooltipFor(target: QuickMoveTarget, t: TFunction): string {
 const ICON_TRIGGER = 'rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground';
 
 /**
- * The fast-move menu: proximate destinations grouped by direction — **up** (parent / Free / Top
- * level) first, then **down** (the project's own sub-projects), then **sideways** (siblings) — each
- * with a tooltip naming its type, so the kinds stay learnable without cluttering the labels. A final
- * **"Browse all projects…"** opens the full column picker. Desktop only; callers keep the inline
- * dropdown on phone.
+ * The fast-move menu: proximate destinations under quiet **section headers** — Parent, Sibling,
+ * Sub-project, Top level · Free actions (#1009) — so the "seemingly random projects" read as
+ * categories at a glance. Each item also keeps a tooltip naming its type. A final **"Browse all
+ * projects…"** opens the full column picker. Desktop only; callers keep the inline dropdown on phone.
  */
 export function MoveTargetMenu({
   quickTargets,
@@ -58,11 +58,13 @@ export function MoveTargetMenu({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
-  // Up (parent / Free / Top level), then down (sub-projects), then sideways (siblings).
-  const up = quickTargets.filter((target) => target.kind === 'parent' || target.kind === 'free' || target.kind === 'toplevel');
-  const down = quickTargets.filter((target) => target.kind === 'subproject');
-  const side = quickTargets.filter((target) => target.kind === 'sibling');
-  const groups = [up, down, side].filter((g) => g.length > 0);
+  // Labeled sections — nearest relations first (parent, sibling, deeper), then the root escapes.
+  const sections = [
+    { label: t('picker.sectionParent'), items: quickTargets.filter((x) => x.kind === 'parent') },
+    { label: t('picker.sectionSibling'), items: quickTargets.filter((x) => x.kind === 'sibling') },
+    { label: t('picker.sectionSubproject'), items: quickTargets.filter((x) => x.kind === 'subproject') },
+    { label: t('picker.sectionTopLevel'), items: quickTargets.filter((x) => x.kind === 'free' || x.kind === 'toplevel') },
+  ].filter((s) => s.items.length > 0);
 
   return (
     <DropdownMenu>
@@ -74,17 +76,18 @@ export function MoveTargetMenu({
         </DropdownMenuTrigger>
       </Tooltip>
       <DropdownMenuContent align="end" className="max-h-80 overflow-y-auto">
-        {groups.map((group, gi) => (
-          <Fragment key={gi}>
-            {gi > 0 && <DropdownMenuSeparator />}
-            {group.map((target) => (
+        {sections.map((section, si) => (
+          <Fragment key={section.label}>
+            {si > 0 && <DropdownMenuSeparator />}
+            <DropdownMenuLabel>{section.label}</DropdownMenuLabel>
+            {section.items.map((target) => (
               <Tooltip key={target.id} label={tooltipFor(target, t)} side="right">
                 <DropdownMenuItem onSelect={() => onPick(target.id)}>{shortLabel(target.label)}</DropdownMenuItem>
               </Tooltip>
             ))}
           </Fragment>
         ))}
-        {groups.length > 0 && <DropdownMenuSeparator />}
+        {sections.length > 0 && <DropdownMenuSeparator />}
         <DropdownMenuItem onSelect={onBrowse}>{t('picker.browseAll')}</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
