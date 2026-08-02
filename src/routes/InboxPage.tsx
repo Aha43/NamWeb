@@ -149,7 +149,24 @@ export function InboxPage() {
     if (!current) return;
     const now = nowIso();
     if (resolution.kind === 'project') {
-      dispatch({ type: 'convertInboxToProject', id: current.id, parentId: resolution.parentId, tags: resolution.tags, now });
+      const id = current.id;
+      dispatch({ type: 'convertInboxToProject', id, parentId: resolution.parentId, tags: resolution.tags, now });
+      // Rename the new project if edited (the convert keeps the item's title otherwise), then seed the
+      // jotted first actions under it in typed order (#1007).
+      const renamed = resolution.projectTitle?.trim();
+      if (renamed && renamed !== current.title) {
+        dispatch({ type: 'updateNode', id, title: renamed, description: current.description ?? null, now });
+      }
+      for (const title of resolution.actionNames ?? []) {
+        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'NEXT', atTop: false, now });
+      }
+      // Open the new project, or keep processing the inbox (deck advances / single closes) (#1007).
+      if (resolution.openAfter) {
+        if (inDeck) endDeck();
+        else setProcessingId(null);
+        navigate(`/projects/${id}`);
+        return;
+      }
     } else {
       dispatch({
         type: 'convertInboxToAction',

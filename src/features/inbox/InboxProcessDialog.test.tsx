@@ -17,12 +17,21 @@ const targets: ProjectTarget[] = [
 ];
 
 describe('InboxProcessDialog', () => {
-  it('resolves to a top-level project', () => {
+  it('resolves to a top-level project via the make-project brain-dump (#1007)', () => {
     const onResolve = vi.fn();
     render(<InboxProcessDialog node={node()} open onOpenChange={vi.fn()} onResolve={onResolve} />);
     fireEvent.click(screen.getByRole('button', { name: /make a project/i }));
-    fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
-    expect(onResolve).toHaveBeenCalledWith({ kind: 'project', parentId: undefined });
+    fireEvent.click(screen.getByRole('button', { name: 'Make project' })); // opens the brain-dump
+    // Create & keep processing → openAfter=false; the item title is the default project name.
+    fireEvent.click(screen.getByRole('button', { name: 'Create & keep processing' }));
+    expect(onResolve).toHaveBeenCalledWith({
+      kind: 'project',
+      parentId: undefined,
+      projectTitle: 'Plan trip',
+      actionNames: [],
+      openAfter: false,
+      tags: undefined,
+    });
   });
 
   it('resolves to an action with the chosen status', () => {
@@ -52,7 +61,19 @@ describe('InboxProcessDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: /make a project/i }));
     fireEvent.change(screen.getByRole('combobox', { name: 'Nest under' }), { target: { value: 'p2' } });
     fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
-    expect(onResolve).toHaveBeenCalledWith({ kind: 'project', parentId: 'p2' });
+    // Seed a first action, then Create & open project → openAfter=true, nested under p2.
+    const addInput = screen.getByLabelText('Add an action');
+    fireEvent.change(addInput, { target: { value: 'Sketch layout' } });
+    fireEvent.keyDown(addInput, { key: 'Enter' });
+    fireEvent.click(screen.getByRole('button', { name: 'Create & open project' }));
+    expect(onResolve).toHaveBeenCalledWith({
+      kind: 'project',
+      parentId: 'p2',
+      projectTitle: 'Plan trip',
+      actionNames: ['Sketch layout'],
+      openAfter: true,
+      tags: undefined,
+    });
   });
 
   it('omits the picker when there are no projects yet', () => {
@@ -91,7 +112,15 @@ describe('InboxProcessDialog', () => {
     // Resolving in deck mode advances via the parent — it must NOT close the dialog itself.
     fireEvent.click(screen.getByRole('button', { name: /make a project/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
-    expect(onResolve).toHaveBeenCalledWith({ kind: 'project', parentId: undefined });
+    fireEvent.click(screen.getByRole('button', { name: 'Create & keep processing' }));
+    expect(onResolve).toHaveBeenCalledWith({
+      kind: 'project',
+      parentId: undefined,
+      projectTitle: 'Plan trip',
+      actionNames: [],
+      openAfter: false,
+      tags: undefined,
+    });
     expect(onOpenChange).not.toHaveBeenCalledWith(false);
   });
 
