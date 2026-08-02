@@ -10,6 +10,8 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Fixed
 
+- The **inbox count** now shows on the **dense**-mode sidebar too — a small corner badge on the icon
+  (capped at `9+`), not just the red glow. Non-dense keeps its inline badge. Closes #1008.
 - A **done** (or cancelled) action no longer shows its due date/time in **red** — a finished item
   isn't overdue, so its due hint now renders in the neutral tone. Closes #1010.
 
