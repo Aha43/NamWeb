@@ -89,7 +89,7 @@ describe('NextActionsPanel', () => {
     expect(screen.getByText('urgent')).not.toHaveClass('italic'); // own tags stay plain
   });
 
-  it('moves an action into a project from its row (#688)', () => {
+  it('moves an action into a project from its row (#688)', async () => {
     const onMoveInto = vi.fn();
     render(
       <MemoryRouter>
@@ -104,7 +104,8 @@ describe('NextActionsPanel', () => {
     );
     fireEvent.keyDown(screen.getByRole('button', { name: 'Move Buy milk to another project' }), { key: 'Enter' });
     // A quiet section header categorizes the destination (#1009) — this one's a sibling project.
-    expect(screen.getByText('Sibling')).toBeInTheDocument();
+    // findBy: the Radix menu content mounts via a portal a tick after opening (races on CI).
+    expect(await screen.findByText('Sibling')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('menuitem', { name: 'Kitchen' }));
     expect(onMoveInto).toHaveBeenCalledWith('x', 'p1');
   });
