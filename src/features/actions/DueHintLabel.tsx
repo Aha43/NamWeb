@@ -24,6 +24,7 @@ export function DueHintLabel({
   dueEndTime,
   derivedStart = false,
   derivedEnd = false,
+  muteTone = false,
 }: {
   dueAt?: string | null;
   dueEndAt?: string | null;
@@ -32,18 +33,22 @@ export function DueHintLabel({
   /** The edge came from the project's contents (`effectiveDue`), not a typed date (#706). */
   derivedStart?: boolean;
   derivedEnd?: boolean;
+  /** Render in the neutral tone regardless of urgency — a finished (DONE/CANCELLED) item isn't
+   *  overdue, so its due date/time must not glow red (#1010). */
+  muteTone?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const { dateFormat } = useSettings();
   const due = dueAt ? formatDueHint(dueAt, undefined, dateFormat, t, i18n.language) : null;
   if (!due) return null;
+  const tone = muteTone ? 'later' : due.tone;
   // A date range: append the end date when it's set and not before the start.
   const end = dueAt && dueEndAt && dueEndAt >= dueAt ? formatDate(dueEndAt, dateFormat, i18n.language) : null;
   // Optional times of day on the start (#493) and end (#500).
   const time = dueTime ?? null;
   const endTime = end && dueEndTime ? dueEndTime : null;
   const label = (
-    <span className={cn('text-[11px] font-medium whitespace-nowrap', DUE_TONE[due.tone])}>
+    <span className={cn('text-[11px] font-medium whitespace-nowrap', DUE_TONE[tone])}>
       <span className={cn(derivedStart && 'italic')}>
         {t('actions.dueLabel', { label: due.label })}
         {time && ` ${time}`}

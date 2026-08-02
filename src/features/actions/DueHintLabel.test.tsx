@@ -14,6 +14,13 @@ describe('DueHintLabel', () => {
     expect(screen.getByText('Due Mar 20, 2026').parentElement).toHaveClass('text-red-600');
   });
 
+  it('mutes the tone for a finished item — a done past-due date is not red (#1010)', () => {
+    render(<DueHintLabel dueAt="2026-03-20" dueTime="09:00" muteTone />);
+    const label = screen.getByText('Due Mar 20, 2026 09:00').parentElement;
+    expect(label).not.toHaveClass('text-red-600'); // not the overdue warning…
+    expect(label).toHaveClass('text-muted-foreground'); // …the neutral tone
+  });
+
   it('appends range and times when present', () => {
     render(<DueHintLabel dueAt="2026-03-20" dueEndAt="2026-03-22" dueTime="09:00" dueEndTime="17:00" />);
     const start = screen.getByText('Due Mar 20, 2026 09:00');

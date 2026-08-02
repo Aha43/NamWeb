@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- A **done** (or cancelled) action no longer shows its due date/time in **red** — a finished item
+  isn't overdue, so its due hint now renders in the neutral tone. Closes #1010.
+
 ## [2.9.0] - 2026-08-01
 
 **A second way to see the calendar, and a better way to grow a project.** Two meatier dogfooding
