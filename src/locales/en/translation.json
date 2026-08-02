@@ -429,6 +429,8 @@
   "inProgressFilter.only": "Show in-progress only",
   "inProgressFilter.showAll": "Show all",
   "inbox.addPlaceholder": "Add to inbox…",
+  "inbox.createKeepProcessing": "Create & keep processing",
+  "inbox.createOpenProject": "Create & open project",
   "inbox.deckPosition": "{position} of {total}",
   "inbox.defaultTarget": "Default (Top level / Free actions)",
   "inbox.deleteMeaning": "Remove from the inbox — nothing to do, or you've already handled it.",

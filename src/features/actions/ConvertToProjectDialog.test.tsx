@@ -24,7 +24,7 @@ describe('ConvertToProjectDialog (#999/#1000)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Create project' }));
 
     // Project title defaults to the action title (unchanged), with the edited action list.
-    expect(onConfirm).toHaveBeenCalledWith('Plan trip', ['Book the flights', 'Book hotel']);
+    expect(onConfirm).toHaveBeenCalledWith('Plan trip', ['Book the flights', 'Book hotel'], true);
   });
 
   it('lets you rename the project (seeded from the action) before creating', () => {
@@ -35,7 +35,23 @@ describe('ConvertToProjectDialog (#999/#1000)', () => {
     fireEvent.change(nameInput, { target: { value: 'Summer trip' } });
     fireEvent.keyDown(nameInput, { key: 'Enter' });
     fireEvent.click(screen.getByRole('button', { name: 'Create project' }));
-    expect(onConfirm).toHaveBeenCalledWith('Summer trip', []);
+    expect(onConfirm).toHaveBeenCalledWith('Summer trip', [], true);
+  });
+
+  it('offers a continue button (openAfter=false) when continueLabel is set — the inbox flow (#1007)', () => {
+    const onConfirm = vi.fn();
+    render(
+      <ConvertToProjectDialog
+        open
+        onOpenChange={vi.fn()}
+        actionTitle="Plan trip"
+        onConfirm={onConfirm}
+        createLabel="Create & open project"
+        continueLabel="Create & keep processing"
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Create & keep processing' }));
+    expect(onConfirm).toHaveBeenCalledWith('Plan trip', [], false);
   });
 
   it('does not create via ⌘/Ctrl+Enter while an inline rename is active (#1000 review, P1)', () => {
@@ -54,6 +70,6 @@ describe('ConvertToProjectDialog (#999/#1000)', () => {
     const onConfirm = vi.fn();
     render(<ConvertToProjectDialog open onOpenChange={vi.fn()} actionTitle="Plan trip" onConfirm={onConfirm} />);
     fireEvent.click(screen.getByRole('button', { name: 'Create project' }));
-    expect(onConfirm).toHaveBeenCalledWith('Plan trip', []);
+    expect(onConfirm).toHaveBeenCalledWith('Plan trip', [], true);
   });
 });

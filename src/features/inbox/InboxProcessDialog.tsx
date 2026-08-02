@@ -13,6 +13,7 @@ import { Tooltip } from '@/components/ui/tooltip';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { TagsInput } from '@/features/actions/TagsInput';
 import { ProjectPickerDialog } from '@/features/projects/picker/ProjectPickerDialog';
+import { ConvertToProjectDialog } from '@/features/actions/ConvertToProjectDialog';
 import type { NamNode } from '@/domain/types';
 
 /** A project the clarified item can be filed under. */
@@ -21,9 +22,11 @@ export interface ProjectTarget {
   label: string;
 }
 
-/** The outcome of processing an inbox item. `parentId` files it under a project; omit for the default location. */
+/** The outcome of processing an inbox item. `parentId` files it under a project; omit for the default
+ *  location. A `project` may carry a renamed title, seeded first-action names, and whether to open the
+ *  new project or keep processing the inbox (#1007). */
 export type ProcessResolution =
-  | { kind: 'project'; parentId?: string; tags?: string[] }
+  | { kind: 'project'; parentId?: string; tags?: string[]; projectTitle?: string; actionNames?: string[]; openAfter?: boolean }
   | { kind: 'action'; status: 'NEXT' | 'BACKLOG'; parentId?: string; tags?: string[] };
 
 /**
@@ -76,6 +79,8 @@ export function InboxProcessDialog({
   // Tags to apply while clarifying (#920) — a comma-separated string (TagsInput's shape), split at
   // resolve time; additive, so the classification lands with the convert.
   const [tags, setTags] = useState('');
+  // The make-project brain-dump (#1007) — seed first actions the moment you decide it's a project.
+  const [convertOpen, setConvertOpen] = useState(false);
   const isDesktop = useIsDesktop();
   const deck = Boolean(onSkip); // process-all flow: parent swaps in the next item
   const parentId = targetId || undefined;
@@ -250,7 +255,7 @@ export function InboxProcessDialog({
               <span className="text-muted-foreground">{t('inbox.tagsLabel')}</span>
               <TagsInput id="process-tags" value={tags} onChange={setTags} suggestions={availableTags} />
             </label>
-            <Button className="justify-start" onClick={() => resolve({ kind: 'project', parentId })}>
+            <Button className="justify-start" onClick={() => setConvertOpen(true)}>
               {t('inbox.makeProject')}
             </Button>
             <Button variant="ghost" className="justify-start" onClick={back}>
@@ -259,6 +264,23 @@ export function InboxProcessDialog({
           </div>
         )}
       </DialogContent>
+      {/* Making a project from this inbox item: seed its first actions in the moment (#1007). The
+          two-button footer decides whether to open the new project or keep processing the inbox. */}
+      {convertOpen && (
+        <ConvertToProjectDialog
+          open
+          onOpenChange={(o) => {
+            if (!o) setConvertOpen(false);
+          }}
+          actionTitle={node.title}
+          createLabel={t('inbox.createOpenProject')}
+          continueLabel={t('inbox.createKeepProcessing')}
+          onConfirm={(projectTitle, actionNames, openAfter) => {
+            setConvertOpen(false);
+            resolve({ kind: 'project', parentId, projectTitle, actionNames, openAfter });
+          }}
+        />
+      )}
     </Dialog>
   );
 }

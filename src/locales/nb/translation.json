@@ -429,6 +429,8 @@
   "inProgressFilter.only": "Vis kun pågående",
   "inProgressFilter.showAll": "Vis alle",
   "inbox.addPlaceholder": "Legg til i innboks…",
+  "inbox.createKeepProcessing": "Opprett og fortsett",
+  "inbox.createOpenProject": "Opprett og åpne prosjekt",
   "inbox.deckPosition": "{position} av {total}",
   "inbox.defaultTarget": "Standard (Toppnivå / Frie handlinger)",
   "inbox.deleteMeaning": "Fjern fra innboksen — ingenting å gjøre, eller du har allerede tatt hånd om det.",

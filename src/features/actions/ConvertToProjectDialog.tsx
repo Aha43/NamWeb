@@ -22,12 +22,20 @@ export function ConvertToProjectDialog({
   onOpenChange,
   actionTitle,
   onConfirm,
+  createLabel,
+  continueLabel,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** The action being converted — seeds the project name and is offered to copy as a first action. */
+  /** The action/item being converted — seeds the project name and is offered to copy as a first action. */
   actionTitle: string;
-  onConfirm: (projectTitle: string, actionNames: string[]) => void;
+  /** `openAfter` = should the caller open the new project (true) or continue what it was doing (false,
+   *  the inbox "keep processing" path). The editor's convert always passes true (single button). */
+  onConfirm: (projectTitle: string, actionNames: string[], openAfter: boolean) => void;
+  /** Primary button label (default "Create project"). */
+  createLabel?: string;
+  /** When set, a secondary button that creates but continues (openAfter=false) — the inbox flow (#1007). */
+  continueLabel?: string;
 }) {
   const { t } = useTranslation();
   const [projectTitle, setProjectTitle] = useState(actionTitle);
@@ -54,9 +62,9 @@ export function ConvertToProjectDialog({
     setDraft('');
   };
 
-  const create = () => {
+  const create = (openAfter: boolean) => {
     const trailing = draft.trim();
-    onConfirm(projectTitle.trim() || actionTitle, [...names.map((n) => n.name), ...(trailing ? [trailing] : [])]);
+    onConfirm(projectTitle.trim() || actionTitle, [...names.map((n) => n.name), ...(trailing ? [trailing] : [])], openAfter);
   };
 
   const iconBtn = 'rounded-md p-1 text-muted-foreground hover:text-foreground';
@@ -72,7 +80,7 @@ export function ConvertToProjectDialog({
           if (editingName || editingId !== null) return;
           if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && !e.nativeEvent.isComposing) {
             e.preventDefault();
-            create();
+            create(true);
           }
         }}
       >
@@ -171,8 +179,15 @@ export function ConvertToProjectDialog({
           <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
             {t('common.cancel')}
           </Button>
-          <Button type="button" onClick={create}>
-            {t('convert.create')}
+          {/* Inbox flow (#1007): a secondary "create & keep processing" beside the primary
+              "create & open". The editor's convert passes no continueLabel → just the primary. */}
+          {continueLabel && (
+            <Button type="button" variant="outline" onClick={() => create(false)}>
+              {continueLabel}
+            </Button>
+          )}
+          <Button type="button" onClick={() => create(true)}>
+            {createLabel ?? t('convert.create')}
           </Button>
         </DialogFooter>
       </DialogContent>

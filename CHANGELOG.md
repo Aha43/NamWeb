@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Making a project from an inbox item can seed its first actions** — the sibling of the
+  action→project brain-dump. When you clarify an inbox item as "needs planning", the item name
+  becomes the editable/copyable **project name** and you jot the first **action names** right then.
+  A two-button footer decides what happens next: **Create & open project** (go work it) or **Create &
+  keep processing** (convert + seed, then carry on with the inbox — the deck advances). Closes #1007.
+
 ### Changed
 
 - The per-row **move-to** menu now groups its proximate destinations under quiet section headers —
