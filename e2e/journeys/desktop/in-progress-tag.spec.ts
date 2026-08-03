@@ -1,11 +1,12 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
 
-// #651/#837 — the built-in "#in-progress" system tag (# sigil reserves the namespace): one-click toggle on rows, always offered as a
-// filter, protected from rename/delete in tag management. Network-mocked.
+// #651/#837/#1024 — the built-in "#in-progress" system tag (# sigil reserves the namespace):
+// one-click toggle on rows, always offered as a filter, but NO LONGER shown in tag management
+// (system tags are managed via the Features dialog now, #1024). Network-mocked.
 test.use({
   seedDoc: new DocBuilder()
-    .action('a1', 'Write report', { status: 'NEXT' })
+    .action('a1', 'Write report', { status: 'NEXT', tags: ['work'] })
     .action('a2', 'Water plants', { status: 'NEXT' })
     .build(),
 });
@@ -24,8 +25,10 @@ test('toggle in-progress from a row, filter by it, and see it protected in manag
   await expect(page.getByText('Write report')).toBeVisible();
   await expect(page.getByText('Water plants')).toHaveCount(0); // not tagged → filtered out
 
-  // Tag management: the system tag is listed (bold) but offers no rename/delete.
+  // Tag management: the system tag is hidden entirely now (#1024) — no rename/delete rows — while an
+  // ordinary user tag ("work") is still managed here, proving the list works and only omits system tags.
   await page.getByRole('button', { name: /Manage/ }).click();
+  await expect(page.getByRole('button', { name: 'Rename tag work' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Rename tag #in-progress' })).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Delete tag #in-progress' })).toHaveCount(0);
 
