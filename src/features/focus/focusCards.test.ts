@@ -33,6 +33,11 @@ describe('focusCards — project source', () => {
     expect(cards.map((c) => c.id)).toEqual(['a1', 'a3']);
     expect(cards.map((c) => c.title)).toEqual(['First', 'Later']);
   });
+
+  it('carries the ancestor path as {id, title} segments for live breadcrumb links (#1019)', () => {
+    const [first] = focusCards(doc(), { project: 'p' });
+    expect(first.path).toEqual([{ id: 'p', title: 'p' }]);
+  });
 });
 
 describe('focusCards — tag source', () => {

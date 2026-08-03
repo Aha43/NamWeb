@@ -1,5 +1,6 @@
-import { backlogItems, contextItems, doneItems, dueGroups, nextActions, projectActions, projectPath } from '@/domain/lenses';
+import { backlogItems, buildPath, contextItems, doneItems, dueGroups, nextActions, projectActions } from '@/domain/lenses';
 import { isInProgress } from '@/features/tags/inProgress';
+import type { ProjectPathSegment } from '@/features/actions/ProjectPathLinks';
 import type { WorkspaceDocument } from '@/domain/types';
 
 /** What to work through: the global Next/Backlog queues, the due-now set (overdue + today), the Done
@@ -10,7 +11,9 @@ export interface FocusCard {
   id: string;
   title: string;
   description: string | null;
-  path: string[];
+  /** Ancestor project segments (top-most first) — rendered as live breadcrumb links so the deck's
+   *  path doubles as the "engage in context" step: jump to the project mid-work (#1019). */
+  path: ProjectPathSegment[];
 }
 
 /** Build the execution queue for a source, in the source's order. When `inProgressOnly` is set the
@@ -41,6 +44,6 @@ export function focusCards(
     id: n.id,
     title: n.title,
     description: n.description,
-    path: projectPath(doc, n.id),
+    path: buildPath(doc, n.id).map((a) => ({ id: a.id, title: a.title })),
   }));
 }

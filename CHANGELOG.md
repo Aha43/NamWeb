@@ -8,6 +8,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+- The Focus deck's action **path is now live** — each ancestor project links to its workbench, so the
+  breadcrumb doubles as the "engage in context" step (jump to the project to see siblings or project
+  info mid-work). Closes #1019.
+
 ## [2.10.0] - 2026-08-03
 
 **Capture-in-the-moment reaches the inbox.** The headline completes a pattern started last cut:

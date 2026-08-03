@@ -8,6 +8,7 @@ import { CopyButton } from '@/components/ui/copy-button';
 import { InProgressToggle } from '@/features/tags/InProgressToggle';
 import { Tooltip } from '@/components/ui/tooltip';
 import { InlineRename } from '../actions/InlineRename';
+import { ProjectPathLinks } from '../actions/ProjectPathLinks';
 import { useHasKeyboard } from '@/shell/useHasKeyboard';
 import { isModalOpen } from '@/shell/useGlobalShortcuts';
 import type { FocusCard } from './focusCards';
@@ -212,9 +213,10 @@ export function FocusDeck({
               )}
             </div>
           )}
-          {current.path.length > 0 && (
-            <p className="mb-2 text-sm text-muted-foreground">{current.path.join(' › ')}</p>
-          )}
+          {/* Live breadcrumb (#1019): each ancestor project links to its workbench, so the path is the
+              "engage in context" step — jump to the project to see siblings / project info mid-work. */}
+          <ProjectPathLinks path={current.path} className="mb-2 text-sm text-muted-foreground" />
+
           {onRenameCard && renamingId === current.id ? (
             <InlineRename
               title={current.title}
