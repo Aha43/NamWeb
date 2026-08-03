@@ -17,6 +17,9 @@ minor = features (breaking changes allowed), patch = fixes.
   is inside a published share.
 
 ### Changed
+- **System tags are hidden from the tag admin** (#1024) — now that they're managed via the Features
+  dialog, the "Manage tags" list no longer shows `#in-progress`, `#not-stalled`, or the `#shared-*`
+  tags. They're still available as **filter chips** (you can still slice by `#in-progress`).
 - The Focus deck's action **path is now live** — each ancestor project links to its workbench, so the
   breadcrumb doubles as the "engage in context" step (jump to the project to see siblings or project
   info mid-work). Closes #1019.
