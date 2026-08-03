@@ -1,5 +1,5 @@
 import { useContext, useEffect, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
-import { ChevronRight, ChevronUp } from 'lucide-react';
+import { ChevronRight, ChevronUp, Flag } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { STATUS_OPTIONS } from './status';
 import {
@@ -15,6 +15,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { TagsInput } from './TagsInput';
 import { InheritedTags } from './InheritedTags';
+import { NodeFeaturesDialog } from '@/features/tags/NodeFeaturesDialog';
+import { canonicalTag } from '@/domain/systemTags';
 import { CopyButton } from '@/components/ui/copy-button';
 import { ResourcesEditor } from './ResourcesEditor';
 import { LinkToHereButton } from './LinkToHereButton';
@@ -89,6 +91,7 @@ export function ActionDialog({
   deleteConfirmMessage,
   availableTags = [],
   inheritedTags = [],
+  inShare = false,
 }: {
   node: NamNode;
   open: boolean;
@@ -101,6 +104,8 @@ export function ActionDialog({
   availableTags?: string[];
   /** Tags inherited from ancestor projects ("rub-off") — shown read-only, can't be edited here. */
   inheritedTags?: string[];
+  /** Whether this node sits inside a published share — gates the `#shared-*` rows in Features (#1023). */
+  inShare?: boolean;
   onMakeProject?: () => void;
   moveTargets?: MoveTarget[];
   onMove?: (targetId: string) => void;
@@ -130,6 +135,15 @@ export function ActionDialog({
   const [title, setTitle] = useState(node.title);
   const [description, setDescription] = useState(node.description ?? '');
   const [tags, setTags] = useState(node.tags.join(', '));
+  // Features (#1023) toggle system tags in THIS unsaved buffer (not a live dispatch), so they save
+  // atomically with the rest of the edit — no race with the pending Save.
+  const [featuresOpen, setFeaturesOpen] = useState(false);
+  const tagList = tags.split(',').map((s) => s.trim()).filter(Boolean);
+  const toggleFeature = (tag: string, on: boolean) =>
+    setTags((cur) => {
+      const list = cur.split(',').map((s) => s.trim()).filter(Boolean);
+      return (on ? [...list, tag] : list.filter((x) => canonicalTag(x) !== tag)).join(', ');
+    });
   const [due, setDue] = useState(node.dueAt ?? '');
   const [dueError, setDueError] = useState(false);
   const [dueEnd, setDueEnd] = useState(node.dueEndAt ?? '');
@@ -289,9 +303,30 @@ export function ActionDialog({
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="action-tags">{t('editor.fieldTags')}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="action-tags">{t('editor.fieldTags')}</Label>
+                {/* System tags are managed here as Features — checkbox + description, not `#`-hunting (#1023). */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto gap-1.5 px-1.5 py-0.5 text-xs text-muted-foreground"
+                  onClick={() => setFeaturesOpen(true)}
+                >
+                  <Flag className="h-3.5 w-3.5" />
+                  {t('features.button')}
+                </Button>
+              </div>
               <TagsInput id="action-tags" value={tags} onChange={setTags} suggestions={availableTags} />
               <InheritedTags tags={inheritedTags} />
+              <NodeFeaturesDialog
+                open={featuresOpen}
+                onOpenChange={setFeaturesOpen}
+                isProject={isProject}
+                inShare={inShare}
+                tags={tagList}
+                onToggle={toggleFeature}
+              />
             </div>
             {/* Dense until asked for (#721) — the collapsed line reads the live drafts, so
                 buffered (not-yet-saved) edits show correctly after a re-collapse. A deriving

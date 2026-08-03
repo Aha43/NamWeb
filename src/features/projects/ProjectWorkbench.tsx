@@ -26,6 +26,7 @@ import { SortableRow, type SortableRowRender } from '@/components/dnd/SortableRo
 import { ColumnView, type WorkbenchColumn } from './ColumnView';
 import { ProjectSummaryDialog } from './ProjectSummaryDialog';
 import { ShareButton } from '@/features/sharing/ShareButton';
+import { NodeFeaturesButton } from '@/features/tags/NodeFeaturesButton';
 import { CompactRowsToggle } from '@/features/actions/CompactRowsToggle';
 import { ProjectDetailsPanel } from './ProjectDetailsPanel';
 import type { ActionEdits } from '../actions/ActionDialog';
@@ -486,6 +487,7 @@ export function ProjectWorkbench({
             </PromptButton>
           )}
           <ShareButton projectId={project.id} />
+          <NodeFeaturesButton nodeId={project.id} dense={dense} />
           <Tooltip label={t('workbench.summaryTooltip')}>
             <Button
               type="button"
