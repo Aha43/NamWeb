@@ -151,6 +151,32 @@ describe('InboxProcessDialog', () => {
     expect(onSkip).toHaveBeenCalledTimes(1);
   });
 
+  it('the make-project brain-dump suppresses the deck ←/→ nav (#1007 review)', () => {
+    const onSkip = vi.fn();
+    const onPrev = vi.fn();
+    render(
+      <InboxProcessDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onResolve={vi.fn()}
+        onDelete={vi.fn()}
+        onSkip={onSkip}
+        onPrev={onPrev}
+        remaining={3}
+        position={1}
+      />,
+    );
+    // Open the nested brain-dump (a layer on top).
+    fireEvent.click(screen.getByRole('button', { name: /make a project/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Make project' }));
+    // ←/→ must NOT advance the inbox deck underneath while the brain-dump owns the keys.
+    fireEvent.keyDown(document.body, { key: 'ArrowRight' });
+    fireEvent.keyDown(document.body, { key: 'ArrowLeft' });
+    expect(onSkip).not.toHaveBeenCalled();
+    expect(onPrev).not.toHaveBeenCalled();
+  });
+
   it('deck arrows fire in the capture phase, surviving a bubble-phase stopPropagation (#885)', () => {
     const onSkip = vi.fn();
     render(
