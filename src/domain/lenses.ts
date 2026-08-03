@@ -121,6 +121,26 @@ export function projects(doc: WorkspaceDocument): NamNode[] {
 }
 
 /**
+ * Every project id in **depth-first tree order** — each project immediately followed by its own
+ * sub-projects, recursively, following the ordered `childIds`. Walks down from the projects root
+ * (whose children are the top-level projects), so the container node itself is excluded. Used to
+ * order the "browse every project" target lists so they read like the tree instead of hash-map
+ * (`Object.values`) order — the mobile move/file friction (#1020).
+ */
+export function projectIdsDepthFirst(doc: WorkspaceDocument): string[] {
+  const out: string[] = [];
+  const walk = (id: string) => {
+    for (const cid of doc.nodes[id]?.childIds ?? []) {
+      if (!doc.nodes[cid]?.project) continue;
+      out.push(cid);
+      walk(cid);
+    }
+  };
+  walk(doc.projectsNodeId);
+  return out;
+}
+
+/**
  * Project ids that are archived — either explicitly (their own `status === 'ARCHIVED'`) or
  * transitively (an ancestor project is archived). We only ever set ARCHIVED on a top-level
  * project, so its whole sub-tree is implicitly archived too. Used to keep archived projects
@@ -261,9 +281,11 @@ export function actionMoveTargetsAll(doc: WorkspaceDocument, actionId: string): 
   if (!action || action.project) return [];
   const archived = archivedProjectIds(doc);
   const targets: ProjectMoveTarget[] = [{ id: doc.nextActionsNodeId, label: 'Free actions' }];
-  for (const candidate of Object.values(doc.nodes)) {
-    if (!candidate.project || archived.has(candidate.id)) continue;
-    targets.push({ id: candidate.id, label: [...projectPath(doc, candidate.id), candidate.title].join(' › ') });
+  // Depth-first so the path-labelled options read like the tree (a parent then its sub-projects),
+  // not hash-map order — the mobile move-list friction (#1020).
+  for (const id of projectIdsDepthFirst(doc)) {
+    if (archived.has(id)) continue;
+    targets.push({ id, label: [...projectPath(doc, id), doc.nodes[id]!.title].join(' › ') });
   }
   return targets;
 }
@@ -306,9 +328,10 @@ export function projectQuickMoveTargets(doc: WorkspaceDocument, id: string): Qui
  *  picker's "open" mode (#595), unlike move mode's constrained destination sets. */
 export function allOpenableProjects(doc: WorkspaceDocument): ProjectMoveTarget[] {
   const archived = archivedProjectIds(doc);
-  return Object.values(doc.nodes)
-    .filter((n) => n.project && !archived.has(n.id))
-    .map((n) => ({ id: n.id, label: n.title }));
+  // Depth-first tree order (parent then its sub-projects) rather than hash-map order (#1020).
+  return projectIdsDepthFirst(doc)
+    .filter((id) => !archived.has(id))
+    .map((id) => ({ id, label: doc.nodes[id]!.title }));
 }
 
 /** Every openable action — non-project, non-structural, not in an archived subtree, not
@@ -357,9 +380,11 @@ export function projectMoveTargets(doc: WorkspaceDocument, id: string): ProjectM
   const topLevel: ProjectMoveTarget[] =
     parentId && parentId !== doc.projectsNodeId ? [{ id: doc.projectsNodeId, label: 'Top level' }] : [];
   const siblings = siblingIds.map((cid) => doc.nodes[cid]!);
-  const others = Object.values(doc.nodes).filter(
-    (n) => n.project && !excluded.has(n.id) && !archived.has(n.id) && !sibSet.has(n.id) && n.id !== parentId,
-  );
+  // Depth-first tree order for the "every other project" tail, so the destination list reads
+  // hierarchically instead of hash-map order (#1020).
+  const others = projectIdsDepthFirst(doc)
+    .filter((id) => !excluded.has(id) && !archived.has(id) && !sibSet.has(id) && id !== parentId)
+    .map((id) => doc.nodes[id]!);
   return [...topLevel, ...siblings.map(toTarget), ...others.map(toTarget)];
 }
 

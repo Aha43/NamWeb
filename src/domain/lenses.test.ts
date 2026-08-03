@@ -28,6 +28,7 @@ import {
   projectMoveTargets,
   projectQuickMoveTargets,
   projectPath,
+  projectIdsDepthFirst,
   projects,
   reorderKindWithinChildren,
   structuralNodeIds,
@@ -104,6 +105,26 @@ describe('projects', () => {
       },
     );
     expect(ids(projects(doc))).toEqual(['p1', 'p2']);
+  });
+});
+
+describe('projectIdsDepthFirst', () => {
+  it('lists projects depth-first (parent then its sub-projects), following childIds order, skipping non-projects', () => {
+    const doc = workspace(
+      [
+        node('p1', { project: true, childIds: ['p1a', 'act', 'p1b'] }),
+        node('p1a', { project: true, childIds: ['p1a1'] }),
+        node('p1a1', { project: true }),
+        node('act'), // a plain action under p1 — must not appear
+        node('p1b', { project: true }),
+        node('p2', { project: true }),
+      ],
+      (d) => {
+        addChild(d, 'projects', 'p1');
+        addChild(d, 'projects', 'p2');
+      },
+    );
+    expect(projectIdsDepthFirst(doc)).toEqual(['p1', 'p1a', 'p1a1', 'p1b', 'p2']);
   });
 });
 

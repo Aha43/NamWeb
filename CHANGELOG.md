@@ -12,6 +12,9 @@ minor = features (breaking changes allowed), patch = fixes.
 - The Focus deck's action **path is now live** — each ancestor project links to its workbench, so the
   breadcrumb doubles as the "engage in context" step (jump to the project to see siblings or project
   info mid-work). Closes #1019.
+- **Move / file destination lists are now depth-first sorted** — every project appears immediately
+  above its own sub-projects (following your ordering), instead of arbitrary hash-map order. Biggest
+  win on mobile, where the native select is the only way to pick a target. Closes #1020.
 
 ## [2.10.0] - 2026-08-03
 
