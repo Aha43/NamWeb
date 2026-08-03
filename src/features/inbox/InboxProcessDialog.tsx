@@ -110,7 +110,9 @@ export function InboxProcessDialog({
     function onKey(e: KeyboardEvent) {
       if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (pickerOpen) return; // the project picker (a layer on top) owns the keys while it's open
+      // A layer on top owns the keys: the project picker OR the make-project brain-dump (#1007) —
+      // otherwise ←/→ would advance the inbox deck underneath the open dialog.
+      if (pickerOpen || convertOpen) return;
       const el = e.target as HTMLElement | null;
       if (el && (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable))
         return;
@@ -120,7 +122,7 @@ export function InboxProcessDialog({
     }
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [deck, open, pickerOpen, onSkip, onPrev]);
+  }, [deck, open, pickerOpen, convertOpen, onSkip, onPrev]);
 
   const picker = (defaultLabel: string, fieldLabel: string) => {
     if (projectTargets.length === 0) return null;
