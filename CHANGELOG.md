@@ -8,6 +8,21 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.10.0] - 2026-08-03
+
+**Capture-in-the-moment reaches the inbox.** The headline completes a pattern started last cut:
+**making a project from an inbox item now seeds its first actions**, just like converting an action
+does — when you clarify an inbox item as "needs planning", the item name becomes the editable/copyable
+project name and you jot the first action names right then, with a two-button footer to either open the
+new project or keep processing the inbox. Around it, three legibility/correctness tweaks straight from
+dogfooding: the per-row **move-to** menu gained quiet **section headers** (Parent / Sibling /
+Sub-project / Top level · Free actions) so a much-used gem stops reading as random projects; the **inbox
+count** now shows on the **dense** sidebar (a corner badge, not just the glow); and a **done** action no
+longer paints its past due date **red** (it isn't overdue — it's finished). Under the hood, a dependency
+sweep including **jsdom 30** (vetted as a batch), which also appears to have quieted the long-flaky
+`#832/P2` sharing test. Squarely **polishing** — and the dual review was a clean sweep: the inline pass
+caught a deck-arrow leak under the new brain-dump before Codex, and Codex found nothing.
+
 ### Added
 
 - **Making a project from an inbox item can seed its first actions** — the sibling of the
@@ -2130,7 +2145,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.9.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.10.0...HEAD
+[2.10.0]: https://github.com/Aha43/NamWeb/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/Aha43/NamWeb/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Aha43/NamWeb/compare/v2.7.0...v2.8.0
 [2.7.0]: https://github.com/Aha43/NamWeb/compare/v2.6.0...v2.7.0
