@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, Pencil, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ActionList, ActionRow, EmptyState } from '../actions/ActionRow';
+import { EmptyState } from '../actions/ActionRow';
+import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
 import { StatusMenu } from '../actions/StatusMenu';
 import { CompactRowsToggle } from '../actions/CompactRowsToggle';
 import { SelectToggle } from '../actions/SelectToggle';
@@ -54,6 +55,10 @@ export interface TagFilterPanelProps {
   onDeleteView?: (name: string) => void;
   /** Optional control (e.g. the bookmark toggle) shown beside Focus/Save when a filter is active. */
   bookmarkSlot?: ReactNode;
+  /** Persist a hand-drag of the result rows into a per-context manual order (#1036). */
+  onReorder?: (ids: string[]) => void;
+  /** Enable drag-to-reorder (desktop only — the pointer sensor) (#1036). */
+  dndEnabled?: boolean;
 }
 
 /** Filter active actions by tags (AND), with saved views. Session-only selection. Presentational. */
@@ -81,6 +86,8 @@ export function TagFilterPanel({
   onRenameView,
   onDeleteView,
   bookmarkSlot,
+  onReorder,
+  dndEnabled,
 }: TagFilterPanelProps) {
   const { t } = useTranslation();
   const selectedSet = new Set(selected);
@@ -331,30 +338,28 @@ export function TagFilterPanel({
             />
           )}
           {selected.length > 0 && rows.length > 0 && (
-            <ActionList>
-              {rows.map((row) => (
-                <ActionRow
-                  key={row.id}
-                  row={row}
-                  colorByStatus={!nextOnly} // next-only = all NEXT; otherwise the list mixes statuses
-                  selectable={selectMode}
-                  selected={picked.has(row.id)}
-                  onSelectedChange={() => toggle(row.id)}
-                  onEdit={selectMode ? undefined : onEdit && (() => onEdit(row.id))}
-                  onDelete={selectMode ? undefined : onDeleteAction && (() => onDeleteAction(row.id))}
-                  onRename={selectMode ? undefined : onRename && ((title) => onRename(row.id, title))}
-                  actions={
-                    selectMode ? null : (
-                      <StatusMenu
-                        status={row.status}
-                        title={row.title}
-                        onSetStatus={(status) => onSetStatus(row.id, status)}
-                      />
-                    )
-                  }
-                />
-              ))}
-            </ActionList>
+            // Drag-to-reorder into a per-context manual order (#1036); disabled in select mode so a
+            // drag can't fight a bulk selection. Reuses the same sortable list as Next/Backlog.
+            <ReorderableActionList
+              rows={rows}
+              colorByStatus={!nextOnly} // next-only = all NEXT; otherwise the list mixes statuses
+              onEdit={selectMode ? undefined : onEdit}
+              onDelete={selectMode ? undefined : onDeleteAction}
+              onRename={selectMode ? undefined : onRename}
+              onReorder={selectMode ? undefined : onReorder}
+              dndEnabled={dndEnabled && !selectMode}
+              selectedIds={selectMode ? picked : undefined}
+              onToggleSelect={selectMode ? toggle : undefined}
+              renderActions={(row) =>
+                selectMode ? null : (
+                  <StatusMenu
+                    status={row.status}
+                    title={row.title}
+                    onSetStatus={(status) => onSetStatus(row.id, status)}
+                  />
+                )
+              }
+            />
           )}
         </>
       )}

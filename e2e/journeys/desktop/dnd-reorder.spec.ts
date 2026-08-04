@@ -70,3 +70,25 @@ test.describe('Next list drag reorder (viewOrders)', () => {
     await expect.poll(() => doc.current().viewOrders['next']).toEqual(['n2', 'n1']);
   });
 });
+
+test.describe('Context (tag) view drag reorder (viewOrders)', () => {
+  test.use({
+    seedDoc: new DocBuilder()
+      .action('t1', 'First', { tags: ['errand'] })
+      .action('t2', 'Second', { tags: ['errand'] })
+      .build(),
+  });
+
+  test('drag an action in a context view, persisted to a per-context order (#1036)', async ({ page, doc }) => {
+    await page.goto('/tags');
+    // Enter the context by selecting the tag chip; the result rows appear.
+    await page.getByRole('button', { name: 'errand', exact: true }).click();
+    const rows = page.getByRole('list').getByRole('listitem');
+    await expect(rows).toHaveText([/First/, /Second/]);
+
+    await dragHandleOntoRow(page, 'Drag to reorder First', rows.nth(1));
+    await expect(rows).toHaveText([/Second/, /First/]);
+    // Keyed by the sorted tag-set, independent of the fixed view keys.
+    await expect.poll(() => doc.current().viewOrders['context:errand']).toEqual(['t2', 't1']);
+  });
+});
