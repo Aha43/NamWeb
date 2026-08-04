@@ -8,6 +8,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+- The logo no longer shows **two** tooltips on hover — the native SVG-title tooltip (just the name)
+  is gone, leaving the single brand tooltip (`Next Action Master · vX.Y.Z · <build>`). Closes #1037.
+
 ## [2.11.0] - 2026-08-04
 
 **System tags grow up into Features.** The headline turns NAM's built-in behaviours — *in progress*,
