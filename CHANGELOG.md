@@ -8,6 +8,20 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-08-04
+
+**The one that replaced Trello.** 3.0.0 isn't a feature milestone — it's a *usage* one. Across the
+whole 2.x series NAM was hardened against real daily life — capture-in-context, the calendar, the
+inbox and convert-to-project flows, system tags growing into Features — until, at some point, it
+stopped being the thing being built and became the thing being *relied on*. That wasn't a decision so
+much as something noticed: Trello went quiet, opened only to migrate the last cards across, and stayed
+quiet for weeks. This release draws the line at that moment — personally production-ready. Fittingly,
+its final sprint closed an original-spec item from the pre-NAM Blazor build that only real use
+resurfaced: **you can now drag actions into a manual order inside a context (tag) view**, persisted
+per context — so engaging with work happens in the view where you actually work it, not only in a
+project's home. (Plus a small papercut fixed: the logo shows a single tooltip now.) No breaking
+changes — the major marks the milestone, not a contract break. From here, 3.x turns toward the AI era.
+
 ### Added
 - **Drag actions into a manual order in context (tag) views** (#1036) — the same reorder you have in a
   project's workbench, now where you actually *work*: filter by a tag, drag the actions into the
@@ -2192,7 +2206,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.11.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/Aha43/NamWeb/compare/v2.11.0...v3.0.0
 [2.11.0]: https://github.com/Aha43/NamWeb/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/Aha43/NamWeb/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/Aha43/NamWeb/compare/v2.8.0...v2.9.0
