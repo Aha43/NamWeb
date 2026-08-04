@@ -7,6 +7,7 @@
 import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
 import { IN_PROGRESS_TAG, SYSTEM_TAGS, canonicalTag, isSystemTag } from './systemTags';
 import { canAddPrerequisite, subtreeIds } from './lenses';
+import { deleteTagInContextOrders, renameTagInContextOrders } from './contextViewKey';
 import { formatCount, parseCount } from './resourceCount';
 import { formatQuestion, parseQuestion } from './resourceQuestion';
 import { makeActionLink, parseActionLink } from './actionLinks';
@@ -506,6 +507,9 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
         const tags = normalizeTags(b.tags.map((t) => (t === from ? to : t)));
         return { ...b, tags, label: tags.map((t) => `#${t}`).join(' ') };
       });
+      // Carry each context's manual order (#1036) across the rename — otherwise a live context keeps
+      // its nodes/bookmark but loses its hand-sorted order, and multi-tag orders orphan (#1036 review).
+      next.viewOrders = renameTagInContextOrders(next.viewOrders, from, to);
       return next;
     }
     case 'deleteTag': {
@@ -528,6 +532,8 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
           return { ...b, tags, label: tags.map((t) => `#${t}`).join(' ') };
         })
         .filter((b) => b.kind !== 'tagFilter' || (b.tags?.length ?? 0) > 0);
+      // A context that references the deleted tag can never be re-selected — drop its dead order (#1036).
+      next.viewOrders = deleteTagInContextOrders(next.viewOrders, tag);
       return next;
     }
     case 'updateResources': {

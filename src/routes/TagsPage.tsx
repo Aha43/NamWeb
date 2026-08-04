@@ -6,7 +6,7 @@ import type { NamNode } from '@/domain/types';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
-import { contextViewKey } from '@/features/tags/contextViewKey';
+import { contextViewKey } from '@/domain/contextViewKey';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
 import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
