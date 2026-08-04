@@ -44,4 +44,18 @@ describe('TagsInput', () => {
     fireEvent.focus(screen.getByRole('combobox'));
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
+
+  it('never suggests system tags — they are set via Features, not hand-typed (#1028)', () => {
+    render(<HarnessWithSystem />);
+    fireEvent.focus(screen.getByRole('combobox'));
+    // A plain match shows; the system tag mixed into the suggestions does not.
+    expect(screen.getByRole('option', { name: 'in-work' })).toBeInTheDocument();
+    expect(screen.queryByRole('option', { name: '#in-progress' })).not.toBeInTheDocument();
+  });
 });
+
+/** Suggestions that include a system tag, to prove it's filtered out of the type-ahead. */
+function HarnessWithSystem() {
+  const [value, setValue] = useState('in');
+  return <TagsInput id="t" value={value} onChange={setValue} suggestions={['#in-progress', 'in-work']} />;
+}

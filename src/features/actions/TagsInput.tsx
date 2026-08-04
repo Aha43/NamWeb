@@ -32,7 +32,9 @@ export function TagsInput({ id, value, onChange, suggestions }: TagsInputProps) 
   const current = (tokens[tokens.length - 1] ?? '').trim().toLowerCase();
   const chosen = new Set(tokens.slice(0, -1).map((t) => t.trim().toLowerCase()).filter(Boolean));
   const matches = suggestions
-    .filter((s) => !chosen.has(s.toLowerCase()) && s.toLowerCase().includes(current))
+    // System tags are set via the Features dialog, not hand-typed — keep them out of the type-ahead
+    // (#1028). They remain filterable as chips on the Tags page.
+    .filter((s) => !isSystemTag(s) && !chosen.has(s.toLowerCase()) && s.toLowerCase().includes(current))
     .slice(0, MAX_SUGGESTIONS);
 
   const open = focused && matches.length > 0;
@@ -115,7 +117,7 @@ export function TagsInput({ id, value, onChange, suggestions }: TagsInputProps) 
                   i === highlight ? 'bg-accent text-accent-foreground' : 'text-foreground hover:bg-accent',
                 )}
               >
-                <span className={cn(isSystemTag(tag) && 'font-semibold')}>{tag}</span>
+                {tag}
               </button>
             </li>
           ))}
