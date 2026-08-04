@@ -740,6 +740,23 @@ describe('system tags (#651)', () => {
     const next = applyIntent(doc, { type: 'deleteTag', tag: 'in progress' });
     expect(next.nodes.a.tags).toEqual(['in progress', 'home']);
   });
+
+  it('renameTag carries the context manual order to the new tag (#1036 review, P2)', () => {
+    const doc = { ...workspace([node('a', { tags: ['work'] })]), registeredTags: ['work'] };
+    doc.viewOrders = { 'context:work': ['a', 'b'], 'context:home+work': ['a'] };
+    const next = applyIntent(doc, { type: 'renameTag', from: 'work', to: 'job' });
+    expect(next.viewOrders['context:job']).toEqual(['a', 'b']);
+    expect(next.viewOrders['context:home+job']).toEqual(['a']);
+    expect(next.viewOrders['context:work']).toBeUndefined();
+  });
+
+  it('deleteTag drops the context order that references the deleted tag (#1036 review)', () => {
+    const doc = { ...workspace([node('a', { tags: ['work'] })]), registeredTags: ['work'] };
+    doc.viewOrders = { 'context:work': ['a'], 'context:home': ['b'] };
+    const next = applyIntent(doc, { type: 'deleteTag', tag: 'work' });
+    expect(next.viewOrders['context:work']).toBeUndefined();
+    expect(next.viewOrders['context:home']).toEqual(['b']);
+  });
 });
 
 describe('addAction scheduling (#681)', () => {
