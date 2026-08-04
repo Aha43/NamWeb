@@ -17,6 +17,9 @@ minor = features (breaking changes allowed), patch = fixes.
   is inside a published share.
 
 ### Changed
+- **System tags no longer appear in the tag type-ahead** (#1028) — the autocomplete you get while
+  typing a tag name stops suggesting `#in-progress` and friends, since they're set via Features now.
+  (They're still filterable as chips on the Tags page.)
 - **System tags are hidden from the tag admin** (#1024) — now that they're managed via the Features
   dialog, the "Manage tags" list no longer shows `#in-progress`, `#not-stalled`, or the `#shared-*`
   tags. They remain **filter chips** (you can still slice by `#in-progress`), and each such chip now
