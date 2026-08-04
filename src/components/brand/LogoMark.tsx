@@ -17,11 +17,12 @@ export function LogoMark({ className, ...props }: ComponentPropsWithRef<'svg'>) 
       viewBox="0 0 256 256"
       fill="none"
       role="img"
+      // aria-label is the sole accessible name. No <title>: it renders a NATIVE browser tooltip that
+      // doubled up with the shell's Radix brand/version tooltip on the logo (#1037).
       aria-label={APP_NAME}
       className={className}
       {...props}
     >
-      <title>{APP_NAME}</title>
       <g stroke="currentColor" strokeWidth={11} strokeLinecap="round" opacity={0.42}>
         <path d="M128 74 L84 182" />
         <path d="M128 74 L172 182" />

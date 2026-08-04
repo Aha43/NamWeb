@@ -22,4 +22,9 @@ describe('LogoMark', () => {
     const svg = screen.getByRole('img', { name: 'Next Action Master' });
     expect(svg).toHaveClass('h-7', 'w-7');
   });
+
+  it('has no <title> — it would render a native tooltip that doubles the Radix brand tooltip (#1037)', () => {
+    render(<LogoMark data-testid="logo" />);
+    expect(screen.getByTestId('logo').querySelector('title')).toBeNull();
+  });
 });
