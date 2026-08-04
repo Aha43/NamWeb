@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+- **Drag actions into a manual order in context (tag) views** (#1036) — the same reorder you have in a
+  project's workbench, now where you actually *work*: filter by a tag, drag the actions into the
+  sequence you want to tackle them, and it **persists per context**. The order is keyed by the tag-set
+  (so it's shared whether "Next only" is on and with a saved view / bookmark of the same tags) and
+  survives toggling the status boxes. Desktop drag; the order rides the workspace like the Next/Backlog
+  ones do.
+
 ### Fixed
 - The logo no longer shows **two** tooltips on hover — the native SVG-title tooltip (just the name)
   is gone, leaving the single brand tooltip (`Next Action Master · vX.Y.Z · <build>`). Closes #1037.

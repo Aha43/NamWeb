@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
-import { allTags, contextItems, effectiveTags } from '@/domain/lenses';
+import { allTags, applyViewOrder, contextItems, effectiveTags, mergeVisibleOrder } from '@/domain/lenses';
 import { canonicalTag } from '@/domain/systemTags';
+import type { NamNode } from '@/domain/types';
 import { nowIso } from '@/lib/local';
 import { toActionRow } from '@/features/actions/rows';
 import { TagFilterPanel } from '@/features/tags/TagFilterPanel';
+import { contextViewKey } from '@/features/tags/contextViewKey';
+import { useIsDesktop } from '@/shell/useIsDesktop';
 import { AddBookmarkButton } from '@/features/bookmarks/AddBookmarkButton';
 import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
 import { InProgressFilterToggle } from '@/features/actions/InProgressFilterToggle';
@@ -23,6 +26,7 @@ export function TagsPage() {
   const navigate = useNavigate();
   const deleteNode = useDeleteNode();
   const setStatus = useSetStatus();
+  const isDesktop = useIsDesktop();
   // The filter lives in the URL so it survives the round-trip into Focus and back.
   const [params, setParams] = useSearchParams();
   const { selected, nextOnly } = useMemo(() => parseTagFilter(params), [params]);
@@ -97,22 +101,34 @@ export function TagsPage() {
       }
     }
   }
-  // Only filter once at least one tag is chosen — an empty selection matches everything.
-  const contextNodes =
+  // Persistent manual order per context (#1036). The FULL ordering domain is every context item
+  // across all statuses — independent of the status boxes / in-progress filter, so a hand-sorted
+  // order stays put as you toggle those. `applyViewOrder` lays the saved order first, unordered
+  // items at the bottom. Only meaningful once at least one tag is chosen.
+  const viewKey = contextViewKey(selected);
+  const allContext: NamNode[] =
     document && selected.length > 0
-      ? contextItems(document, selected, false, boxes.DONE).filter((n) =>
-          n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE' ? boxes[n.status] : true,
-        )
+      ? applyViewOrder(contextItems(document, selected, false, true), document.viewOrders[viewKey])
       : [];
+  // Visible = the boxes + in-progress filter applied, preserving the ordered sequence.
+  const contextNodes = allContext.filter((n) =>
+    n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE' ? boxes[n.status] : true,
+  );
   const hasInProgress = contextNodes.some(isInProgress);
   const shown = inProgressOnly ? contextNodes.filter(isInProgress) : contextNodes;
   const rows = document ? shown.map((n) => toActionRow(document, n)) : [];
+  // Persist a drag: merge the reordered VISIBLE ids back into the full context order, so reordering
+  // while a filter hides rows never strands the hidden ones (#968-style; #1036).
+  const reorderContext = (ids: string[]) =>
+    dispatch({ type: 'reorderView', view: viewKey, order: mergeVisibleOrder(allContext, ids) });
 
   return (
     <TagFilterPanel
       allTags={tags}
       selected={selected}
       nextOnly={effectiveNextOnly}
+      onReorder={reorderContext}
+      dndEnabled={isDesktop}
       rows={rows}
       savedViews={bookmark ? [] : (document?.savedViews ?? [])}
       onToggleTag={(tag) =>
