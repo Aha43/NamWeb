@@ -12,7 +12,7 @@ import { ConfirmButton } from '@/components/ui/confirm-button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { isSystemTag } from '@/domain/systemTags';
+import { featureForTag, isSystemTag } from '@/domain/systemTags';
 import type { ActionRowData } from '../actions/rows';
 import type { NodeStatus, SavedView } from '../../domain/types';
 
@@ -84,6 +84,10 @@ export function TagFilterPanel({
 }: TagFilterPanelProps) {
   const { t } = useTranslation();
   const selectedSet = new Set(selected);
+  // The manage (rename/delete) list omits system tags — they're managed via the Features dialog now,
+  // not hand-edited here (#1024). They stay available as FILTER chips below (e.g. filter by
+  // #in-progress), so hiding them from admin doesn't remove the ability to slice by them.
+  const manageTags = allTags.filter((tag) => !isSystemTag(tag));
   // `selected` here is the selected *tags* (the filter); the multi-select's picked *rows* is `picked`.
   const { selectMode, selected: picked, toggle, clear, selectAll, enter, exit } = useMultiSelect();
   const [newTag, setNewTag] = useState('');
@@ -133,18 +137,15 @@ export function TagFilterPanel({
                   <Button type="submit">{t('common.add')}</Button>
                 </form>
               )}
-              {(onRenameTag || onDeleteTag) && allTags.length > 0 && (
+              {(onRenameTag || onDeleteTag) && manageTags.length > 0 && (
                 <ul className="divide-y divide-border rounded-lg border border-border bg-card">
-                  {allTags.map((tag) => (
+                  {manageTags.map((tag) => (
                     <li key={tag} className="flex items-center gap-2 px-3 py-2">
-                      <span className={cn('flex-1 truncate text-sm text-foreground', isSystemTag(tag) && 'font-semibold')}>
-                        {tag}
-                      </span>
+                      <span className="flex-1 truncate text-sm text-foreground">{tag}</span>
                       {tagCounts && (
                         <span className="text-xs text-muted-foreground">{tagCounts[tag] ?? 0}</span>
                       )}
-                      {/* System tags are part of the app — no rename/delete (#651). */}
-                      {onRenameTag && !isSystemTag(tag) && (
+                      {onRenameTag && (
                         <PromptButton
                           aria-label={t('tags.renameTagAria', { tag })}
                           label={t('tags.newTagName')}
@@ -156,7 +157,7 @@ export function TagFilterPanel({
                           <Pencil className="h-3.5 w-3.5" />
                         </PromptButton>
                       )}
-                      {onDeleteTag && !isSystemTag(tag) && (
+                      {onDeleteTag && (
                         <ConfirmButton
                           aria-label={t('tags.deleteTagAria', { tag })}
                           message={
@@ -250,7 +251,8 @@ export function TagFilterPanel({
               <div className="flex flex-wrap gap-1.5">
                 {allTags.map((tag) => {
                   const on = selectedSet.has(tag);
-                  return (
+                  const feature = featureForTag(tag);
+                  const chip = (
                     <button
                       key={tag}
                       type="button"
@@ -265,6 +267,15 @@ export function TagFilterPanel({
                     >
                       <span className={cn(isSystemTag(tag) && 'font-bold')}>{tag}</span>
                     </button>
+                  );
+                  // A system tag still filters here, but it's managed via Features — the tooltip names
+                  // what it does and where to set it, so a bare `#name` chip isn't a mystery (#1024).
+                  return feature ? (
+                    <Tooltip key={tag} label={`${t(feature.descKey)} · ${t('features.chipHint')}`}>
+                      {chip}
+                    </Tooltip>
+                  ) : (
+                    chip
                   );
                 })}
               </div>
