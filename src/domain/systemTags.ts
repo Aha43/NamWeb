@@ -90,6 +90,14 @@ export const SYSTEM_FEATURES: readonly SystemFeature[] = [
   { tag: SHARED_OPEN_TAG, labelKey: 'features.sharedOpen.label', descKey: 'features.sharedOpen.desc', appliesTo: 'project', sharedOnly: true },
 ];
 
+/** The feature descriptor a tag maps to, if it's a known system feature (canonical-form match).
+ *  Lets surfaces that still SHOW a system tag — e.g. the tag filter chips — explain it and point to
+ *  the Features dialog, rather than leaving a bare `#name` (#1024). */
+export function featureForTag(tag: string): SystemFeature | undefined {
+  const c = canonicalTag(tag);
+  return SYSTEM_FEATURES.find((f) => f.tag === c);
+}
+
 /** The features applicable to a node, given its kind and whether it sits inside a published share.
  *  Drives which rows the Features dialog shows — the `sharedOnly` gating IS part of the UX (#1023). */
 export function featuresFor(opts: { isProject: boolean; inShare: boolean }): SystemFeature[] {

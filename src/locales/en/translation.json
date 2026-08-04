@@ -321,6 +321,7 @@
   "editor.to": "to",
   "editor.wouldUnblock": "Would unblock: {list}",
   "features.button": "Features",
+  "features.chipHint": "Set in Features",
   "features.description": "Turn built-in behaviours on or off for this item.",
   "features.inProgress.desc": "Marks the action as one you're actively working on — shown with an amber tint and filterable across views.",
   "features.inProgress.label": "In progress",

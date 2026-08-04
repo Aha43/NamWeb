@@ -21,6 +21,9 @@ test('toggle in-progress from a row, filter by it, and see it protected in manag
 
   // The tag filters like any tag — and is offered even though it was never "created".
   await page.goto('/tags');
+  // The chip carries a tooltip explaining the behaviour and pointing to Features (#1024).
+  await page.getByRole('button', { name: '#in-progress', exact: true }).hover();
+  await expect(page.getByRole('tooltip')).toContainText('Set in Features');
   await page.getByRole('button', { name: '#in-progress', exact: true }).click();
   await expect(page.getByText('Write report')).toBeVisible();
   await expect(page.getByText('Water plants')).toHaveCount(0); // not tagged → filtered out

@@ -12,7 +12,7 @@ import { ConfirmButton } from '@/components/ui/confirm-button';
 import { PromptButton } from '@/components/ui/prompt-button';
 import { Tooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { isSystemTag } from '@/domain/systemTags';
+import { featureForTag, isSystemTag } from '@/domain/systemTags';
 import type { ActionRowData } from '../actions/rows';
 import type { NodeStatus, SavedView } from '../../domain/types';
 
@@ -251,7 +251,8 @@ export function TagFilterPanel({
               <div className="flex flex-wrap gap-1.5">
                 {allTags.map((tag) => {
                   const on = selectedSet.has(tag);
-                  return (
+                  const feature = featureForTag(tag);
+                  const chip = (
                     <button
                       key={tag}
                       type="button"
@@ -266,6 +267,15 @@ export function TagFilterPanel({
                     >
                       <span className={cn(isSystemTag(tag) && 'font-bold')}>{tag}</span>
                     </button>
+                  );
+                  // A system tag still filters here, but it's managed via Features — the tooltip names
+                  // what it does and where to set it, so a bare `#name` chip isn't a mystery (#1024).
+                  return feature ? (
+                    <Tooltip key={tag} label={`${t(feature.descKey)} · ${t('features.chipHint')}`}>
+                      {chip}
+                    </Tooltip>
+                  ) : (
+                    chip
                   );
                 })}
               </div>
