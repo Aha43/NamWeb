@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IN_PROGRESS_TAG, NOT_STALLED_TAG, SHARED_HIDE_TAG, SHARED_OPEN_TAG, SHARED_SHOW_TAG, SYSTEM_FEATURES, SYSTEM_TAGS, canonicalTag, featuresFor, isSystemTag } from './systemTags';
+import { IN_PROGRESS_TAG, NOT_STALLED_TAG, SHARED_HIDE_TAG, SHARED_OPEN_TAG, SHARED_SHOW_TAG, SYSTEM_FEATURES, SYSTEM_TAGS, canonicalTag, featureForTag, featuresFor, isSystemTag } from './systemTags';
 
 describe('systemTags (#837/#842)', () => {
   it('canonicalTag: legacy alias, sigil case-folding, trimmed user tags', () => {
@@ -67,5 +67,12 @@ describe('featuresFor (#1023)', () => {
 
   it('every feature maps to a registered system tag (drift guard)', () => {
     for (const f of SYSTEM_FEATURES) expect(SYSTEM_TAGS).toContain(f.tag);
+  });
+
+  it('featureForTag resolves a system tag (incl. legacy/cased) to its descriptor, user tags to undefined', () => {
+    expect(featureForTag('#in-progress')?.tag).toBe(IN_PROGRESS_TAG);
+    expect(featureForTag('In Progress')?.tag).toBe(IN_PROGRESS_TAG); // canonicalized
+    expect(featureForTag('#not-stalled')?.tag).toBe(NOT_STALLED_TAG);
+    expect(featureForTag('work')).toBeUndefined();
   });
 });

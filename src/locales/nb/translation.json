@@ -321,6 +321,7 @@
   "editor.to": "til",
   "editor.wouldUnblock": "Ville frigjøre: {list}",
   "features.button": "Funksjoner",
+  "features.chipHint": "Angis i Funksjoner",
   "features.description": "Slå innebygde atferder på eller av for dette elementet.",
   "features.inProgress.desc": "Markerer handlingen som en du aktivt jobber med — vises med et gult skjær og kan filtreres på tvers av visninger.",
   "features.inProgress.label": "Under arbeid",
