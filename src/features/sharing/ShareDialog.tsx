@@ -18,6 +18,7 @@ import { useAuthUser } from '@/auth/auth-context';
 import { shareContent, SHARE_DEFAULT_OPTIONS } from '@/domain/shareContent';
 import { canonicalTag, SHARED_HIDE_TAG } from '@/domain/systemTags';
 import { subtreeIds } from '@/domain/lenses';
+import { emitSharesChanged } from './shareEvents';
 import { newId, nowIso } from '@/lib/local';
 import {
   canonicalSnapshot,
@@ -203,10 +204,12 @@ export function ShareDialog({
         const salted = buildContent(next.token);
         if (salted) {
           setShare((await publishShare(user.id, projectId, salted, true)) ?? next);
+          emitSharesChanged(); // newly-published project → refresh #shared-* feature gating (#1023 review)
           return;
         }
       }
       setShare(next);
+      emitSharesChanged();
     });
 
   const unpublish = () =>
@@ -216,6 +219,7 @@ export function ShareDialog({
       setShare(null);
       setSuggestions([]); // unpublish cascades the rows server-side (#804)
       setGuestTicks(0); // the events cascade with them (#811)
+      emitSharesChanged(); // revoked project → #shared-* features drop out of the Features dialog (#1023 review)
     });
 
   const rotate = () =>
