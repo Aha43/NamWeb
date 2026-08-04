@@ -5,7 +5,8 @@ import { ActionDialog, type ActionEdits, type MoveTarget } from './ActionDialog'
 import { ConvertToProjectDialog } from './ConvertToProjectDialog';
 import { useWorkspaceContext } from '@/store/workspace-context';
 import { normalizeTags } from '@/domain/mutations';
-import { allOpenableActions, allTags, archivedProjectIds, canAddPrerequisite, effectiveTags, projectPath, subtreeIds, unblocks } from '@/domain/lenses';
+import { allOpenableActions, allTags, archivedProjectIds, buildPath, canAddPrerequisite, effectiveTags, projectPath, subtreeIds, unblocks } from '@/domain/lenses';
+import { useSharedProjectIds } from '@/features/sharing/useSharedProjectIds';
 import { useDeleteNode } from './useDeleteNode';
 import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { newId, nowIso } from '@/lib/local';
@@ -68,6 +69,15 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
     if (!node || !document) return [];
     return effectiveTags(document, node.id).filter((t) => !node.tags.includes(t));
   }, [node, document]);
+
+  // Is the edited node inside a published share? Gates the `#shared-*` rows in the Features dialog
+  // (#1023). Empty in the demo (no backend), so those rows stay hidden there — as intended.
+  const sharedIds = useSharedProjectIds();
+  const inShare = useMemo<boolean>(() => {
+    if (!node || !document || !sharedIds) return false;
+    const ids = [node.id, ...buildPath(document, node.id).map((n) => n.id)];
+    return ids.some((id) => sharedIds.has(id));
+  }, [node, document, sharedIds]);
 
   // Blocked-by data, recomputed live as prerequisites are added/removed.
   const blockers = useMemo(() => {
@@ -256,6 +266,7 @@ export function ActionEditorProvider({ children }: { children: ReactNode }) {
           onSave={save}
           availableTags={document ? allTags(document) : []}
           inheritedTags={inheritedTags}
+          inShare={inShare}
           onMakeProject={node.project ? undefined : makeProject}
           moveTargets={moveTargets}
           onMove={move}

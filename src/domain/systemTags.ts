@@ -58,3 +58,45 @@ export function isSystemTag(tag: string): boolean {
   return SYSTEM_TAGS.includes(canonicalTag(tag));
 }
 
+/** Which node kinds a feature makes sense on. `both` = actions and projects. */
+export type FeatureAppliesTo = 'action' | 'project' | 'both';
+
+/**
+ * A **Feature**: the user-facing face of a system tag (#1023). System tags are *functional* — they
+ * flip a behaviour on/off — so users shouldn't have to hunt for a `#`-tag or decode its name. The
+ * Features dialog renders one row per applicable feature (checkbox + plain-language description).
+ *
+ * The registry is the single source of truth the dialog reads. It's deliberately richer than a
+ * 1:1 tag↔checkbox map so future behaviours can diverge from "just toggle one tag" — a combo-box
+ * row, or a checkbox that sets several tags — by extending this shape, not rewriting the dialog.
+ */
+export interface SystemFeature {
+  /** The system tag this feature currently maps to (the whole effect, for now). */
+  tag: string;
+  /** i18n keys: a short label and a description of what turning it on/off does. */
+  labelKey: string;
+  descKey: string;
+  appliesTo: FeatureAppliesTo;
+  /** Only offered when the node is inside a published share — the `#shared-*` visibility grammar
+   *  is meaningless off a share (#1023). */
+  sharedOnly?: boolean;
+}
+
+export const SYSTEM_FEATURES: readonly SystemFeature[] = [
+  { tag: IN_PROGRESS_TAG, labelKey: 'features.inProgress.label', descKey: 'features.inProgress.desc', appliesTo: 'action' },
+  { tag: NOT_STALLED_TAG, labelKey: 'features.notStalled.label', descKey: 'features.notStalled.desc', appliesTo: 'project' },
+  { tag: SHARED_HIDE_TAG, labelKey: 'features.sharedHide.label', descKey: 'features.sharedHide.desc', appliesTo: 'both', sharedOnly: true },
+  { tag: SHARED_SHOW_TAG, labelKey: 'features.sharedShow.label', descKey: 'features.sharedShow.desc', appliesTo: 'both', sharedOnly: true },
+  { tag: SHARED_OPEN_TAG, labelKey: 'features.sharedOpen.label', descKey: 'features.sharedOpen.desc', appliesTo: 'project', sharedOnly: true },
+];
+
+/** The features applicable to a node, given its kind and whether it sits inside a published share.
+ *  Drives which rows the Features dialog shows — the `sharedOnly` gating IS part of the UX (#1023). */
+export function featuresFor(opts: { isProject: boolean; inShare: boolean }): SystemFeature[] {
+  return SYSTEM_FEATURES.filter((f) => {
+    if (f.sharedOnly && !opts.inShare) return false;
+    if (f.appliesTo === 'both') return true;
+    return f.appliesTo === (opts.isProject ? 'project' : 'action');
+  });
+}
+

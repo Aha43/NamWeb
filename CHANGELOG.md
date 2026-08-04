@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+- A **Features** dialog for a node's built-in behaviours (#1023) — a checkbox + plain-language
+  description for each, so you turn things like **In progress** or **Intentionally next-less** on/off
+  without hunting for a `#`-tag or decoding its name. Opens from the **action editor** and the
+  **project workbench header**; only the features that apply to the item show, and the share-related
+  ones (**Hidden from share** / **Force-shown** / **Expanded on arrival**) appear only when the item
+  is inside a published share.
+
 ### Changed
 - The Focus deck's action **path is now live** — each ancestor project links to its workbench, so the
   breadcrumb doubles as the "engage in context" step (jump to the project to see siblings or project
