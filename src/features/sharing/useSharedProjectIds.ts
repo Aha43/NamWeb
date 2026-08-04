@@ -1,6 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { AuthUserContext } from '@/auth/auth-context';
 import { fetchOwnerShares } from './shares';
+import { onSharesChanged } from './shareEvents';
 
 /**
  * The set of project ids the owner has published as a share (#857), fetched once on mount from
@@ -15,6 +16,11 @@ import { fetchOwnerShares } from './shares';
 export function useSharedProjectIds(): Set<string> | null {
   const user = useContext(AuthUserContext);
   const [ids, setIds] = useState<Set<string> | null>(null);
+  // A publish/unpublish elsewhere bumps this so the fetch effect re-runs — consumers stay mounted, so
+  // a one-shot mount fetch would leave the shared-project set (and `#shared-*` feature gating) stale
+  // until reload (#1023 review, P2).
+  const [nonce, setNonce] = useState(0);
+  useEffect(() => onSharesChanged(() => setNonce((n) => n + 1)), []);
   useEffect(() => {
     if (!user || user.aud === 'demo') {
       setIds(new Set());
@@ -32,6 +38,6 @@ export function useSharedProjectIds(): Set<string> | null {
     return () => {
       cancelled = true;
     };
-  }, [user]);
+  }, [user, nonce]);
   return ids;
 }

@@ -328,6 +328,7 @@
   "features.none": "No features apply to this item.",
   "features.notStalled.desc": "Tells \"Loose ends\" this project is intentionally without a next action, so it won't be flagged as stalled.",
   "features.notStalled.label": "Intentionally next-less",
+  "features.overriddenBy": "Overridden by \"{feature}\" — no effect while that's on.",
   "features.sharedHide.desc": "Keeps this item and everything under it out of the published share.",
   "features.sharedHide.label": "Hidden from share",
   "features.sharedOpen.desc": "This section starts expanded when someone opens the shared page.",

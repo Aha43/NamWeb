@@ -6,7 +6,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { canonicalTag, featuresFor } from '@/domain/systemTags';
+import { canonicalTag, featureForTag, featuresFor } from '@/domain/systemTags';
+import { cn } from '@/lib/utils';
 
 /**
  * The **Features** dialog (#1023): the friendly face of a node's system tags. One row per applicable
@@ -49,15 +50,38 @@ export function NodeFeaturesDialog({
           <p className="text-sm text-muted-foreground">{t('features.none')}</p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {features.map((f) => (
-              <li key={f.tag} className="grid grid-cols-[minmax(8rem,auto)_1fr] items-start gap-x-4 gap-y-1">
-                <label className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <input type="checkbox" checked={has(f.tag)} onChange={(e) => onToggle(f.tag, e.target.checked)} />
-                  {t(f.labelKey)}
-                </label>
-                <span className="text-sm text-muted-foreground">{t(f.descKey)}</span>
-              </li>
-            ))}
+            {features.map((f) => {
+              // A feature the share rules override when its superseding tag is also set (e.g. a hard
+              // #shared-hide beats #shared-show): keep the checkbox honest but inert, and say why, so
+              // "Force-shown" can't silently promise something hide is overriding (#1023 review, P2).
+              const overridden = Boolean(f.supersededBy && has(f.supersededBy));
+              const overrider = f.supersededBy ? featureForTag(f.supersededBy) : undefined;
+              return (
+                <li key={f.tag} className="grid grid-cols-[minmax(8rem,auto)_1fr] items-start gap-x-4 gap-y-1">
+                  <label
+                    className={cn(
+                      'flex items-center gap-2 text-sm font-medium',
+                      overridden ? 'text-muted-foreground' : 'text-foreground',
+                    )}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={has(f.tag)}
+                      disabled={overridden}
+                      onChange={(e) => {
+                        if (!overridden) onToggle(f.tag, e.target.checked);
+                      }}
+                    />
+                    {t(f.labelKey)}
+                  </label>
+                  <span className="text-sm text-muted-foreground">
+                    {overridden && overrider
+                      ? t('features.overriddenBy', { feature: t(overrider.labelKey) })
+                      : t(f.descKey)}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         )}
       </DialogContent>

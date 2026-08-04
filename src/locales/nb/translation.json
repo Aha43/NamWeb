@@ -328,6 +328,7 @@
   "features.none": "Ingen funksjoner gjelder for dette elementet.",
   "features.notStalled.desc": "Forteller «Løse tråder» at dette prosjektet med vilje er uten en neste handling, så det ikke flagges som stoppet.",
   "features.notStalled.label": "Bevisst uten neste",
+  "features.overriddenBy": "Overstyrt av «{feature}» — ingen effekt mens den er på.",
   "features.sharedHide.desc": "Holder dette elementet og alt under det utenfor den publiserte delingen.",
   "features.sharedHide.label": "Skjult fra deling",
   "features.sharedOpen.desc": "Denne seksjonen starter utvidet når noen åpner den delte siden.",

@@ -80,13 +80,17 @@ export interface SystemFeature {
   /** Only offered when the node is inside a published share — the `#shared-*` visibility grammar
    *  is meaningless off a share (#1023). */
   sharedOnly?: boolean;
+  /** Another feature's tag that OVERRIDES this one when both are set: this feature is then inert, so
+   *  the Features dialog disables it and says so (e.g. a hard `#shared-hide` beats `#shared-show` in
+   *  the share-content rules — #1023 review, P2). */
+  supersededBy?: string;
 }
 
 export const SYSTEM_FEATURES: readonly SystemFeature[] = [
   { tag: IN_PROGRESS_TAG, labelKey: 'features.inProgress.label', descKey: 'features.inProgress.desc', appliesTo: 'action' },
   { tag: NOT_STALLED_TAG, labelKey: 'features.notStalled.label', descKey: 'features.notStalled.desc', appliesTo: 'project' },
   { tag: SHARED_HIDE_TAG, labelKey: 'features.sharedHide.label', descKey: 'features.sharedHide.desc', appliesTo: 'both', sharedOnly: true },
-  { tag: SHARED_SHOW_TAG, labelKey: 'features.sharedShow.label', descKey: 'features.sharedShow.desc', appliesTo: 'both', sharedOnly: true },
+  { tag: SHARED_SHOW_TAG, labelKey: 'features.sharedShow.label', descKey: 'features.sharedShow.desc', appliesTo: 'both', sharedOnly: true, supersededBy: SHARED_HIDE_TAG },
   { tag: SHARED_OPEN_TAG, labelKey: 'features.sharedOpen.label', descKey: 'features.sharedOpen.desc', appliesTo: 'project', sharedOnly: true },
 ];
 
