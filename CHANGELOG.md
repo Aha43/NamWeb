@@ -8,6 +8,18 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [2.11.0] - 2026-08-04
+
+**System tags grow up into Features.** The headline turns NAM's built-in behaviours — *in progress*,
+*intentionally next-less*, the share-visibility grammar — into a proper **Features dialog**: a
+checkbox and a plain-language description for each, instead of hunting for a `#`-tag and decoding its
+name. You reach it from the **action editor** and the **project workbench header**, and it's the *only*
+place they're set now — system tags no longer clutter the tag admin or the type-ahead, though they
+stay as **filter chips** (each with a tooltip pointing back to Features). Around it, two
+engage-in-context wins from dogfooding: the **Focus deck's path went live** (click an ancestor
+project to jump there mid-work), and **move / file destination lists are depth-first sorted** so a
+flat list finally reads like your tree — the mobile move friction, gone.
+
 ### Added
 - A **Features** dialog for a node's built-in behaviours (#1023) — a checkbox + plain-language
   description for each, so you turn things like **In progress** or **Intentionally next-less** on/off
@@ -2168,7 +2180,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.10.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v2.11.0...HEAD
+[2.11.0]: https://github.com/Aha43/NamWeb/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/Aha43/NamWeb/compare/v2.9.0...v2.10.0
 [2.9.0]: https://github.com/Aha43/NamWeb/compare/v2.8.0...v2.9.0
 [2.8.0]: https://github.com/Aha43/NamWeb/compare/v2.7.0...v2.8.0
