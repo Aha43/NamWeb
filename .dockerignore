@@ -1,0 +1,21 @@
+# Keep the build context small and secrets out of the image. The Dockerfile COPYs only what the MCP
+# server needs (package files, tsconfig, mcp/, src/); everything else is irrelevant to it.
+.git
+node_modules
+dist
+coverage
+playwright-report
+test-results
+.env
+.env.*
+*.local
+
+# SPA-only surface the server never runs
+e2e
+public
+index.html
+vite.config.ts
+supabase
+.github
+docs
+scratchpad
