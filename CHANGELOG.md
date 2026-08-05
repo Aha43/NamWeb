@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+- **Project summaries now include every sub-project**, not just those with actions (#1044). A plan
+  whose content lives in sub-project **descriptions** (no actions) no longer vanishes from the
+  summary — each sub-project's title and description is always part of the outline, with actions still
+  filtered by status underneath. Also improves the MCP summary.
+
 ## [3.0.0] - 2026-08-04
 
 **The one that replaced Trello.** 3.0.0 isn't a feature milestone — it's a *usage* one. Across the
