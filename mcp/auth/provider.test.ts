@@ -172,6 +172,47 @@ describe('SupabaseOAuthProvider', () => {
     expect(refreshed.scope).toBe('nam.read');
   });
 
+  it('reuse of a rotated (superseded) refresh token revokes the whole family (#1051)', async () => {
+    const code = await login();
+    const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    const second = await provider.exchangeRefreshToken(client, first.refresh_token!); // rotate
+    // Replaying the OLD token is treated as theft → the family is revoked, so even the CURRENT
+    // (second) refresh token stops working.
+    await expect(provider.exchangeRefreshToken(client, first.refresh_token!)).rejects.toThrow(/reuse/i);
+    await expect(provider.exchangeRefreshToken(client, second.refresh_token!)).rejects.toThrow();
+  });
+
+  it('revoking a token revokes the whole grant; another client cannot revoke it (#1051)', async () => {
+    const code = await login();
+    const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    const other = { client_id: 'other-client', redirect_uris: [REDIRECT_URI] } as OAuthClientInformationFull;
+    // Ownership: a different client may not revoke this token.
+    await expect(provider.revokeToken(other, { token: tokens.access_token })).rejects.toThrow();
+    // The owner revokes → BOTH the access and refresh tokens stop working (family revoked).
+    await provider.revokeToken(client, { token: tokens.access_token });
+    await expect(provider.verifyAccessToken(tokens.access_token)).rejects.toThrow();
+    await expect(provider.exchangeRefreshToken(client, tokens.refresh_token!)).rejects.toThrow();
+  });
+
+  it('a session rotation at verify time is seen by the next refresh — no desync (#1051)', async () => {
+    const rotated = fakeSession({ access_token: 'rotated-token' });
+    // First clientForSession call (at verify) returns a ROTATED session; later calls echo their input.
+    clientForSession
+      .mockReset()
+      .mockImplementationOnce(async () => ({ client: fakeSupabase, session: rotated }))
+      .mockImplementation(async (session: AuthSession) => ({ client: fakeSupabase, session }));
+
+    const code = await login();
+    const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    await provider.verifyAccessToken(tokens.access_token); // rotates the GRANT session
+    await provider.exchangeRefreshToken(client, tokens.refresh_token!); // must use the rotated session
+
+    // The refresh's clientForSession was called with the rotated session, not the stale original.
+    const calls = clientForSession.mock.calls;
+    const lastArg = calls[calls.length - 1]?.[0] as AuthSession;
+    expect(lastArg.access_token).toBe('rotated-token');
+  });
+
   it('revokeToken invalidates the access token', async () => {
     const code = await login();
     const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);

@@ -1,12 +1,11 @@
-// Persistent AuthStore backed by the MCP-owned `mcp` Postgres schema (P4a, #113).
+// Persistent AuthStore backed by the MCP-owned `mcp` Postgres schema (P4a #113; grants #1051).
 //
-// Drop-in for InMemoryAuthStore so issued clients/codes/tokens survive a server
-// restart (connectors no longer re-authorize on every restart). Each row stores
-// the store's data object verbatim as JSONB — node-postgres serializes the JS
-// object for us — keeping this a thin, obvious mapping of the AuthStore methods.
+// Drop-in for InMemoryAuthStore so issued clients/codes/grants/tokens survive a restart. Each row
+// stores its data object verbatim as JSONB (node-postgres serializes it); access/refresh tokens also
+// carry a `grant_id` column so a grant delete cascades to them (family revocation).
 //
-// Expiry: codes/access tokens carry an `expiresAt` (epoch seconds); reads treat
-// an expired row as absent and delete it. `pruneExpired` is a best-effort sweep.
+// Expiry: codes/access tokens carry an `expiresAt` (epoch seconds); reads treat an expired row as
+// absent and delete it. `pruneExpired` is a best-effort sweep.
 
 import type pg from 'pg';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
@@ -15,6 +14,7 @@ import type {
   AccessTokenData,
   AuthCodeData,
   AuthStore,
+  GrantData,
   PendingLoginData,
   RefreshTokenData,
 } from './stores';
@@ -62,15 +62,70 @@ export class PostgresAuthStore implements AuthStore {
     return data;
   }
 
+  async takeCode(code: string): Promise<AuthCodeData | undefined> {
+    // Atomic single-use claim (#1051) — one exchange wins the row.
+    const { rows } = await this.pool.query<{ data: AuthCodeData }>(
+      'delete from mcp.oauth_codes where code = $1 returning data',
+      [code],
+    );
+    const data = rows[0]?.data;
+    if (!data) return undefined;
+    return data.expiresAt <= nowSeconds() ? undefined : data;
+  }
+
   async deleteCode(code: string): Promise<void> {
     await this.pool.query('delete from mcp.oauth_codes where code = $1', [code]);
   }
 
+  async saveGrant(id: string, data: GrantData): Promise<void> {
+    await this.pool.query(
+      `insert into mcp.oauth_grants (grant_id, data) values ($1, $2)
+       on conflict (grant_id) do update set data = excluded.data`,
+      [id, data],
+    );
+  }
+
+  async getGrant(id: string): Promise<GrantData | undefined> {
+    const { rows } = await this.pool.query<{ data: GrantData }>(
+      'select data from mcp.oauth_grants where grant_id = $1',
+      [id],
+    );
+    return rows[0]?.data;
+  }
+
+  async updateGrantSession(id: string, session: AuthSession): Promise<void> {
+    await this.pool.query(
+      `update mcp.oauth_grants set data = jsonb_set(data, '{session}', $2::jsonb) where grant_id = $1`,
+      [id, JSON.stringify(session)],
+    );
+  }
+
+  async advanceGrant(id: string, session: AuthSession): Promise<number> {
+    // Rotate the session AND bump the refresh generation atomically; return the new generation.
+    const { rows } = await this.pool.query<{ gen: number }>(
+      `update mcp.oauth_grants
+         set data = jsonb_set(
+           jsonb_set(data, '{session}', $2::jsonb),
+           '{refreshGeneration}', to_jsonb((data->>'refreshGeneration')::int + 1))
+       where grant_id = $1
+       returning (data->>'refreshGeneration')::int as gen`,
+      [id, JSON.stringify(session)],
+    );
+    if (!rows[0]) throw new Error(`No grant ${id}`);
+    return rows[0].gen;
+  }
+
+  async deleteGrant(id: string): Promise<void> {
+    // Cascades to access + refresh tokens via their grant_id FK (on delete cascade).
+    await this.pool.query('delete from mcp.oauth_grants where grant_id = $1', [id]);
+  }
+
   async saveAccessToken(token: string, data: AccessTokenData): Promise<void> {
     await this.pool.query(
-      `insert into mcp.oauth_access_tokens (token, data, expires_at) values ($1, $2, to_timestamp($3))
-       on conflict (token) do update set data = excluded.data, expires_at = excluded.expires_at`,
-      [token, data, data.expiresAt],
+      `insert into mcp.oauth_access_tokens (token, grant_id, data, expires_at)
+       values ($1, $2, $3, to_timestamp($4))
+       on conflict (token) do update set grant_id = excluded.grant_id, data = excluded.data, expires_at = excluded.expires_at`,
+      [token, data.grantId, data, data.expiresAt],
     );
   }
 
@@ -88,29 +143,22 @@ export class PostgresAuthStore implements AuthStore {
     return data;
   }
 
-  async updateAccessSession(token: string, session: AuthSession): Promise<void> {
-    await this.pool.query(
-      `update mcp.oauth_access_tokens set data = jsonb_set(data, '{session}', $2::jsonb)
-       where token = $1`,
-      [token, JSON.stringify(session)],
-    );
-  }
-
   async deleteAccessToken(token: string): Promise<void> {
     await this.pool.query('delete from mcp.oauth_access_tokens where token = $1', [token]);
   }
 
   async saveRefreshToken(token: string, data: RefreshTokenData): Promise<void> {
     await this.pool.query(
-      `insert into mcp.oauth_refresh_tokens (token, data) values ($1, $2)
-       on conflict (token) do update set data = excluded.data`,
-      [token, data],
+      `insert into mcp.oauth_refresh_tokens (token, grant_id, data) values ($1, $2, $3)
+       on conflict (token) do update set grant_id = excluded.grant_id, data = excluded.data`,
+      [token, data.grantId, data],
     );
   }
 
-  async takeRefreshToken(token: string): Promise<RefreshTokenData | undefined> {
+  async getRefreshToken(token: string): Promise<RefreshTokenData | undefined> {
+    // Non-consuming — validated by generation, not deleted, so a replay is detectable (#1051).
     const { rows } = await this.pool.query<{ data: RefreshTokenData }>(
-      'delete from mcp.oauth_refresh_tokens where token = $1 returning data',
+      'select data from mcp.oauth_refresh_tokens where token = $1',
       [token],
     );
     return rows[0]?.data;

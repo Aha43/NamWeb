@@ -1,12 +1,13 @@
-// Storage seam for the OAuth Authorization Server (P1, issue #107).
+// Storage seam for the OAuth Authorization Server (P1 #107; grant/family model #1051).
 //
-// Everything stateful the AS needs — registered clients (DCR), one-time auth
-// codes, and issued access/refresh tokens — lives behind these interfaces so the
-// in-memory implementation here can be swapped for a persistent one at P4 hosting
-// (and so a future managed-AS swap stays a provider concern, not a rewrite).
+// Everything stateful the AS needs lives behind this interface so the in-memory
+// implementation here can be swapped for the persistent Postgres one (P4a).
 //
-// In-memory means: a server restart drops all of it, so connectors re-authorize.
-// That is acceptable for the local-first P1; persistence is a P4 concern.
+// Grant/family model (#1051): the durable per-authorization state — the Supabase session, granted
+// scopes, workspace — lives in ONE **grant** record. Access and refresh tokens are thin references
+// to a grant, so (a) a session rotation is written once and both tokens see it (no desync), and
+// (b) refresh tokens carry a generation checked against the grant's, giving reuse detection: a
+// replayed (superseded) refresh token revokes the whole family.
 
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { AuthSession } from '@supabase/supabase-js';
@@ -23,21 +24,28 @@ export interface AuthCodeData {
   expiresAt: number; // epoch seconds
 }
 
-/** An issued MCP access token → the Supabase session it acts as. */
-export interface AccessTokenData {
+/** The shared per-authorization record. Access + refresh tokens reference it by id. */
+export interface GrantData {
   clientId: string;
   scopes: string[];
-  session: AuthSession;
   workspace: string;
+  /** The Supabase session; rotated in place (shared by every token of this grant). */
+  session: AuthSession;
+  /** The currently-valid refresh generation; a refresh token with a lower generation is a replay. */
+  refreshGeneration: number;
+}
+
+/** An issued MCP access token → the grant it acts under. */
+export interface AccessTokenData {
+  grantId: string;
   expiresAt: number; // epoch seconds (our MCP token TTL)
 }
 
-/** An issued MCP refresh token → the Supabase session to refresh from. */
+/** An issued MCP refresh token → its grant + the generation it was minted at (kept, not deleted on
+ *  use, so a replay of a superseded token is detectable). */
 export interface RefreshTokenData {
-  clientId: string;
-  scopes: string[];
-  session: AuthSession;
-  workspace: string;
+  grantId: string;
+  generation: number;
 }
 
 /**
@@ -60,30 +68,38 @@ export interface AuthStore {
   getClient(clientId: string): Promise<OAuthClientInformationFull | undefined>;
   saveClient(client: OAuthClientInformationFull): Promise<void>;
 
-  // --- Authorization codes (single use) ---
+  // --- Authorization codes ---
   saveCode(code: string, data: AuthCodeData): Promise<void>;
-  getCode(code: string): Promise<AuthCodeData | undefined>;
+  getCode(code: string): Promise<AuthCodeData | undefined>; // non-consuming (PKCE challenge lookup)
+  takeCode(code: string): Promise<AuthCodeData | undefined>; // atomic single-use claim (#1051 H2)
   deleteCode(code: string): Promise<void>;
+
+  // --- Grants (the shared session/family record) ---
+  saveGrant(id: string, data: GrantData): Promise<void>;
+  getGrant(id: string): Promise<GrantData | undefined>;
+  updateGrantSession(id: string, session: AuthSession): Promise<void>; // verify-time rotation
+  advanceGrant(id: string, session: AuthSession): Promise<number>; // refresh: rotate + bump gen → new gen
+  deleteGrant(id: string): Promise<void>; // cascades: drops the grant's access + refresh tokens
 
   // --- Access tokens ---
   saveAccessToken(token: string, data: AccessTokenData): Promise<void>;
   getAccessToken(token: string): Promise<AccessTokenData | undefined>;
-  updateAccessSession(token: string, session: AuthSession): Promise<void>;
   deleteAccessToken(token: string): Promise<void>;
 
-  // --- Refresh tokens (single use — Supabase rotates them) ---
+  // --- Refresh tokens (kept for reuse detection; validated by generation, not deleted on use) ---
   saveRefreshToken(token: string, data: RefreshTokenData): Promise<void>;
-  takeRefreshToken(token: string): Promise<RefreshTokenData | undefined>;
+  getRefreshToken(token: string): Promise<RefreshTokenData | undefined>;
 
   // --- Pending logins (authenticated, awaiting workspace pick; single use) ---
   savePendingLogin(id: string, data: PendingLoginData): Promise<void>;
   takePendingLogin(id: string): Promise<PendingLoginData | undefined>;
 }
 
-/** Process-local, non-persistent store. Fine for local P1; replace at P4. */
+/** Process-local, non-persistent store. Fine for local P1; the Postgres store persists at P4a. */
 export class InMemoryAuthStore implements AuthStore {
   private clients = new Map<string, OAuthClientInformationFull>();
   private codes = new Map<string, AuthCodeData>();
+  private grants = new Map<string, GrantData>();
   private accessTokens = new Map<string, AccessTokenData>();
   private refreshTokens = new Map<string, RefreshTokenData>();
   private pendingLogins = new Map<string, PendingLoginData>();
@@ -101,8 +117,36 @@ export class InMemoryAuthStore implements AuthStore {
   async getCode(code: string) {
     return this.codes.get(code);
   }
+  async takeCode(code: string) {
+    const data = this.codes.get(code);
+    this.codes.delete(code);
+    return data;
+  }
   async deleteCode(code: string) {
     this.codes.delete(code);
+  }
+
+  async saveGrant(id: string, data: GrantData) {
+    this.grants.set(id, data);
+  }
+  async getGrant(id: string) {
+    return this.grants.get(id);
+  }
+  async updateGrantSession(id: string, session: AuthSession) {
+    const g = this.grants.get(id);
+    if (g) this.grants.set(id, { ...g, session });
+  }
+  async advanceGrant(id: string, session: AuthSession) {
+    const g = this.grants.get(id);
+    if (!g) throw new Error(`No grant ${id}`);
+    const refreshGeneration = g.refreshGeneration + 1;
+    this.grants.set(id, { ...g, session, refreshGeneration });
+    return refreshGeneration;
+  }
+  async deleteGrant(id: string) {
+    this.grants.delete(id);
+    for (const [t, d] of this.accessTokens) if (d.grantId === id) this.accessTokens.delete(t);
+    for (const [t, d] of this.refreshTokens) if (d.grantId === id) this.refreshTokens.delete(t);
   }
 
   async saveAccessToken(token: string, data: AccessTokenData) {
@@ -111,10 +155,6 @@ export class InMemoryAuthStore implements AuthStore {
   async getAccessToken(token: string) {
     return this.accessTokens.get(token);
   }
-  async updateAccessSession(token: string, session: AuthSession) {
-    const existing = this.accessTokens.get(token);
-    if (existing) this.accessTokens.set(token, { ...existing, session });
-  }
   async deleteAccessToken(token: string) {
     this.accessTokens.delete(token);
   }
@@ -122,10 +162,8 @@ export class InMemoryAuthStore implements AuthStore {
   async saveRefreshToken(token: string, data: RefreshTokenData) {
     this.refreshTokens.set(token, data);
   }
-  async takeRefreshToken(token: string) {
-    const data = this.refreshTokens.get(token);
-    this.refreshTokens.delete(token);
-    return data;
+  async getRefreshToken(token: string) {
+    return this.refreshTokens.get(token);
   }
 
   async savePendingLogin(id: string, data: PendingLoginData) {
