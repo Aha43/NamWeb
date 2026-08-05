@@ -18,6 +18,7 @@ import type {
 } from '@modelcontextprotocol/sdk/server/auth/provider.js';
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import {
+  InvalidClientMetadataError,
   InvalidGrantError,
   InvalidRequestError,
   InvalidTokenError,
@@ -31,6 +32,7 @@ import type { AuthSession, SupabaseClient } from '@supabase/supabase-js';
 
 import { AuthStore, InMemoryAuthStore } from './stores';
 import { constrainRefreshScopes, resolveGrantedScopes } from './scopes';
+import { isRedirectUriAllowed, type RedirectAllowlist } from './redirectAllowlist';
 import { clientForSession, listWorkspaceNames, signInWithPassword } from './supabaseIdentity';
 import { renderLoginPage, renderNoWorkspacePage, renderWorkspacePicker } from './loginPage';
 import { issueCsrf, verifyCsrf } from './csrf';
@@ -49,24 +51,35 @@ function nowSeconds(): number {
 export interface SupabaseOAuthProviderOptions {
   accessTokenTtlSeconds?: number;
   store?: AuthStore;
+  /** Origins an auth code may be redirected to (#1052). Default: not enforcing (local/dev). */
+  redirectAllowlist?: RedirectAllowlist;
 }
 
 export class SupabaseOAuthProvider implements OAuthServerProvider {
   private readonly store: AuthStore;
   private readonly accessTtl: number;
+  private readonly redirectAllowlist: RedirectAllowlist;
 
   constructor(opts: SupabaseOAuthProviderOptions = {}) {
     this.store = opts.store ?? new InMemoryAuthStore();
     // Keep our access-token TTL under Supabase's ~1h JWT so refreshes line up.
     this.accessTtl = opts.accessTokenTtlSeconds ?? 50 * 60;
+    this.redirectAllowlist = opts.redirectAllowlist ?? { origins: [], enforce: false };
   }
 
   get clientsStore(): OAuthRegisteredClientsStore {
     return {
       getClient: (clientId) => this.store.getClient(clientId),
-      // DCR: the register handler generates client_id/secret; we persist + echo back.
+      // DCR: the register handler generates client_id/secret; we persist + echo back — but only for a
+      // client whose every redirect_uri is on the origin allowlist (#1052), so an attacker can't
+      // register a client that sends the auth code to their own callback.
       registerClient: async (client) => {
         const full = client as OAuthClientInformationFull;
+        for (const uri of full.redirect_uris ?? []) {
+          if (!isRedirectUriAllowed(uri, this.redirectAllowlist)) {
+            throw new InvalidClientMetadataError(`redirect_uri origin not allowed: ${uri}`);
+          }
+        }
         await this.store.saveClient(full);
         return full;
       },
@@ -107,6 +120,12 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     const client = await this.store.getClient(client_id);
     if (!client || !client.redirect_uris.includes(redirect_uri)) {
       res.status(400).send('Unknown client or redirect_uri');
+      return;
+    }
+    // Re-check the allowlist at login too (#1052) — defends against a client registered before the
+    // allowlist was tightened, or any store manipulation.
+    if (!isRedirectUriAllowed(redirect_uri, this.redirectAllowlist)) {
+      res.status(400).send('redirect_uri is not an allowed destination.');
       return;
     }
     if (!verifyCsrf(req)) {

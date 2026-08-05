@@ -106,9 +106,20 @@ export function renderLoginPage(p: LoginPageParams): string {
     ? 'read <strong>and modify</strong> your workspace — view your projects, inbox, and actions, and create, edit, and delete them on your behalf.'
     : 'read your workspace — view your projects, inbox, and actions, but not change them.';
 
+  // Transparency (#1052): name where the assistant will be sent back to, so the user can spot a
+  // destination they don't recognise before entering credentials.
+  let destHost: string;
+  try {
+    destHost = new URL(p.redirectUri).host;
+  } catch {
+    destHost = p.redirectUri;
+  }
+  const destination = `<p class="lead" style="margin-top:-.6rem">After signing in you'll be returned to <strong>${esc(destHost)}</strong>. Only continue if you recognise it.</p>`;
+
   return page(
     'Sign in to Nam',
     `    <p class="lead">Sign in with your Nam account to let this assistant ${access}</p>
+    ${destination}
     ${error}
     <form method="post" action="/nam/login">
       ${hidden}
