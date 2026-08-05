@@ -28,6 +28,7 @@ import { z } from 'zod';
 import { SupabaseOAuthProvider, supabaseClientFromAuth } from './auth/provider';
 import { SCOPE_READ, SCOPE_WRITE, SUPPORTED_SCOPES } from './auth/scopes';
 import { createRateLimiter } from './auth/rateLimit';
+import { loadRedirectAllowlist } from './auth/redirectAllowlist';
 import type { AuthStore } from './auth/stores';
 import { PostgresAuthStore } from './auth/postgresStore';
 import { ensureSchema, getPool } from './db/pool';
@@ -647,7 +648,19 @@ async function main() {
         'OAuth store: in-memory — set NAM_MCP_DATABASE_URL to persist clients/tokens across restarts.',
       );
     }
-    const provider = new SupabaseOAuthProvider({ store });
+    // Redirect-origin allowlist (#1052): only registrations/logins whose redirect origin is allowed
+    // proceed. Fail-closed in a deployment with the list unset — warn loudly so it gets configured.
+    const redirectAllowlist = loadRedirectAllowlist();
+    if (redirectAllowlist.enforce && redirectAllowlist.origins.length === 0) {
+      console.warn(
+        '⚠  NAM_MCP_ALLOWED_REDIRECT_ORIGINS is unset in a production/https context — ALL client ' +
+          'registrations will be refused until you set it (e.g. "https://claude.ai,https://chatgpt.com").',
+      );
+    }
+    const provider = new SupabaseOAuthProvider({ store, redirectAllowlist });
+    // Rate-limit Dynamic Client Registration (#1052) so it can't be spammed to grow the client store.
+    const regLimiter = createRateLimiter({ windowMs: 60 * 60_000, max: 20 });
+    app.post('/register', regLimiter.middleware);
     app.use(
       mcpAuthRouter({
         provider,

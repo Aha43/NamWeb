@@ -22,4 +22,10 @@ describe('renderLoginPage consent copy', () => {
     expect(html).toContain('name="_csrf" value="tok"');
     expect(html).toContain('<svg'); // branded logo
   });
+
+  it('names the redirect destination host so an off-brand callback is visible (#1052)', () => {
+    const html = renderLoginPage({ ...base, redirectUri: 'https://claude.ai/api/mcp/auth_callback' });
+    expect(html).toContain('claude.ai');
+    expect(html).toContain('returned to');
+  });
 });

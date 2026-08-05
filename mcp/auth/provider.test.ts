@@ -334,3 +334,31 @@ describe('SupabaseOAuthProvider', () => {
     });
   }
 });
+
+describe('SupabaseOAuthProvider — redirect allowlist (#1052)', () => {
+  // REDIRECT_URI is https://connector.example/callback → origin https://connector.example
+  const allowed = { origins: ['https://connector.example'], enforce: true };
+
+  it('registers a client whose redirect origin is allowed', async () => {
+    const provider = new SupabaseOAuthProvider({ redirectAllowlist: allowed });
+    await expect(provider.clientsStore.registerClient!(registeredClient())).resolves.toBeDefined();
+  });
+
+  it('rejects registering a client that would redirect the code off the allowlist (phishing)', async () => {
+    const provider = new SupabaseOAuthProvider({ redirectAllowlist: allowed });
+    const rogue = {
+      client_id: 'rogue',
+      redirect_uris: ['https://evil.example/callback'],
+    } as OAuthClientInformationFull;
+    await expect(provider.clientsStore.registerClient!(rogue)).rejects.toThrow(/redirect_uri/i);
+  });
+
+  it('does not enforce when the allowlist is off (local/dev)', async () => {
+    const provider = new SupabaseOAuthProvider(); // default: not enforcing
+    const any = {
+      client_id: 'x',
+      redirect_uris: ['https://anywhere.example/cb'],
+    } as OAuthClientInformationFull;
+    await expect(provider.clientsStore.registerClient!(any)).resolves.toBeDefined();
+  });
+});
