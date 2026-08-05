@@ -13,7 +13,7 @@
 // Human control is connector-side per-write confirmation. Phasing → P3 Realtime,
 // P4 hosting. See docs/features/remote-mcp/design.md.
 
-import express, { type Request, type Response } from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import { pathToFileURL } from 'node:url';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -26,7 +26,7 @@ import { requireBearerAuth } from '@modelcontextprotocol/sdk/server/auth/middlew
 import { z } from 'zod';
 
 import { SupabaseOAuthProvider, supabaseClientFromAuth } from './auth/provider';
-import { SCOPE_WRITE, SUPPORTED_SCOPES } from './auth/scopes';
+import { SCOPE_READ, SCOPE_WRITE, SUPPORTED_SCOPES } from './auth/scopes';
 import { createRateLimiter } from './auth/rateLimit';
 import type { AuthStore } from './auth/stores';
 import { PostgresAuthStore } from './auth/postgresStore';
@@ -593,14 +593,36 @@ function mcpHandler(
   };
 }
 
+/**
+ * Fail-closed guard for the local-only no-auth mode (#1050 CRITICAL): refuse to start when the
+ * environment looks like a deployment (NODE_ENV=production or an https issuer), so a copied
+ * `NAM_MCP_DEV_NOAUTH=1` can't silently expose an unauthenticated read+write endpoint. Exported for
+ * testing.
+ */
+export function assertNoAuthAllowed(env: NodeJS.ProcessEnv = process.env): void {
+  const issuer = env.NAM_MCP_ISSUER_URL ?? '';
+  if (env.NODE_ENV === 'production' || issuer.startsWith('https://')) {
+    throw new Error(
+      'Refusing to start: NAM_MCP_DEV_NOAUTH=1 in a production/https context. No-auth mode is ' +
+        'local-dev only — unset it (and use OAuth) for any deployment.',
+    );
+  }
+}
+
 async function main() {
   const port = Number(process.env.NAM_MCP_PORT ?? 3333);
   const app = express();
-  // Behind a tunnel/proxy in deploy, so req.ip / req.secure reflect the real client.
-  app.set('trust proxy', true);
+  // Trust EXACTLY the configured number of proxy hops (default 1 — a single PaaS load balancer), so
+  // req.ip / req.secure reflect the real client. NOT `true` (#1050): trusting the whole
+  // X-Forwarded-For chain lets a client spoof req.ip and bypass the sign-in rate-limit. Set
+  // NAM_MCP_TRUST_PROXY to the real hop count for your host.
+  app.set('trust proxy', Number(process.env.NAM_MCP_TRUST_PROXY ?? 1));
 
-  if (process.env.NAM_MCP_DEV_NOAUTH === '1') {
-    // Dev/Inspector escape hatch: no OAuth, one shared signed-in client. Never deploy.
+  const noAuth = process.env.NAM_MCP_DEV_NOAUTH === '1';
+  if (noAuth) {
+    // Dev/Inspector escape hatch: no OAuth, one shared signed-in client. LOCAL ONLY, fail-closed +
+    // loopback-bound below — a copied env var must not silently expose an unauthenticated endpoint.
+    assertNoAuthAllowed();
     const client = await signedInClient();
     // Dev shared session has full access; workspace from the env (no consent step).
     app.post(
@@ -608,7 +630,7 @@ async function main() {
       express.json(),
       mcpHandler(() => ({ client, canWrite: true, workspace: workspaceName() })),
     );
-    console.warn('⚠  NAM_MCP_DEV_NOAUTH=1 — OAuth disabled, shared dev session (local only).');
+    console.warn('⚠  NAM_MCP_DEV_NOAUTH=1 — OAuth disabled, shared dev session (loopback only).');
   } else {
     // Normal: this server is the OAuth 2.1 Authorization Server (Supabase-backed).
     const issuerUrl = new URL(process.env.NAM_MCP_ISSUER_URL ?? `http://127.0.0.1:${port}`);
@@ -634,11 +656,24 @@ async function main() {
         resourceName: 'NamWeb',
       }),
     );
-    const loginLimiter = createRateLimiter({ windowMs: 5 * 60_000, max: 10 });
+    // Two independent limiters (#1050): by IP (blunts one host flooding attempts) AND by account
+    // (blunts one email targeted from many hosts). Keeping them separate avoids the ip+email footgun
+    // where rotating the target would mint a fresh bucket. Per-process/in-memory — a multi-instance
+    // deploy would move these to a shared store (see rateLimit.ts).
+    const ipLimiter = createRateLimiter({ windowMs: 5 * 60_000, max: 10 });
+    const accountLimiter = createRateLimiter({ windowMs: 15 * 60_000, max: 20 });
     app.post(
       '/nam/login',
-      loginLimiter.middleware,
+      ipLimiter.middleware,
       express.urlencoded({ extended: false }),
+      (req: Request, res: Response, next: NextFunction) => {
+        const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+        if (email && !accountLimiter.allow(`email:${email}`)) {
+          res.status(429).send('Too many sign-in attempts for this account. Please wait and try again.');
+          return;
+        }
+        next();
+      },
       provider.handleLogin,
     );
     app.post(
@@ -651,7 +686,9 @@ async function main() {
     app.post(
       '/mcp',
       express.json(),
-      requireBearerAuth({ verifier: provider, resourceMetadataUrl }),
+      // Require the read baseline on the resource endpoint (#1050) — a write-only or unsupported-scope
+      // token can no longer invoke read tools; write tools additionally check nam.write below.
+      requireBearerAuth({ verifier: provider, requiredScopes: [SCOPE_READ], resourceMetadataUrl }),
       mcpHandler((req) => ({
         client: supabaseClientFromAuth(req.auth),
         canWrite: req.auth?.scopes?.includes(SCOPE_WRITE) ?? false,
@@ -670,9 +707,11 @@ async function main() {
   app.get('/mcp', methodNotAllowed);
   app.delete('/mcp', methodNotAllowed);
 
-  app.listen(port, () => {
-    const mode = process.env.NAM_MCP_DEV_NOAUTH === '1' ? 'DEV no-auth' : 'OAuth';
-    console.log(`NamWeb MCP (read + write, ${mode}) on http://127.0.0.1:${port}/mcp`);
+  // No-auth mode binds to loopback only — even if the fail-closed guard above were bypassed, the
+  // unauthenticated endpoint must not be reachable off-host (#1050). OAuth mode binds all interfaces.
+  const host = noAuth ? '127.0.0.1' : '0.0.0.0';
+  app.listen(port, host, () => {
+    console.log(`NamWeb MCP (read + write, ${noAuth ? 'DEV no-auth' : 'OAuth'}) on ${host}:${port}/mcp`);
     console.log(`Workspace row: "${workspaceName()}"`);
   });
 }

@@ -156,6 +156,22 @@ describe('SupabaseOAuthProvider', () => {
     await expect(provider.exchangeRefreshToken(client, first.refresh_token!)).rejects.toThrow();
   });
 
+  it('rejects a refresh that widens scope beyond the grant (#1050)', async () => {
+    const code = await login(); // granted nam.read only
+    const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    // Asking for nam.write on refresh must be rejected (invalid_scope), not silently escalated.
+    await expect(
+      provider.exchangeRefreshToken(client, first.refresh_token!, ['nam.write']),
+    ).rejects.toThrow(/scope/i);
+  });
+
+  it('allows a refresh to narrow scope within the grant (#1050)', async () => {
+    const code = await login({ scope: 'nam.read nam.write' }); // granted read+write
+    const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    const refreshed = await provider.exchangeRefreshToken(client, first.refresh_token!, ['nam.read']);
+    expect(refreshed.scope).toBe('nam.read');
+  });
+
   it('revokeToken invalidates the access token', async () => {
     const code = await login();
     const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
