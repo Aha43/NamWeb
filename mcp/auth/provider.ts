@@ -30,7 +30,7 @@ import type {
 import type { AuthSession, SupabaseClient } from '@supabase/supabase-js';
 
 import { AuthStore, InMemoryAuthStore } from './stores';
-import { resolveGrantedScopes } from './scopes';
+import { constrainRefreshScopes, resolveGrantedScopes } from './scopes';
 import { clientForSession, listWorkspaceNames, signInWithPassword } from './supabaseIdentity';
 import { renderLoginPage, renderNoWorkspacePage, renderWorkspacePicker } from './loginPage';
 import { issueCsrf, verifyCsrf } from './csrf';
@@ -262,14 +262,12 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     if (!data || data.clientId !== client.client_id) {
       throw new InvalidGrantError('Invalid refresh token');
     }
+    // A refresh may narrow but never widen the grant (#1050) — reject scope escalation before doing
+    // any work (the Supabase refresh below).
+    const nextScopes = constrainRefreshScopes(scopes, data.scopes);
     // Refresh the Supabase session too, so the two token lifetimes stay aligned.
     const { session } = await clientForSession(data.session);
-    return this.issueTokens(
-      client.client_id,
-      scopes?.length ? scopes : data.scopes,
-      session,
-      data.workspace,
-    );
+    return this.issueTokens(client.client_id, nextScopes, session, data.workspace);
   }
 
   /** Verify an MCP access token and resolve the per-user Supabase client (in `extra`). */

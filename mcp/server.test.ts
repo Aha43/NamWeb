@@ -12,7 +12,7 @@ const pull = vi.fn();
 vi.mock('../src/sync/workspaceClient', () => ({ pull }));
 
 // Imported after the mock is registered.
-const { buildServer } = await import('./server');
+const { buildServer, assertNoAuthAllowed } = await import('./server');
 
 // --- Minimal valid workspace (mirrors src/domain/lenses.test.ts skeleton) ---
 
@@ -176,5 +176,23 @@ describe('NamWeb MCP server (read surface)', () => {
     expect(result.isError).toBe(true);
     expect(firstText(result)).toContain('boom');
     await server.close();
+  });
+});
+
+describe('assertNoAuthAllowed — dev no-auth fail-closed guard (#1050)', () => {
+  it('allows no-auth in a local/dev context', () => {
+    expect(() => assertNoAuthAllowed({})).not.toThrow();
+    expect(() => assertNoAuthAllowed({ NAM_MCP_ISSUER_URL: 'http://127.0.0.1:3333' })).not.toThrow();
+    expect(() => assertNoAuthAllowed({ NODE_ENV: 'development' })).not.toThrow();
+  });
+
+  it('refuses no-auth when NODE_ENV=production', () => {
+    expect(() => assertNoAuthAllowed({ NODE_ENV: 'production' })).toThrow(/refusing to start/i);
+  });
+
+  it('refuses no-auth when the issuer is https (a real deployment)', () => {
+    expect(() => assertNoAuthAllowed({ NAM_MCP_ISSUER_URL: 'https://mcp.example.com' })).toThrow(
+      /refusing to start/i,
+    );
   });
 });

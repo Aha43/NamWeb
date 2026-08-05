@@ -10,6 +10,10 @@ export interface RateLimitOptions {
   max: number;
 }
 
+/** Cap on tracked keys before a sweep drops fully-aged-out ones — bounds memory on a public URL
+ *  (#1050: the map otherwise retained every unique IP/account forever). */
+const MAX_KEYS = 20_000;
+
 /** Returns true if `key` is within budget (and records the hit); false if over. */
 export function createRateLimiter({ windowMs, max }: RateLimitOptions) {
   const hits = new Map<string, number[]>();
@@ -22,6 +26,12 @@ export function createRateLimiter({ windowMs, max }: RateLimitOptions) {
     }
     fresh.push(now);
     hits.set(key, fresh);
+    // Bound memory: when the map grows large, evict keys whose newest hit has aged past the window.
+    if (hits.size > MAX_KEYS) {
+      for (const [k, ts] of hits) {
+        if (ts.length === 0 || now - ts[ts.length - 1] >= windowMs) hits.delete(k);
+      }
+    }
     return true;
   }
 
