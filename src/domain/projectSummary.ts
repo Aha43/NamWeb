@@ -1,8 +1,9 @@
 // Render a project's actions as copyable Markdown: the project title as `#` (+ its description),
 // then each action as a heading with its tags and description below it. Sub-projects get their own
 // heading with their actions nested a level deeper; at each level actions come before sub-projects.
-// Actions are filtered by status (the dialog defaults to Next + Backlog); sub-projects with no
-// matching actions are pruned. Pure + React-free (reusable by the MCP server).
+// Actions are filtered by status (the dialog defaults to Next + Backlog), but EVERY sub-project is
+// included — title + description always — so a plan whose content lives in sub-project descriptions
+// (no actions) survives the summary (#1044). Pure + React-free (reusable by the MCP server).
 
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
 
@@ -44,16 +45,16 @@ export function projectSummaryMarkdown(
       if (d) out.push(d);
     }
 
-    // Then sub-projects — only when they actually contain matching actions (skipped entirely when
-    // the caller wants just this project's own direct actions).
+    // Then sub-projects (skipped entirely when the caller wants just this project's own direct
+    // actions). Every sub-project is emitted — its title and description are part of the outline even
+    // with no matching actions, so a description-carried plan isn't silently dropped (#1044). The
+    // status filter still prunes the actions listed beneath each one.
     if (includeSubProjects) {
       for (const sub of children.filter((n) => n.project)) {
-        const subBlocks = walk(sub.id, level + 1);
-        if (subBlocks.length === 0) continue;
         out.push(heading(level, sub.title));
         const d = sub.description?.trim();
         if (d) out.push(d);
-        out.push(...subBlocks);
+        out.push(...walk(sub.id, level + 1));
       }
     }
     return out;

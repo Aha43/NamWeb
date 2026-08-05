@@ -59,7 +59,7 @@ describe('projectSummaryMarkdown', () => {
     );
   });
 
-  it('filters actions by status and prunes sub-projects with no matching actions', () => {
+  it('filters actions by status but still lists every sub-project heading (#1044)', () => {
     const doc = workspace([
       node('p', { project: true, title: 'P', childIds: ['a1', 'a2', 'sub'] }),
       node('a1', { title: 'Do now', status: 'NEXT' }),
@@ -67,13 +67,25 @@ describe('projectSummaryMarkdown', () => {
       node('sub', { project: true, title: 'All done', childIds: ['b1'] }),
       node('b1', { title: 'Old', status: 'DONE' }),
     ]);
-    // Next + Backlog only: the DONE action is excluded and the all-DONE sub-project is pruned.
+    // Next + Backlog only: the DONE action is excluded, but the all-DONE sub-project's HEADING still
+    // shows (its actions are filtered, not the sub-project itself).
     expect(projectSummaryMarkdown(doc, 'p', { statuses: ['NEXT', 'BACKLOG'] })).toBe(
-      ['# P', '## Do now'].join('\n\n') + '\n',
+      ['# P', '## Do now', '## All done'].join('\n\n') + '\n',
     );
-    // Including DONE brings them back (sub-project no longer pruned).
+    // Including DONE lists the actions beneath it too.
     expect(projectSummaryMarkdown(doc, 'p', { statuses: ['NEXT', 'BACKLOG', 'DONE'] })).toBe(
       ['# P', '## Do now', '## Finished', '## All done', '### Old'].join('\n\n') + '\n',
+    );
+  });
+
+  it('includes a sub-project whose content is only in its description — no actions (#1044)', () => {
+    const doc = workspace([
+      node('p', { project: true, title: 'AI direction', description: 'Top-level notes.', childIds: ['s1', 's2'] }),
+      node('s1', { project: true, title: 'Option A', description: 'Ride the MCP flow.' }), // desc, no actions
+      node('s2', { project: true, title: 'Option B' }), // title only, no desc, no actions
+    ]);
+    expect(projectSummaryMarkdown(doc, 'p')).toBe(
+      ['# AI direction', 'Top-level notes.', '## Option A', 'Ride the MCP flow.', '## Option B'].join('\n\n') + '\n',
     );
   });
 
