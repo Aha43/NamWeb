@@ -100,48 +100,49 @@ export class PostgresAuthStore implements AuthStore {
     );
   }
 
-  async claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number): Promise<boolean> {
+  async claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number, lockId: string): Promise<boolean> {
     // Acquire the in-progress lock atomically (#1051 re-review v3): set `refreshLock` ONLY if the grant
-    // is still at `expectedGeneration` and no LIVE lock is held (an expired lease is reclaimable). Does
-    // NOT bump the generation — that happens at finalizeRefresh, after the new token is durable — so a
-    // concurrent duplicate of the same token sees generation unchanged + a live lock and is told to
-    // retry, never mistaken for reuse. The lock lives in the `data` JSONB beside the generation.
-    // rowCount 0 = not claimed (superseded, gone, or already locked).
+    // is still at `expectedGeneration` and no LIVE lock is held (an expired lease is reclaimable). Stamps
+    // the lock with the caller's random `lockId` (v4 owner nonce). Does NOT bump the generation — that
+    // happens at finalizeRefresh, after the new token is durable — so a concurrent duplicate of the same
+    // token sees generation unchanged + a live lock and is told to retry, never mistaken for reuse. The
+    // lock lives in the `data` JSONB beside the generation. rowCount 0 = not claimed.
     const { rowCount } = await this.pool.query(
       `update mcp.oauth_grants
          set data = jsonb_set(data, '{refreshLock}',
-               jsonb_build_object('generation', $2::int, 'expiresAt', $3::int))
+               jsonb_build_object('generation', $2::int, 'expiresAt', $3::int, 'lockId', $5::text))
        where grant_id = $1
          and (data->>'refreshGeneration')::int = $2
          and (data->'refreshLock' is null
               or (data->'refreshLock'->>'expiresAt')::int <= $4)`,
-      [id, expectedGeneration, nowSeconds() + leaseSeconds, nowSeconds()],
+      [id, expectedGeneration, nowSeconds() + leaseSeconds, nowSeconds(), lockId],
     );
     return (rowCount ?? 0) > 0;
   }
 
-  async finalizeRefresh(id: string, expectedGeneration: number): Promise<number | null> {
-    // Bump the generation (superseding the old token) and drop the lock — only while still at
-    // `expectedGeneration`. Called AFTER the new refresh token is durably issued, so the generation
-    // never runs ahead of a usable replacement. Zero rows = the state moved (lease expired + reclaimed).
+  async finalizeRefresh(id: string, lockId: string): Promise<number | null> {
+    // Bump the generation (superseding the old token) and drop the lock — but ONLY while the live lock is
+    // still ours (`lockId` matches). Called AFTER the new refresh token is durably issued, so the
+    // generation never runs ahead of a usable replacement. Zero rows = the lock is no longer ours (lease
+    // expired + reclaimed by a newer request), so we must NOT advance the generation.
     const { rows } = await this.pool.query<{ gen: number }>(
       `update mcp.oauth_grants
          set data = jsonb_set(data, '{refreshGeneration}',
                  to_jsonb((data->>'refreshGeneration')::int + 1)) - 'refreshLock'
-       where grant_id = $1 and (data->>'refreshGeneration')::int = $2
+       where grant_id = $1 and data->'refreshLock'->>'lockId' = $2
        returning (data->>'refreshGeneration')::int as gen`,
-      [id, expectedGeneration],
+      [id, lockId],
     );
     return rows[0]?.gen ?? null;
   }
 
-  async releaseRefresh(id: string, expectedGeneration: number): Promise<void> {
+  async releaseRefresh(id: string, lockId: string): Promise<void> {
     // Winner path failed: drop the lock WITHOUT advancing the generation, so the still-current token can
-    // be retried. Guarded on our own lock's generation so a later request's lock is never cleared.
+    // be retried. Guarded on our own `lockId` so a newer claimant's lock is never cleared.
     await this.pool.query(
       `update mcp.oauth_grants set data = data - 'refreshLock'
-       where grant_id = $1 and (data->'refreshLock'->>'generation')::int = $2`,
-      [id, expectedGeneration],
+       where grant_id = $1 and data->'refreshLock'->>'lockId' = $2`,
+      [id, lockId],
     );
   }
 

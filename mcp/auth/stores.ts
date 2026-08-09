@@ -39,8 +39,10 @@ export interface GrantData {
   refreshGeneration: number;
   /** Set while a refresh for the token at `generation` is in flight (#1051 re-review v3). A concurrent
    *  duplicate of that same (still-current) token is told to retry rather than mistaken for reuse.
-   *  Lease-bounded so a crashed winner can't wedge the grant forever. Absent = no refresh in progress. */
-  refreshLock?: { generation: number; expiresAt: number };
+   *  Lease-bounded so a crashed winner can't wedge the grant forever. Absent = no refresh in progress.
+   *  `lockId` is a per-claim random nonce (#1051 re-review v4): finalize/release act ONLY on their own
+   *  lock, so a stale winner whose lease expired can't clear or finalize a newer claimant's lock. */
+  refreshLock?: { generation: number; expiresAt: number; lockId: string };
 }
 
 /** An issued MCP access token → the grant it acts under, plus the scopes THIS token carries. A
@@ -91,19 +93,20 @@ export interface AuthStore {
   updateGrantSession(id: string, session: AuthSession): Promise<void>; // rotation write (verify + refresh)
   /** Acquire the in-progress refresh lock for the token at `expectedGeneration` (#1051 re-review v3).
    *  Atomic mutex that does NOT bump the generation: succeeds only if the grant is still at
-   *  `expectedGeneration` and no *live* lock is held (an expired lease is reclaimable). Returns true if
-   *  claimed. This is what serializes concurrent refreshes AND signals "in progress", so a duplicate of
-   *  the same token gets a retry (false) instead of being mistaken for reuse — reuse is decided on the
-   *  generation alone, which advances only at finalizeRefresh. */
-  claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number): Promise<boolean>;
-  /** Finalize a claimed refresh: bump the generation (superseding the old token) and clear the lock,
-   *  only while still at `expectedGeneration`. Call AFTER the new refresh token is durably issued, so
-   *  the generation never advances ahead of a usable replacement. Returns the new generation, or null
-   *  if the state moved (e.g. the lease expired and another request reclaimed). */
-  finalizeRefresh(id: string, expectedGeneration: number): Promise<number | null>;
-  /** Release a claimed refresh WITHOUT advancing the generation (the winner path failed): clear the
-   *  lock for `expectedGeneration` so the still-current token can be retried. */
-  releaseRefresh(id: string, expectedGeneration: number): Promise<void>;
+   *  `expectedGeneration` and no *live* lock is held (an expired lease is reclaimable). Stamps the lock
+   *  with the caller's random `lockId` (v4 owner nonce). Returns true if claimed. This is what serializes
+   *  concurrent refreshes AND signals "in progress", so a duplicate of the same token gets a retry
+   *  (false) instead of being mistaken for reuse — reuse is decided on the generation alone, which
+   *  advances only at finalizeRefresh. */
+  claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number, lockId: string): Promise<boolean>;
+  /** Finalize a claimed refresh: bump the generation (superseding the old token) and clear the lock, but
+   *  ONLY if the live lock is still ours (`lockId` matches). Call AFTER the new refresh token is durably
+   *  issued, so the generation never advances ahead of a usable replacement. Returns the new generation,
+   *  or null if the state moved (e.g. the lease expired and another request reclaimed with a new lockId). */
+  finalizeRefresh(id: string, lockId: string): Promise<number | null>;
+  /** Release a claimed refresh WITHOUT advancing the generation (the winner path failed): clear the lock
+   *  ONLY if it is still ours (`lockId` matches) so a newer claimant's lock is never cleared. */
+  releaseRefresh(id: string, lockId: string): Promise<void>;
   deleteGrant(id: string): Promise<void>; // cascades: drops the grant's access + refresh tokens
 
   // --- Access tokens ---
@@ -161,25 +164,25 @@ export class InMemoryAuthStore implements AuthStore {
     const g = this.grants.get(id);
     if (g) this.grants.set(id, { ...g, session });
   }
-  async claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number) {
+  async claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number, lockId: string) {
     const g = this.grants.get(id);
     if (!g || g.refreshGeneration !== expectedGeneration) return false; // gone, or already superseded
     if (g.refreshLock && g.refreshLock.expiresAt > nowSeconds()) return false; // a live refresh is in progress
-    const refreshLock = { generation: expectedGeneration, expiresAt: nowSeconds() + leaseSeconds };
+    const refreshLock = { generation: expectedGeneration, expiresAt: nowSeconds() + leaseSeconds, lockId };
     this.grants.set(id, { ...g, refreshLock }); // mutex + "in progress" — generation NOT bumped yet
     return true;
   }
-  async finalizeRefresh(id: string, expectedGeneration: number) {
+  async finalizeRefresh(id: string, lockId: string) {
     const g = this.grants.get(id);
-    if (!g || g.refreshGeneration !== expectedGeneration) return null; // state moved (e.g. lease expired + reclaimed)
+    if (!g || g.refreshLock?.lockId !== lockId) return null; // not our lock (lease expired + reclaimed)
     const next = { ...g, refreshGeneration: g.refreshGeneration + 1 };
     delete next.refreshLock; // drop the lock; generation now supersedes the old token
     this.grants.set(id, next);
     return next.refreshGeneration;
   }
-  async releaseRefresh(id: string, expectedGeneration: number) {
+  async releaseRefresh(id: string, lockId: string) {
     const g = this.grants.get(id);
-    if (!g || g.refreshLock?.generation !== expectedGeneration) return; // only clear our own lock
+    if (!g || g.refreshLock?.lockId !== lockId) return; // only clear our OWN lock, never a newer claimant's
     const next = { ...g };
     delete next.refreshLock; // generation unchanged — the current token can be retried
     this.grants.set(id, next);

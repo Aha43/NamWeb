@@ -318,7 +318,8 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     // refresh as in-flight WITHOUT advancing the generation — so a concurrent duplicate of the same
     // still-current token is told to retry here rather than tripping reuse revocation. Losers/duplicates
     // get a retry; nothing is revoked.
-    const claimed = await this.store.claimRefresh(data.grantId, data.generation, REFRESH_LEASE_SECONDS);
+    const lockId = opaqueToken(); // owner nonce (#1051 re-review v4) — finalize/release act only on OUR lock
+    const claimed = await this.store.claimRefresh(data.grantId, data.generation, REFRESH_LEASE_SECONDS, lockId);
     if (!claimed) throw new InvalidGrantError('Concurrent refresh — please retry.');
     try {
       // Winner only: refresh the Supabase session + store it on the grant, then issue the new token
@@ -327,12 +328,12 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       const { session } = await clientForSession(grant.session);
       await this.store.updateGrantSession(data.grantId, session);
       const tokens = await this.issueTokens(data.grantId, nextScopes, data.generation + 1);
-      await this.store.finalizeRefresh(data.grantId, data.generation);
+      await this.store.finalizeRefresh(data.grantId, lockId);
       return tokens;
     } catch (err) {
       // Winner path failed before finalizing: release the lock, leaving the generation unchanged so the
       // client's still-current refresh token succeeds on retry instead of looking like reuse.
-      await this.store.releaseRefresh(data.grantId, data.generation);
+      await this.store.releaseRefresh(data.grantId, lockId);
       throw err;
     }
   }
