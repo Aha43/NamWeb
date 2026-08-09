@@ -216,6 +216,25 @@ describe('SupabaseOAuthProvider', () => {
     expect(lastArg.access_token).toBe('rotated-token');
   });
 
+  it('two concurrent refreshes of the same token: only the CAS winner refreshes Supabase (#1051 re-review)', async () => {
+    const code = await login();
+    const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    clientForSession.mockClear(); // count only the refresh-time calls, not login/verify
+
+    // Fire both with the SAME refresh token. Claim-first: one wins the generation CAS and refreshes the
+    // upstream session; the other loses the CAS and is rejected BEFORE calling clientForSession — so the
+    // upstream Supabase token is rotated exactly once (no double-rotate/desync).
+    const [a, b] = await Promise.allSettled([
+      provider.exchangeRefreshToken(client, tokens.refresh_token!),
+      provider.exchangeRefreshToken(client, tokens.refresh_token!),
+    ]);
+    const outcomes = [a.status, b.status].sort();
+    expect(outcomes).toEqual(['fulfilled', 'rejected']);
+    const rejected = (a.status === 'rejected' ? a : b) as PromiseRejectedResult;
+    expect(String(rejected.reason)).toMatch(/concurrent refresh/i);
+    expect(clientForSession).toHaveBeenCalledTimes(1); // only the winner touched Supabase
+  });
+
   it('revokeToken invalidates the access token', async () => {
     const code = await login();
     const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);

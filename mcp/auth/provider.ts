@@ -308,13 +308,16 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     }
     // A refresh may narrow but never widen the grant (#1050).
     const nextScopes = constrainRefreshScopes(scopes, grant.scopes);
-    // Refresh the Supabase session and store it on the GRANT (shared), bumping the generation so this
-    // refresh token can't be replayed. No desync — verifyAccessToken reads the same grant session.
-    const { session } = await clientForSession(grant.session);
-    // Compare-and-swap the generation (#1051 review, P2): if a concurrent refresh already advanced it,
-    // reject THIS request rather than double-advance (which would falsely trip reuse revocation later).
-    const generation = await this.store.advanceGrant(data.grantId, data.generation, session);
+    // Claim the next generation FIRST as a compare-and-swap (#1051 review, P2 + re-review). Winning the
+    // CAS is the mutex: only the winner proceeds to refresh the upstream Supabase session, so two
+    // concurrent refreshes can't both rotate/consume the upstream token and desync the stored session.
+    // A loser (CAS already moved) is rejected here, before touching Supabase.
+    const generation = await this.store.advanceGrant(data.grantId, data.generation);
     if (generation === null) throw new InvalidGrantError('Concurrent refresh — please retry.');
+    // Winner only: refresh the Supabase session and store it on the GRANT (shared). No desync —
+    // verifyAccessToken reads the same grant session.
+    const { session } = await clientForSession(grant.session);
+    await this.store.updateGrantSession(data.grantId, session);
     return this.issueTokens(data.grantId, nextScopes, generation);
   }
 

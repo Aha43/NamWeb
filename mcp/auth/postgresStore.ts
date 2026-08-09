@@ -100,18 +100,19 @@ export class PostgresAuthStore implements AuthStore {
     );
   }
 
-  async advanceGrant(id: string, expectedGeneration: number, session: AuthSession): Promise<number | null> {
-    // Compare-and-swap on the generation (#1051 review, P2): rotate + bump ONLY if the grant still has
-    // `expectedGeneration`. Zero rows updated = a concurrent refresh already advanced it → return null
-    // (the caller rejects this refresh instead of double-advancing and later mis-flagging reuse).
+  async advanceGrant(id: string, expectedGeneration: number): Promise<number | null> {
+    // Compare-and-swap on the generation (#1051 review, P2 + re-review): bump ONLY if the grant still
+    // has `expectedGeneration`. Zero rows updated = a concurrent refresh already advanced it → return
+    // null (the caller rejects this refresh instead of double-advancing and later mis-flagging reuse).
+    // Pure mutex — does NOT write the session, so the winner alone refreshes upstream Supabase and
+    // stores the rotated session via updateGrantSession (no two concurrent upstream rotations).
     const { rows } = await this.pool.query<{ gen: number }>(
       `update mcp.oauth_grants
-         set data = jsonb_set(
-           jsonb_set(data, '{session}', $2::jsonb),
-           '{refreshGeneration}', to_jsonb((data->>'refreshGeneration')::int + 1))
-       where grant_id = $1 and (data->>'refreshGeneration')::int = $3
+         set data = jsonb_set(data, '{refreshGeneration}',
+           to_jsonb((data->>'refreshGeneration')::int + 1))
+       where grant_id = $1 and (data->>'refreshGeneration')::int = $2
        returning (data->>'refreshGeneration')::int as gen`,
-      [id, JSON.stringify(session), expectedGeneration],
+      [id, expectedGeneration],
     );
     return rows[0]?.gen ?? null;
   }

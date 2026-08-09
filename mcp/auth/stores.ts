@@ -80,12 +80,13 @@ export interface AuthStore {
   // --- Grants (the shared session/family record) ---
   saveGrant(id: string, data: GrantData): Promise<void>;
   getGrant(id: string): Promise<GrantData | undefined>;
-  updateGrantSession(id: string, session: AuthSession): Promise<void>; // verify-time rotation
-  /** Refresh rotation as a compare-and-swap on the generation (#1051 review, P2): rotate the session
-   *  and bump the generation ONLY if it still equals `expectedGeneration`; returns the new generation,
-   *  or null when a concurrent refresh already advanced it (so the caller can reject this one without
-   *  falsely revoking the family). */
-  advanceGrant(id: string, expectedGeneration: number, session: AuthSession): Promise<number | null>;
+  updateGrantSession(id: string, session: AuthSession): Promise<void>; // rotation write (verify + refresh)
+  /** Claim the next refresh generation as a compare-and-swap (#1051 review, P2 + re-review): bump the
+   *  generation ONLY if it still equals `expectedGeneration`; returns the new generation, or null when a
+   *  concurrent refresh already advanced it. This is a pure mutex — it does NOT write the session — so
+   *  the caller can claim FIRST and let only the winner refresh the upstream Supabase session (avoiding
+   *  two concurrent refreshes both rotating/consuming the upstream token). */
+  advanceGrant(id: string, expectedGeneration: number): Promise<number | null>;
   deleteGrant(id: string): Promise<void>; // cascades: drops the grant's access + refresh tokens
 
   // --- Access tokens ---
@@ -143,12 +144,12 @@ export class InMemoryAuthStore implements AuthStore {
     const g = this.grants.get(id);
     if (g) this.grants.set(id, { ...g, session });
   }
-  async advanceGrant(id: string, expectedGeneration: number, session: AuthSession) {
+  async advanceGrant(id: string, expectedGeneration: number) {
     const g = this.grants.get(id);
     if (!g) throw new Error(`No grant ${id}`);
     if (g.refreshGeneration !== expectedGeneration) return null; // lost the CAS — concurrent refresh
     const refreshGeneration = g.refreshGeneration + 1;
-    this.grants.set(id, { ...g, session, refreshGeneration });
+    this.grants.set(id, { ...g, refreshGeneration }); // pure mutex — session written separately by the winner
     return refreshGeneration;
   }
   async deleteGrant(id: string) {

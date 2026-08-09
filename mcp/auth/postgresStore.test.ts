@@ -111,15 +111,16 @@ describe('PostgresAuthStore', () => {
 
   it('advances a grant via compare-and-swap on the generation, returning the new gen (#1051 review)', async () => {
     const { pool, calls } = makePool([{ rows: [{ gen: 3 }] }]);
-    expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2, session)).toBe(3);
+    expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2)).toBe(3);
     expect(calls[0].sql).toContain("'{refreshGeneration}'");
-    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $3"); // the CAS guard
-    expect(calls[0].params).toEqual(['g1', JSON.stringify(session), 2]);
+    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $2"); // the CAS guard
+    expect(calls[0].sql).not.toContain("'{session}'"); // pure mutex — session written separately
+    expect(calls[0].params).toEqual(['g1', 2]);
   });
 
   it('advanceGrant returns null when a concurrent refresh already moved the generation (#1051 review)', async () => {
     const { pool } = makePool([{ rows: [] }]); // WHERE generation = expected matched nothing
-    expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2, session)).toBeNull();
+    expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2)).toBeNull();
   });
 
   it('deletes a grant (tokens cascade via FK)', async () => {
