@@ -1,6 +1,8 @@
 # Remote MCP Server: ChatGPT / Claude web → Nam
 
-Status: **ready for implementation — P0 (design + read-only prototype) in progress.**
+Status: **P0–P4a complete and verified locally** (read tools, write tools, OAuth 2.1/PKCE, per-user
+RLS, Realtime live-updates, persistent OAuth store). **Only P4b — hosting/deploy — remains**; host
+decided (a small Node service first, see "Hosting decision — P4b"). #1046.
 Companion to NamDesktop's `docs/features/external-agent/design.md` (the stdio/file-contract
 version). This is the **web** equivalent: a *remote* MCP server the hosted AI surfaces connect to.
 
@@ -85,6 +87,49 @@ Both are remote-MCP clients, so one OAuth-gated Streamable-HTTP server serves bo
 3. **Third — a small Node service / new backend repo.** Most control, most ops; only if 1–2 don't fit.
 
 Final call deferred; the read-only prototype (below) is host-agnostic (plain Node + `tsx`).
+
+## Hosting decision — P4b (resolved 2026-08-05): **a small Node service first**
+
+The ranking above was written before P1/P2 existed. It no longer holds, because of **how** the server
+was actually built:
+
+- P1/P2 hand-roll the OAuth 2.1 Authorization Server on the **MCP SDK's Express integration** —
+  `mcpAuthRouter` + `StreamableHTTPServerTransport` + `express` (`mcp/server.ts`, `mcp/auth/*`). That
+  is a Node/Express stack.
+- **Supabase Edge Functions (Deno)** and **Cloudflare Workers** would each require **rewriting** that
+  transport + OAuth layer to their runtime — not a deploy, a port. That's real risk against a server
+  that already works end-to-end.
+
+So for the goal *"ship what's built"*, the pragmatic order **inverts**: a **small Node service is now
+#1** (run the existing Express app almost unchanged), with **Supabase Edge Functions kept as a later
+platform-consolidation migration** (attractive once the AI backend also hosts the phase-2 in-app-chat
+proxy — revisit then). Cloudflare Workers: same port cost, deferred.
+
+**Recommended host:** a managed Docker/Node container host — **Fly.io or Railway** (both: a Node
+runtime, a managed Postgres for the token store, automatic TLS, a custom domain, env-secret storage;
+low single-digit $/mo). Vendor is the owner's preference/account; the requirements are what matter:
+
+| Need | Why | Source |
+| --- | --- | --- |
+| Long-running Node process (not serverless-per-request in a foreign runtime) | runs the Express/MCP-SDK app as-is | `mcp/server.ts` |
+| Managed Postgres + `NAM_MCP_DATABASE_URL` | persist OAuth clients/tokens across restarts | `mcp/auth/postgresStore.ts`, `mcp/db/schema.sql` |
+| HTTPS on a stable custom domain | OAuth AS metadata must advertise public `https://` URLs | `NAM_MCP_ISSUER_URL` |
+| Secret env (`NAM_MCP_*`, Supabase URL/keys) | login + row access | `.env.example` |
+
+**Deploy shape (Node service):**
+1. A `Dockerfile` that builds the server bundle (server + its `../src/...` core — see the refactor
+   note below on whether to bundle vs extract) and runs `node`/`tsx mcp/server.ts`.
+2. Provision the managed Postgres; set `NAM_MCP_DATABASE_URL` → `PostgresAuthStore` engages
+   automatically (schema created idempotently, kept off PostgREST).
+3. Point a custom domain at the service; set `NAM_MCP_ISSUER_URL` to that public origin.
+4. **Security posture (verify in prod):** CSRF double-submit cookie, per-IP sign-in rate-limit, and
+   PKCE all active; `NAM_MCP_DEV_NOAUTH` **unset**; secrets only in the host's secret store.
+5. Add `https://…/mcp` as a Claude Custom Connector / ChatGPT developer connector → DCR → PKCE →
+   Supabase login → workspace pick → gated `/mcp`. Smoke read + write + live-SPA (Realtime).
+
+**Shared-core refactor (design P4):** a Node/Docker build **can bundle `../src/...` directly**, so the
+"extract to a shared package" refactor is **not a prerequisite** for this first deploy — do it later
+(it pays off mainly for the phase-2 Edge-Function chat proxy, which *can't* reach into `src/`).
 
 ## Domain-code reuse
 
@@ -184,11 +229,14 @@ Today the SPA pulls on mount and on conflict. To get the NamDesktop "watch it la
 
 ## Issue breakdown (phased)
 
-- **P0** — Design doc (this) + local **read-only** prototype (`mcp/`, no auth, tunnel-connectable). ← #105
+- **P0** — Design doc (this) + local **read-only** prototype (`mcp/`, no auth, tunnel-connectable). ← #105 ✅
 - **P1** — OAuth 2.1/PKCE + authorized-user → Supabase-identity mapping. ← #107 ✅
 - **P2** — Write tools (the `Intent`-mapped set above) with connector-side per-write confirmation. ← #109 ✅
-- **P3** — Supabase Realtime live updates in the SPA.
-- **P4** — Hosting/deploy (Edge Functions vs Workers decision) + the core-extraction refactor.
+- **P3** — Supabase Realtime live updates in the SPA. ✅ (`src/sync/realtime.ts`, wired in `useWorkspace`)
+- **P4a** — Persistent OAuth store (`PostgresAuthStore`). ✅
+- **P4b** — **Hosting/deploy — the remaining gap.** Host **decided: a small Node service first**
+  (see "Hosting decision" above). ← #1046. The core-extraction refactor is deferred (not needed to
+  bundle `../src` in a Node/Docker build).
 
 ## Decisions settled
 - Contract is the Supabase `workspaces` row, not a file; no monitoring/staging mode needed.
@@ -204,7 +252,11 @@ Today the SPA pulls on mount and on conflict. To get the NamDesktop "watch it la
   gated `/mcp`) against the local stack.
 
 ## Open (for design review)
-- Hosting target (Edge Functions vs Cloudflare Workers).
-- OAuth provider choice — **P1 hand-rolls a Supabase-backed `OAuthServerProvider`**; revisit whether
-  to adopt a managed provider (Cloudflare `workers-oauth-provider`, etc.) at P4 hosting.
+- ~~Hosting target~~ — **resolved (P4b): a small Node service first** (see "Hosting decision"); Edge
+  Functions revisited as a later platform-consolidation migration.
+- OAuth provider choice — **P1 hand-rolls a Supabase-backed `OAuthServerProvider`**; the managed-
+  provider swap (e.g. Cloudflare `workers-oauth-provider`) only becomes relevant *if* we later migrate
+  off the Node service to Workers. Not needed for the Node-service deploy.
 - Whether to add a drafts/review mode or rely on connector-side confirmation only.
+- **Concrete host vendor** (Fly.io vs Railway vs …) + domain + prod-Postgres provisioning — owner's
+  call/spend; the deploy shape is vendor-agnostic.
