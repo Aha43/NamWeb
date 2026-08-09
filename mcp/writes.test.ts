@@ -188,9 +188,32 @@ describe('NamWeb MCP write tools', () => {
     expect(committedIntent()).toMatchObject({ type: 'updateTags', tags: ['work', 'home'] });
   });
 
-  it('move_node → moveNode', async () => {
-    await call('move_node', { node_id: 'a1', new_parent_id: 'projects' });
-    expect(committedIntent()).toMatchObject({ type: 'moveNode', id: 'a1', newParentId: 'projects' });
+  it('move_node → moveNode (action to a valid destination)', async () => {
+    await call('move_node', { node_id: 'a1', new_parent_id: 'actions' }); // a1 (action) → Free actions
+    expect(committedIntent()).toMatchObject({ type: 'moveNode', id: 'a1', newParentId: 'actions' });
+  });
+
+  it('create_project rejects a non-project parent (#1054)', async () => {
+    const result = await call('create_project', { title: 'X', parent_id: 'a1' }); // a1 is a leaf action
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/not a project/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
+  it('add_action rejects a non-project parent (#1054)', async () => {
+    const result = await call('add_action', { project_id: 'a1', title: 'X' }); // a1 is a leaf action
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/not a project/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
+  it('move_node rejects an invalid destination — under a leaf action or the projects container (#1054)', async () => {
+    const underAction = await call('move_node', { node_id: 'a1', new_parent_id: 'a1' });
+    expect(underAction.isError).toBe(true);
+    const underContainer = await call('move_node', { node_id: 'a1', new_parent_id: 'projects' });
+    expect(underContainer.isError).toBe(true);
+    expect(firstText(underContainer)).toMatch(/not a valid destination/i);
+    expect(commitIntent).not.toHaveBeenCalled();
   });
 
   it('delete_node picks deleteLeaf for a childless node', async () => {
