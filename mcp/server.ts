@@ -31,6 +31,7 @@ import { createRateLimiter } from './auth/rateLimit';
 import { loadRedirectAllowlist } from './auth/redirectAllowlist';
 import type { AuthStore } from './auth/stores';
 import { PostgresAuthStore } from './auth/postgresStore';
+import { loadEncryptionKey } from './auth/crypto';
 import { ensureSchema, getPool } from './db/pool';
 
 import { pull } from '../src/sync/workspaceClient';
@@ -682,10 +683,19 @@ async function main() {
     // Persist OAuth state to the MCP-owned `mcp` Postgres schema when configured,
     // so clients/tokens survive a restart; otherwise fall back to in-memory.
     let store: AuthStore | undefined;
+    let pgStore: PostgresAuthStore | undefined;
     if (process.env.NAM_MCP_DATABASE_URL) {
       await ensureSchema();
-      store = new PostgresAuthStore(getPool());
-      console.log('OAuth store: Postgres (mcp schema) — persists across restarts.');
+      // At-rest encryption is REQUIRED with the persistent store (#1053) — loadEncryptionKey throws
+      // if NAM_MCP_ENCRYPTION_KEY is missing/malformed, so a deploy can't silently store sessions
+      // in the clear.
+      pgStore = new PostgresAuthStore(getPool(), loadEncryptionKey());
+      store = pgStore;
+      console.log('OAuth store: Postgres (mcp schema) — persistent, sessions encrypted at rest.');
+      // Sweep expired codes/tokens/idle grants/pending periodically (#1053) — pruneExpired was never
+      // scheduled before, so expired rows accumulated.
+      const prune = () => void pgStore!.pruneExpired().catch((e) => console.warn('prune failed:', e));
+      setInterval(prune, 60 * 60_000).unref();
     } else {
       console.warn(
         'OAuth store: in-memory — set NAM_MCP_DATABASE_URL to persist clients/tokens across restarts.',

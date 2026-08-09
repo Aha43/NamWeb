@@ -28,11 +28,15 @@ create index if not exists oauth_codes_expires_at on mcp.oauth_codes (expires_at
 
 -- Grants: the shared per-authorization record (session, scopes, workspace, refresh generation) that
 -- access + refresh tokens reference. Deleting a grant cascades to its tokens (family revocation).
+-- `expires_at` is a sliding window extended on each refresh (#1053) — an idle authorization ages out
+-- and is pruned, giving refresh tokens a lifetime. The `session` inside `data` is encrypted at rest.
 create table if not exists mcp.oauth_grants (
   grant_id   text        primary key,
   data       jsonb       not null,
+  expires_at timestamptz not null,
   created_at timestamptz not null default now()
 );
+create index if not exists oauth_grants_expires_at on mcp.oauth_grants (expires_at);
 
 -- Issued access tokens → their grant.
 create table if not exists mcp.oauth_access_tokens (
