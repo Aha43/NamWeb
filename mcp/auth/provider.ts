@@ -39,6 +39,9 @@ import { issueCsrf, verifyCsrf } from './csrf';
 
 const AUTH_CODE_TTL_SECONDS = 600; // 10 min — time to complete the code exchange
 const PENDING_LOGIN_TTL_SECONDS = 600; // 10 min — time to pick a workspace after sign-in
+// How long a single refresh may hold its in-progress lock (#1051 re-review). Long enough to cover a
+// Supabase session refresh + our token writes; short enough that a crashed winner frees the grant fast.
+const REFRESH_LEASE_SECONDS = 30;
 
 function opaqueToken(): string {
   return randomBytes(32).toString('base64url');
@@ -258,18 +261,29 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     _codeVerifier?: string,
     redirectUri?: string,
   ): Promise<OAuthTokens> {
-    const data = await this.store.getCode(authorizationCode);
+    // Claim the code atomically (#1051 H2) — a DELETE…RETURNING so two concurrent exchanges can't
+    // both read it and mint independent token families.
+    const data = await this.store.takeCode(authorizationCode);
     if (!data || data.clientId !== client.client_id) {
       throw new InvalidGrantError('Invalid authorization code');
     }
-    await this.store.deleteCode(authorizationCode); // single use
     if (data.expiresAt < nowSeconds()) {
       throw new InvalidGrantError('Authorization code expired');
     }
     if (redirectUri && redirectUri !== data.redirectUri) {
       throw new InvalidGrantError('redirect_uri mismatch');
     }
-    return this.issueTokens(client.client_id, data.scopes, data.session, data.workspace);
+    // Open a grant: the shared session/scope/workspace record every token of this authorization
+    // references (#1051). The first refresh token is minted at generation 0.
+    const grantId = opaqueToken();
+    await this.store.saveGrant(grantId, {
+      clientId: data.clientId,
+      scopes: data.scopes,
+      workspace: data.workspace,
+      session: data.session,
+      refreshGeneration: 0,
+    });
+    return this.issueTokens(grantId, data.scopes, 0);
   }
 
   async exchangeRefreshToken(
@@ -277,16 +291,51 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     refreshToken: string,
     scopes?: string[],
   ): Promise<OAuthTokens> {
-    const data = await this.store.takeRefreshToken(refreshToken); // rotate
-    if (!data || data.clientId !== client.client_id) {
+    // Non-consuming read — a refresh token is validated by GENERATION, not deleted, so a replay of a
+    // superseded token is still detectable (#1051 M5).
+    const data = await this.store.getRefreshToken(refreshToken);
+    if (!data) throw new InvalidGrantError('Invalid refresh token');
+    const grant = await this.store.getGrant(data.grantId);
+    if (!grant || grant.clientId !== client.client_id) {
       throw new InvalidGrantError('Invalid refresh token');
     }
-    // A refresh may narrow but never widen the grant (#1050) — reject scope escalation before doing
-    // any work (the Supabase refresh below).
-    const nextScopes = constrainRefreshScopes(scopes, data.scopes);
-    // Refresh the Supabase session too, so the two token lifetimes stay aligned.
-    const { session } = await clientForSession(data.session);
-    return this.issueTokens(client.client_id, nextScopes, session, data.workspace);
+    // Reuse detection is decided on the GENERATION alone (#1051 re-review v3). The generation advances
+    // only once a replacement refresh token is durably issued (finalizeRefresh), so a token below it is
+    // genuinely superseded — treat its use as a stolen-token replay and revoke the whole family. A
+    // refresh merely *in progress* does NOT advance the generation, so a benign concurrent duplicate is
+    // NOT caught here; it's handled by the claim below.
+    if (data.generation !== grant.refreshGeneration) {
+      if (data.generation < grant.refreshGeneration) {
+        await this.store.deleteGrant(data.grantId);
+        throw new InvalidGrantError('Refresh token reuse detected — this authorization was revoked.');
+      }
+      throw new InvalidGrantError('Invalid refresh token');
+    }
+    // A refresh may narrow but never widen the grant (#1050).
+    const nextScopes = constrainRefreshScopes(scopes, grant.scopes);
+    // Acquire the in-progress lock for this token BEFORE touching Supabase (#1051 re-review). This both
+    // serializes concurrent refreshes (only the winner refreshes the upstream session) and marks the
+    // refresh as in-flight WITHOUT advancing the generation — so a concurrent duplicate of the same
+    // still-current token is told to retry here rather than tripping reuse revocation. Losers/duplicates
+    // get a retry; nothing is revoked.
+    const lockId = opaqueToken(); // owner nonce (#1051 re-review v4) — finalize/release act only on OUR lock
+    const claimed = await this.store.claimRefresh(data.grantId, data.generation, REFRESH_LEASE_SECONDS, lockId);
+    if (!claimed) throw new InvalidGrantError('Concurrent refresh — please retry.');
+    try {
+      // Winner only: refresh the Supabase session + store it on the grant, then issue the new token
+      // family. `return await` so a rejection is caught. The generation is advanced LAST (finalize),
+      // after the replacement refresh token is durably persisted — it never runs ahead of a usable token.
+      const { session } = await clientForSession(grant.session);
+      await this.store.updateGrantSession(data.grantId, session);
+      const tokens = await this.issueTokens(data.grantId, nextScopes, data.generation + 1);
+      await this.store.finalizeRefresh(data.grantId, lockId);
+      return tokens;
+    } catch (err) {
+      // Winner path failed before finalizing: release the lock, leaving the generation unchanged so the
+      // client's still-current refresh token succeeds on retry instead of looking like reuse.
+      await this.store.releaseRefresh(data.grantId, lockId);
+      throw err;
+    }
   }
 
   /** Verify an MCP access token and resolve the per-user Supabase client (in `extra`). */
@@ -297,45 +346,55 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       await this.store.deleteAccessToken(token);
       throw new InvalidTokenError('Access token expired');
     }
-    // Build the user's Supabase client now, refreshing the session if needed, and
-    // persist any rotation so the next call starts from the live session.
-    const { client, session } = await clientForSession(data.session);
-    if (session !== data.session) await this.store.updateAccessSession(token, session);
+    const grant = await this.store.getGrant(data.grantId);
+    if (!grant) throw new InvalidTokenError('Invalid access token'); // grant revoked
+    // Build the user's Supabase client, refreshing the session if needed, and persist any rotation on
+    // the GRANT so every token of this authorization (incl. the refresh token) sees the live session.
+    const { client, session } = await clientForSession(grant.session);
+    if (session !== grant.session) await this.store.updateGrantSession(data.grantId, session);
 
     return {
       token,
-      clientId: data.clientId,
+      clientId: grant.clientId,
+      // THIS token's scopes (may be a narrowed subset of the grant), not the grant's full set —
+      // otherwise a refresh-narrowed read-only token would still expose write tools (#1051 review, P1).
       scopes: data.scopes,
       expiresAt: data.expiresAt,
-      extra: { supabase: client, workspace: data.workspace },
+      extra: { supabase: client, workspace: grant.workspace },
     };
   }
 
   async revokeToken(
-    _client: OAuthClientInformationFull,
+    client: OAuthClientInformationFull,
     request: OAuthTokenRevocationRequest,
   ): Promise<void> {
     if (!request.token) throw new InvalidRequestError('Missing token');
-    await this.store.deleteAccessToken(request.token);
-    await this.store.takeRefreshToken(request.token);
+    // Resolve the token (access or refresh) to its grant, verify the caller owns it, then revoke the
+    // whole family (#1051 M5). Unknown token → no-op (RFC 7009: revocation is idempotent).
+    const access = await this.store.getAccessToken(request.token);
+    const refresh = access ? undefined : await this.store.getRefreshToken(request.token);
+    const grantId = access?.grantId ?? refresh?.grantId;
+    if (!grantId) return;
+    const grant = await this.store.getGrant(grantId);
+    if (grant && grant.clientId !== client.client_id) {
+      throw new InvalidRequestError('Token was not issued to this client');
+    }
+    await this.store.deleteGrant(grantId);
   }
 
   private async issueTokens(
-    clientId: string,
+    grantId: string,
     scopes: string[],
-    session: AuthSession,
-    workspace: string,
+    generation: number,
   ): Promise<OAuthTokens> {
     const accessToken = opaqueToken();
     const refreshToken = opaqueToken();
     await this.store.saveAccessToken(accessToken, {
-      clientId,
-      scopes,
-      session,
-      workspace,
+      grantId,
+      scopes, // this token's scopes (enforced at /mcp) — a refresh may have narrowed them (#1051 review)
       expiresAt: nowSeconds() + this.accessTtl,
     });
-    await this.store.saveRefreshToken(refreshToken, { clientId, scopes, session, workspace });
+    await this.store.saveRefreshToken(refreshToken, { grantId, generation });
     return {
       access_token: accessToken,
       token_type: 'bearer',

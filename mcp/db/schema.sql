@@ -1,4 +1,4 @@
--- MCP-owned OAuth Authorization Server storage (P4a, issue #113).
+-- MCP-owned OAuth Authorization Server storage (P4a #113; grant/family model #1051).
 --
 -- A dedicated `mcp` schema, created and managed by the MCP server itself — kept
 -- out of NamDesktop's `public` app schema (whose migrations are NamDesktop's
@@ -26,19 +26,32 @@ create table if not exists mcp.oauth_codes (
 );
 create index if not exists oauth_codes_expires_at on mcp.oauth_codes (expires_at);
 
--- Issued access tokens → the Supabase session they act as.
+-- Grants: the shared per-authorization record (session, scopes, workspace, refresh generation) that
+-- access + refresh tokens reference. Deleting a grant cascades to its tokens (family revocation).
+create table if not exists mcp.oauth_grants (
+  grant_id   text        primary key,
+  data       jsonb       not null,
+  created_at timestamptz not null default now()
+);
+
+-- Issued access tokens → their grant.
 create table if not exists mcp.oauth_access_tokens (
   token      text        primary key,
+  grant_id   text        not null references mcp.oauth_grants (grant_id) on delete cascade,
   data       jsonb       not null,
   expires_at timestamptz not null
 );
 create index if not exists oauth_access_tokens_expires_at on mcp.oauth_access_tokens (expires_at);
+create index if not exists oauth_access_tokens_grant on mcp.oauth_access_tokens (grant_id);
 
--- Issued refresh tokens (single use — taken on refresh; Supabase rotates them).
+-- Issued refresh tokens → their grant + the generation they were minted at. NOT deleted on use:
+-- a refresh token with a generation below the grant's current one is a replay (reuse detection).
 create table if not exists mcp.oauth_refresh_tokens (
-  token text  primary key,
-  data  jsonb not null
+  token    text  primary key,
+  grant_id text  not null references mcp.oauth_grants (grant_id) on delete cascade,
+  data     jsonb not null
 );
+create index if not exists oauth_refresh_tokens_grant on mcp.oauth_refresh_tokens (grant_id);
 
 -- Authenticated-but-not-yet-workspace-chosen logins, held between the credential
 -- POST and the workspace-pick POST (single use; short TTL).

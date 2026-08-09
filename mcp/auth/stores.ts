@@ -1,15 +1,18 @@
-// Storage seam for the OAuth Authorization Server (P1, issue #107).
+// Storage seam for the OAuth Authorization Server (P1 #107; grant/family model #1051).
 //
-// Everything stateful the AS needs — registered clients (DCR), one-time auth
-// codes, and issued access/refresh tokens — lives behind these interfaces so the
-// in-memory implementation here can be swapped for a persistent one at P4 hosting
-// (and so a future managed-AS swap stays a provider concern, not a rewrite).
+// Everything stateful the AS needs lives behind this interface so the in-memory
+// implementation here can be swapped for the persistent Postgres one (P4a).
 //
-// In-memory means: a server restart drops all of it, so connectors re-authorize.
-// That is acceptable for the local-first P1; persistence is a P4 concern.
+// Grant/family model (#1051): the durable per-authorization state — the Supabase session, granted
+// scopes, workspace — lives in ONE **grant** record. Access and refresh tokens are thin references
+// to a grant, so (a) a session rotation is written once and both tokens see it (no desync), and
+// (b) refresh tokens carry a generation checked against the grant's, giving reuse detection: a
+// replayed (superseded) refresh token revokes the whole family.
 
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { AuthSession } from '@supabase/supabase-js';
+
+const nowSeconds = () => Math.floor(Date.now() / 1000);
 
 /** An issued auth code, bound to the PKCE challenge and the Supabase session captured at login. */
 export interface AuthCodeData {
@@ -23,21 +26,39 @@ export interface AuthCodeData {
   expiresAt: number; // epoch seconds
 }
 
-/** An issued MCP access token → the Supabase session it acts as. */
-export interface AccessTokenData {
+/** The shared per-authorization record. Access + refresh tokens reference it by id. */
+export interface GrantData {
   clientId: string;
   scopes: string[];
-  session: AuthSession;
   workspace: string;
+  /** The Supabase session; rotated in place (shared by every token of this grant). */
+  session: AuthSession;
+  /** The currently-valid refresh generation. This advances ONLY when a new refresh token has been
+   *  durably issued (finalizeRefresh), so a refresh token with a *lower* generation is genuinely
+   *  superseded — a replay to revoke on. A refresh merely *in progress* does NOT advance this. */
+  refreshGeneration: number;
+  /** Set while a refresh for the token at `generation` is in flight (#1051 re-review v3). A concurrent
+   *  duplicate of that same (still-current) token is told to retry rather than mistaken for reuse.
+   *  Lease-bounded so a crashed winner can't wedge the grant forever. Absent = no refresh in progress.
+   *  `lockId` is a per-claim random nonce (#1051 re-review v4): finalize/release act ONLY on their own
+   *  lock, so a stale winner whose lease expired can't clear or finalize a newer claimant's lock. */
+  refreshLock?: { generation: number; expiresAt: number; lockId: string };
+}
+
+/** An issued MCP access token → the grant it acts under, plus the scopes THIS token carries. A
+ *  refresh may narrow scopes, so the per-token scopes can be a subset of the grant's (#1051 review):
+ *  the resource endpoint must gate on these, not the grant's full set. */
+export interface AccessTokenData {
+  grantId: string;
+  scopes: string[];
   expiresAt: number; // epoch seconds (our MCP token TTL)
 }
 
-/** An issued MCP refresh token → the Supabase session to refresh from. */
+/** An issued MCP refresh token → its grant + the generation it was minted at (kept, not deleted on
+ *  use, so a replay of a superseded token is detectable). */
 export interface RefreshTokenData {
-  clientId: string;
-  scopes: string[];
-  session: AuthSession;
-  workspace: string;
+  grantId: string;
+  generation: number;
 }
 
 /**
@@ -60,30 +81,53 @@ export interface AuthStore {
   getClient(clientId: string): Promise<OAuthClientInformationFull | undefined>;
   saveClient(client: OAuthClientInformationFull): Promise<void>;
 
-  // --- Authorization codes (single use) ---
+  // --- Authorization codes ---
   saveCode(code: string, data: AuthCodeData): Promise<void>;
-  getCode(code: string): Promise<AuthCodeData | undefined>;
+  getCode(code: string): Promise<AuthCodeData | undefined>; // non-consuming (PKCE challenge lookup)
+  takeCode(code: string): Promise<AuthCodeData | undefined>; // atomic single-use claim (#1051 H2)
   deleteCode(code: string): Promise<void>;
+
+  // --- Grants (the shared session/family record) ---
+  saveGrant(id: string, data: GrantData): Promise<void>;
+  getGrant(id: string): Promise<GrantData | undefined>;
+  updateGrantSession(id: string, session: AuthSession): Promise<void>; // rotation write (verify + refresh)
+  /** Acquire the in-progress refresh lock for the token at `expectedGeneration` (#1051 re-review v3).
+   *  Atomic mutex that does NOT bump the generation: succeeds only if the grant is still at
+   *  `expectedGeneration` and no *live* lock is held (an expired lease is reclaimable). Stamps the lock
+   *  with the caller's random `lockId` (v4 owner nonce). Returns true if claimed. This is what serializes
+   *  concurrent refreshes AND signals "in progress", so a duplicate of the same token gets a retry
+   *  (false) instead of being mistaken for reuse — reuse is decided on the generation alone, which
+   *  advances only at finalizeRefresh. */
+  claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number, lockId: string): Promise<boolean>;
+  /** Finalize a claimed refresh: bump the generation (superseding the old token) and clear the lock, but
+   *  ONLY if the live lock is still ours (`lockId` matches). Call AFTER the new refresh token is durably
+   *  issued, so the generation never advances ahead of a usable replacement. Returns the new generation,
+   *  or null if the state moved (e.g. the lease expired and another request reclaimed with a new lockId). */
+  finalizeRefresh(id: string, lockId: string): Promise<number | null>;
+  /** Release a claimed refresh WITHOUT advancing the generation (the winner path failed): clear the lock
+   *  ONLY if it is still ours (`lockId` matches) so a newer claimant's lock is never cleared. */
+  releaseRefresh(id: string, lockId: string): Promise<void>;
+  deleteGrant(id: string): Promise<void>; // cascades: drops the grant's access + refresh tokens
 
   // --- Access tokens ---
   saveAccessToken(token: string, data: AccessTokenData): Promise<void>;
   getAccessToken(token: string): Promise<AccessTokenData | undefined>;
-  updateAccessSession(token: string, session: AuthSession): Promise<void>;
   deleteAccessToken(token: string): Promise<void>;
 
-  // --- Refresh tokens (single use — Supabase rotates them) ---
+  // --- Refresh tokens (kept for reuse detection; validated by generation, not deleted on use) ---
   saveRefreshToken(token: string, data: RefreshTokenData): Promise<void>;
-  takeRefreshToken(token: string): Promise<RefreshTokenData | undefined>;
+  getRefreshToken(token: string): Promise<RefreshTokenData | undefined>;
 
   // --- Pending logins (authenticated, awaiting workspace pick; single use) ---
   savePendingLogin(id: string, data: PendingLoginData): Promise<void>;
   takePendingLogin(id: string): Promise<PendingLoginData | undefined>;
 }
 
-/** Process-local, non-persistent store. Fine for local P1; replace at P4. */
+/** Process-local, non-persistent store. Fine for local P1; the Postgres store persists at P4a. */
 export class InMemoryAuthStore implements AuthStore {
   private clients = new Map<string, OAuthClientInformationFull>();
   private codes = new Map<string, AuthCodeData>();
+  private grants = new Map<string, GrantData>();
   private accessTokens = new Map<string, AccessTokenData>();
   private refreshTokens = new Map<string, RefreshTokenData>();
   private pendingLogins = new Map<string, PendingLoginData>();
@@ -101,8 +145,52 @@ export class InMemoryAuthStore implements AuthStore {
   async getCode(code: string) {
     return this.codes.get(code);
   }
+  async takeCode(code: string) {
+    const data = this.codes.get(code);
+    this.codes.delete(code);
+    return data;
+  }
   async deleteCode(code: string) {
     this.codes.delete(code);
+  }
+
+  async saveGrant(id: string, data: GrantData) {
+    this.grants.set(id, data);
+  }
+  async getGrant(id: string) {
+    return this.grants.get(id);
+  }
+  async updateGrantSession(id: string, session: AuthSession) {
+    const g = this.grants.get(id);
+    if (g) this.grants.set(id, { ...g, session });
+  }
+  async claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number, lockId: string) {
+    const g = this.grants.get(id);
+    if (!g || g.refreshGeneration !== expectedGeneration) return false; // gone, or already superseded
+    if (g.refreshLock && g.refreshLock.expiresAt > nowSeconds()) return false; // a live refresh is in progress
+    const refreshLock = { generation: expectedGeneration, expiresAt: nowSeconds() + leaseSeconds, lockId };
+    this.grants.set(id, { ...g, refreshLock }); // mutex + "in progress" — generation NOT bumped yet
+    return true;
+  }
+  async finalizeRefresh(id: string, lockId: string) {
+    const g = this.grants.get(id);
+    if (!g || g.refreshLock?.lockId !== lockId) return null; // not our lock (lease expired + reclaimed)
+    const next = { ...g, refreshGeneration: g.refreshGeneration + 1 };
+    delete next.refreshLock; // drop the lock; generation now supersedes the old token
+    this.grants.set(id, next);
+    return next.refreshGeneration;
+  }
+  async releaseRefresh(id: string, lockId: string) {
+    const g = this.grants.get(id);
+    if (!g || g.refreshLock?.lockId !== lockId) return; // only clear our OWN lock, never a newer claimant's
+    const next = { ...g };
+    delete next.refreshLock; // generation unchanged — the current token can be retried
+    this.grants.set(id, next);
+  }
+  async deleteGrant(id: string) {
+    this.grants.delete(id);
+    for (const [t, d] of this.accessTokens) if (d.grantId === id) this.accessTokens.delete(t);
+    for (const [t, d] of this.refreshTokens) if (d.grantId === id) this.refreshTokens.delete(t);
   }
 
   async saveAccessToken(token: string, data: AccessTokenData) {
@@ -111,10 +199,6 @@ export class InMemoryAuthStore implements AuthStore {
   async getAccessToken(token: string) {
     return this.accessTokens.get(token);
   }
-  async updateAccessSession(token: string, session: AuthSession) {
-    const existing = this.accessTokens.get(token);
-    if (existing) this.accessTokens.set(token, { ...existing, session });
-  }
   async deleteAccessToken(token: string) {
     this.accessTokens.delete(token);
   }
@@ -122,10 +206,8 @@ export class InMemoryAuthStore implements AuthStore {
   async saveRefreshToken(token: string, data: RefreshTokenData) {
     this.refreshTokens.set(token, data);
   }
-  async takeRefreshToken(token: string) {
-    const data = this.refreshTokens.get(token);
-    this.refreshTokens.delete(token);
-    return data;
+  async getRefreshToken(token: string) {
+    return this.refreshTokens.get(token);
   }
 
   async savePendingLogin(id: string, data: PendingLoginData) {

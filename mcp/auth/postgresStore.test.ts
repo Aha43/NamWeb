@@ -3,10 +3,11 @@ import { describe, expect, it } from 'vitest';
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { AuthSession } from '@supabase/supabase-js';
 import { PostgresAuthStore } from './postgresStore';
-import type { AccessTokenData, AuthCodeData } from './stores';
+import type { AccessTokenData, AuthCodeData, RefreshTokenData } from './stores';
 
 interface QueryResult {
   rows: unknown[];
+  rowCount?: number;
 }
 
 /** Fake pg.Pool: records (sql, params) per call, returns queued results in order. */
@@ -64,10 +65,22 @@ describe('PostgresAuthStore', () => {
     expect(expiredStore.calls[1].params).toEqual(['k']);
   });
 
-  it('drops an expired access token on read', async () => {
-    const expired: AccessTokenData = {
-      clientId: 'c1', scopes: [], session, workspace: 'default', expiresAt: past,
+  it('claims a code atomically via DELETE ... RETURNING (#1051)', async () => {
+    const live: AuthCodeData = {
+      clientId: 'c1', codeChallenge: 'x', redirectUri: 'r', scopes: [], session,
+      workspace: 'default', expiresAt: future,
     };
+    const { pool, calls } = makePool([{ rows: [{ data: live }] }]);
+    expect(await new PostgresAuthStore(pool).takeCode('k')).toEqual(live);
+    expect(calls[0].sql).toContain('delete from mcp.oauth_codes');
+    expect(calls[0].sql).toContain('returning data');
+
+    const empty = makePool([{ rows: [] }]);
+    expect(await new PostgresAuthStore(empty.pool).takeCode('gone')).toBeUndefined();
+  });
+
+  it('drops an expired access token on read', async () => {
+    const expired: AccessTokenData = { grantId: 'g1', scopes: ['nam.read'], expiresAt: past };
     const { pool, calls } = makePool([{ rows: [{ data: expired }] }, { rows: [] }]);
     const store = new PostgresAuthStore(pool);
 
@@ -75,24 +88,73 @@ describe('PostgresAuthStore', () => {
     expect(calls[1].sql).toContain('delete from mcp.oauth_access_tokens');
   });
 
-  it('patches just the session on updateAccessSession', async () => {
+  it('saves an access token with its grant_id column + per-token scopes', async () => {
+    const data: AccessTokenData = { grantId: 'g1', scopes: ['nam.read'], expiresAt: future };
     const { pool, calls } = makePool();
-    await new PostgresAuthStore(pool).updateAccessSession('t', session);
-
-    expect(calls[0].sql).toContain("jsonb_set(data, '{session}'");
-    expect(calls[0].params).toEqual(['t', JSON.stringify(session)]);
+    await new PostgresAuthStore(pool).saveAccessToken('t', data);
+    expect(calls[0].sql).toContain('mcp.oauth_access_tokens');
+    expect(calls[0].params).toEqual(['t', 'g1', data, future]);
   });
 
-  it('takes a refresh token via DELETE ... RETURNING', async () => {
-    const data = { clientId: 'c1', scopes: [], session };
+  it('reads a refresh token without consuming it (reuse detection needs the row)', async () => {
+    const data: RefreshTokenData = { grantId: 'g1', generation: 2 };
     const { pool, calls } = makePool([{ rows: [{ data }] }]);
-    const store = new PostgresAuthStore(pool);
+    expect(await new PostgresAuthStore(pool).getRefreshToken('r')).toEqual(data);
+    expect(calls[0].sql).toContain('select data from mcp.oauth_refresh_tokens');
+  });
 
-    expect(await store.takeRefreshToken('r')).toEqual(data);
-    expect(calls[0].sql).toContain('delete from mcp.oauth_refresh_tokens');
-    expect(calls[0].sql).toContain('returning data');
+  it('patches just the session on updateGrantSession', async () => {
+    const { pool, calls } = makePool();
+    await new PostgresAuthStore(pool).updateGrantSession('g1', session);
+    expect(calls[0].sql).toContain("jsonb_set(data, '{session}'");
+    expect(calls[0].params).toEqual(['g1', JSON.stringify(session)]);
+  });
 
-    const empty = makePool([{ rows: [] }]);
-    expect(await new PostgresAuthStore(empty.pool).takeRefreshToken('gone')).toBeUndefined();
+  it('claimRefresh acquires the lock at the generation with no live lock, stamping the lockId (#1051 re-review)', async () => {
+    const { pool, calls } = makePool([{ rowCount: 1, rows: [] }]);
+    expect(await new PostgresAuthStore(pool).claimRefresh('g1', 2, 30, 'lock-abc')).toBe(true);
+    expect(calls[0].sql).toContain("'{refreshLock}'"); // sets the in-progress lock
+    expect(calls[0].sql).toContain("'lockId'"); // stamped with the owner nonce
+    expect(calls[0].sql).not.toContain("'{refreshGeneration}'"); // does NOT advance the generation
+    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $2"); // at this generation
+    expect(calls[0].sql).toContain("data->'refreshLock' is null"); // and no live lock
+    expect(calls[0].params[0]).toBe('g1');
+    expect(calls[0].params[1]).toBe(2);
+    expect(calls[0].params[4]).toBe('lock-abc');
+  });
+
+  it('claimRefresh returns false when the row was already locked/superseded (rowCount 0)', async () => {
+    const { pool } = makePool([{ rowCount: 0, rows: [] }]);
+    expect(await new PostgresAuthStore(pool).claimRefresh('g1', 2, 30, 'lock-abc')).toBe(false);
+  });
+
+  it('finalizeRefresh bumps the generation and drops the lock, guarded on the OWN lockId (#1051 re-review)', async () => {
+    const { pool, calls } = makePool([{ rows: [{ gen: 3 }] }]);
+    expect(await new PostgresAuthStore(pool).finalizeRefresh('g1', 'lock-abc')).toBe(3);
+    expect(calls[0].sql).toContain("'{refreshGeneration}'"); // advances the generation
+    expect(calls[0].sql).toContain("- 'refreshLock'"); // and clears the lock
+    expect(calls[0].sql).toContain("data->'refreshLock'->>'lockId' = $2"); // only OUR lock
+    expect(calls[0].params).toEqual(['g1', 'lock-abc']);
+  });
+
+  it('finalizeRefresh returns null when the lock is no longer ours (lease expired + reclaimed)', async () => {
+    const { pool } = makePool([{ rows: [] }]);
+    expect(await new PostgresAuthStore(pool).finalizeRefresh('g1', 'lock-abc')).toBeNull();
+  });
+
+  it('releaseRefresh drops only its OWN lock (by lockId), leaving the generation unchanged (#1051 re-review)', async () => {
+    const { pool, calls } = makePool();
+    await new PostgresAuthStore(pool).releaseRefresh('g1', 'lock-abc');
+    expect(calls[0].sql).toContain("data - 'refreshLock'"); // clears the lock
+    expect(calls[0].sql).not.toContain("'{refreshGeneration}'"); // generation NOT touched
+    expect(calls[0].sql).toContain("data->'refreshLock'->>'lockId' = $2"); // only our lock
+    expect(calls[0].params).toEqual(['g1', 'lock-abc']);
+  });
+
+  it('deletes a grant (tokens cascade via FK)', async () => {
+    const { pool, calls } = makePool();
+    await new PostgresAuthStore(pool).deleteGrant('g1');
+    expect(calls[0].sql).toContain('delete from mcp.oauth_grants');
+    expect(calls[0].params).toEqual(['g1']);
   });
 });
