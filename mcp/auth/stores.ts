@@ -12,6 +12,8 @@
 import type { OAuthClientInformationFull } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { AuthSession } from '@supabase/supabase-js';
 
+const nowSeconds = () => Math.floor(Date.now() / 1000);
+
 /** An issued auth code, bound to the PKCE challenge and the Supabase session captured at login. */
 export interface AuthCodeData {
   clientId: string;
@@ -31,8 +33,14 @@ export interface GrantData {
   workspace: string;
   /** The Supabase session; rotated in place (shared by every token of this grant). */
   session: AuthSession;
-  /** The currently-valid refresh generation; a refresh token with a lower generation is a replay. */
+  /** The currently-valid refresh generation. This advances ONLY when a new refresh token has been
+   *  durably issued (finalizeRefresh), so a refresh token with a *lower* generation is genuinely
+   *  superseded — a replay to revoke on. A refresh merely *in progress* does NOT advance this. */
   refreshGeneration: number;
+  /** Set while a refresh for the token at `generation` is in flight (#1051 re-review v3). A concurrent
+   *  duplicate of that same (still-current) token is told to retry rather than mistaken for reuse.
+   *  Lease-bounded so a crashed winner can't wedge the grant forever. Absent = no refresh in progress. */
+  refreshLock?: { generation: number; expiresAt: number };
 }
 
 /** An issued MCP access token → the grant it acts under, plus the scopes THIS token carries. A
@@ -81,18 +89,21 @@ export interface AuthStore {
   saveGrant(id: string, data: GrantData): Promise<void>;
   getGrant(id: string): Promise<GrantData | undefined>;
   updateGrantSession(id: string, session: AuthSession): Promise<void>; // rotation write (verify + refresh)
-  /** Claim the next refresh generation as a compare-and-swap (#1051 review, P2 + re-review): bump the
-   *  generation ONLY if it still equals `expectedGeneration`; returns the new generation, or null when a
-   *  concurrent refresh already advanced it. This is a pure mutex — it does NOT write the session — so
-   *  the caller can claim FIRST and let only the winner refresh the upstream Supabase session (avoiding
-   *  two concurrent refreshes both rotating/consuming the upstream token). */
-  advanceGrant(id: string, expectedGeneration: number): Promise<number | null>;
-  /** Undo a won generation claim (#1051 re-review, P2 failure-atomicity): if advanceGrant advanced the
-   *  generation to `advancedGeneration` but the winner's refresh path then failed (Supabase refresh /
-   *  session store / token persistence), roll it back by one so the client's still-current refresh token
-   *  works on retry instead of tripping reuse revocation. CAS-guarded on `advancedGeneration` so it only
-   *  ever undoes OUR own claim — never a later, successful advance. */
-  rollbackGeneration(id: string, advancedGeneration: number): Promise<void>;
+  /** Acquire the in-progress refresh lock for the token at `expectedGeneration` (#1051 re-review v3).
+   *  Atomic mutex that does NOT bump the generation: succeeds only if the grant is still at
+   *  `expectedGeneration` and no *live* lock is held (an expired lease is reclaimable). Returns true if
+   *  claimed. This is what serializes concurrent refreshes AND signals "in progress", so a duplicate of
+   *  the same token gets a retry (false) instead of being mistaken for reuse — reuse is decided on the
+   *  generation alone, which advances only at finalizeRefresh. */
+  claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number): Promise<boolean>;
+  /** Finalize a claimed refresh: bump the generation (superseding the old token) and clear the lock,
+   *  only while still at `expectedGeneration`. Call AFTER the new refresh token is durably issued, so
+   *  the generation never advances ahead of a usable replacement. Returns the new generation, or null
+   *  if the state moved (e.g. the lease expired and another request reclaimed). */
+  finalizeRefresh(id: string, expectedGeneration: number): Promise<number | null>;
+  /** Release a claimed refresh WITHOUT advancing the generation (the winner path failed): clear the
+   *  lock for `expectedGeneration` so the still-current token can be retried. */
+  releaseRefresh(id: string, expectedGeneration: number): Promise<void>;
   deleteGrant(id: string): Promise<void>; // cascades: drops the grant's access + refresh tokens
 
   // --- Access tokens ---
@@ -150,18 +161,28 @@ export class InMemoryAuthStore implements AuthStore {
     const g = this.grants.get(id);
     if (g) this.grants.set(id, { ...g, session });
   }
-  async advanceGrant(id: string, expectedGeneration: number) {
+  async claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number) {
     const g = this.grants.get(id);
-    if (!g) throw new Error(`No grant ${id}`);
-    if (g.refreshGeneration !== expectedGeneration) return null; // lost the CAS — concurrent refresh
-    const refreshGeneration = g.refreshGeneration + 1;
-    this.grants.set(id, { ...g, refreshGeneration }); // pure mutex — session written separately by the winner
-    return refreshGeneration;
+    if (!g || g.refreshGeneration !== expectedGeneration) return false; // gone, or already superseded
+    if (g.refreshLock && g.refreshLock.expiresAt > nowSeconds()) return false; // a live refresh is in progress
+    const refreshLock = { generation: expectedGeneration, expiresAt: nowSeconds() + leaseSeconds };
+    this.grants.set(id, { ...g, refreshLock }); // mutex + "in progress" — generation NOT bumped yet
+    return true;
   }
-  async rollbackGeneration(id: string, advancedGeneration: number) {
+  async finalizeRefresh(id: string, expectedGeneration: number) {
     const g = this.grants.get(id);
-    if (!g || g.refreshGeneration !== advancedGeneration) return; // gone, or someone else moved on — don't clobber
-    this.grants.set(id, { ...g, refreshGeneration: advancedGeneration - 1 });
+    if (!g || g.refreshGeneration !== expectedGeneration) return null; // state moved (e.g. lease expired + reclaimed)
+    const next = { ...g, refreshGeneration: g.refreshGeneration + 1 };
+    delete next.refreshLock; // drop the lock; generation now supersedes the old token
+    this.grants.set(id, next);
+    return next.refreshGeneration;
+  }
+  async releaseRefresh(id: string, expectedGeneration: number) {
+    const g = this.grants.get(id);
+    if (!g || g.refreshLock?.generation !== expectedGeneration) return; // only clear our own lock
+    const next = { ...g };
+    delete next.refreshLock; // generation unchanged — the current token can be retried
+    this.grants.set(id, next);
   }
   async deleteGrant(id: string) {
     this.grants.delete(id);

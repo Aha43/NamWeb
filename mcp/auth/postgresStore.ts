@@ -100,16 +100,34 @@ export class PostgresAuthStore implements AuthStore {
     );
   }
 
-  async advanceGrant(id: string, expectedGeneration: number): Promise<number | null> {
-    // Compare-and-swap on the generation (#1051 review, P2 + re-review): bump ONLY if the grant still
-    // has `expectedGeneration`. Zero rows updated = a concurrent refresh already advanced it → return
-    // null (the caller rejects this refresh instead of double-advancing and later mis-flagging reuse).
-    // Pure mutex — does NOT write the session, so the winner alone refreshes upstream Supabase and
-    // stores the rotated session via updateGrantSession (no two concurrent upstream rotations).
+  async claimRefresh(id: string, expectedGeneration: number, leaseSeconds: number): Promise<boolean> {
+    // Acquire the in-progress lock atomically (#1051 re-review v3): set `refreshLock` ONLY if the grant
+    // is still at `expectedGeneration` and no LIVE lock is held (an expired lease is reclaimable). Does
+    // NOT bump the generation — that happens at finalizeRefresh, after the new token is durable — so a
+    // concurrent duplicate of the same token sees generation unchanged + a live lock and is told to
+    // retry, never mistaken for reuse. The lock lives in the `data` JSONB beside the generation.
+    // rowCount 0 = not claimed (superseded, gone, or already locked).
+    const { rowCount } = await this.pool.query(
+      `update mcp.oauth_grants
+         set data = jsonb_set(data, '{refreshLock}',
+               jsonb_build_object('generation', $2::int, 'expiresAt', $3::int))
+       where grant_id = $1
+         and (data->>'refreshGeneration')::int = $2
+         and (data->'refreshLock' is null
+              or (data->'refreshLock'->>'expiresAt')::int <= $4)`,
+      [id, expectedGeneration, nowSeconds() + leaseSeconds, nowSeconds()],
+    );
+    return (rowCount ?? 0) > 0;
+  }
+
+  async finalizeRefresh(id: string, expectedGeneration: number): Promise<number | null> {
+    // Bump the generation (superseding the old token) and drop the lock — only while still at
+    // `expectedGeneration`. Called AFTER the new refresh token is durably issued, so the generation
+    // never runs ahead of a usable replacement. Zero rows = the state moved (lease expired + reclaimed).
     const { rows } = await this.pool.query<{ gen: number }>(
       `update mcp.oauth_grants
          set data = jsonb_set(data, '{refreshGeneration}',
-           to_jsonb((data->>'refreshGeneration')::int + 1))
+                 to_jsonb((data->>'refreshGeneration')::int + 1)) - 'refreshLock'
        where grant_id = $1 and (data->>'refreshGeneration')::int = $2
        returning (data->>'refreshGeneration')::int as gen`,
       [id, expectedGeneration],
@@ -117,16 +135,13 @@ export class PostgresAuthStore implements AuthStore {
     return rows[0]?.gen ?? null;
   }
 
-  async rollbackGeneration(id: string, advancedGeneration: number): Promise<void> {
-    // Undo a won-but-failed generation claim (#1051 re-review, P2): CAS the generation back down by one,
-    // but ONLY while it's still the value we advanced to — a loser at the old generation was already
-    // rejected, so nothing else can have advanced during our critical section. (Expiry stays slid; a
-    // slightly longer-lived grant on a failed refresh is harmless.)
+  async releaseRefresh(id: string, expectedGeneration: number): Promise<void> {
+    // Winner path failed: drop the lock WITHOUT advancing the generation, so the still-current token can
+    // be retried. Guarded on our own lock's generation so a later request's lock is never cleared.
     await this.pool.query(
-      `update mcp.oauth_grants
-         set data = jsonb_set(data, '{refreshGeneration}', to_jsonb($2::int - 1))
-       where grant_id = $1 and (data->>'refreshGeneration')::int = $2`,
-      [id, advancedGeneration],
+      `update mcp.oauth_grants set data = data - 'refreshLock'
+       where grant_id = $1 and (data->'refreshLock'->>'generation')::int = $2`,
+      [id, expectedGeneration],
     );
   }
 

@@ -216,13 +216,13 @@ describe('SupabaseOAuthProvider', () => {
     expect(lastArg.access_token).toBe('rotated-token');
   });
 
-  it('two concurrent refreshes of the same token: only the CAS winner refreshes Supabase (#1051 re-review)', async () => {
+  it('two concurrent refreshes of the same token: only the lock winner refreshes Supabase (#1051 re-review)', async () => {
     const code = await login();
     const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
     clientForSession.mockClear(); // count only the refresh-time calls, not login/verify
 
-    // Fire both with the SAME refresh token. Claim-first: one wins the generation CAS and refreshes the
-    // upstream session; the other loses the CAS and is rejected BEFORE calling clientForSession — so the
+    // Fire both with the SAME refresh token. Claim-first: one wins the in-progress lock and refreshes the
+    // upstream session; the other fails to claim and is rejected BEFORE calling clientForSession — so the
     // upstream Supabase token is rotated exactly once (no double-rotate/desync).
     const [a, b] = await Promise.allSettled([
       provider.exchangeRefreshToken(client, tokens.refresh_token!),
@@ -235,18 +235,49 @@ describe('SupabaseOAuthProvider', () => {
     expect(clientForSession).toHaveBeenCalledTimes(1); // only the winner touched Supabase
   });
 
-  it('rolls the generation back when the winner path fails, so the old token still refreshes (#1051 re-review, P2)', async () => {
+  it('a duplicate refresh while the winner is still in-flight is told to retry, NOT treated as reuse (#1051 re-review v3)', async () => {
     const code = await login();
     const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
 
-    // The winner won the CAS (generation advanced), then the Supabase refresh fails transiently.
+    // Park the winner mid-refresh (inside clientForSession) so it holds the in-progress lock but has NOT
+    // yet issued the new token or advanced the generation.
+    let unblock!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      unblock = resolve;
+    });
+    clientForSession.mockImplementationOnce(async (session: AuthSession) => {
+      await gate;
+      return { client: fakeSupabase, session };
+    });
+    const winner = provider.exchangeRefreshToken(client, first.refresh_token!);
+    await new Promise((r) => setTimeout(r, 0)); // let the winner acquire the lock and park on the gate
+
+    // A duplicate of the SAME still-current token arrives during the in-flight window. It must be told to
+    // retry — NOT deleted as reuse (the bug: generation would have advanced before a replacement existed).
+    await expect(provider.exchangeRefreshToken(client, first.refresh_token!)).rejects.toThrow(
+      /concurrent refresh/i,
+    );
+
+    // The winner completes and the family is intact — the duplicate did not revoke the grant mid-flight.
+    unblock();
+    const done = await winner;
+    expect(done.refresh_token).toBeTruthy();
+    const info = await provider.verifyAccessToken(done.access_token);
+    expect(info.clientId).toBe(client.client_id);
+  });
+
+  it('releases the lock when the winner path fails, so the old token still refreshes (#1051 re-review, P2)', async () => {
+    const code = await login();
+    const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+
+    // The winner claimed the lock, then the Supabase refresh fails transiently (before finalize).
     clientForSession.mockRejectedValueOnce(new Error('supabase transient'));
     await expect(provider.exchangeRefreshToken(client, first.refresh_token!)).rejects.toThrow(
       /supabase transient/,
     );
 
-    // Because the generation was rolled back, retrying the SAME refresh token succeeds — it is NOT
-    // mistaken for reuse, and the family is NOT revoked.
+    // The lock was released and the generation never advanced, so retrying the SAME refresh token
+    // succeeds — it is NOT mistaken for reuse, and the family is NOT revoked.
     const second = await provider.exchangeRefreshToken(client, first.refresh_token!);
     expect(second.refresh_token).toBeTruthy();
     expect(second.access_token).not.toBe(first.access_token);

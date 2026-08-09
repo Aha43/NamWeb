@@ -39,6 +39,9 @@ import { issueCsrf, verifyCsrf } from './csrf';
 
 const AUTH_CODE_TTL_SECONDS = 600; // 10 min — time to complete the code exchange
 const PENDING_LOGIN_TTL_SECONDS = 600; // 10 min — time to pick a workspace after sign-in
+// How long a single refresh may hold its in-progress lock (#1051 re-review). Long enough to cover a
+// Supabase session refresh + our token writes; short enough that a crashed winner frees the grant fast.
+const REFRESH_LEASE_SECONDS = 30;
 
 function opaqueToken(): string {
   return randomBytes(32).toString('base64url');
@@ -296,9 +299,11 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     if (!grant || grant.clientId !== client.client_id) {
       throw new InvalidGrantError('Invalid refresh token');
     }
-    // Reuse detection: a token minted before the grant's current generation was already superseded —
-    // treat its use as a stolen-token replay and revoke the whole family (all access + refresh
-    // tokens for the grant).
+    // Reuse detection is decided on the GENERATION alone (#1051 re-review v3). The generation advances
+    // only once a replacement refresh token is durably issued (finalizeRefresh), so a token below it is
+    // genuinely superseded — treat its use as a stolen-token replay and revoke the whole family. A
+    // refresh merely *in progress* does NOT advance the generation, so a benign concurrent duplicate is
+    // NOT caught here; it's handled by the claim below.
     if (data.generation !== grant.refreshGeneration) {
       if (data.generation < grant.refreshGeneration) {
         await this.store.deleteGrant(data.grantId);
@@ -308,25 +313,26 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     }
     // A refresh may narrow but never widen the grant (#1050).
     const nextScopes = constrainRefreshScopes(scopes, grant.scopes);
-    // Claim the next generation FIRST as a compare-and-swap (#1051 review, P2 + re-review). Winning the
-    // CAS is the mutex: only the winner proceeds to refresh the upstream Supabase session, so two
-    // concurrent refreshes can't both rotate/consume the upstream token and desync the stored session.
-    // A loser (CAS already moved) is rejected here, before touching Supabase.
-    const generation = await this.store.advanceGrant(data.grantId, data.generation);
-    if (generation === null) throw new InvalidGrantError('Concurrent refresh — please retry.');
+    // Acquire the in-progress lock for this token BEFORE touching Supabase (#1051 re-review). This both
+    // serializes concurrent refreshes (only the winner refreshes the upstream session) and marks the
+    // refresh as in-flight WITHOUT advancing the generation — so a concurrent duplicate of the same
+    // still-current token is told to retry here rather than tripping reuse revocation. Losers/duplicates
+    // get a retry; nothing is revoked.
+    const claimed = await this.store.claimRefresh(data.grantId, data.generation, REFRESH_LEASE_SECONDS);
+    if (!claimed) throw new InvalidGrantError('Concurrent refresh — please retry.');
     try {
-      // Winner only: refresh the Supabase session and store it on the GRANT (shared). No desync —
-      // verifyAccessToken reads the same grant session. `return await` so a rejection here is caught.
+      // Winner only: refresh the Supabase session + store it on the grant, then issue the new token
+      // family. `return await` so a rejection is caught. The generation is advanced LAST (finalize),
+      // after the replacement refresh token is durably persisted — it never runs ahead of a usable token.
       const { session } = await clientForSession(grant.session);
       await this.store.updateGrantSession(data.grantId, session);
-      return await this.issueTokens(data.grantId, nextScopes, generation);
+      const tokens = await this.issueTokens(data.grantId, nextScopes, data.generation + 1);
+      await this.store.finalizeRefresh(data.grantId, data.generation);
+      return tokens;
     } catch (err) {
-      // The CAS advanced the generation, but the refresh didn't complete — no replacement token ever
-      // reached the client. Roll the generation back so a retry of the still-current refresh token
-      // succeeds instead of looking like reuse and revoking the whole family (#1051 re-review, P2
-      // failure-atomicity). Safe under concurrency: losers were rejected at the CAS above, so nothing
-      // else advanced during this critical section.
-      await this.store.rollbackGeneration(data.grantId, generation);
+      // Winner path failed before finalizing: release the lock, leaving the generation unchanged so the
+      // client's still-current refresh token succeeds on retry instead of looking like reuse.
+      await this.store.releaseRefresh(data.grantId, data.generation);
       throw err;
     }
   }

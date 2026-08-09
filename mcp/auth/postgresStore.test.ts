@@ -7,6 +7,7 @@ import type { AccessTokenData, AuthCodeData, RefreshTokenData } from './stores';
 
 interface QueryResult {
   rows: unknown[];
+  rowCount?: number;
 }
 
 /** Fake pg.Pool: records (sql, params) per call, returns queued results in order. */
@@ -109,27 +110,43 @@ describe('PostgresAuthStore', () => {
     expect(calls[0].params).toEqual(['g1', JSON.stringify(session)]);
   });
 
-  it('advances a grant via compare-and-swap on the generation, returning the new gen (#1051 review)', async () => {
+  it('claimRefresh acquires the lock only at the generation with no live lock (#1051 re-review)', async () => {
+    const { pool, calls } = makePool([{ rowCount: 1, rows: [] }]);
+    expect(await new PostgresAuthStore(pool).claimRefresh('g1', 2, 30)).toBe(true);
+    expect(calls[0].sql).toContain("'{refreshLock}'"); // sets the in-progress lock
+    expect(calls[0].sql).not.toContain("'{refreshGeneration}'"); // does NOT advance the generation
+    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $2"); // at this generation
+    expect(calls[0].sql).toContain("data->'refreshLock' is null"); // and no live lock
+    expect(calls[0].params[0]).toBe('g1');
+    expect(calls[0].params[1]).toBe(2);
+  });
+
+  it('claimRefresh returns false when the row was already locked/superseded (rowCount 0)', async () => {
+    const { pool } = makePool([{ rowCount: 0, rows: [] }]);
+    expect(await new PostgresAuthStore(pool).claimRefresh('g1', 2, 30)).toBe(false);
+  });
+
+  it('finalizeRefresh bumps the generation and drops the lock, guarded on the generation (#1051 re-review)', async () => {
     const { pool, calls } = makePool([{ rows: [{ gen: 3 }] }]);
-    expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2)).toBe(3);
-    expect(calls[0].sql).toContain("'{refreshGeneration}'");
-    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $2"); // the CAS guard
-    expect(calls[0].sql).not.toContain("'{session}'"); // pure mutex — session written separately
+    expect(await new PostgresAuthStore(pool).finalizeRefresh('g1', 2)).toBe(3);
+    expect(calls[0].sql).toContain("'{refreshGeneration}'"); // advances the generation
+    expect(calls[0].sql).toContain("- 'refreshLock'"); // and clears the lock
+    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $2");
     expect(calls[0].params).toEqual(['g1', 2]);
   });
 
-  it('advanceGrant returns null when a concurrent refresh already moved the generation (#1051 review)', async () => {
-    const { pool } = makePool([{ rows: [] }]); // WHERE generation = expected matched nothing
-    expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2)).toBeNull();
+  it('finalizeRefresh returns null when the state moved (lease expired + reclaimed)', async () => {
+    const { pool } = makePool([{ rows: [] }]);
+    expect(await new PostgresAuthStore(pool).finalizeRefresh('g1', 2)).toBeNull();
   });
 
-  it('rolls the generation back by one, CAS-guarded on the advanced value (#1051 re-review)', async () => {
+  it('releaseRefresh drops only its own lock, leaving the generation unchanged (#1051 re-review)', async () => {
     const { pool, calls } = makePool();
-    await new PostgresAuthStore(pool).rollbackGeneration('g1', 3);
-    expect(calls[0].sql).toContain("'{refreshGeneration}'");
-    expect(calls[0].sql).toContain('to_jsonb($2::int - 1)'); // back down by one
-    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $2"); // only undo our own claim
-    expect(calls[0].params).toEqual(['g1', 3]);
+    await new PostgresAuthStore(pool).releaseRefresh('g1', 2);
+    expect(calls[0].sql).toContain("data - 'refreshLock'"); // clears the lock
+    expect(calls[0].sql).not.toContain("'{refreshGeneration}'"); // generation NOT touched
+    expect(calls[0].sql).toContain("(data->'refreshLock'->>'generation')::int = $2"); // only our lock
+    expect(calls[0].params).toEqual(['g1', 2]);
   });
 
   it('deletes a grant (tokens cascade via FK)', async () => {
