@@ -79,7 +79,7 @@ describe('PostgresAuthStore', () => {
   });
 
   it('drops an expired access token on read', async () => {
-    const expired: AccessTokenData = { grantId: 'g1', expiresAt: past };
+    const expired: AccessTokenData = { grantId: 'g1', scopes: ['nam.read'], expiresAt: past };
     const { pool, calls } = makePool([{ rows: [{ data: expired }] }, { rows: [] }]);
     const store = new PostgresAuthStore(pool);
 
@@ -87,8 +87,8 @@ describe('PostgresAuthStore', () => {
     expect(calls[1].sql).toContain('delete from mcp.oauth_access_tokens');
   });
 
-  it('saves an access token with its grant_id column (for FK cascade)', async () => {
-    const data: AccessTokenData = { grantId: 'g1', expiresAt: future };
+  it('saves an access token with its grant_id column + per-token scopes', async () => {
+    const data: AccessTokenData = { grantId: 'g1', scopes: ['nam.read'], expiresAt: future };
     const { pool, calls } = makePool();
     await new PostgresAuthStore(pool).saveAccessToken('t', data);
     expect(calls[0].sql).toContain('mcp.oauth_access_tokens');
@@ -109,11 +109,17 @@ describe('PostgresAuthStore', () => {
     expect(calls[0].params).toEqual(['g1', JSON.stringify(session)]);
   });
 
-  it('advances a grant (rotate session + bump generation) returning the new generation', async () => {
+  it('advances a grant via compare-and-swap on the generation, returning the new gen (#1051 review)', async () => {
     const { pool, calls } = makePool([{ rows: [{ gen: 3 }] }]);
-    expect(await new PostgresAuthStore(pool).advanceGrant('g1', session)).toBe(3);
+    expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2, session)).toBe(3);
     expect(calls[0].sql).toContain("'{refreshGeneration}'");
-    expect(calls[0].sql).toContain('returning');
+    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $3"); // the CAS guard
+    expect(calls[0].params).toEqual(['g1', JSON.stringify(session), 2]);
+  });
+
+  it('advanceGrant returns null when a concurrent refresh already moved the generation (#1051 review)', async () => {
+    const { pool } = makePool([{ rows: [] }]); // WHERE generation = expected matched nothing
+    expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2, session)).toBeNull();
   });
 
   it('deletes a grant (tokens cascade via FK)', async () => {

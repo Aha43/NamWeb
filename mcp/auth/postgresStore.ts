@@ -100,19 +100,20 @@ export class PostgresAuthStore implements AuthStore {
     );
   }
 
-  async advanceGrant(id: string, session: AuthSession): Promise<number> {
-    // Rotate the session AND bump the refresh generation atomically; return the new generation.
+  async advanceGrant(id: string, expectedGeneration: number, session: AuthSession): Promise<number | null> {
+    // Compare-and-swap on the generation (#1051 review, P2): rotate + bump ONLY if the grant still has
+    // `expectedGeneration`. Zero rows updated = a concurrent refresh already advanced it → return null
+    // (the caller rejects this refresh instead of double-advancing and later mis-flagging reuse).
     const { rows } = await this.pool.query<{ gen: number }>(
       `update mcp.oauth_grants
          set data = jsonb_set(
            jsonb_set(data, '{session}', $2::jsonb),
            '{refreshGeneration}', to_jsonb((data->>'refreshGeneration')::int + 1))
-       where grant_id = $1
+       where grant_id = $1 and (data->>'refreshGeneration')::int = $3
        returning (data->>'refreshGeneration')::int as gen`,
-      [id, JSON.stringify(session)],
+      [id, JSON.stringify(session), expectedGeneration],
     );
-    if (!rows[0]) throw new Error(`No grant ${id}`);
-    return rows[0].gen;
+    return rows[0]?.gen ?? null;
   }
 
   async deleteGrant(id: string): Promise<void> {

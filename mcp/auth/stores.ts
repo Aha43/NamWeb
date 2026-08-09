@@ -35,9 +35,12 @@ export interface GrantData {
   refreshGeneration: number;
 }
 
-/** An issued MCP access token → the grant it acts under. */
+/** An issued MCP access token → the grant it acts under, plus the scopes THIS token carries. A
+ *  refresh may narrow scopes, so the per-token scopes can be a subset of the grant's (#1051 review):
+ *  the resource endpoint must gate on these, not the grant's full set. */
 export interface AccessTokenData {
   grantId: string;
+  scopes: string[];
   expiresAt: number; // epoch seconds (our MCP token TTL)
 }
 
@@ -78,7 +81,11 @@ export interface AuthStore {
   saveGrant(id: string, data: GrantData): Promise<void>;
   getGrant(id: string): Promise<GrantData | undefined>;
   updateGrantSession(id: string, session: AuthSession): Promise<void>; // verify-time rotation
-  advanceGrant(id: string, session: AuthSession): Promise<number>; // refresh: rotate + bump gen → new gen
+  /** Refresh rotation as a compare-and-swap on the generation (#1051 review, P2): rotate the session
+   *  and bump the generation ONLY if it still equals `expectedGeneration`; returns the new generation,
+   *  or null when a concurrent refresh already advanced it (so the caller can reject this one without
+   *  falsely revoking the family). */
+  advanceGrant(id: string, expectedGeneration: number, session: AuthSession): Promise<number | null>;
   deleteGrant(id: string): Promise<void>; // cascades: drops the grant's access + refresh tokens
 
   // --- Access tokens ---
@@ -136,9 +143,10 @@ export class InMemoryAuthStore implements AuthStore {
     const g = this.grants.get(id);
     if (g) this.grants.set(id, { ...g, session });
   }
-  async advanceGrant(id: string, session: AuthSession) {
+  async advanceGrant(id: string, expectedGeneration: number, session: AuthSession) {
     const g = this.grants.get(id);
     if (!g) throw new Error(`No grant ${id}`);
+    if (g.refreshGeneration !== expectedGeneration) return null; // lost the CAS — concurrent refresh
     const refreshGeneration = g.refreshGeneration + 1;
     this.grants.set(id, { ...g, session, refreshGeneration });
     return refreshGeneration;

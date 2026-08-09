@@ -165,11 +165,14 @@ describe('SupabaseOAuthProvider', () => {
     ).rejects.toThrow(/scope/i);
   });
 
-  it('allows a refresh to narrow scope within the grant (#1050)', async () => {
+  it('narrows scope on refresh — and ENFORCES it at the token, not just the response (#1051 review, P1)', async () => {
     const code = await login({ scope: 'nam.read nam.write' }); // granted read+write
     const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
     const refreshed = await provider.exchangeRefreshToken(client, first.refresh_token!, ['nam.read']);
     expect(refreshed.scope).toBe('nam.read');
+    // The access token itself must carry only nam.read — otherwise /mcp would still expose write tools.
+    const info = await provider.verifyAccessToken(refreshed.access_token);
+    expect(info.scopes).toEqual(['nam.read']);
   });
 
   it('reuse of a rotated (superseded) refresh token revokes the whole family (#1051)', async () => {

@@ -311,7 +311,10 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     // Refresh the Supabase session and store it on the GRANT (shared), bumping the generation so this
     // refresh token can't be replayed. No desync — verifyAccessToken reads the same grant session.
     const { session } = await clientForSession(grant.session);
-    const generation = await this.store.advanceGrant(data.grantId, session);
+    // Compare-and-swap the generation (#1051 review, P2): if a concurrent refresh already advanced it,
+    // reject THIS request rather than double-advance (which would falsely trip reuse revocation later).
+    const generation = await this.store.advanceGrant(data.grantId, data.generation, session);
+    if (generation === null) throw new InvalidGrantError('Concurrent refresh — please retry.');
     return this.issueTokens(data.grantId, nextScopes, generation);
   }
 
@@ -333,7 +336,9 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     return {
       token,
       clientId: grant.clientId,
-      scopes: grant.scopes,
+      // THIS token's scopes (may be a narrowed subset of the grant), not the grant's full set —
+      // otherwise a refresh-narrowed read-only token would still expose write tools (#1051 review, P1).
+      scopes: data.scopes,
       expiresAt: data.expiresAt,
       extra: { supabase: client, workspace: grant.workspace },
     };
@@ -366,6 +371,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     const refreshToken = opaqueToken();
     await this.store.saveAccessToken(accessToken, {
       grantId,
+      scopes, // this token's scopes (enforced at /mcp) — a refresh may have narrowed them (#1051 review)
       expiresAt: nowSeconds() + this.accessTtl,
     });
     await this.store.saveRefreshToken(refreshToken, { grantId, generation });
