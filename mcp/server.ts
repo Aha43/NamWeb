@@ -40,13 +40,16 @@ import { normalizeTags, type Intent } from '../src/domain/mutations';
 import { newId, nowIso } from '../src/lib/local';
 import type { NamNode, NodeStatus, Resource, WorkspaceDocument } from '../src/domain/types';
 import {
+  actionMoveTargetsAll,
   allTags,
+  archivedProjectIds,
   backlogItems,
   doneItems,
   getNode,
   inboxItems,
   nextActions,
   projectActions,
+  projectMoveTargets,
   projectPath,
   projects,
   searchResults,
@@ -133,6 +136,32 @@ function requireNode(doc: WorkspaceDocument, id: string): NamNode {
 function assertNotContainer(doc: WorkspaceDocument, id: string): void {
   if ([doc.rootNodeId, doc.inboxNodeId, doc.projectsNodeId, doc.nextActionsNodeId].includes(id)) {
     throw new Error(`Node ${id} is a structural container and cannot be modified.`);
+  }
+}
+
+// Parent-type guards (#1054): the domain reducer accepts any non-cyclic node as a parent, so the
+// MCP tools must enforce the SAME structural rules the SPA's pickers do — otherwise the AI could
+// nest a project/action under a leaf action, producing trees the app's lenses don't expect. A valid
+// project parent is the projects root or another (non-archived) project; a valid action parent is
+// the free-actions root or a (non-archived) project.
+function assertProjectParent(doc: WorkspaceDocument, parentId: string): void {
+  const ok =
+    parentId === doc.projectsNodeId ||
+    (doc.nodes[parentId]?.project === true && !archivedProjectIds(doc).has(parentId));
+  if (!ok) {
+    throw new Error(
+      `Parent ${parentId} is not a project — a project can only nest under another project or at top level.`,
+    );
+  }
+}
+function assertActionParent(doc: WorkspaceDocument, parentId: string): void {
+  const ok =
+    parentId === doc.nextActionsNodeId ||
+    (doc.nodes[parentId]?.project === true && !archivedProjectIds(doc).has(parentId));
+  if (!ok) {
+    throw new Error(
+      `Parent ${parentId} is not a project — an action must live under a project (use add_next_action for a free action).`,
+    );
   }
 }
 
@@ -319,7 +348,10 @@ export function buildServer(
     },
     ({ title, parent_id }) =>
       commit((doc) => {
-        if (parent_id) requireNode(doc, parent_id);
+        if (parent_id) {
+          requireNode(doc, parent_id);
+          assertProjectParent(doc, parent_id); // #1054
+        }
         const parentId = parent_id ?? doc.projectsNodeId;
         return { type: 'addSubProject', parentId, id: newId(), title, now: nowIso() };
       }),
@@ -338,6 +370,7 @@ export function buildServer(
     ({ project_id, title, status }) =>
       commit((doc) => {
         requireNode(doc, project_id);
+        assertActionParent(doc, project_id); // #1054
         return {
           type: 'addAction',
           parentId: project_id,
@@ -438,9 +471,19 @@ export function buildServer(
     },
     ({ node_id, new_parent_id }) =>
       commit((doc) => {
+        const node = requireNode(doc, node_id);
         assertNotContainer(doc, node_id);
-        requireNode(doc, node_id);
         requireNode(doc, new_parent_id);
+        // Enforce the SAME destinations the SPA's move pickers offer (#1054): valid parents for a
+        // project vs an action, excluding self/subtree/archived. Rejects nesting under a leaf action.
+        const targets = node.project
+          ? projectMoveTargets(doc, node_id)
+          : actionMoveTargetsAll(doc, node_id);
+        if (!targets.some((t) => t.id === new_parent_id)) {
+          throw new Error(
+            `${new_parent_id} is not a valid destination for this ${node.project ? 'project' : 'action'}.`,
+          );
+        }
         return { type: 'moveNode', id: node_id, newParentId: new_parent_id, now: nowIso() };
       }),
   );
