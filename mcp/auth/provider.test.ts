@@ -235,6 +235,25 @@ describe('SupabaseOAuthProvider', () => {
     expect(clientForSession).toHaveBeenCalledTimes(1); // only the winner touched Supabase
   });
 
+  it('rolls the generation back when the winner path fails, so the old token still refreshes (#1051 re-review, P2)', async () => {
+    const code = await login();
+    const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+
+    // The winner won the CAS (generation advanced), then the Supabase refresh fails transiently.
+    clientForSession.mockRejectedValueOnce(new Error('supabase transient'));
+    await expect(provider.exchangeRefreshToken(client, first.refresh_token!)).rejects.toThrow(
+      /supabase transient/,
+    );
+
+    // Because the generation was rolled back, retrying the SAME refresh token succeeds — it is NOT
+    // mistaken for reuse, and the family is NOT revoked.
+    const second = await provider.exchangeRefreshToken(client, first.refresh_token!);
+    expect(second.refresh_token).toBeTruthy();
+    expect(second.access_token).not.toBe(first.access_token);
+    const info = await provider.verifyAccessToken(second.access_token);
+    expect(info.clientId).toBe(client.client_id);
+  });
+
   it('revokeToken invalidates the access token', async () => {
     const code = await login();
     const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);

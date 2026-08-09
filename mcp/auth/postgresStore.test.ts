@@ -123,6 +123,15 @@ describe('PostgresAuthStore', () => {
     expect(await new PostgresAuthStore(pool).advanceGrant('g1', 2)).toBeNull();
   });
 
+  it('rolls the generation back by one, CAS-guarded on the advanced value (#1051 re-review)', async () => {
+    const { pool, calls } = makePool();
+    await new PostgresAuthStore(pool).rollbackGeneration('g1', 3);
+    expect(calls[0].sql).toContain("'{refreshGeneration}'");
+    expect(calls[0].sql).toContain('to_jsonb($2::int - 1)'); // back down by one
+    expect(calls[0].sql).toContain("(data->>'refreshGeneration')::int = $2"); // only undo our own claim
+    expect(calls[0].params).toEqual(['g1', 3]);
+  });
+
   it('deletes a grant (tokens cascade via FK)', async () => {
     const { pool, calls } = makePool();
     await new PostgresAuthStore(pool).deleteGrant('g1');

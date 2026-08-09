@@ -117,6 +117,19 @@ export class PostgresAuthStore implements AuthStore {
     return rows[0]?.gen ?? null;
   }
 
+  async rollbackGeneration(id: string, advancedGeneration: number): Promise<void> {
+    // Undo a won-but-failed generation claim (#1051 re-review, P2): CAS the generation back down by one,
+    // but ONLY while it's still the value we advanced to — a loser at the old generation was already
+    // rejected, so nothing else can have advanced during our critical section. (Expiry stays slid; a
+    // slightly longer-lived grant on a failed refresh is harmless.)
+    await this.pool.query(
+      `update mcp.oauth_grants
+         set data = jsonb_set(data, '{refreshGeneration}', to_jsonb($2::int - 1))
+       where grant_id = $1 and (data->>'refreshGeneration')::int = $2`,
+      [id, advancedGeneration],
+    );
+  }
+
   async deleteGrant(id: string): Promise<void> {
     // Cascades to access + refresh tokens via their grant_id FK (on delete cascade).
     await this.pool.query('delete from mcp.oauth_grants where grant_id = $1', [id]);

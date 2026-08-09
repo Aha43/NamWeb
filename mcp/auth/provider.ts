@@ -314,11 +314,21 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     // A loser (CAS already moved) is rejected here, before touching Supabase.
     const generation = await this.store.advanceGrant(data.grantId, data.generation);
     if (generation === null) throw new InvalidGrantError('Concurrent refresh — please retry.');
-    // Winner only: refresh the Supabase session and store it on the GRANT (shared). No desync —
-    // verifyAccessToken reads the same grant session.
-    const { session } = await clientForSession(grant.session);
-    await this.store.updateGrantSession(data.grantId, session);
-    return this.issueTokens(data.grantId, nextScopes, generation);
+    try {
+      // Winner only: refresh the Supabase session and store it on the GRANT (shared). No desync —
+      // verifyAccessToken reads the same grant session. `return await` so a rejection here is caught.
+      const { session } = await clientForSession(grant.session);
+      await this.store.updateGrantSession(data.grantId, session);
+      return await this.issueTokens(data.grantId, nextScopes, generation);
+    } catch (err) {
+      // The CAS advanced the generation, but the refresh didn't complete — no replacement token ever
+      // reached the client. Roll the generation back so a retry of the still-current refresh token
+      // succeeds instead of looking like reuse and revoking the whole family (#1051 re-review, P2
+      // failure-atomicity). Safe under concurrency: losers were rejected at the CAS above, so nothing
+      // else advanced during this critical section.
+      await this.store.rollbackGeneration(data.grantId, generation);
+      throw err;
+    }
   }
 
   /** Verify an MCP access token and resolve the per-user Supabase client (in `extra`). */

@@ -87,6 +87,12 @@ export interface AuthStore {
    *  the caller can claim FIRST and let only the winner refresh the upstream Supabase session (avoiding
    *  two concurrent refreshes both rotating/consuming the upstream token). */
   advanceGrant(id: string, expectedGeneration: number): Promise<number | null>;
+  /** Undo a won generation claim (#1051 re-review, P2 failure-atomicity): if advanceGrant advanced the
+   *  generation to `advancedGeneration` but the winner's refresh path then failed (Supabase refresh /
+   *  session store / token persistence), roll it back by one so the client's still-current refresh token
+   *  works on retry instead of tripping reuse revocation. CAS-guarded on `advancedGeneration` so it only
+   *  ever undoes OUR own claim — never a later, successful advance. */
+  rollbackGeneration(id: string, advancedGeneration: number): Promise<void>;
   deleteGrant(id: string): Promise<void>; // cascades: drops the grant's access + refresh tokens
 
   // --- Access tokens ---
@@ -151,6 +157,11 @@ export class InMemoryAuthStore implements AuthStore {
     const refreshGeneration = g.refreshGeneration + 1;
     this.grants.set(id, { ...g, refreshGeneration }); // pure mutex — session written separately by the winner
     return refreshGeneration;
+  }
+  async rollbackGeneration(id: string, advancedGeneration: number) {
+    const g = this.grants.get(id);
+    if (!g || g.refreshGeneration !== advancedGeneration) return; // gone, or someone else moved on — don't clobber
+    this.grants.set(id, { ...g, refreshGeneration: advancedGeneration - 1 });
   }
   async deleteGrant(id: string) {
     this.grants.delete(id);
