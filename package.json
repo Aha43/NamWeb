@@ -23,7 +23,8 @@
     "db:stop": "supabase stop",
     "db:status": "supabase status",
     "db:reset": "supabase db reset",
-    "mcp": "tsx --env-file=.env mcp/server.ts"
+    "mcp": "tsx --env-file=.env mcp/server.ts",
+    "mcp:deploy": "tsc --noEmit -p tsconfig.mcp.json && vitest run mcp/ && fly deploy"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
