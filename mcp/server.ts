@@ -352,9 +352,11 @@ export function buildServer(
         const doc = await loadDoc(client, workspace);
         if (!getNode(doc, node_id)) return errorResult(`No node with id ${node_id}.`);
         const out: unknown[] = [];
+        const seen = new Set<string>(); // guard a malformed doc (DAG / cycle) — mirrors subtreeIds
         const walk = (id: string, d: number) => {
           const n = doc.nodes[id];
-          if (!n) return;
+          if (!n || seen.has(id)) return;
+          seen.add(id);
           out.push({ ...nodeView(doc, n), depth: d });
           if (depth != null && d >= depth) return;
           for (const childId of n.childIds) walk(childId, d + 1);

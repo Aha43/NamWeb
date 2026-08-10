@@ -286,6 +286,16 @@ describe('MCP read surface enrichment', () => {
     expect(capped.map((n: { id: string }) => n.id)).toEqual(['p1']);
   });
 
+  it('list_subtree dedupes a node reachable via two parents (malformed DAG), emitting it once', async () => {
+    const dag = richDoc();
+    dag.nodes['p1'].childIds = ['a1', 'p2']; // p1 → a1, p2
+    dag.nodes['p2'].childIds = ['a1']; // …and p2 → a1 too (a1 has two parents)
+    pull.mockResolvedValue({ kind: 'ok', document: dag, version: 1 });
+    const sub = await call('list_subtree', { node_id: 'p1' });
+    // Without the visited-guard a1 would appear twice; it must appear exactly once and terminate.
+    expect(sub.map((n: { id: string }) => n.id)).toEqual(['p1', 'a1', 'p2']);
+  });
+
   it('list_stalled_projects and list_gone_quiet run the review lenses server-side (#1071)', async () => {
     const stalled = await call('list_stalled_projects');
     expect(stalled.map((n: { id: string }) => n.id)).toEqual(['p2']); // Stale has no NEXT; Launch does
