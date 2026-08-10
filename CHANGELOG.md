@@ -8,7 +8,26 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-08-10
+
+**The AI era arrives.** 3.0.0 drew the line at "personally production-ready"; 3.1.0 opens the next
+chapter — NAM is now readable by an AI assistant. The remote MCP server, built across 2.x and hardened
+over four independent security-review rounds, went **live**: sign in with your NamWeb account from a
+Claude or ChatGPT connector and the assistant reads your real workspace — projects, actions, tags, due
+dates, calendar. The first thing it became was a **read-only GTD reviewer** that critiques your tree
+against the method, and dogfooding *that* immediately shaped the surface it reads — node listings now
+carry the timestamps, due dates, and ancestor paths an AI needs to reason about *time* and *place*,
+plus server-side stalled / gone-quiet lenses and a one-call subtree read. Read-only and opt-in: the
+assistant can look, not touch — write is the next chapter. No breaking changes.
+
 ### Added
+- **Remote MCP server — read your NAM workspace from an AI assistant.** NAM is now reachable over a
+  hosted, OAuth-secured Model Context Protocol connector (Claude / ChatGPT): sign in with your NamWeb
+  account, pick a workspace, and the assistant can read your projects, actions, tags, and calendar —
+  e.g. a read-only reviewer that critiques your tree against GTD. Hardened before launch (OAuth 2.1 +
+  PKCE, refresh-token reuse detection, tokens hashed and Supabase sessions encrypted at rest, per-user
+  Row-Level Security, redirect-origin allowlist) and hosted on Fly.io. Read-only for now; opt-in write
+  is the next chapter.
 - **Richer MCP read tools for review work** (#1070, #1071, #1074). Node listings now carry timestamps
   (created / updated / status-changed), due dates, the ancestor **path**, node **type** (project vs
   action), **tag classification** (system / sharing / context), and note/resource presence — so an AI
@@ -2220,7 +2239,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/Aha43/NamWeb/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/Aha43/NamWeb/compare/v2.11.0...v3.0.0
 [2.11.0]: https://github.com/Aha43/NamWeb/compare/v2.10.0...v2.11.0
 [2.10.0]: https://github.com/Aha43/NamWeb/compare/v2.9.0...v2.10.0
