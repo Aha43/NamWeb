@@ -340,6 +340,16 @@ describe('buildPath / effectiveTags', () => {
     expect(buildPath(nested(), 'p1')).toEqual([]);
   });
 
+  it('buildPath terminates on a malformed cyclic parent chain, not hanging (#1083)', () => {
+    // p1 ⇄ p2 via childIds (unwired from `projects`) — a pure 2-cycle in the parent index.
+    // Without the visited-guard this loops forever; it must return a finite, bounded path.
+    const cyclic = workspace([
+      node('p1', { project: true, childIds: ['p2'] }),
+      node('p2', { project: true, childIds: ['p1'] }),
+    ]);
+    expect(buildPath(cyclic, 'p2')).toHaveLength(2);
+  });
+
   it('effectiveTags unions own tags with inherited ancestor tags (own first)', () => {
     expect(effectiveTags(nested(), 'a')).toEqual(['urgent', 'home', 'kitchen']);
     expect(effectiveTags(nested(), 'p2')).toEqual(['kitchen', 'home']);
