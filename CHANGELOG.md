@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+- **Richer MCP read tools for review work** (#1070, #1071, #1074). Node listings now carry timestamps
+  (created / updated / status-changed), due dates, the ancestor **path**, node **type** (project vs
+  action), **tag classification** (system / sharing / context), and note/resource presence — so an AI
+  connector can do time-based review (stalled, gone-quiet, urgency) and place a node without walking the
+  tree. New tools: `list_stalled_projects` and `list_gone_quiet` (the Review lenses, computed
+  server-side) and `list_subtree` (a whole branch, with per-node depth, in one call instead of many).
+
 ### Fixed
 - **Project summaries now include every sub-project**, not just those with actions (#1044). A plan
   whose content lives in sub-project **descriptions** (no actions) no longer vanishes from the

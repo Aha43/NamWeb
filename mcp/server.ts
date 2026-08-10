@@ -55,6 +55,8 @@ import {
   searchResults,
   subProjects,
 } from '../src/domain/lenses';
+import { GONE_QUIET_DAYS, goneQuiet, stalledProjects } from '../src/domain/review';
+import { canonicalTag, isSystemTag } from '../src/domain/systemTags';
 
 // ---- Config --------------------------------------------------------------
 
@@ -178,25 +180,55 @@ function writeSummary(outcome: CommitOutcome, message: string | undefined, inten
   return summary;
 }
 
-// Compact node projections — small, AI-friendly shapes (not the whole NamNode).
-function briefNode(n: NamNode) {
-  return { id: n.id, title: n.title, status: n.status, tags: n.tags };
+// Tag lanes (#837, #1070): `#shared-*` = sharing, other registered `#…` = system, else a
+// user/context tag — so a consumer doesn't have to decode the `#` convention out of band.
+function classifyTags(tags: string[]): { system: string[]; sharing: string[]; context: string[] } {
+  const system: string[] = [];
+  const sharing: string[] = [];
+  const context: string[] = [];
+  for (const t of tags) {
+    if (canonicalTag(t).startsWith('#shared-')) sharing.push(t);
+    else if (isSystemTag(t)) system.push(t);
+    else context.push(t);
+  }
+  return { system, sharing, context };
 }
-function projectBrief(doc: WorkspaceDocument, n: NamNode) {
-  return {
+
+// The compact, review-capable node projection (#1070). One shape for actions AND projects. Every
+// field is already on the node — the old `briefNode` just dropped them, which made time-based review
+// (gone-quiet, urgency) and out-of-tree placement (path) impossible from the MCP surface. Null/empty
+// fields are omitted to keep payloads lean. `path` is the ancestor project titles (excludes the node
+// itself and structural containers), so a consumer can place any node without walking the tree.
+function nodeView(doc: WorkspaceDocument, n: NamNode) {
+  const view: Record<string, unknown> = {
     id: n.id,
+    type: n.project ? 'project' : 'action', // node kind — project-NEXT ≠ action-NEXT
     title: n.title,
     status: n.status,
-    childCount: n.childIds.length,
     path: projectPath(doc, n.id),
   };
+  if (n.project) view.childCount = n.childIds.length;
+  if (n.tags.length) {
+    view.tags = n.tags;
+    view.tagKinds = classifyTags(n.tags);
+  }
+  if (n.dueAt) view.dueAt = n.dueAt;
+  if (n.dueEndAt) view.dueEndAt = n.dueEndAt;
+  if (n.dueTime) view.dueTime = n.dueTime;
+  if (n.createdAt) view.createdAt = n.createdAt;
+  if (n.updatedAt) view.updatedAt = n.updatedAt;
+  if (n.statusChangedAt) view.statusChangedAt = n.statusChangedAt;
+  if (n.description?.trim()) view.hasNote = true; // presence only — fetch text via list_resources
+  if (n.resources.length) view.resourceCount = n.resources.length;
+  return view;
 }
+
 function resourceBrief(r: Resource, index: number) {
   return { index, type: r.type, value: r.value, description: r.description };
 }
 
 /**
- * Build a fresh McpServer with the 10 read tools registered, each closing over the
+ * Build a fresh McpServer with the read tools registered, each closing over the
  * shared authenticated `client`. A new instance is created per HTTP request (the
  * canonical stateless Streamable-HTTP pattern); registration is cheap.
  */
@@ -245,24 +277,37 @@ export function buildServer(
     }),
   );
   read('list_inbox', 'List all items currently in the Inbox.', (doc) =>
-    inboxItems(doc).map(briefNode),
+    inboxItems(doc).map((n) => nodeView(doc, n)),
   );
   read('list_projects', 'List all top-level projects.', (doc) =>
-    projects(doc).map((p) => projectBrief(doc, p)),
+    projects(doc).map((p) => nodeView(doc, p)),
   );
   read('list_next_actions', 'List all actions with status NEXT across the whole workspace.', (doc) =>
-    nextActions(doc).map(briefNode),
+    nextActions(doc).map((n) => nodeView(doc, n)),
   );
   read('list_backlog', 'List all actions with status BACKLOG across the whole workspace.', (doc) =>
-    backlogItems(doc).map(briefNode),
+    backlogItems(doc).map((n) => nodeView(doc, n)),
   );
   read('list_done', 'List all actions with status DONE across the whole workspace.', (doc) =>
-    doneItems(doc).map(briefNode),
+    doneItems(doc).map((n) => nodeView(doc, n)),
   );
   read(
     'list_saved_views',
     'List the saved views (user-defined tag filters) defined in the workspace.',
     (doc) => doc.savedViews,
+  );
+  // Derived Review lenses (#1071) — the stalled / gone-quiet computation runs SERVER-SIDE over the
+  // same pure lenses the app uses, so a consumer gets the answer directly instead of hand-joining
+  // paginated status buckets. (gone-quiet needs the timestamps #1070 now projects.)
+  read(
+    'list_stalled_projects',
+    'List open projects whose subtree has no NEXT action — GTD "loose ends" (excludes ones tagged #not-stalled).',
+    (doc) => stalledProjects(doc).map((n) => nodeView(doc, n)),
+  );
+  read(
+    'list_gone_quiet',
+    `List open actions untouched for ${GONE_QUIET_DAYS}+ days (by last activity) — candidates that may have stalled.`,
+    (doc) => goneQuiet(doc).map((n) => nodeView(doc, n)),
   );
 
   server.registerTool(
@@ -275,9 +320,49 @@ export function buildServer(
       try {
         const doc = await loadDoc(client, workspace);
         return json({
-          actions: projectActions(doc, project_id).map(briefNode),
-          subProjects: subProjects(doc, project_id).map((p) => projectBrief(doc, p)),
+          actions: projectActions(doc, project_id).map((n) => nodeView(doc, n)),
+          subProjects: subProjects(doc, project_id).map((p) => nodeView(doc, p)),
         });
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  // Bulk subtree read (#1074): one call returns a node and all its descendants (DFS order, each with
+  // its `depth`), so a consumer can review a whole branch without N single-level round trips —
+  // list_project_children is single-level and a full-tree pass otherwise costs dozens of calls.
+  server.registerTool(
+    'list_subtree',
+    {
+      description:
+        'List a node and all its descendants (depth-first), each carrying its depth. Optionally cap the depth (0 = the node only, 1 = node + direct children, …).',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the root node'),
+        depth: z
+          .number()
+          .int()
+          .nonnegative()
+          .optional()
+          .describe('Max depth to descend; omit for the whole subtree'),
+      },
+    },
+    async ({ node_id, depth }) => {
+      try {
+        const doc = await loadDoc(client, workspace);
+        if (!getNode(doc, node_id)) return errorResult(`No node with id ${node_id}.`);
+        const out: unknown[] = [];
+        const seen = new Set<string>(); // guard a malformed doc (DAG / cycle) — mirrors subtreeIds
+        const walk = (id: string, d: number) => {
+          const n = doc.nodes[id];
+          if (!n || seen.has(id)) return;
+          seen.add(id);
+          out.push({ ...nodeView(doc, n), depth: d });
+          if (depth != null && d >= depth) return;
+          for (const childId of n.childIds) walk(childId, d + 1);
+        };
+        walk(node_id, 0);
+        return json(out);
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
@@ -294,9 +379,7 @@ export function buildServer(
     async ({ title }) => {
       try {
         const doc = await loadDoc(client, workspace);
-        return json(
-          searchResults(doc, title).map(({ node, path }) => ({ ...briefNode(node), path })),
-        );
+        return json(searchResults(doc, title).map(({ node }) => nodeView(doc, node)));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
