@@ -83,7 +83,10 @@ const EXPECTED_READ_TOOLS = [
   'list_backlog',
   'list_done',
   'list_saved_views',
+  'list_stalled_projects',
+  'list_gone_quiet',
   'list_project_children',
+  'list_subtree',
   'find_node',
   'list_resources',
 ];
@@ -160,7 +163,16 @@ describe('NamWeb MCP server (read surface)', () => {
     });
     const payload = JSON.parse(firstText(result as never));
     expect(payload.subProjects).toEqual([
-      { id: 'p1', title: 'Launch', status: 'BACKLOG', childCount: 0, path: [] },
+      {
+        id: 'p1',
+        type: 'project',
+        title: 'Launch',
+        status: 'BACKLOG',
+        path: [],
+        childCount: 0,
+        tags: ['work'],
+        tagKinds: { system: [], sharing: [], context: ['work'] },
+      },
     ]);
     expect(payload.actions).toEqual([]);
     await server.close();
@@ -176,6 +188,109 @@ describe('NamWeb MCP server (read surface)', () => {
     expect(result.isError).toBe(true);
     expect(firstText(result)).toContain('boom');
     await server.close();
+  });
+});
+
+// --- Enriched read surface for review work (#1070 projections / #1071 lenses / #1074 subtree) ---
+
+function richDoc(): WorkspaceDocument {
+  const nodes: Record<string, NamNode> = {};
+  const add = (n: NamNode) => (nodes[n.id] = n);
+  add(node('root', { title: 'NAM', childIds: ['inbox', 'projects', 'actions'] }));
+  add(node('inbox', { title: 'Inbox' }));
+  add(node('projects', { title: 'Projects', childIds: ['p1', 'p2'] }));
+  add(node('actions', { title: 'Actions' }));
+  add(node('p1', { title: 'Launch', project: true, childIds: ['a1'], tags: ['work', '#in-progress', '#shared-open'] }));
+  add(
+    node('a1', {
+      title: 'Ship it',
+      status: 'NEXT',
+      tags: ['errand'],
+      createdAt: '2026-08-01T09:00:00',
+      updatedAt: '2026-08-09T09:00:00',
+      statusChangedAt: '2026-08-05T09:00:00',
+      dueAt: '2026-08-12',
+      dueTime: '14:30',
+      description: 'the note',
+      resources: [{ type: 'URI', value: 'https://x', description: null }],
+    }),
+  );
+  add(node('p2', { title: 'Stale', project: true, childIds: ['a2'] })); // no NEXT in subtree → stalled
+  add(node('a2', { title: 'old thing', status: 'BACKLOG', updatedAt: '2020-01-01T00:00:00' })); // gone quiet
+  return {
+    formatVersion: 1,
+    rootNodeId: 'root',
+    inboxNodeId: 'inbox',
+    projectsNodeId: 'projects',
+    nextActionsNodeId: 'actions',
+    nodes,
+    registeredTags: [],
+    savedViews: [],
+    missionControls: [],
+    templates: [],
+    viewOrders: {},
+  };
+}
+
+describe('MCP read surface enrichment', () => {
+  beforeEach(() => {
+    pull.mockReset();
+    pull.mockResolvedValue({ kind: 'ok', document: richDoc(), version: 1 });
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  const call = async (name: string, args: Record<string, unknown> = {}) => {
+    const { client, server } = await connectedClient();
+    const result = await client.callTool({ name, arguments: args });
+    await server.close();
+    return JSON.parse(firstText(result as never));
+  };
+
+  it('projects timestamps, due, path, node-type, and note/resource presence (#1070)', async () => {
+    const [a1] = await call('list_next_actions');
+    expect(a1).toMatchObject({
+      id: 'a1',
+      type: 'action',
+      title: 'Ship it',
+      status: 'NEXT',
+      path: ['Launch'], // ancestor project, resolved server-side
+      dueAt: '2026-08-12',
+      dueTime: '14:30',
+      createdAt: '2026-08-01T09:00:00',
+      updatedAt: '2026-08-09T09:00:00',
+      statusChangedAt: '2026-08-05T09:00:00',
+      hasNote: true,
+      resourceCount: 1,
+      tags: ['errand'],
+    });
+  });
+
+  it('classifies tags into system / sharing / context lanes (#1070)', async () => {
+    const projects = await call('list_projects');
+    const launch = projects.find((p: { id: string }) => p.id === 'p1');
+    expect(launch.type).toBe('project');
+    expect(launch.tagKinds).toEqual({
+      system: ['#in-progress'],
+      sharing: ['#shared-open'],
+      context: ['work'],
+    });
+  });
+
+  it('list_subtree returns the node + descendants with depth, and honors a depth cap (#1074)', async () => {
+    const full = await call('list_subtree', { node_id: 'p1' });
+    expect(full.map((n: { id: string; depth: number }) => [n.id, n.depth])).toEqual([
+      ['p1', 0],
+      ['a1', 1],
+    ]);
+    const capped = await call('list_subtree', { node_id: 'p1', depth: 0 });
+    expect(capped.map((n: { id: string }) => n.id)).toEqual(['p1']);
+  });
+
+  it('list_stalled_projects and list_gone_quiet run the review lenses server-side (#1071)', async () => {
+    const stalled = await call('list_stalled_projects');
+    expect(stalled.map((n: { id: string }) => n.id)).toEqual(['p2']); // Stale has no NEXT; Launch does
+    const quiet = await call('list_gone_quiet');
+    expect(quiet.map((n: { id: string }) => n.id)).toContain('a2'); // untouched since 2020
   });
 });
 
