@@ -97,8 +97,10 @@ export function buildPath(doc: WorkspaceDocument, id: string): NamNode[] {
   const parents = buildParentIndex(doc);
   const structural = structuralNodeIds(doc);
   const path: NamNode[] = [];
+  const seen = new Set<string>(); // guard a malformed cyclic parent chain (#1083) — terminate, don't hang
   let cursor = parents.get(id);
-  while (cursor && !structural.has(cursor)) {
+  while (cursor && !structural.has(cursor) && !seen.has(cursor)) {
+    seen.add(cursor);
     const ancestor = doc.nodes[cursor];
     if (ancestor) path.unshift(ancestor);
     cursor = parents.get(cursor);
