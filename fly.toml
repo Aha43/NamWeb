@@ -1,0 +1,32 @@
+# Fly.io deploy config for the NamWeb remote MCP server (mcp/server.ts).
+#
+# First deploy:  fly launch --no-deploy   (uses this file + the Dockerfile; adds the app to your org)
+#                fly secrets set ...       (see docs/features/remote-mcp/deploy.md)
+#                fly deploy
+# Redeploy:      fly deploy
+#
+# All configuration is via SECRETS (env), never committed here — see the deploy runbook.
+
+# App name must be globally unique. If `fly launch` says this is taken, change it to something like
+# "nam-mcp-<yourname>" and re-run.
+app = "nam-mcp"
+
+# Closest region to Norway. `fly platform regions` lists all; change if you prefer another.
+primary_region = "arn"  # Stockholm
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 3333        # must match the container's port (NAM_MCP_PORT, default 3333)
+  force_https = true          # the OAuth AS metadata must advertise https:// URLs
+  auto_start_machines = true
+  # An OAuth server must stay reachable and must NOT run as multiple instances: the sign-in
+  # rate-limiters are per-process/in-memory (mcp/auth/rateLimit.ts), so a second machine would
+  # get its own buckets. Keep exactly one always-on machine.
+  auto_stop_machines = "off"
+  min_machines_running = 1
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"            # tsx + supabase-js + express; trim to 256mb later if headroom allows
