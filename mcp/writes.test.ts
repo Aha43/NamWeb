@@ -216,14 +216,27 @@ describe('NamWeb MCP write tools', () => {
     expect(commitIntent).not.toHaveBeenCalled();
   });
 
-  it('delete_node picks deleteLeaf for a childless node', async () => {
-    await call('delete_node', { node_id: 'i1' });
+  it('delete_node deletes a childless leaf directly, returning a 1-node manifest (#1092)', async () => {
+    const result = await call('delete_node', { node_id: 'i1' });
     expect(committedIntent()).toEqual({ type: 'deleteLeaf', id: 'i1' });
+    const payload = JSON.parse(firstText(result));
+    expect(payload).toMatchObject({ ok: true, outcome: 'synced', deletedCount: 1 });
+    expect(payload.deleted).toEqual([{ id: 'i1', title: 'Buy milk' }]);
   });
 
-  it('delete_node picks deleteRecursive for a node with children', async () => {
-    await call('delete_node', { node_id: 'p1' });
+  it('delete_node REFUSES a node with children unless recursive:true (#1092)', async () => {
+    const result = await call('delete_node', { node_id: 'p1' }); // p1 has child a1
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/recursive:true/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
+  it('delete_node with recursive:true removes the subtree and returns its manifest (#1092)', async () => {
+    const result = await call('delete_node', { node_id: 'p1', recursive: true });
     expect(committedIntent()).toEqual({ type: 'deleteRecursive', id: 'p1' });
+    const payload = JSON.parse(firstText(result));
+    expect(payload).toMatchObject({ ok: true, outcome: 'synced', deletedCount: 2 });
+    expect(payload.deleted.map((d: { id: string }) => d.id).sort()).toEqual(['a1', 'p1']);
   });
 
   it('refuses to delete a structural container', async () => {

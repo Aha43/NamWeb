@@ -17,6 +17,12 @@ minor = features (breaking changes allowed), patch = fixes.
   on its own — only your explicit consent does. (One-approval bulk project creation — `seed_project` —
   is the next step.)
 
+### Changed
+- **`delete_node` is safer** (#1092). Deleting a node that has children now **refuses unless you pass
+  `recursive: true`** (so a project is never removed by mistaking it for a leaf), leads its description
+  with the recursive warning, and **returns a manifest of exactly what was removed** (ids + titles) —
+  the delete is the one unrecoverable write, and it now reports what it did instead of an opaque "ok".
+
 ## [3.1.0] - 2026-08-10
 
 **The AI era arrives.** 3.0.0 drew the line at "personally production-ready"; 3.1.0 opens the next

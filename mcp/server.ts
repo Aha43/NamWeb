@@ -54,6 +54,7 @@ import {
   projects,
   searchResults,
   subProjects,
+  subtreeIds,
 } from '../src/domain/lenses';
 import { GONE_QUIET_DAYS, goneQuiet, stalledProjects } from '../src/domain/review';
 import { canonicalTag, isSystemTag } from '../src/domain/systemTags';
@@ -598,17 +599,46 @@ export function buildServer(
     'delete_node',
     {
       description:
-        'Delete a node. A node with children is deleted recursively; a leaf is removed directly.',
-      inputSchema: { node_id: z.string().describe('UUID of the node to delete') },
+        'Delete a node. WARNING: if the node has children this RECURSIVELY deletes the node AND its ' +
+        'entire subtree — every descendant project, action, and resource — irreversibly. A delete that ' +
+        'would remove children is REFUSED unless you pass recursive:true (so a project is never nuked by ' +
+        'mistaking it for a leaf). Returns a manifest of exactly what was removed (ids + titles).',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the node to delete'),
+        recursive: z
+          .boolean()
+          .optional()
+          .describe('Required (true) to delete a node that HAS children; omit/false for a leaf'),
+      },
     },
-    ({ node_id }) =>
-      commit((doc) => {
+    // Raw handler (not the shared `commit`) so it can (a) refuse an unconfirmed subtree delete and
+    // (b) return a manifest of the removed nodes — #1092 (delete is the one unrecoverable op, and
+    // writes now come from an agent resolving ambiguous titles → ids).
+    async ({ node_id, recursive }) => {
+      try {
+        const snapshot = await loadSnapshot(client, workspace);
+        const doc = snapshot.document;
         const node = requireNode(doc, node_id);
         assertNotContainer(doc, node_id);
-        return node.childIds.length > 0
+        const hasChildren = node.childIds.length > 0;
+        const ids = [...subtreeIds(doc, node_id)]; // includes the node itself
+        if (hasChildren && recursive !== true) {
+          return errorResult(
+            `"${node.title}" has ${node.childIds.length} direct child(ren) and ${ids.length - 1} ` +
+              `descendant(s) in total — deleting it recursively removes them all. Pass recursive:true to confirm.`,
+          );
+        }
+        const deleted = ids.map((id) => ({ id, title: doc.nodes[id]?.title ?? '(unknown)' }));
+        const intent: Intent = hasChildren
           ? { type: 'deleteRecursive', id: node_id }
           : { type: 'deleteLeaf', id: node_id };
-      }),
+        const result = await commitIntent(client, workspace, snapshot, intent);
+        if (result.outcome === 'error') return errorResult(result.message ?? 'Delete failed.');
+        return json({ ok: true, outcome: result.outcome, deletedCount: deleted.length, deleted });
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    },
   );
 
   const prerequisite = (
