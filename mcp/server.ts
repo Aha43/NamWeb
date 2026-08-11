@@ -58,6 +58,14 @@ import {
 } from '../src/domain/lenses';
 import { GONE_QUIET_DAYS, goneQuiet, stalledProjects } from '../src/domain/review';
 import { canonicalTag, isSystemTag } from '../src/domain/systemTags';
+import pkg from '../package.json';
+
+// A build signal surfaced in get_workspace_context (#1099/#1097): `<version>+<sha>` when deployed
+// (NAM_MCP_BUILD is the git short-SHA baked at deploy time), so a client can notice on its first read
+// that it's talking to a newer server than the tool list it cached. Falls back to the bare version locally.
+const SERVER_VERSION = process.env.NAM_MCP_BUILD
+  ? `${pkg.version}+${process.env.NAM_MCP_BUILD}`
+  : pkg.version;
 
 // ---- Config --------------------------------------------------------------
 
@@ -270,8 +278,13 @@ export function buildServer(
 
   read(
     'get_workspace_context',
-    'Get a compact summary of the workspace: project titles, tags in use, and inbox/project counts.',
+    'Get a compact summary of the workspace plus this connection\'s capabilities: whether it can write ' +
+      '(canWrite), the server build (serverVersion), and project titles, tags, and inbox/project counts.',
     (doc) => ({
+      // Connection capabilities first (#1099) — so an agent knows its permissions and the server build
+      // up front, instead of discovering "read-only" or "stale tools" by a write call that fails opaquely.
+      canWrite, // does this connection hold nam.write? (false = read-only; reconnect + consent to enable)
+      serverVersion: SERVER_VERSION,
       projectCount: projects(doc).length,
       inboxCount: inboxItems(doc).length,
       tags: allTags(doc),

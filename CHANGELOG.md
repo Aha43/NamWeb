@@ -16,6 +16,10 @@ minor = features (breaking changes allowed), patch = fixes.
   deletes) so the assistant prompts before each change. The client's requested scope never grants write
   on its own — only your explicit consent does. (One-approval bulk project creation — `seed_project` —
   is the next step.)
+- **`get_workspace_context` reports the connection's capabilities** (#1099): `canWrite` (does this
+  connection have write access?) and `serverVersion` (the deploy build). So an AI agent learns its
+  permissions and the server build on its **first read**, instead of discovering "read-only" or a
+  stale-after-deploy tool list by a write call that fails opaquely as "tool not found".
 
 ### Changed
 - **`delete_node` is safer** (#1092). Deleting a node that has children now **refuses unless you pass
