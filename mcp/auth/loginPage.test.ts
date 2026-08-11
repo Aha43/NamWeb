@@ -1,20 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { renderLoginPage } from './loginPage';
-import { SCOPE_READ } from './scopes';
 
 const base = { clientId: 'c1', redirectUri: 'https://x/cb', codeChallenge: 'ch', csrfToken: 'tok' };
 
 describe('renderLoginPage consent copy', () => {
-  it('warns the connector can modify when write is granted (default, no scope requested)', () => {
+  it('is read-only by default — the copy says view-not-change (#1069)', () => {
     const html = renderLoginPage(base);
-    expect(html).toContain('and modify');
-    expect(html).toContain('create, edit, and delete');
+    expect(html).toContain('view them, not change them');
   });
 
-  it('says read-only when only nam.read is requested', () => {
-    const html = renderLoginPage({ ...base, scope: SCOPE_READ });
-    expect(html).toContain('but not change them');
-    expect(html).not.toContain('and modify');
+  it('offers write only as an explicit, unticked opt-in checkbox (#1069)', () => {
+    const html = renderLoginPage(base);
+    expect(html).toContain('name="allow_write"');
+    expect(html).toContain('make changes');
+    expect(html).toContain('create, edit, and delete');
+    // the checkbox must NOT be pre-checked — read-only is the default
+    expect(html).not.toMatch(/name="allow_write"[^>]*checked/);
   });
 
   it('embeds the CSRF token and the brand mark', () => {

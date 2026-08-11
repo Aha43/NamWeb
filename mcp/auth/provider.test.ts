@@ -14,6 +14,7 @@ vi.mock('./supabaseIdentity', () => ({ signInWithPassword, clientForSession, lis
 
 // Imported after the mock is registered.
 const { SupabaseOAuthProvider, supabaseClientFromAuth } = await import('./provider');
+const { SCOPE_READ, SCOPE_WRITE } = await import('./scopes');
 
 // --- Fakes -----------------------------------------------------------------
 
@@ -142,6 +143,22 @@ describe('SupabaseOAuthProvider', () => {
     expect(info.clientId).toBe(client.client_id);
     expect(info.scopes).toEqual(['nam.read']);
     expect(supabaseClientFromAuth(info)).toBe(fakeSupabase);
+  });
+
+  it('grants nam.write ONLY when the owner ticks the write-consent checkbox (#1069)', async () => {
+    const code = await login({ allow_write: '1' });
+    const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    expect(tokens.scope).toBe('nam.read nam.write');
+    const info = await provider.verifyAccessToken(tokens.access_token);
+    expect(info.scopes).toEqual([SCOPE_READ, SCOPE_WRITE]);
+  });
+
+  it('stays read-only when the checkbox is unticked, even if the client requested write (#1069/#1050)', async () => {
+    // client asks for write, but the owner did NOT consent → read-only. Consent is the authority.
+    const code = await login({ scope: 'nam.read nam.write' });
+    const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    const info = await provider.verifyAccessToken(tokens.access_token);
+    expect(info.scopes).toEqual([SCOPE_READ]);
   });
 
   it('rotates the refresh token and invalidates the old one', async () => {

@@ -1,10 +1,8 @@
 // Branded Supabase login / consent pages for the OAuth authorize step.
 //
-// Honest consent copy (reflects the granted read vs read+write scopes), a CSRF
+// Honest consent copy (read-only by default; an opt-in checkbox for write — #1069), a CSRF
 // token on every form (double-submit cookie — see ./csrf), and Nam branding +
 // styling, so this is presentable as the trust surface for a public connector.
-
-import { resolveGrantedScopes, SCOPE_WRITE } from './scopes';
 
 function esc(value: string): string {
   return value
@@ -99,13 +97,6 @@ export function renderLoginPage(p: LoginPageParams): string {
 
   const error = p.error ? `<p class="err">${esc(p.error)}</p>` : '';
 
-  // Honest consent: describe exactly what the granted scopes allow.
-  const granted = resolveGrantedScopes(p.scope ? p.scope.split(' ').filter(Boolean) : []);
-  const canWrite = granted.includes(SCOPE_WRITE);
-  const access = canWrite
-    ? 'read <strong>and modify</strong> your workspace — view your projects, inbox, and actions, and create, edit, and delete them on your behalf.'
-    : 'read your workspace — view your projects, inbox, and actions, but not change them.';
-
   // Transparency (#1052): name where the assistant will be sent back to, so the user can spot a
   // destination they don't recognise before entering credentials.
   let destHost: string;
@@ -116,9 +107,16 @@ export function renderLoginPage(p: LoginPageParams): string {
   }
   const destination = `<p class="lead" style="margin-top:-.6rem">After signing in you'll be returned to <strong>${esc(destHost)}</strong>. Only continue if you recognise it.</p>`;
 
+  // Opt-in write (#1069): read-only is the default; the checkbox is the ONLY way this connection gets
+  // `nam.write` (honest, owner-controlled consent). Left unticked → the assistant can look, not touch.
+  const writeConsent = `<label class="choice" style="margin:.4rem 0 .2rem">
+        <input type="checkbox" name="allow_write" value="1" />
+        Also let it <strong>make changes</strong> — create, edit, and delete on your behalf. Leave unticked for read-only.
+      </label>`;
+
   return page(
     'Sign in to Nam',
-    `    <p class="lead">Sign in with your Nam account to let this assistant ${access}</p>
+    `    <p class="lead">Sign in with your Nam account to connect this assistant to your workspace. By default it can <strong>read</strong> your projects, inbox, and actions — view them, not change them.</p>
     ${destination}
     ${error}
     <form method="post" action="/nam/login">
@@ -127,6 +125,7 @@ export function renderLoginPage(p: LoginPageParams): string {
       <input name="email" type="email" autocomplete="username" required />
       <label>Password</label>
       <input name="password" type="password" autocomplete="current-password" required />
+      ${writeConsent}
       <button type="submit">Sign in</button>
     </form>`,
   );

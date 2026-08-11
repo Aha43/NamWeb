@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+- **Let the AI make changes — opt-in write for the MCP connector** (#1089). The remote MCP connection
+  stays **read-only by default**; a new "Allow this connection to make changes" checkbox on the sign-in
+  page grants `nam.write`, lighting up the existing write tools (create / edit / move / delete projects
+  and actions, tags, resources). Write tools are annotated (`readOnlyHint: false`, `destructiveHint` on
+  deletes) so the assistant prompts before each change. The client's requested scope never grants write
+  on its own — only your explicit consent does. (One-approval bulk project creation — `seed_project` —
+  is the next step.)
+
 ## [3.1.0] - 2026-08-10
 
 **The AI era arrives.** 3.0.0 drew the line at "personally production-ready"; 3.1.0 opens the next
