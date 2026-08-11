@@ -632,8 +632,20 @@ export function buildServer(
         const intent: Intent = hasChildren
           ? { type: 'deleteRecursive', id: node_id }
           : { type: 'deleteLeaf', id: node_id };
-        const result = await commitIntent(client, workspace, snapshot, intent);
+        // Disable conflict-replay (#1092): the recursive-gate + manifest above were computed on THIS
+        // snapshot. If another edit landed first, a blind replay onto the fresher doc could bypass the
+        // gate (a leaf that just gained a child) or misreport what was removed — so refuse and ask the
+        // caller to re-read. A `synced` outcome therefore means the delete applied to exactly what we gated.
+        const result = await commitIntent(client, workspace, snapshot, intent, {
+          replayOnConflict: false,
+        });
         if (result.outcome === 'error') return errorResult(result.message ?? 'Delete failed.');
+        if (result.outcome !== 'synced') {
+          return errorResult(
+            `The workspace changed since you read "${node.title}" — nothing was deleted. Re-read the ` +
+              `node (e.g. list_subtree) and retry, so the recursive check and manifest reflect the current state.`,
+          );
+        }
         return json({ ok: true, outcome: result.outcome, deletedCount: deleted.length, deleted });
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));

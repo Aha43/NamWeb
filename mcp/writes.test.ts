@@ -239,6 +239,15 @@ describe('NamWeb MCP write tools', () => {
     expect(payload.deleted.map((d: { id: string }) => d.id).sort()).toEqual(['a1', 'p1']);
   });
 
+  it('delete_node refuses (no data loss) when the workspace changed under it (#1092 conflict-safety)', async () => {
+    // The gate + manifest were computed on the read snapshot; a conflict means commitIntent did NOT
+    // replay (replayOnConflict:false) — delete_node must surface that, not report a false success.
+    commitIntent.mockResolvedValueOnce({ snapshot: { document: makeDoc(), version: 8 }, outcome: 'reloaded' });
+    const result = await call('delete_node', { node_id: 'p1', recursive: true });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/changed|re-read|retry/i);
+  });
+
   it('refuses to delete a structural container', async () => {
     const result = await call('delete_node', { node_id: 'inbox' });
     expect(result.isError).toBe(true);

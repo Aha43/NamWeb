@@ -67,6 +67,16 @@ describe('commitIntent', () => {
     expect(result.snapshot.document.nodes['a'].status).toBe('DONE');
   });
 
+  it('does NOT replay on conflict when replayOnConflict is false — reloads without applying (#1092)', async () => {
+    push.mockResolvedValueOnce({ kind: 'conflict', remoteVersion: 6 });
+    pull.mockResolvedValueOnce({ kind: 'ok', document: workspace(true), version: 6 });
+    const result = await commitIntent(client, 'default', base, intent, { replayOnConflict: false });
+    expect(result.outcome).toBe('reloaded');
+    expect(result.snapshot.version).toBe(6); // the fresh snapshot…
+    expect(result.snapshot.document.nodes['a'].status).toBe('NEXT'); // …with the intent NOT applied
+    expect(push).toHaveBeenCalledTimes(1); // first push only — no replay push
+  });
+
   it('reloads when the target node vanished remotely', async () => {
     push.mockResolvedValueOnce({ kind: 'conflict', remoteVersion: 6 });
     pull.mockResolvedValueOnce({ kind: 'ok', document: workspace(false), version: 6 });

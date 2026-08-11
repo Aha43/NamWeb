@@ -28,11 +28,23 @@ export interface CommitResult {
 
 const RELOADED = 'Reloaded — synced from another device';
 
+export interface CommitOptions {
+  /**
+   * On a version conflict, replay the intent onto the freshly-pulled document (the default). Set
+   * `false` for an operation that must NOT re-apply against a base the caller never saw — e.g. a
+   * destructive delete whose safety gate + manifest were computed on the caller's snapshot (#1092):
+   * a stale replay could bypass the gate (a leaf that gained children) or misreport what it removed.
+   * With it off, a conflict returns `reloaded` WITHOUT applying, so the caller re-reads and re-issues.
+   */
+  replayOnConflict?: boolean;
+}
+
 export async function commitIntent(
   client: SupabaseClient,
   name: string,
   base: WorkspaceSnapshot,
   intent: Intent,
+  { replayOnConflict = true }: CommitOptions = {},
 ): Promise<CommitResult> {
   const optimistic = applyIntent(base.document, intent);
 
@@ -60,6 +72,13 @@ export async function commitIntent(
   }
 
   const fresh: WorkspaceSnapshot = { document: pulled.document, version: pulled.version };
+
+  // Opt-out of replay (#1092): the caller's decision (e.g. a delete's recursive-gate + manifest) was
+  // made against `base`, not this freshly-pulled document — re-applying blind could be unsafe. Surface
+  // the change and let the caller re-read and re-issue instead.
+  if (!replayOnConflict) {
+    return { snapshot: fresh, outcome: 'reloaded', message: RELOADED };
+  }
 
   if (!intentTargetExists(pulled.document, intent)) {
     return { snapshot: fresh, outcome: 'reloaded', message: RELOADED };
