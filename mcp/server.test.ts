@@ -154,17 +154,26 @@ describe('NamWeb MCP server (read surface)', () => {
     await server.close();
   });
 
-  it('get_workspace_context returns counts, tags, and project titles from pull()', async () => {
-    const { client, server } = await connectedClient();
+  it('get_workspace_context reports capabilities (canWrite, serverVersion) + counts, tags, titles (#1099)', async () => {
+    const { client, server } = await connectedClient(); // default canWrite: true
     const result = await client.callTool({ name: 'get_workspace_context', arguments: {} });
     const ctx = JSON.parse(firstText(result as never));
     expect(ctx).toEqual({
+      canWrite: true,
+      serverVersion: expect.any(String),
       projectCount: 1,
       inboxCount: 1,
       tags: expect.arrayContaining(['work', 'errand']),
       projects: ['Launch'],
     });
     expect(pull).toHaveBeenCalledOnce();
+    await server.close();
+  });
+
+  it('get_workspace_context reports canWrite:false for a read-only connection (#1099)', async () => {
+    const { client, server } = await connectedClient({ canWrite: false });
+    const result = await client.callTool({ name: 'get_workspace_context', arguments: {} });
+    expect(JSON.parse(firstText(result as never)).canWrite).toBe(false);
     await server.close();
   });
 

@@ -26,6 +26,12 @@ COPY src ./src
 # VITE_SUPABASE_PUBLISHABLE_KEY, VITE_WORKSPACE_NAME, NAM_MCP_DATABASE_URL (persistent OAuth store),
 # NAM_MCP_ISSUER_URL (public https origin). Never set NAM_MCP_DEV_NOAUTH in production.
 # The server listens on NAM_MCP_PORT (default 3333) — map/expose that to your host's port.
+# Bake the deploy's git short-SHA so the server can advertise its build in get_workspace_context
+# (serverVersion → `<version>+<sha>`, #1099/#1097) — lets a client detect it cached a stale tool list
+# after a deploy. Passed by `npm run mcp:deploy`; empty on a plain `fly deploy` (→ bare version).
+ARG NAM_MCP_BUILD=""
+ENV NAM_MCP_BUILD=$NAM_MCP_BUILD
+
 ENV NODE_ENV=production
 EXPOSE 3333
 CMD ["npx", "tsx", "mcp/server.ts"]
