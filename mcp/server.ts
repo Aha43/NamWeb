@@ -16,7 +16,7 @@
 import express, { type NextFunction, type Request, type Response } from 'express';
 import { pathToFileURL } from 'node:url';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { McpServer, type ToolCallback } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import {
   getOAuthProtectedResourceMetadataUrl,
@@ -243,7 +243,8 @@ export function buildServer(
     description: string,
     handler: (doc: WorkspaceDocument) => unknown,
   ) =>
-    server.registerTool(name, { description }, async () => {
+    // readOnlyHint (#1069): tells a client (Claude) this tool only reads, so it needn't prompt for it.
+    server.registerTool(name, { description, annotations: { readOnlyHint: true } }, async () => {
       try {
         return json(handler(await loadDoc(client, workspace)));
       } catch (err) {
@@ -315,6 +316,7 @@ export function buildServer(
     {
       description: 'List the direct children (actions and sub-projects) of a project node.',
       inputSchema: { project_id: z.string().describe('UUID of the project') },
+      annotations: { readOnlyHint: true },
     },
     async ({ project_id }) => {
       try {
@@ -346,6 +348,7 @@ export function buildServer(
           .optional()
           .describe('Max depth to descend; omit for the whole subtree'),
       },
+      annotations: { readOnlyHint: true },
     },
     async ({ node_id, depth }) => {
       try {
@@ -375,6 +378,7 @@ export function buildServer(
       description:
         'Find nodes by title or tag (case-insensitive substring match) across actions and projects.',
       inputSchema: { title: z.string().describe('Substring to search for') },
+      annotations: { readOnlyHint: true },
     },
     async ({ title }) => {
       try {
@@ -391,6 +395,7 @@ export function buildServer(
     {
       description: 'List all resources (links, files, notes) attached to a node.',
       inputSchema: { node_id: z.string().describe('UUID of the node') },
+      annotations: { readOnlyHint: true },
     },
     async ({ node_id }) => {
       try {
@@ -410,7 +415,25 @@ export function buildServer(
   // the `nam.write` scope: a read-only token never sees these tools at all.
   if (!canWrite) return server;
 
-  server.registerTool(
+  // Every tool below is a write. Register through this wrapper so each carries write annotations
+  // (#1069): `readOnlyHint: false` tells a client (Claude) to prompt before running it, and
+  // `destructiveHint` flags the delete/remove tools. Generic over the input shape so each handler's
+  // args stay typed exactly as a direct `registerTool` call.
+  const registerWrite = <Args extends z.ZodRawShape>(
+    name: string,
+    config: { description: string; inputSchema: Args },
+    cb: ToolCallback<Args>,
+  ) =>
+    server.registerTool(
+      name,
+      {
+        ...config,
+        annotations: { readOnlyHint: false, destructiveHint: /^(delete|remove)_/.test(name) },
+      },
+      cb,
+    );
+
+  registerWrite(
     'add_inbox_item',
     {
       description: 'Capture a new item into the Inbox for later triage.',
@@ -419,7 +442,7 @@ export function buildServer(
     ({ title }) => commit(() => ({ type: 'addInboxItem', id: newId(), title, now: nowIso() })),
   );
 
-  server.registerTool(
+  registerWrite(
     'create_project',
     {
       description:
@@ -440,7 +463,7 @@ export function buildServer(
       }),
   );
 
-  server.registerTool(
+  registerWrite(
     'add_action',
     {
       description: 'Add an action to a project. Defaults to status BACKLOG (matches NamDesktop).',
@@ -465,7 +488,7 @@ export function buildServer(
       }),
   );
 
-  server.registerTool(
+  registerWrite(
     'add_next_action',
     {
       description: 'Add a free-standing NEXT action, not attached to any project.',
@@ -483,7 +506,7 @@ export function buildServer(
   );
 
   const markStatus = (toolName: string, status: NodeStatus) =>
-    server.registerTool(
+    registerWrite(
       toolName,
       {
         description: `Set a node's status to ${status}.`,
@@ -500,7 +523,7 @@ export function buildServer(
   markStatus('mark_done', 'DONE');
   markStatus('mark_backlog', 'BACKLOG');
 
-  server.registerTool(
+  registerWrite(
     'update_node',
     {
       description: 'Update a node title and/or description. Omitted fields are left unchanged.',
@@ -524,7 +547,7 @@ export function buildServer(
       }),
   );
 
-  server.registerTool(
+  registerWrite(
     'update_tags',
     {
       description:
@@ -542,7 +565,7 @@ export function buildServer(
       }),
   );
 
-  server.registerTool(
+  registerWrite(
     'move_node',
     {
       description:
@@ -571,7 +594,7 @@ export function buildServer(
       }),
   );
 
-  server.registerTool(
+  registerWrite(
     'delete_node',
     {
       description:
@@ -593,7 +616,7 @@ export function buildServer(
     type: 'addPrerequisite' | 'removePrerequisite',
     verb: string,
   ) =>
-    server.registerTool(
+    registerWrite(
       toolName,
       {
         description: `${verb} a blocked-by dependency: node_id is blocked by blocked_by_id.`,
@@ -612,7 +635,7 @@ export function buildServer(
   prerequisite('add_blocked_by', 'addPrerequisite', 'Add');
   prerequisite('remove_blocked_by', 'removePrerequisite', 'Remove');
 
-  server.registerTool(
+  registerWrite(
     'add_resource',
     {
       description: 'Attach a resource (link, file, note) to a node.',
@@ -634,7 +657,7 @@ export function buildServer(
       }),
   );
 
-  server.registerTool(
+  registerWrite(
     'remove_resource',
     {
       description:
@@ -653,7 +676,7 @@ export function buildServer(
       }),
   );
 
-  server.registerTool(
+  registerWrite(
     'edit_resource',
     {
       description: 'Edit the resource at the given index. Omitted fields are left unchanged.',

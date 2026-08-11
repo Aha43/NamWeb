@@ -10,17 +10,14 @@ export const SCOPE_WRITE = 'nam.write';
 export const SUPPORTED_SCOPES = [SCOPE_READ, SCOPE_WRITE] as const;
 
 /**
- * Resolve which scopes to grant at consent. No scope requested → the connector's natural full set
- * (read + write; the user consents by logging in on our page). Otherwise: keep the supported subset,
- * and always include the `nam.read` baseline. A request naming ONLY unsupported scopes is narrowed to
- * read — never broadened up to write (#1050: the old fallback returned the full set here).
+ * Resolve the scopes to grant at consent (#1069 opt-in write). `nam.read` is always granted — the
+ * baseline every connection carries. `nam.write` is granted ONLY when the resource owner ticks the
+ * write-consent checkbox on the sign-in page (`allowWrite`), NEVER from the client's requested scope
+ * alone: a client can't escalate itself to write (#1050), and read-only stays the safe default. The
+ * client's requested `scope` is advisory — the owner's consent is the authority for write.
  */
-export function resolveGrantedScopes(requested: string[]): string[] {
-  if (requested.length === 0) return [...SUPPORTED_SCOPES];
-  const supported: readonly string[] = SUPPORTED_SCOPES;
-  const filtered = requested.filter((s) => supported.includes(s));
-  const base = filtered.length ? filtered : [SCOPE_READ];
-  return base.includes(SCOPE_READ) ? base : [SCOPE_READ, ...base];
+export function resolveGrantedScopes(allowWrite: boolean): string[] {
+  return allowWrite ? [SCOPE_READ, SCOPE_WRITE] : [SCOPE_READ];
 }
 
 /**

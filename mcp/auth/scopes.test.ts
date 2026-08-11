@@ -7,31 +7,17 @@ import {
   resolveGrantedScopes,
 } from './scopes';
 
-describe('resolveGrantedScopes', () => {
-  it('grants the full supported set when nothing is requested', () => {
-    expect(resolveGrantedScopes([])).toEqual([...SUPPORTED_SCOPES]);
+describe('resolveGrantedScopes (#1069 opt-in write)', () => {
+  it('grants read-only by default — no write without owner consent (#1050 safe default)', () => {
+    expect(resolveGrantedScopes(false)).toEqual([SCOPE_READ]);
   });
 
-  it('honors a read-only request', () => {
-    expect(resolveGrantedScopes([SCOPE_READ])).toEqual([SCOPE_READ]);
+  it('grants read + write ONLY when the owner consents (the sign-in checkbox)', () => {
+    expect(resolveGrantedScopes(true)).toEqual([SCOPE_READ, SCOPE_WRITE]);
   });
 
-  it('honors a read+write request', () => {
-    expect(resolveGrantedScopes([SCOPE_READ, SCOPE_WRITE])).toEqual([SCOPE_READ, SCOPE_WRITE]);
-  });
-
-  it('adds the read baseline to a write request (write implies read)', () => {
-    expect(resolveGrantedScopes([SCOPE_WRITE])).toEqual([SCOPE_READ, SCOPE_WRITE]);
-  });
-
-  it('does NOT broaden an all-unsupported request up to write — narrows to read (#1050)', () => {
-    // The old fallback returned the full set here, silently granting write.
-    expect(resolveGrantedScopes(['bogus'])).toEqual([SCOPE_READ]);
-    expect(resolveGrantedScopes(['bogus', 'admin'])).toEqual([SCOPE_READ]);
-  });
-
-  it('drops unsupported scopes from a mixed request, keeping the read baseline', () => {
-    expect(resolveGrantedScopes([SCOPE_WRITE, 'bogus'])).toEqual([SCOPE_READ, SCOPE_WRITE]);
+  it('the write grant is exactly the supported set (read is the baseline)', () => {
+    expect(resolveGrantedScopes(true)).toEqual([...SUPPORTED_SCOPES]);
   });
 });
 

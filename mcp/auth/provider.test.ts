@@ -14,6 +14,7 @@ vi.mock('./supabaseIdentity', () => ({ signInWithPassword, clientForSession, lis
 
 // Imported after the mock is registered.
 const { SupabaseOAuthProvider, supabaseClientFromAuth } = await import('./provider');
+const { SCOPE_READ, SCOPE_WRITE } = await import('./scopes');
 
 // --- Fakes -----------------------------------------------------------------
 
@@ -144,6 +145,22 @@ describe('SupabaseOAuthProvider', () => {
     expect(supabaseClientFromAuth(info)).toBe(fakeSupabase);
   });
 
+  it('grants nam.write ONLY when the owner ticks the write-consent checkbox (#1069)', async () => {
+    const code = await login({ allow_write: '1' });
+    const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    expect(tokens.scope).toBe('nam.read nam.write');
+    const info = await provider.verifyAccessToken(tokens.access_token);
+    expect(info.scopes).toEqual([SCOPE_READ, SCOPE_WRITE]);
+  });
+
+  it('stays read-only when the checkbox is unticked, even if the client requested write (#1069/#1050)', async () => {
+    // client asks for write, but the owner did NOT consent → read-only. Consent is the authority.
+    const code = await login({ scope: 'nam.read nam.write' });
+    const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
+    const info = await provider.verifyAccessToken(tokens.access_token);
+    expect(info.scopes).toEqual([SCOPE_READ]);
+  });
+
   it('rotates the refresh token and invalidates the old one', async () => {
     const code = await login();
     const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
@@ -166,7 +183,7 @@ describe('SupabaseOAuthProvider', () => {
   });
 
   it('narrows scope on refresh — and ENFORCES it at the token, not just the response (#1051 review, P1)', async () => {
-    const code = await login({ scope: 'nam.read nam.write' }); // granted read+write
+    const code = await login({ allow_write: '1' }); // owner consents → granted read+write (#1069)
     const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
     const refreshed = await provider.exchangeRefreshToken(client, first.refresh_token!, ['nam.read']);
     expect(refreshed.scope).toBe('nam.read');

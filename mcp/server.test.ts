@@ -126,6 +126,19 @@ describe('NamWeb MCP server (read surface)', () => {
     await server.close();
   });
 
+  it('annotates read tools read-only and write tools as writes/destructive (#1069)', async () => {
+    const { client, server } = await connectedClient();
+    const tools = (await client.listTools()).tools;
+    const ann = (name: string) => tools.find((t) => t.name === name)?.annotations;
+    expect(ann('list_projects')?.readOnlyHint).toBe(true);
+    expect(ann('list_subtree')?.readOnlyHint).toBe(true);
+    expect(ann('create_project')?.readOnlyHint).toBe(false);
+    expect(ann('add_action')?.destructiveHint).toBe(false);
+    expect(ann('delete_node')?.destructiveHint).toBe(true);
+    expect(ann('remove_resource')?.destructiveHint).toBe(true);
+    await server.close();
+  });
+
   it('reads from the workspace the token selected', async () => {
     const { client, server } = await connectedClient({ workspace: 'dev' });
     await client.callTool({ name: 'list_inbox', arguments: {} });
