@@ -109,9 +109,12 @@ export function renderLoginPage(p: LoginPageParams): string {
 
   // Opt-in write (#1069): read-only is the default; the checkbox is the ONLY way this connection gets
   // `nam.write` (honest, owner-controlled consent). Left unticked → the assistant can look, not touch.
-  const writeConsent = `<label class="choice" style="margin:.4rem 0 .2rem">
-        <input type="checkbox" name="allow_write" value="1" />
-        Also let it <strong>make changes</strong> — create, edit, and delete on your behalf. Leave unticked for read-only.
+  // Wrap the text in ONE <span> so the flex `.choice` row has exactly two items (checkbox + text) —
+  // otherwise the inline <strong> splits the sentence into separate flex items that wrap into ragged
+  // columns (#1095). flex-start keeps the checkbox on the first line of the multi-line label.
+  const writeConsent = `<label class="choice" style="margin:.4rem 0 .2rem; align-items:flex-start">
+        <input type="checkbox" name="allow_write" value="1" style="flex:0 0 auto; margin-top:.15rem" />
+        <span>Also let it <strong>make changes</strong> — create, edit, and delete on your behalf. Leave unticked for read-only.</span>
       </label>`;
 
   return page(
