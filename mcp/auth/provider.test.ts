@@ -183,7 +183,7 @@ describe('SupabaseOAuthProvider', () => {
   });
 
   it('narrows scope on refresh — and ENFORCES it at the token, not just the response (#1051 review, P1)', async () => {
-    const code = await login({ scope: 'nam.read nam.write' }); // granted read+write
+    const code = await login({ allow_write: '1' }); // owner consents → granted read+write (#1069)
     const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
     const refreshed = await provider.exchangeRefreshToken(client, first.refresh_token!, ['nam.read']);
     expect(refreshed.scope).toBe('nam.read');

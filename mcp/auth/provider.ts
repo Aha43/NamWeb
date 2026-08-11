@@ -159,7 +159,9 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
     // Opt-in write (#1069): read-only unless the owner ticked the write-consent checkbox. The client's
     // requested `scope` doesn't grant write — only this consent does. Flows into the pending-login /
     // workspace-picker path too via `base.scopes`, so a multi-workspace user's choice is preserved.
-    const scopes = resolveGrantedScopes(Boolean(allow_write));
+    // Parse the checkbox value EXACTLY (it's the write gate): the browser posts `allow_write=1` only
+    // when checked; a malformed/present-but-falsey value (`0`, `false`) must NOT count as consent.
+    const scopes = resolveGrantedScopes(allow_write === '1');
     const base = {
       clientId: client_id,
       redirectUri: redirect_uri,
