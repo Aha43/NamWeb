@@ -8,6 +8,25 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-08-13
+
+**The AI gains write — opt-in, guarded, self-describing.** 3.1.0 let an AI assistant *read* your
+workspace; 3.2.0 lets it *change* it — the second chapter of the 3.x AI arc, and deliberately gated. The
+remote MCP connection stays **read-only by default**; a single "Allow this connection to make changes"
+checkbox on the sign-in page is the only thing that grants `nam.write` — never the client's requested
+scope, so a connector can't escalate itself and read-only stays the safe default. With it ticked, the
+assistant can create, edit, move, and delete projects, actions, tags, and resources — each write
+**annotated** so the client prompts before it runs. The one irreversible operation, `delete_node`, got
+the most care: it **refuses** to remove a node with children unless you confirm `recursive: true` (naming
+the blast radius — direct children and total descendants), returns a **manifest** of exactly what it
+removed, and — after a second-vendor review caught a conflict-replay hole — **aborts on a concurrent
+edit** rather than deleting against a document it never saw. And because a read-only connection used to
+make the write tools simply *absent* (a `create_project` failing as "tool not found," indistinguishable
+from a typo), `get_workspace_context` now reports **`canWrite`** and a per-deploy **`serverVersion`**, so
+an agent learns its permissions and the server build on its first read. Read-only was validated as a GTD
+*reviewer* in 3.1.0; write was validated the same way — a live acceptance test drove the whole lifecycle
+(create → add → status → recursive delete) and confirmed the delete gate holds. No breaking changes.
+
 ### Added
 - **Let the AI make changes — opt-in write for the MCP connector** (#1089). The remote MCP connection
   stays **read-only by default**; a new "Allow this connection to make changes" checkbox on the sign-in
@@ -2258,7 +2277,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/Aha43/NamWeb/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/Aha43/NamWeb/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/Aha43/NamWeb/compare/v2.11.0...v3.0.0
 [2.11.0]: https://github.com/Aha43/NamWeb/compare/v2.10.0...v2.11.0
