@@ -18,7 +18,7 @@ export function FocusPage() {
   const { t } = useTranslation();
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-  const { document, dispatch } = useWorkspaceContext();
+  const { document, dispatch, loading } = useWorkspaceContext();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
   const setStatus = useSetStatus();
@@ -125,41 +125,49 @@ export function FocusPage() {
         <div className="w-10" aria-hidden />
       </div>
 
-      <FocusDeck
-        key={sourceKey + inProgressKey}
-        cards={cards}
-        // Done-focus is re-triage: the primary action restores the card to Next (it wasn't done after
-        // all); otherwise the deck marks the card Done.
-        onDone={(id) => setStatus(id, isDone ? 'NEXT' : 'DONE')}
-        doneLabel={isDone ? t('focus.toNext') : undefined}
-        // In-flow re-triage: flat queues flip Next↔Backlog; Done-focus moves the card to Backlog.
-        flipLabel={
-          flat
-            ? sourceParam === 'backlog'
-              ? t('domain.status.next')
-              : t('domain.status.backlog')
-            : isDone
-              ? t('domain.status.backlog')
-              : undefined
-        }
-        onFlip={
-          flat
-            ? (id) => setStatus(id, sourceParam === 'backlog' ? 'NEXT' : 'BACKLOG')
-            : isDone
-              ? (id) => setStatus(id, 'BACKLOG')
-              : undefined
-        }
-        onExit={exit}
-        onEditCard={(id) => openEditor(id)}
-        onRenameCard={(id, title) => {
-          const node = document?.nodes[id];
-          if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
-        }}
-        onDeleteCard={(id) => deleteNode(id)}
-        // Promote Delete beside Done on the execution decks; the Done re-triage deck keeps its small
-        // trash (its primary is "restore to Next", not "done") (#978).
-        promoteDelete={!isDone}
-      />
+      {/* Focus lives outside the shell, so it skips ShellContent's global loading gate — without this
+          the deck would render "All clear" over a still-null document during the initial pull (#1108). */}
+      {loading || !document ? (
+        <div className="flex flex-1 items-center justify-center p-8 text-sm text-muted-foreground">
+          {t('focus.loading')}
+        </div>
+      ) : (
+        <FocusDeck
+          key={sourceKey + inProgressKey}
+          cards={cards}
+          // Done-focus is re-triage: the primary action restores the card to Next (it wasn't done after
+          // all); otherwise the deck marks the card Done.
+          onDone={(id) => setStatus(id, isDone ? 'NEXT' : 'DONE')}
+          doneLabel={isDone ? t('focus.toNext') : undefined}
+          // In-flow re-triage: flat queues flip Next↔Backlog; Done-focus moves the card to Backlog.
+          flipLabel={
+            flat
+              ? sourceParam === 'backlog'
+                ? t('domain.status.next')
+                : t('domain.status.backlog')
+              : isDone
+                ? t('domain.status.backlog')
+                : undefined
+          }
+          onFlip={
+            flat
+              ? (id) => setStatus(id, sourceParam === 'backlog' ? 'NEXT' : 'BACKLOG')
+              : isDone
+                ? (id) => setStatus(id, 'BACKLOG')
+                : undefined
+          }
+          onExit={exit}
+          onEditCard={(id) => openEditor(id)}
+          onRenameCard={(id, title) => {
+            const node = document?.nodes[id];
+            if (node) dispatch({ type: 'updateNode', id, title, description: node.description, now: nowIso() });
+          }}
+          onDeleteCard={(id) => deleteNode(id)}
+          // Promote Delete beside Done on the execution decks; the Done re-triage deck keeps its small
+          // trash (its primary is "restore to Next", not "done") (#978).
+          promoteDelete={!isDone}
+        />
+      )}
     </div>
   );
 }

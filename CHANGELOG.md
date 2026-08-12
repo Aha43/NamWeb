@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- Focus no longer blanks when opened in a tab that's been open across a deploy. The code-split Focus
+  route now catches a stale-chunk load failure and recovers (auto-reload once, with a manual Reload
+  fallback) instead of showing a blank page until you refresh. And because Focus lives outside the
+  shell, it now shows its own loading state while the workspace is still loading, instead of flashing
+  a misleading "All clear". Closes #1108.
+
 ## [3.2.0] - 2026-08-13
 
 **The AI gains write — opt-in, guarded, self-describing.** 3.1.0 let an AI assistant *read* your

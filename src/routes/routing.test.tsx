@@ -210,6 +210,23 @@ describe('routing', () => {
     );
   });
 
+  it('renders the Focus deck at /focus with the first card of the source queue', async () => {
+    renderAt('/focus?source=next');
+    // Lazy route: wait for the chunk, then the deck shows the first Next action.
+    expect(await screen.findByRole('heading', { name: 'Do this' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Progress')).toHaveTextContent('1 /');
+  });
+
+  it('shows a loading state on Focus (not "all clear") while the workspace is still loading (#1108)', async () => {
+    // Focus is outside the shell, so it never gets ShellContent's global loading gate — it must gate
+    // itself, else the deck renders "All clear" over a null document during the initial pull.
+    renderAt('/focus?source=next', { loading: true, document: null });
+    // The header (with Exit) proves FocusPage itself mounted — not just the Suspense fallback.
+    expect(await screen.findByLabelText('Exit focus')).toBeInTheDocument();
+    expect(screen.getByText('Loading…')).toBeInTheDocument();
+    expect(screen.queryByText('All clear 🎉')).not.toBeInTheDocument();
+  });
+
   it('shows a dismissible sync notice across routes', () => {
     const clearNotice = vi.fn();
     renderAt('/next', { notice: { kind: 'info', messageKey: 'sync.updatedFromDevice' }, clearNotice });
