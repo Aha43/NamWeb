@@ -63,30 +63,32 @@ function doc(bookmarks: Bookmark[]): WorkspaceDocument {
 
 const projectBm: Bookmark = { id: 'b1', label: 'Vacation', kind: 'project', projectId: 'p1', color: '#ef4444' };
 const staleBm: Bookmark = { id: 'b2', label: 'Old plans', kind: 'project', projectId: 'gone', color: '#f59e0b' };
-const contextBm: Bookmark = { id: 'b3', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: true, color: '#10b981' };
+// A leftover tag-filter bookmark from an old doc (#1107): the kind no longer exists in the type, so
+// simulate the on-disk shape. It must be ignored everywhere, never rendered.
+const legacyTagBm = { id: 'b3', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: true, color: '#10b981' } as unknown as Bookmark;
 
-function renderMenu(kind: 'project' | 'tagFilter', bookmarks: Bookmark[]) {
+function renderMenu(bookmarks: Bookmark[]) {
   render(
     <MemoryRouter>
       <WorkspaceContext.Provider value={{ document: doc(bookmarks), dispatch: vi.fn() } as unknown as UseWorkspace}>
-        <SidebarBookmarkMenu kind={kind} />
+        <SidebarBookmarkMenu />
       </WorkspaceContext.Provider>
     </MemoryRouter>,
   );
 }
 
 describe('SidebarBookmarkMenu (#588)', () => {
-  it('renders nothing when there are no bookmarks of its kind', () => {
-    renderMenu('project', [contextBm]); // only the other kind
+  it('renders nothing when there are no project bookmarks (a leftover tag bookmark is ignored, #1107)', () => {
+    renderMenu([legacyTagBm]);
     expect(screen.queryByRole('button', { name: 'Project bookmarks' })).not.toBeInTheDocument();
   });
 
-  it('shows a stale bookmark greyed (not navigable) with a remove \u2715 (#594)', () => {
+  it('shows a stale bookmark greyed (not navigable) with a remove control (#594)', () => {
     const dispatch = vi.fn();
     render(
       <MemoryRouter>
         <WorkspaceContext.Provider value={{ document: doc([staleBm]), dispatch } as unknown as UseWorkspace}>
-          <SidebarBookmarkMenu kind="project" />
+          <SidebarBookmarkMenu />
         </WorkspaceContext.Provider>
       </MemoryRouter>,
     );
@@ -95,41 +97,40 @@ describe('SidebarBookmarkMenu (#588)', () => {
     const row = screen.getByRole('menuitem', { name: /Old plans/ });
     expect(row).toBeDisabled(); // greyed, not navigable
     expect(screen.getByText('(no longer exists)')).toBeInTheDocument();
-    // No "\u2026" browse for a gone project.
+    // No browse for a gone project.
     expect(screen.queryByRole('menuitem', { name: 'Browse from Old plans' })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Remove bookmark: Old plans' }));
     expect(dispatch).toHaveBeenCalledWith({ type: 'removeBookmark', id: 'b2' });
   });
 
   it('lists project bookmarks (stale greyed), navigates on live ones, and offers remove (#594)', () => {
-    renderMenu('project', [projectBm, staleBm, contextBm]);
+    renderMenu([projectBm, staleBm, legacyTagBm]);
     expect(screen.getByRole('button', { name: 'Project bookmarks' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: /Old plans/ })).toBeDisabled(); // stale: shown, greyed
-    expect(screen.queryByText('#home')).not.toBeInTheDocument(); // other kind
+    expect(screen.queryByText('#home')).not.toBeInTheDocument(); // leftover tag bookmark ignored
     expect(screen.getByRole('button', { name: 'Remove bookmark: Vacation' })).toBeInTheDocument(); // live rows too
     fireEvent.click(screen.getByRole('menuitem', { name: 'Vacation' }));
     expect(navigate).toHaveBeenCalledWith('/projects/p1');
   });
 
-  it("move up/down reorders within the kind, leaving other kinds' slots untouched (#636)", () => {
+  it('move up/down reorders the project bookmarks (#636)', () => {
     const secondProjectBm: Bookmark = { id: 'b4', label: 'Cabin', kind: 'project', projectId: 'p1', color: '#3b82f6' };
     const dispatch = vi.fn();
-    // Stored mixed order: [context b3, project b1, project b4] — the menu shows only b1, b4.
     render(
       <MemoryRouter>
         <WorkspaceContext.Provider
-          value={{ document: doc([contextBm, projectBm, secondProjectBm]), dispatch } as unknown as UseWorkspace}
+          value={{ document: doc([projectBm, secondProjectBm]), dispatch } as unknown as UseWorkspace}
         >
-          <SidebarBookmarkMenu kind="project" />
+          <SidebarBookmarkMenu />
         </WorkspaceContext.Provider>
       </MemoryRouter>,
     );
-    // Ends are disabled within the visible (kind-filtered) list.
+    // Ends are disabled within the list.
     expect(screen.getByRole('button', { name: 'Move Vacation up' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Move Cabin down' })).toBeDisabled();
-    // Moving Cabin up swaps the two project slots; the context bookmark keeps its slot.
+    // Moving Cabin up swaps the two slots.
     fireEvent.click(screen.getByRole('button', { name: 'Move Cabin up' }));
-    expect(dispatch).toHaveBeenCalledWith({ type: 'reorderBookmarks', order: ['b3', 'b4', 'b1'] });
+    expect(dispatch).toHaveBeenCalledWith({ type: 'reorderBookmarks', order: ['b4', 'b1'] });
   });
 
   it('the pencil opens a rename dialog — prefilled, empty-guarded, dispatching renameBookmark (#732)', () => {
@@ -137,7 +138,7 @@ describe('SidebarBookmarkMenu (#588)', () => {
     render(
       <MemoryRouter>
         <WorkspaceContext.Provider value={{ document: doc([projectBm]), dispatch } as unknown as UseWorkspace}>
-          <SidebarBookmarkMenu kind="project" />
+          <SidebarBookmarkMenu />
         </WorkspaceContext.Provider>
       </MemoryRouter>,
     );
@@ -159,12 +160,12 @@ describe('SidebarBookmarkMenu (#588)', () => {
     expect(screen.queryByLabelText('Name')).not.toBeInTheDocument(); // dialog closed
   });
 
-  it('⌘/Ctrl+Enter commits the rename dialog like Save (#746)', () => {
+  it('Cmd/Ctrl+Enter commits the rename dialog like Save (#746)', () => {
     const dispatch = vi.fn();
     render(
       <MemoryRouter>
         <WorkspaceContext.Provider value={{ document: doc([projectBm]), dispatch } as unknown as UseWorkspace}>
-          <SidebarBookmarkMenu kind="project" />
+          <SidebarBookmarkMenu />
         </WorkspaceContext.Provider>
       </MemoryRouter>,
     );
@@ -176,40 +177,13 @@ describe('SidebarBookmarkMenu (#588)', () => {
     expect(screen.queryByLabelText('Name')).not.toBeInTheDocument(); // closed
   });
 
-  it('a context bookmark renames too, but has no "Use project name" (#732)', () => {
-    const dispatch = vi.fn();
-    render(
-      <MemoryRouter>
-        <WorkspaceContext.Provider value={{ document: doc([contextBm]), dispatch } as unknown as UseWorkspace}>
-          <SidebarBookmarkMenu kind="tagFilter" />
-        </WorkspaceContext.Provider>
-      </MemoryRouter>,
-    );
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Rename bookmark: #home' }));
-    expect(screen.queryByRole('button', { name: 'Use project name' })).not.toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Economy of trip to Japan' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(dispatch).toHaveBeenCalledWith({ type: 'renameBookmark', id: 'b3', label: 'Economy of trip to Japan' });
-  });
-
-  it('a context bookmark navigates with tags + nextOnly encoded', () => {
-    renderMenu('tagFilter', [projectBm, contextBm]);
-    fireEvent.click(screen.getByRole('menuitem', { name: '#home' }));
-    expect(navigate).toHaveBeenCalledWith('/tags?tags=home&next=1&bm=b3');
-  });
-
-  it('a row\'s "…" opens the picker already at that project — Open navigates (#595)', () => {
-    renderMenu('project', [projectBm]);
+  it('a row browse "…" opens the picker already at that project — Open navigates (#595)', () => {
+    renderMenu([projectBm]);
     fireEvent.click(screen.getByRole('menuitem', { name: 'Browse from Vacation' }));
     // The Finder-style picker in open mode, pre-navigated: the bookmark is already the selection,
     // so Open is immediately available and confirms to it.
     expect(screen.getByText('Open project')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Open' }));
     expect(navigate).toHaveBeenCalledWith('/projects/p1');
-  });
-
-  it('the context menu has no "…" browse items (#595 is a project affair)', () => {
-    renderMenu('tagFilter', [contextBm]);
-    expect(screen.queryByRole('menuitem', { name: /Browse from/ })).not.toBeInTheDocument();
   });
 });

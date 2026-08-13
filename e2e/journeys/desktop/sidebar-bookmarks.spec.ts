@@ -1,16 +1,15 @@
 import { test, expect } from '../../mockedTest';
 import { DocBuilder } from '../../mocks/docBuilder';
 
-// #588 — bookmarks live in the sidebar as split-buttons: project bookmarks behind a chevron on the
-// Projects entry, context (tag-filter) bookmarks behind one on the Contexts button. The toolbar
-// strip is gone. Network-mocked.
+// #588 — project bookmarks live in the sidebar as a split-button: behind a chevron on the Projects
+// entry. Context (tag-filter) bookmarking was removed (#1107); saved views are the tag-view feature.
+// The toolbar strip is gone. Network-mocked.
 
 test.describe('with bookmarks', () => {
   const seed = new DocBuilder().project('vac', 'Vacation').action('a1', 'Water plants', { tags: ['home'] }).build();
   seed.bookmarks = [
     { id: 'bm1', label: 'Vacation', kind: 'project' as const, projectId: 'vac', color: '#3b82f6' },
     { id: 'bm2', label: 'Old plans', kind: 'project' as const, projectId: 'gone', color: '#f59e0b' }, // stale
-    { id: 'bm3', label: '#home', kind: 'tagFilter' as const, tags: ['home'], nextOnly: true, color: '#10b981' },
   ];
   test.use({ seedDoc: seed });
 
@@ -45,44 +44,12 @@ test.describe('with bookmarks', () => {
     await menu.getByRole('button', { name: 'Remove bookmark: Old plans' }).click();
     await expect(menu).toBeVisible();
     await expect(menu.getByText('Old plans')).toHaveCount(0);
-    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual(['bm1', 'bm3']);
+    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual(['bm1']);
 
     await menu.getByRole('button', { name: 'Remove bookmark: Vacation' }).click();
-    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual(['bm3']);
+    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual([]);
     // No project bookmarks left → the chevron disappears.
     await expect(page.getByRole('button', { name: 'Project bookmarks' })).toHaveCount(0);
-  });
-
-  test('the Contexts chevron lands on the bookmark view — actions first, workshop tucked away (#745)', async ({ page }) => {
-    await page.goto('/inbox');
-
-    await page.getByRole('button', { name: 'Context bookmarks' }).click();
-    await page.getByRole('menu').getByText('#home').click();
-
-    await expect(page).toHaveURL(/\/tags\?tags=home&next=1&bm=bm3$/);
-    // The bookmark's label is the view title; the filtered actions lead.
-    await expect(page.getByRole('heading', { name: '#home' })).toBeVisible();
-    await expect(page.getByText('Water plants')).toBeVisible();
-    // The workshop chrome is gone: no tag management, no chips until asked.
-    await expect(page.getByRole('button', { name: 'Manage tags' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'home', exact: true })).toHaveCount(0);
-
-    // The status boxes (#766) are the always-at-hand doing-levers: outside the collapse,
-    // Next-only semantics on landing (Next ✓, Backlog ✗), and ticking Backlog writes the URL's
-    // nextOnly=0 without leaving the bookmark view.
-    const nextBox = page.getByRole('checkbox', { name: 'Next' });
-    const backlogBox = page.getByRole('checkbox', { name: 'Backlog' });
-    await expect(nextBox).toBeChecked();
-    await expect(backlogBox).not.toBeChecked();
-    // click, not check(): the control is URL-driven — the state flips on the router re-render.
-    await backlogBox.click();
-    await expect(backlogBox).toBeChecked();
-    await expect(page).toHaveURL(/next=0.*bm=bm3|bm=bm3.*next=0/);
-    await expect(page.getByRole('heading', { name: '#home' })).toBeVisible(); // still the bookmark view
-
-    // Tweaking tags is one click deeper — the dense line expands to the chips.
-    await page.getByRole('button', { name: 'Adjust tag selection' }).click();
-    await expect(page.getByRole('button', { name: 'home', exact: true })).toBeVisible();
   });
 
   test('the plain Tags view keeps its full workshop (#745)', async ({ page }) => {
@@ -129,11 +96,9 @@ test.describe('bookmark labels grow up (#732)', () => {
     .project('dev', 'NAM dev')
     .project('web', 'Web', { under: 'dev' })
     .project('sprint', 'Next sprint', { under: 'web' })
-    .action('a1', 'Book flights', { tags: ['economy', 'summer-trip-26'] })
     .build();
   seed.bookmarks = [
     { id: 'bm1', label: 'Next sprint', kind: 'project' as const, projectId: 'sprint', color: '#3b82f6' },
-    { id: 'bm2', label: '#economy', kind: 'tagFilter' as const, tags: ['economy', 'summer-trip-26'], nextOnly: true, color: '#10b981' },
   ];
   test.use({ seedDoc: seed });
 
@@ -157,79 +122,15 @@ test.describe('bookmark labels grow up (#732)', () => {
     await page.getByRole('button', { name: 'Project bookmarks' }).click();
     await expect(page.getByRole('menu').getByText('Next sprint (NamWeb)')).toBeVisible();
   });
-
-  test('a context bookmark lists its tags on hover and takes a human name', async ({ page, doc }) => {
-    await page.goto('/inbox');
-    await page.getByRole('button', { name: 'Context bookmarks' }).click();
-    const menu = page.getByRole('menu');
-
-    await menu.getByRole('menuitem', { name: '#economy', exact: true }).hover();
-    await expect(page.getByRole('tooltip')).toHaveText('economy, summer-trip-26 · Next only');
-
-    await menu.getByRole('menuitem', { name: 'Rename bookmark: #economy' }).click();
-    const dialog = page.getByRole('dialog', { name: 'Rename bookmark' });
-    // No live project behind a tag filter — no "Use project name" helper.
-    await expect(dialog.getByRole('button', { name: 'Use project name' })).toHaveCount(0);
-    await dialog.getByLabel('Name').fill('Economy of trip to Japan');
-    await dialog.getByRole('button', { name: 'Save' }).click();
-    await expect.poll(() => doc.current().bookmarks?.[1].label).toBe('Economy of trip to Japan');
-  });
-});
-
-test.describe('stored-false bookmark round-trips (#750)', () => {
-  // The review's blind spot: every earlier test used a stored-TRUE bookmark, so the forced
-  // Next-only landing was never exercised. This bookmark was saved with nextOnly OFF.
-  const seed = new DocBuilder()
-    .action('a1', 'Water plants', { tags: ['daily'], status: 'NEXT' })
-    .action('a2', 'Sort receipts', { tags: ['daily'], status: 'BACKLOG' })
-    .action('a3', 'Old idea', { tags: ['someday'], status: 'BACKLOG' })
-    .build();
-  seed.bookmarks = [
-    { id: 'bmF', label: 'Daily', kind: 'tagFilter' as const, tags: ['daily'], nextOnly: false, color: '#10b981' },
-  ];
-  test.use({ seedDoc: seed });
-
-  test('forced Next-only survives chip toggles and the Focus round-trip; the star stays honest', async ({ page }) => {
-    await page.goto('/inbox');
-    await page.getByRole('button', { name: 'Context bookmarks' }).click();
-    await page.getByRole('menu').getByText('Daily').click();
-
-    // Lands with Next-only semantics (forced) — despite the stored nextOnly: false.
-    await expect(page.getByRole('heading', { name: 'Daily' })).toBeVisible();
-    await expect(page.getByRole('checkbox', { name: 'Next' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: 'Backlog' })).not.toBeChecked();
-    await expect(page.getByText('Water plants')).toBeVisible();
-    await expect(page.getByText('Sort receipts')).toHaveCount(0);
-
-    // F3: standing in the bookmark's own view, the star is filled (remove, not re-add).
-    await expect(page.getByRole('button', { name: 'Remove bookmark' })).toBeVisible();
-
-    // F1: a tag-chip toggle must not release the forced Next-only.
-    await page.getByRole('button', { name: 'Adjust tag selection' }).click();
-    await page.getByRole('button', { name: 'someday', exact: true }).click(); // on…
-    await expect(page.getByRole('checkbox', { name: 'Next' })).toBeChecked();
-    await page.getByRole('button', { name: 'someday', exact: true }).click(); // …and off
-    await expect(page.getByRole('checkbox', { name: 'Next' })).toBeChecked();
-    await expect(page.getByRole('checkbox', { name: 'Backlog' })).not.toBeChecked();
-    await expect(page.getByText('Water plants')).toBeVisible();
-
-    // F2: deal the deck and X out — home to the bookmark view, not the workshop.
-    await page.getByRole('button', { name: 'Focus', exact: true }).click();
-    await expect(page).toHaveURL(/\/focus\?.*bm=bmF/);
-    await page.getByRole('button', { name: 'Exit focus' }).click();
-    await expect(page.getByRole('heading', { name: 'Daily' })).toBeVisible();
-    await expect(page.getByRole('checkbox', { name: 'Next' })).toBeChecked();
-  });
 });
 
 test.describe('without bookmarks', () => {
   test.use({ seedDoc: new DocBuilder().project('vac', 'Vacation').build() });
 
-  test('no chevrons appear beside Projects or Contexts', async ({ page }) => {
+  test('no chevron appears beside Projects', async ({ page }) => {
     await page.goto('/inbox');
     await expect(page.getByRole('link', { name: 'Projects' })).toBeVisible(); // command bar rendered
     await expect(page.getByRole('button', { name: 'Project bookmarks' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Context bookmarks' })).toHaveCount(0);
   });
 
   test('the project explorer works without any bookmarks (#595)', async ({ page }) => {
@@ -246,25 +147,23 @@ test.describe('reorder bookmarks (#636)', () => {
   const seed = new DocBuilder().project('vac', 'Vacation').project('cab', 'Cabin').build();
   seed.bookmarks = [
     { id: 'bm1', label: 'Vacation', kind: 'project' as const, projectId: 'vac', color: '#3b82f6' },
-    { id: 'bm3', label: '#home', kind: 'tagFilter' as const, tags: ['home'], nextOnly: true, color: '#10b981' },
     { id: 'bm2', label: 'Cabin', kind: 'project' as const, projectId: 'cab', color: '#ef4444' },
   ];
   test.use({ seedDoc: seed });
 
-  test('move up swaps within the kind, persists, and leaves other kinds in place', async ({ page, doc }) => {
+  test('move up swaps the two bookmarks and persists', async ({ page, doc }) => {
     await page.goto('/inbox');
     await page.getByRole('button', { name: 'Project bookmarks' }).click();
     const menu = page.getByRole('menu');
 
-    // Ends disabled within the kind-filtered menu; the menu stays open while fiddling.
+    // Ends disabled; the menu stays open while fiddling.
     await expect(menu.getByRole('button', { name: 'Move Vacation up' })).toBeDisabled();
     await expect(menu.getByRole('button', { name: 'Move Cabin down' })).toBeDisabled();
     await menu.getByRole('button', { name: 'Move Cabin up' }).click();
     await expect(menu).toBeVisible();
     await expect(menu.getByRole('button', { name: 'Move Cabin up' })).toBeDisabled(); // now first
 
-    // The stored order swapped the two project slots; the context bookmark kept its slot.
-    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual(['bm2', 'bm3', 'bm1']);
+    await expect.poll(() => doc.current().bookmarks?.map((b) => b.id)).toEqual(['bm2', 'bm1']);
 
     // The new order survives closing and reopening the menu.
     await page.keyboard.press('Escape');

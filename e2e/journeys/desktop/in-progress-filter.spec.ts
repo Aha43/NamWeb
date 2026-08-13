@@ -92,33 +92,31 @@ test.describe('filtered reorder preserves hidden rows', () => {
 });
 
 // #968 review (P2): the Tags in-progress filter is session state — a fresh landing (a different
-// context bookmark) must not inherit it, or the second context shows an empty/partial list.
+// saved view) must not inherit it, or the second context shows an empty/partial list.
 test.describe('Tags in-progress filter does not leak across context visits', () => {
   const seed = new DocBuilder()
     .action('h1', 'Mow lawn', { status: 'NEXT', tags: ['home'] })
     .action('h2', 'Trim hedge', { status: 'NEXT', tags: ['home', '#in-progress'] })
     .action('w1', 'Email client', { status: 'NEXT', tags: ['work'] })
     .build();
-  seed.bookmarks = [
-    { id: 'bmh', label: '#home', kind: 'tagFilter' as const, tags: ['home'], nextOnly: false, color: '#10b981' },
-    { id: 'bmw', label: '#work', kind: 'tagFilter' as const, tags: ['work'], nextOnly: false, color: '#3b82f6' },
+  seed.savedViews = [
+    { name: 'Home', tags: ['home'], nextOnly: false },
+    { name: 'Work', tags: ['work'], nextOnly: false },
   ];
   test.use({ seedDoc: seed });
 
-  test('switching to another context bookmark resets the in-progress filter', async ({ page }) => {
-    await page.goto('/next');
+  test('switching to another saved view resets the in-progress filter', async ({ page }) => {
+    await page.goto('/tags');
 
-    // Land in the #home context via its bookmark, then filter to in-progress (hides Mow lawn).
-    await page.getByRole('button', { name: 'Context bookmarks' }).click();
-    await page.getByRole('menu').getByText('#home').click();
+    // Open the Home context via its saved view, then filter to in-progress (hides Mow lawn).
+    await page.getByRole('button', { name: 'Open view Home' }).click();
     await expect(page.getByText('Trim hedge')).toBeVisible();
     await page.getByRole('button', { name: 'Show in-progress only' }).click();
     await expect(page.getByText('Mow lawn')).toHaveCount(0);
 
-    // Switch to the #work context — a fresh landing. #work has no in-progress item, so a leaked
+    // Switch to the Work context — a fresh landing. Work has no in-progress item, so a leaked
     // filter would hide Email client entirely. It must be visible (filter reset).
-    await page.getByRole('button', { name: 'Context bookmarks' }).click();
-    await page.getByRole('menu').getByText('#work').click();
+    await page.getByRole('button', { name: 'Open view Work' }).click();
     await expect(page.getByText('Email client')).toBeVisible();
   });
 });

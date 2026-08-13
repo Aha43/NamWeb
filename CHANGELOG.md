@@ -15,6 +15,15 @@ minor = features (breaking changes allowed), patch = fixes.
   resources, so an AI can review *intent* instead of guessing from titles. The list-projection flag
   `hasNote` is renamed **`hasDescription`** to align the read surface with the write param and the web.
 
+### Removed
+
+- Context (tag-filter) bookmarking. Bookmarking is now for projects (a location) only — saved views
+  are the single way to save a tag view. The two had overlapped since they were invented alongside
+  each other; this collapses them to one. The context-bookmark chevron on the Contexts entry, the
+  bookmark toggle on the tag-filter view, and the label-led "bookmark view" are gone. Any leftover
+  tag-filter bookmarks in an existing workspace are ignored (never shown, never migrated), so old
+  data still loads fine. Closes #1107.
+
 ### Fixed
 
 - Focus no longer blanks when opened in a tab that's been open across a deploy. The code-split Focus

@@ -499,14 +499,6 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       for (const node of Object.values(next.nodes)) {
         if (node.tags.includes(from)) node.tags = normalizeTags(node.tags.map((t) => (t === from ? to : t)));
       }
-      // Tag-filter bookmarks follow the rename too (#603) — otherwise they keep navigating to the
-      // old, now-empty filter. normalizeTags dedupes when the rename collides with an existing tag,
-      // and the auto-generated "#a #b" label is regenerated to match.
-      next.bookmarks = next.bookmarks?.map((b) => {
-        if (b.kind !== 'tagFilter' || !b.tags?.includes(from)) return b;
-        const tags = normalizeTags(b.tags.map((t) => (t === from ? to : t)));
-        return { ...b, tags, label: tags.map((t) => `#${t}`).join(' ') };
-      });
       // Carry each context's manual order (#1036) across the rename — otherwise a live context keeps
       // its nodes/bookmark but loses its hand-sorted order, and multi-tag orders orphan (#1036 review).
       next.viewOrders = renameTagInContextOrders(next.viewOrders, from, to);
@@ -523,15 +515,6 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       for (const node of Object.values(next.nodes)) {
         if (node.tags.includes(tag)) node.tags = node.tags.filter((t) => t !== tag);
       }
-      // Drop the tag from tag-filter bookmarks (#603); a bookmark left with no tags is removed —
-      // a bookmark to an empty filter is meaningless.
-      next.bookmarks = next.bookmarks
-        ?.map((b) => {
-          if (b.kind !== 'tagFilter' || !b.tags?.includes(tag)) return b;
-          const tags = b.tags.filter((t) => t !== tag);
-          return { ...b, tags, label: tags.map((t) => `#${t}`).join(' ') };
-        })
-        .filter((b) => b.kind !== 'tagFilter' || (b.tags?.length ?? 0) > 0);
       // A context that references the deleted tag can never be re-selected — drop its dead order (#1036).
       next.viewOrders = deleteTagInContextOrders(next.viewOrders, tag);
       return next;
