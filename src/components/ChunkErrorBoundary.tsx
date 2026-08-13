@@ -11,7 +11,8 @@ function safeSessionStorage(): Pick<Storage, 'getItem' | 'setItem'> | null {
   try {
     return window.sessionStorage;
   } catch {
-    // Private-mode / disabled storage — fall back to a single manual reload with no loop guard.
+    // Private-mode / disabled storage — no loop guard available, so we show the manual Reload
+    // fallback instead of auto-reloading.
     return null;
   }
 }
@@ -45,13 +46,22 @@ export class ChunkErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: unknown) {
     if (!isChunkLoadError(error)) return;
+    // Guarded auto-reload: pull the fresh shell once, but never loop if the chunk is genuinely gone.
+    // The loop guard needs persistent storage; if it's unavailable, or reading/writing it throws
+    // (private/disabled modes — Codex P3), skip the auto-reload and leave the manual Reload fallback
+    // rather than reloading with no guard. All storage access is wrapped so a throw here can't break
+    // the boundary while it's already handling the chunk-load error.
     const now = (this.props.now ?? Date.now)();
     const store = this.props.storage === undefined ? safeSessionStorage() : this.props.storage;
-    const last = Number(store?.getItem(RELOAD_GUARD_KEY) ?? 0);
-    if (!last || now - last > RELOAD_WINDOW_MS) {
-      store?.setItem(RELOAD_GUARD_KEY, String(now));
-      this.reload();
+    if (!store) return;
+    try {
+      const last = Number(store.getItem(RELOAD_GUARD_KEY) ?? 0);
+      if (last && now - last <= RELOAD_WINDOW_MS) return; // just reloaded — don't loop
+      store.setItem(RELOAD_GUARD_KEY, String(now));
+    } catch {
+      return; // storage-hostile: fall back to the manual Reload button
     }
+    this.reload();
   }
 
   render() {

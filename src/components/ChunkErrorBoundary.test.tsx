@@ -86,6 +86,29 @@ describe('ChunkErrorBoundary', () => {
     expect(store.map.get('nam:chunk-reload-at')).toBe('20000');
   });
 
+  it('survives storage whose methods throw (private mode) — no crash, no reload, manual fallback (Codex P3)', () => {
+    const reload = vi.fn();
+    // Storage that exists but throws on access — the private-mode shape safeSessionStorage() can't
+    // detect up front. The throw must not break the boundary mid-chunk-error.
+    const hostile = {
+      getItem: () => {
+        throw new Error('SecurityError: storage disabled');
+      },
+      setItem: () => {
+        throw new Error('SecurityError: storage disabled');
+      },
+    };
+    render(
+      <ChunkErrorBoundary reload={reload} storage={hostile}>
+        <Boom message={CHUNK_MSG} />
+      </ChunkErrorBoundary>,
+    );
+    expect(reload).not.toHaveBeenCalled(); // no unguarded auto-reload
+    // The recoverable screen still renders, and its manual Reload works.
+    fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
   it('does not auto-reload on a non-chunk render error, but offers manual Reload', () => {
     const reload = vi.fn();
     render(
