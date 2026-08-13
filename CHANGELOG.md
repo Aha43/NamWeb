@@ -8,6 +8,21 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-08-13
+
+**Descriptions come out of hiding — and a redundant path retires.** This sprint came from dogfooding
+NAM with an AI assistant in the loop over the MCP connection, and its findings cluster around one
+need: *a description should be reachable, not buried.* On the tool side, `get_node(id)` now returns a
+node's full description text plus its blocked-by dependencies and resources — so an assistant reviews
+*intent* instead of guessing from titles (the list flag `hasNote` becomes `hasDescription` to match
+the write param and the web). On the web, a project's description previews right on the **collapsed**
+Details panel — readable at a glance, with a click-to-read popover for a long one — so you no longer
+open Details just to see what a project is about. Alongside the reach work: **context (tag-filter)
+bookmarking retires** — it always overlapped with saved views, so bookmarking is now for projects (a
+location) only; legacy tag bookmarks are ignored, never migrated or dropped. And the Focus deck **no
+longer blanks** when opened in a tab left open across a deploy — the one code-split route now recovers
+from a stale-chunk load instead of showing a blank page.
+
 ### Added
 - **`get_node` — read a node's full description, dependencies, and resources over MCP** (#1106). MCP
   clients could *write* a node description (`update_node`) but never *read* one back — listings only
@@ -2305,7 +2320,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.3.0...HEAD
+[3.3.0]: https://github.com/Aha43/NamWeb/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/Aha43/NamWeb/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/Aha43/NamWeb/compare/v3.0.0...v3.1.0
 [3.0.0]: https://github.com/Aha43/NamWeb/compare/v2.11.0...v3.0.0
