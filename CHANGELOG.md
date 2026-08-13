@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+- **`get_node` — read a node's full description, dependencies, and resources over MCP** (#1106). MCP
+  clients could *write* a node description (`update_node`) but never *read* one back — listings only
+  showed presence. `get_node(id)` returns the full description text plus its blocked-by dependencies and
+  resources, so an AI can review *intent* instead of guessing from titles. The list-projection flag
+  `hasNote` is renamed **`hasDescription`** to align the read surface with the write param and the web.
+
 ### Fixed
 
 - Focus no longer blanks when opened in a tab that's been open across a deploy. The code-split Focus
