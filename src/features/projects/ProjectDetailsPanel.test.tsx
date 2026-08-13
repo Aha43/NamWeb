@@ -26,6 +26,53 @@ describe('ProjectDetailsPanel', () => {
     expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
   });
 
+  it('previews the description while collapsed, without opening Details (#1109)', () => {
+    render(
+      <ProjectDetailsPanel
+        project={project({ description: 'Repaint the cabinets and swap the handles.' })}
+        collapsed
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+    expect(screen.getByText('Repaint the cabinets and swap the handles.')).toBeInTheDocument();
+    // A short description fits the preview — no "read more" affordance needed.
+    expect(screen.queryByRole('button', { name: 'Show more' })).not.toBeInTheDocument();
+    // Still collapsed: the edit fields stay hidden.
+    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+  });
+
+  it('shows no collapsed preview when the project has no description (#1109)', () => {
+    const { container } = render(
+      <ProjectDetailsPanel project={project({ description: null })} collapsed onToggle={vi.fn()} onSave={vi.fn()} />,
+    );
+    // Only the toggle button; no preview paragraph.
+    expect(container.querySelector('p')).toBeNull();
+  });
+
+  it('a long collapsed description opens in full via the peek popover (#1109)', () => {
+    const long = 'x'.repeat(250);
+    render(
+      <ProjectDetailsPanel project={project({ description: long })} collapsed onToggle={vi.fn()} onSave={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Show more' }));
+    expect(screen.getByRole('dialog', { name: 'Show more' })).toHaveTextContent(long);
+  });
+
+  it('does not render the collapsed preview when expanded (the description is in the textarea)', () => {
+    render(
+      <ProjectDetailsPanel
+        project={project({ description: 'fix the leak' })}
+        collapsed={false}
+        onToggle={vi.fn()}
+        onSave={vi.fn()}
+      />,
+    );
+    // The value lives in the Description field; there's no separate preview paragraph.
+    expect(screen.getByLabelText('Description')).toHaveValue('fix the leak');
+    expect(screen.queryByRole('button', { name: 'Show more' })).not.toBeInTheDocument();
+  });
+
   it('seeds the fields from the project when open', () => {
     render(
       <ProjectDetailsPanel

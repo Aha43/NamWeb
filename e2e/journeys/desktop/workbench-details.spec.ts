@@ -56,5 +56,20 @@ test('edit a sub-project on its own workbench', async ({ page, doc }) => {
   await expect.poll(() => doc.current().nodes['sub'].title).toBe('Pipework');
 });
 
+test.describe('collapsed description preview (#1109)', () => {
+  test.use({
+    seedDoc: new DocBuilder()
+      .project('proj', 'Kitchen reno', { description: 'Repaint the cabinets and swap the handles.' })
+      .build(),
+  });
+
+  test('the description shows on the collapsed Details panel — no click needed', async ({ page }) => {
+    await page.goto('/projects/proj');
+    // Details lands collapsed (#279); the description is readable at a glance, not hidden behind it.
+    await expect(page.getByRole('button', { name: 'Details' })).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.getByText('Repaint the cabinets and swap the handles.')).toBeVisible();
+  });
+});
+
 // Note: deleting a project from its Details panel (and the resulting redirect — to the parent for a
 // sub-project, to the list for a top-level one, per #330) is covered by workbench-delete-edit.spec.ts.

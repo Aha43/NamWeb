@@ -14,6 +14,10 @@ minor = features (breaking changes allowed), patch = fixes.
   showed presence. `get_node(id)` returns the full description text plus its blocked-by dependencies and
   resources, so an AI can review *intent* instead of guessing from titles. The list-projection flag
   `hasNote` is renamed **`hasDescription`** to align the read surface with the write param and the web.
+- A project's description is now visible at a glance on its workbench: the collapsed **Details**
+  panel shows a two-line preview of the description, with the same click-to-read popover the action
+  rows use for a long one — so you no longer have to open Details to see what a project is about.
+  Closes #1109.
 
 ### Removed
 
