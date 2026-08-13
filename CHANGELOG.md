@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- A project's description is now visible at a glance on its workbench: the collapsed **Details**
+  panel shows a two-line preview of the description, with the same click-to-read popover the action
+  rows use for a long one — so you no longer have to open Details to see what a project is about.
+  Closes #1109.
+
 ## [3.2.0] - 2026-08-13
 
 **The AI gains write — opt-in, guarded, self-describing.** 3.1.0 let an AI assistant *read* your

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { TagsInput } from '../actions/TagsInput';
+import { DescriptionPeek } from '../actions/DescriptionPeek';
 import { InheritedTags } from '../actions/InheritedTags';
 import { ResourcesEditor } from '../actions/ResourcesEditor';
 import { DueFieldset, type DueFields } from '../actions/DueFieldset';
@@ -63,6 +64,12 @@ export function ProjectDetailsPanel({
   const [resources, setResources] = useState<Resource[]>(project.resources);
   const [saved, setSaved] = useState(false);
 
+  // Surface the project's description while Details is collapsed (#1109): descriptions were only
+  // reachable by opening the panel. A clamped muted preview shows it at a glance; a long one gets the
+  // same click-to-read Popover the action rows use, so nothing is hidden behind an extra click.
+  const collapsedDescription = project.description?.trim();
+  const descriptionPeekable = (collapsedDescription?.length ?? 0) > 200;
+
   // Build the edits snapshot from current state (with optional overrides for a just-changed discrete
   // control, to dodge setState's async staleness) and report it. Never persists an empty title —
   // it falls back to the project's current value, so one bad field can't block saving the others.
@@ -118,6 +125,17 @@ export function ProjectDetailsPanel({
           )}
         </button>
       </Tooltip>
+      {collapsed && collapsedDescription && (
+        // A peek of the description without opening Details (#1109). Sibling of the toggle (not
+        // nested) so the peek chevron's button stays valid; clamped to two lines with the full text
+        // one click away in the Popover.
+        <div className="flex items-start gap-1 px-3 pb-2">
+          <p className="min-w-0 flex-1 line-clamp-2 whitespace-pre-wrap break-words text-xs text-muted-foreground">
+            {collapsedDescription}
+          </p>
+          {descriptionPeekable && <DescriptionPeek description={collapsedDescription} />}
+        </div>
+      )}
       {!collapsed && (
         <div className="space-y-4 border-t border-border p-3">
           {/* Title on one line — label + field + copy (far right) — to save vertical space (#558). */}
