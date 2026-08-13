@@ -52,6 +52,12 @@ function Path() {
 }
 
 const projectBm: Bookmark = { id: 'b1', label: 'Vacation', kind: 'project', projectId: 'p1', color: '#3b82f6' };
+const projectBm2: Bookmark = { id: 'b2', label: 'Errands', kind: 'project', projectId: 'p2', color: '#10b981' };
+// Live project nodes so the bookmarks aren't stale (a stale bookmark disables its Go button).
+const liveNodes = {
+  p1: { id: 'p1', title: 'Vacation', project: true } as never,
+  p2: { id: 'p2', title: 'Errands', project: true } as never,
+};
 
 describe('BookmarkBar', () => {
   it('renders nothing when there are no bookmarks', () => {
@@ -60,19 +66,17 @@ describe('BookmarkBar', () => {
   });
 
   it('navigates to a bookmark target on click', () => {
-    const workspace = ws([{ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' }]);
+    const workspace = ws([projectBm], { nodes: liveNodes });
     renderWithWs(<BookmarkBar />, workspace);
-    fireEvent.click(screen.getByRole('button', { name: 'Go to bookmark: #home' }));
-    expect(screen.getByTestId('path').textContent).toBe('/tags?tags=home&bm=b2');
+    fireEvent.click(screen.getByRole('button', { name: 'Go to bookmark: Vacation' }));
+    expect(screen.getByTestId('path').textContent).toBe('/projects/p1');
   });
 
   it('the focus glyph deals the deck scoped to the bookmark (#739)', () => {
-    const workspace = ws([
-      { id: 'b2', label: 'After work', kind: 'tagFilter', tags: ['daily'], nextOnly: true, color: '#10b981' },
-    ]);
+    const workspace = ws([projectBm], { nodes: liveNodes });
     renderWithWs(<BookmarkBar />, workspace);
-    fireEvent.click(screen.getByRole('button', { name: 'Focus: After work' }));
-    expect(screen.getByTestId('path').textContent).toBe('/focus?tags=daily&next=1&bm=b2');
+    fireEvent.click(screen.getByRole('button', { name: 'Focus: Vacation' }));
+    expect(screen.getByTestId('path').textContent).toBe('/focus?project=p1');
   });
 
   it('a stale bookmark offers no focus glyph (#739)', () => {
@@ -82,7 +86,7 @@ describe('BookmarkBar', () => {
   });
 
   it('removes a bookmark via its × control', () => {
-    const workspace = ws([projectBm], { nodes: { p1: { id: 'p1', title: 'Vacation', project: true } as never } });
+    const workspace = ws([projectBm], { nodes: liveNodes });
     renderWithWs(<BookmarkBar />, workspace);
     fireEvent.click(screen.getByRole('button', { name: 'Remove bookmark: Vacation' }));
     expect(workspace.dispatch).toHaveBeenCalledWith({ type: 'removeBookmark', id: 'b1' });
@@ -96,24 +100,23 @@ describe('BookmarkBar', () => {
   });
 
   it('reorders with move up/down, committing the full order (#636)', () => {
-    const tagBm: Bookmark = { id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' };
-    const workspace = ws([projectBm, tagBm]);
+    const workspace = ws([projectBm, projectBm2], { nodes: liveNodes });
     renderWithWs(<BookmarkBar />, workspace);
     // The first row can't move up, the last can't move down.
     expect(screen.getByRole('button', { name: 'Move Vacation up' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Move #home down' })).toBeDisabled();
-    fireEvent.click(screen.getByRole('button', { name: 'Move #home up' }));
+    expect(screen.getByRole('button', { name: 'Move Errands down' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Move Errands up' }));
     expect(workspace.dispatch).toHaveBeenCalledWith({ type: 'reorderBookmarks', order: ['b2', 'b1'] });
   });
 
   it('shows visible labels and navigates + fires onNavigate (phone)', () => {
     const onNavigate = vi.fn();
-    const workspace = ws([{ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], nextOnly: false, color: '#10b981' }]);
+    const workspace = ws([projectBm], { nodes: liveNodes });
     renderWithWs(<BookmarkBar onNavigate={onNavigate} />, workspace);
     // The label is visible text (not just a tooltip) for touch.
-    expect(screen.getByText('#home')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Go to bookmark: #home' }));
-    expect(screen.getByTestId('path').textContent).toBe('/tags?tags=home&bm=b2');
+    expect(screen.getByText('Vacation')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Go to bookmark: Vacation' }));
+    expect(screen.getByTestId('path').textContent).toBe('/projects/p1');
     expect(onNavigate).toHaveBeenCalled();
   });
 });

@@ -9,11 +9,33 @@ minor = features (breaking changes allowed), patch = fixes.
 ## [Unreleased]
 
 ### Added
-
+- **`get_node` — read a node's full description, dependencies, and resources over MCP** (#1106). MCP
+  clients could *write* a node description (`update_node`) but never *read* one back — listings only
+  showed presence. `get_node(id)` returns the full description text plus its blocked-by dependencies and
+  resources, so an AI can review *intent* instead of guessing from titles. The list-projection flag
+  `hasNote` is renamed **`hasDescription`** to align the read surface with the write param and the web.
 - A project's description is now visible at a glance on its workbench: the collapsed **Details**
   panel shows a two-line preview of the description, with the same click-to-read popover the action
   rows use for a long one — so you no longer have to open Details to see what a project is about.
   Closes #1109.
+
+### Removed
+
+- Context (tag-filter) bookmarking. Bookmarking is now for projects (a location) only — saved views
+  are the single way to save a tag view. The two had overlapped since they were invented alongside
+  each other; this collapses them to one. The context-bookmark chevron on the Contexts entry, the
+  bookmark toggle on the tag-filter view, and the label-led "bookmark view" are gone. Any leftover
+  tag-filter bookmarks in an existing workspace are ignored (never shown, never migrated), so old
+  data still loads fine. Closes #1107.
+
+### Fixed
+
+- Focus no longer blanks when opened in a tab that's been open across a deploy. The code-split Focus
+  route now catches a stale-chunk load failure and recovers (auto-reload once, with a manual Reload
+  fallback) instead of showing a blank page until you refresh. And because Focus lives outside the
+  shell, it now shows its own loading state while the workspace is still loading, instead of flashing
+  a misleading "All clear". Closes #1108.
+>>>>>>> main
 
 ## [3.2.0] - 2026-08-13
 

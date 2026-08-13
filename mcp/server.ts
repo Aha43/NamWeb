@@ -227,7 +227,7 @@ function nodeView(doc: WorkspaceDocument, n: NamNode) {
   if (n.createdAt) view.createdAt = n.createdAt;
   if (n.updatedAt) view.updatedAt = n.updatedAt;
   if (n.statusChangedAt) view.statusChangedAt = n.statusChangedAt;
-  if (n.description?.trim()) view.hasNote = true; // presence only — fetch text via list_resources
+  if (n.description?.trim()) view.hasDescription = true; // presence only — get the text via get_node (#1106)
   if (n.resources.length) view.resourceCount = n.resources.length;
   return view;
 }
@@ -417,6 +417,40 @@ export function buildServer(
         const node = getNode(doc, node_id);
         if (!node) return errorResult(`No node with id ${node_id}.`);
         return json(node.resources.map(resourceBrief));
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  // Deep single-node read (#1106): everything the list views show for a node PLUS the full
+  // `description` text (lists only carry `hasDescription`), the blocked-by dependencies (as
+  // {id,title}), and its resources inline. This is what lets an AI review intent instead of
+  // guessing from titles — call it when a listing showed `hasDescription: true`.
+  server.registerTool(
+    'get_node',
+    {
+      description:
+        'Get one node in full: its description text, blocked-by dependencies, and resources, plus ' +
+        'everything the list views show (path, status, tags, due, timestamps). Use when a listing ' +
+        'reported hasDescription:true and you need the actual text, or to inspect a node before editing.',
+      inputSchema: { node_id: z.string().describe('UUID of the node') },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ node_id }) => {
+      try {
+        const doc = await loadDoc(client, workspace);
+        const n = getNode(doc, node_id);
+        if (!n) return errorResult(`No node with id ${node_id}.`);
+        const view: Record<string, unknown> = { ...nodeView(doc, n) };
+        delete view.hasDescription; // replaced by the full text
+        delete view.resourceCount; // replaced by the resources array
+        if (n.description?.trim()) view.description = n.description;
+        if (n.blockedBy.length) {
+          view.blockedBy = n.blockedBy.map((id) => ({ id, title: doc.nodes[id]?.title ?? '(unknown)' }));
+        }
+        if (n.resources.length) view.resources = n.resources.map(resourceBrief);
+        return json(view);
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

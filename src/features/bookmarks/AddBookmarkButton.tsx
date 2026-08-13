@@ -10,9 +10,9 @@ import {
 } from './bookmarks';
 
 /**
- * The "make bookmark" toggle for a surface (a project, or a tag filter). Filled when the current
- * target is already bookmarked (click removes it); outline otherwise (click adds it, assigning the
- * next palette color). Self-contained — drives the synced workspace document directly.
+ * The "make bookmark" toggle for a project. Filled when the project is already bookmarked (click
+ * removes it); outline otherwise (click adds it, assigning the next palette color). Self-contained —
+ * drives the synced workspace document directly.
  */
 export function AddBookmarkButton({
   draft,

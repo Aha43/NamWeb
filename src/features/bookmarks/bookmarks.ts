@@ -2,7 +2,6 @@
 // detection, and stale-project detection. Kept transport-free (domain types only).
 
 import type { Bookmark, WorkspaceDocument } from '@/domain/types';
-import { tagFilterParams } from '@/features/tags/tagFilterParams';
 
 /** A small fixed palette — bookmarks cycle through it so each gets a distinct, learnable color. */
 export const BOOKMARK_COLORS = [
@@ -24,9 +23,11 @@ export function nextBookmarkColor(existing: Bookmark[]): string {
 /** A bookmark without its generated id/color — the "draft" a surface offers to save. */
 export type BookmarkDraft = Omit<Bookmark, 'id' | 'color'>;
 
-/** Always-an-array accessor (the field is optional on older/desktop documents). */
+/** Always-an-array accessor (the field is optional on older/desktop documents). Legacy tag-filter
+ *  ("context") bookmarks are filtered out here (#1107) so no surface ever renders one — every
+ *  consumer reads through this. The stored rows are left untouched (ignored, not migrated). */
 export function bookmarksOf(doc: WorkspaceDocument): Bookmark[] {
-  return doc.bookmarks ?? [];
+  return (doc.bookmarks ?? []).filter((b) => b.kind === 'project');
 }
 
 /**
@@ -52,48 +53,24 @@ export function movedBookmarkOrder(
   return order;
 }
 
-/** Does this draft already exist (same kind + same target)? Returns the matching bookmark, if any. */
+/** Does this draft already exist (same project)? Returns the matching bookmark, if any. */
 export function findBookmark(bookmarks: Bookmark[], draft: BookmarkDraft): Bookmark | undefined {
-  return bookmarks.find((b) => {
-    if (b.kind !== draft.kind) return false;
-    if (draft.kind === 'project') return b.projectId === draft.projectId;
-    // tagFilter: same set of tags (order-insensitive) and same nextOnly.
-    const a = [...(b.tags ?? [])].sort();
-    const c = [...(draft.tags ?? [])].sort();
-    return Boolean(b.nextOnly) === Boolean(draft.nextOnly) && a.length === c.length && a.every((t, i) => t === c[i]);
-  });
+  return bookmarks.find((b) => b.projectId === draft.projectId);
 }
 
-/** The in-app route a bookmark jumps to. A tagFilter bookmark carries its id (`bm`) so the
- *  Tags route can land on the bookmark view — its label as the title, the workshop chrome
- *  tucked away (#745) — instead of the full Tags workshop. */
+/** The in-app route a bookmark jumps to — its project's workbench. */
 export function bookmarkTarget(bookmark: Bookmark): string {
-  if (bookmark.kind === 'project') return `/projects/${bookmark.projectId}`;
-  const params = tagFilterParams(bookmark.tags ?? [], Boolean(bookmark.nextOnly));
-  params.set('bm', bookmark.id);
-  return `/tags?${params.toString()}`;
+  return `/projects/${bookmark.projectId}`;
 }
 
-/** The speed-dial route (#738): focus scoped to the bookmark — the deck, not the view. Both
- *  scopes are long-standing FocusPage URLs (project = the workbench Focus semantics). A context
- *  bookmark's deck follows the bookmark VIEW's rule (#750/F4): about doing, so Next-only —
- *  regardless of the stored flag — and it carries `bm` so the deck's exit lands back in the
- *  bookmark view. (Backlog-inclusive decks can return via a switcher in tag-scoped Focus.) */
+/** The speed-dial route (#738): focus scoped to the bookmark's project — the deck, not the view
+ *  (the workbench Focus semantics). */
 export function bookmarkFocusTarget(bookmark: Bookmark): string {
-  if (bookmark.kind === 'project') return `/focus?project=${bookmark.projectId}`;
-  const params = tagFilterParams(bookmark.tags ?? [], true);
-  params.set('bm', bookmark.id);
-  return `/focus?${params.toString()}`;
+  return `/focus?project=${bookmark.projectId}`;
 }
 
 /** A project bookmark whose project no longer exists (or is no longer a project) is stale. */
 export function isBookmarkStale(doc: WorkspaceDocument, bookmark: Bookmark): boolean {
-  if (bookmark.kind !== 'project') return false;
   const node = bookmark.projectId ? doc.nodes[bookmark.projectId] : undefined;
   return !node || !node.project;
-}
-
-/** Bookmarks of one kind, minus stale ones — what the sidebar quick-jump menus list (#588). */
-export function liveBookmarksOfKind(doc: WorkspaceDocument, kind: Bookmark['kind']): Bookmark[] {
-  return bookmarksOf(doc).filter((b) => b.kind === kind && !isBookmarkStale(doc, b));
 }
