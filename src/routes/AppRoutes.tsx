@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router';
+import { ChunkErrorBoundary } from '@/components/ChunkErrorBoundary';
 import { useGlobalShortcuts } from '@/shell/useGlobalShortcuts';
 import { ShellLayout } from './ShellLayout';
 import { InboxPage } from './InboxPage';
@@ -32,15 +33,20 @@ export function AppRoutes() {
       <Route
         path="focus"
         element={
-          <Suspense
-            fallback={
-              <div className="flex min-h-dvh items-center justify-center bg-background text-sm text-muted-foreground">
-                Loading…
-              </div>
-            }
-          >
-            <FocusPage />
-          </Suspense>
+          // A stale chunk (an open tab after a deploy) makes the lazy import 404; without a boundary
+          // React.lazy re-throws and blanks the route until a manual refresh — Focus is the only
+          // code-split route, so it was the only one that could blank (#1108).
+          <ChunkErrorBoundary>
+            <Suspense
+              fallback={
+                <div className="flex min-h-dvh items-center justify-center bg-background text-sm text-muted-foreground">
+                  Loading…
+                </div>
+              }
+            >
+              <FocusPage />
+            </Suspense>
+          </ChunkErrorBoundary>
         }
       />
       <Route element={<ShellLayout />}>

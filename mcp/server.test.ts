@@ -88,6 +88,7 @@ const EXPECTED_READ_TOOLS = [
   'list_project_children',
   'list_subtree',
   'find_node',
+  'get_node',
   'list_resources',
 ];
 
@@ -281,10 +282,35 @@ describe('MCP read surface enrichment', () => {
       createdAt: '2026-08-01T09:00:00',
       updatedAt: '2026-08-09T09:00:00',
       statusChangedAt: '2026-08-05T09:00:00',
-      hasNote: true,
+      hasDescription: true, // presence in lists; full text via get_node (#1106)
       resourceCount: 1,
       tags: ['errand'],
     });
+  });
+
+  it('get_node returns the full description text, blocked-by, and resources (#1106)', async () => {
+    const node = await call('get_node', { node_id: 'a1' });
+    expect(node).toMatchObject({
+      id: 'a1',
+      type: 'action',
+      title: 'Ship it',
+      description: 'the note', // the actual text, not just hasDescription
+      path: ['Launch'],
+      resources: [{ index: 0, type: 'URI', value: 'https://x', description: null }],
+    });
+    // presence flags are replaced by the real data
+    expect(node.hasDescription).toBeUndefined();
+    expect(node.resourceCount).toBeUndefined();
+  });
+
+  it('get_node errors on an unknown id', async () => {
+    const { client, server } = await connectedClient();
+    const result = (await client.callTool({ name: 'get_node', arguments: { node_id: 'nope' } })) as {
+      isError?: boolean;
+      content: { type: string; text?: string }[];
+    };
+    expect(result.isError).toBe(true);
+    await server.close();
   });
 
   it('classifies tags into system / sharing / context lanes (#1070)', async () => {
