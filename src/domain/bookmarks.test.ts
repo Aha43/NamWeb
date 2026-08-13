@@ -26,7 +26,7 @@ describe('bookmark intents', () => {
 
   it('removeBookmark drops the matching id', () => {
     let doc = applyIntent(createDefaultWorkspace(), { type: 'addBookmark', bookmark: bm() });
-    doc = applyIntent(doc, { type: 'addBookmark', bookmark: bm({ id: 'b2', label: '#home', kind: 'tagFilter', tags: ['home'], projectId: undefined }) });
+    doc = applyIntent(doc, { type: 'addBookmark', bookmark: bm({ id: 'b2', label: 'Other', projectId: 'p2' }) });
     doc = applyIntent(doc, { type: 'removeBookmark', id: 'b1' });
     expect(doc.bookmarks?.map((b) => b.id)).toEqual(['b2']);
   });

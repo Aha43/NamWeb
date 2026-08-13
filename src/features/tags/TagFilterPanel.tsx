@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { useState, type FormEvent, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, Pencil, Target } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { EmptyState } from '../actions/ActionRow';
@@ -18,11 +18,6 @@ import type { ActionRowData } from '../actions/rows';
 import type { NodeStatus, SavedView } from '../../domain/types';
 
 export interface TagFilterPanelProps {
-  /** Bookmark-view title (#745): set when the page landed via a context bookmark. */
-  title?: string;
-  /** Start with the tag-chip selection collapsed to a dense line (#745) — tweaking stays a
-   *  click away, but the view leads with the actions. */
-  collapseSelection?: boolean;
   allTags: string[];
   selected: string[];
   nextOnly: boolean;
@@ -53,8 +48,6 @@ export interface TagFilterPanelProps {
   onOpenView: (view: SavedView) => void;
   onRenameView?: (oldName: string, newName: string) => void;
   onDeleteView?: (name: string) => void;
-  /** Optional control (e.g. the bookmark toggle) shown beside Focus/Save when a filter is active. */
-  bookmarkSlot?: ReactNode;
   /** Persist a hand-drag of the result rows into a per-context manual order (#1036). */
   onReorder?: (ids: string[]) => void;
   /** Enable drag-to-reorder (desktop only — the pointer sensor) (#1036). */
@@ -63,8 +56,6 @@ export interface TagFilterPanelProps {
 
 /** Filter active actions by tags (AND), with saved views. Session-only selection. Presentational. */
 export function TagFilterPanel({
-  title,
-  collapseSelection = false,
   allTags,
   selected,
   nextOnly,
@@ -85,7 +76,6 @@ export function TagFilterPanel({
   onOpenView,
   onRenameView,
   onDeleteView,
-  bookmarkSlot,
   onReorder,
   dndEnabled,
 }: TagFilterPanelProps) {
@@ -100,13 +90,6 @@ export function TagFilterPanel({
   const [newTag, setNewTag] = useState('');
   // Manage (create / rename / delete) is collapsed by default so it's out of the way when filtering.
   const [manageOpen, setManageOpen] = useState(false);
-  // The bookmark view leads with the actions; the chips open on demand (#745).
-  const [selectionOpen, setSelectionOpen] = useState(!collapseSelection);
-  // If the collapse mode leaves mid-session (the bookmark deleted remotely → workshop mode),
-  // the expander disappears — the chips must not stay hidden with no way back (#750).
-  useEffect(() => {
-    if (!collapseSelection) setSelectionOpen(true);
-  }, [collapseSelection]);
 
   function submitAddTag(event: FormEvent) {
     event.preventDefault();
@@ -118,7 +101,6 @@ export function TagFilterPanel({
 
   return (
     <section className="space-y-4">
-      {title && <h2 className="truncate px-1 text-lg font-semibold tracking-tight">{title}</h2>}
       {(onAddTag || onRenameTag || onDeleteTag) && (
         <div className="space-y-2">
           <button
@@ -235,61 +217,39 @@ export function TagFilterPanel({
         <EmptyState hint={t('tags.emptyHint')}>{t('tags.emptyTitle')}</EmptyState>
       ) : (
         <>
-          {collapseSelection && (
-            /* The dense truth of the selection doubles as the expander (#745): the tags you
-               came for readable at a glance, adjustable one click deeper. Next-only sits
-               OUTSIDE the collapse — it's a doing-lever, not a tag tweak — beside the line. */
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              <button
-                type="button"
-                aria-expanded={selectionOpen}
-                aria-label={t('tags.adjustSelectionAria')}
-                onClick={() => setSelectionOpen((o) => !o)}
-                className="flex items-center gap-1 px-1 text-xs font-medium text-muted-foreground hover:text-foreground"
-              >
-                {selectionOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                {selected.join(', ')}
-              </button>
-              {statusBoxesSlot}
-            </div>
-          )}
-          {selectionOpen && (
-            <>
-              <div className="flex flex-wrap gap-1.5">
-                {allTags.map((tag) => {
-                  const on = selectedSet.has(tag);
-                  const feature = featureForTag(tag);
-                  const chip = (
-                    <button
-                      key={tag}
-                      type="button"
-                      aria-pressed={on}
-                      onClick={() => onToggleTag(tag)}
-                      className={cn(
-                        'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
-                        on
-                          ? 'border-primary bg-primary text-primary-foreground'
-                          : 'border-input text-muted-foreground hover:bg-accent hover:text-foreground',
-                      )}
-                    >
-                      <span className={cn(isSystemTag(tag) && 'font-bold')}>{tag}</span>
-                    </button>
-                  );
-                  // A system tag still filters here, but it's managed via Features — the tooltip names
-                  // what it does and where to set it, so a bare `#name` chip isn't a mystery (#1024).
-                  return feature ? (
-                    <Tooltip key={tag} label={`${t(feature.descKey)} · ${t('features.chipHint')}`}>
-                      {chip}
-                    </Tooltip>
-                  ) : (
-                    chip
-                  );
-                })}
-              </div>
+          <div className="flex flex-wrap gap-1.5">
+            {allTags.map((tag) => {
+              const on = selectedSet.has(tag);
+              const feature = featureForTag(tag);
+              const chip = (
+                <button
+                  key={tag}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => onToggleTag(tag)}
+                  className={cn(
+                    'rounded-full border px-2.5 py-1 text-xs font-medium transition-colors',
+                    on
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-input text-muted-foreground hover:bg-accent hover:text-foreground',
+                  )}
+                >
+                  <span className={cn(isSystemTag(tag) && 'font-bold')}>{tag}</span>
+                </button>
+              );
+              // A system tag still filters here, but it's managed via Features — the tooltip names
+              // what it does and where to set it, so a bare `#name` chip isn't a mystery (#1024).
+              return feature ? (
+                <Tooltip key={tag} label={`${t(feature.descKey)} · ${t('features.chipHint')}`}>
+                  {chip}
+                </Tooltip>
+              ) : (
+                chip
+              );
+            })}
+          </div>
 
-              {!collapseSelection && statusBoxesSlot}
-            </>
-          )}
+          {statusBoxesSlot}
 
           {selected.length === 0 ? (
             <p className="px-1 text-xs text-muted-foreground">
@@ -303,7 +263,6 @@ export function TagFilterPanel({
               <div className="flex items-center gap-1.5">
                 <CompactRowsToggle />
                 {rows.length > 0 && <SelectToggle active={selectMode} onToggle={() => (selectMode ? exit() : enter())} />}
-                {bookmarkSlot}
                 {onFocus && rows.length > 0 && (
                   <button
                     type="button"

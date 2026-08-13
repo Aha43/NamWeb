@@ -17,22 +17,12 @@ describe('bookmark helpers', () => {
     expect(nextBookmarkColor(five)).toBe(BOOKMARK_COLORS[0]); // wraps around
   });
 
-  it('builds the navigation target for each kind', () => {
+  it('builds the navigation target — the project workbench', () => {
     expect(bookmarkTarget({ kind: 'project', projectId: 'p1' } as Bookmark)).toBe('/projects/p1');
-    expect(bookmarkTarget({ id: 'b7', kind: 'tagFilter', tags: ['home', 'errand'], nextOnly: true } as Bookmark)).toBe(
-      '/tags?tags=home%2Cerrand&next=1&bm=b7', // bm → the Tags route lands on the bookmark view (#745)
-    );
   });
 
-  it('builds the speed-dial focus target for each kind — context decks follow the view: Next-only, exit comes home (#738, #750)', () => {
+  it('builds the speed-dial focus target — the project deck (#738)', () => {
     expect(bookmarkFocusTarget({ kind: 'project', projectId: 'p1' } as Bookmark)).toBe('/focus?project=p1');
-    expect(bookmarkFocusTarget({ id: 'b7', kind: 'tagFilter', tags: ['home', 'errand'], nextOnly: true } as Bookmark)).toBe(
-      '/focus?tags=home%2Cerrand&next=1&bm=b7',
-    );
-    // Stored-false too: the deck is about doing (the stored flag stays for the bookmark itself).
-    expect(bookmarkFocusTarget({ id: 'b8', kind: 'tagFilter', tags: ['home'] } as Bookmark)).toBe(
-      '/focus?tags=home&next=1&bm=b8',
-    );
   });
 
   it('finds an existing project bookmark by projectId', () => {
@@ -41,22 +31,11 @@ describe('bookmark helpers', () => {
     expect(findBookmark(list, { kind: 'project', projectId: 'p2', label: 'X' })).toBeUndefined();
   });
 
-  it('finds a tag-filter bookmark regardless of tag order', () => {
-    const list: Bookmark[] = [
-      { id: 'b1', label: '#a #b', kind: 'tagFilter', tags: ['a', 'b'], nextOnly: false, color: '#fff' },
-    ];
-    expect(findBookmark(list, { kind: 'tagFilter', tags: ['b', 'a'], nextOnly: false, label: 'x' })?.id).toBe('b1');
-    // nextOnly mismatch → not the same view
-    expect(findBookmark(list, { kind: 'tagFilter', tags: ['a', 'b'], nextOnly: true, label: 'x' })).toBeUndefined();
-  });
-
   it('flags a project bookmark as stale when the project is gone', () => {
     const doc: WorkspaceDocument = createDefaultWorkspace();
     const live = doc.projectsNodeId;
     expect(isBookmarkStale(doc, { id: 'b', label: 'x', kind: 'project', projectId: 'missing', color: '#fff' })).toBe(true);
     // a structural/non-project node is also "not a project"
     expect(isBookmarkStale(doc, { id: 'b', label: 'x', kind: 'project', projectId: live, color: '#fff' })).toBe(true);
-    // tag filters are never stale
-    expect(isBookmarkStale(doc, { id: 'b', label: 'x', kind: 'tagFilter', tags: ['a'], color: '#fff' })).toBe(false);
   });
 });

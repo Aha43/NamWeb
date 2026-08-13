@@ -92,20 +92,19 @@ export interface MissionControl {
   tags: string[];
 }
 
-export type BookmarkKind = 'project' | 'tagFilter';
-
-/** A saved quick-jump target shown as a colored icon in the toolbar. Synced in the workspace doc. */
+/**
+ * A saved quick-jump target shown as a colored icon in the toolbar. Synced in the workspace doc.
+ *
+ * Bookmarks are for a *location* (a project) only. Tag-filter ("context") bookmarks were removed
+ * (#1107) — saved views are the one way to save a tag view. Legacy docs may still hold bookmarks
+ * with `kind: 'tagFilter'`; they're ignored (filtered out in `bookmarksOf`), not migrated.
+ */
 export interface Bookmark {
   id: string;
-  /** Shown in the tooltip; defaults from the project name or the tag selection. */
+  /** Shown in the tooltip; defaults from the project name. */
   label: string;
-  kind: BookmarkKind;
-  /** When kind === 'project'. */
-  projectId?: string;
-  /** When kind === 'tagFilter'. */
-  tags?: string[];
-  /** When kind === 'tagFilter': restrict to Next actions. */
-  nextOnly?: boolean;
+  kind: 'project';
+  projectId: string;
   /** A swatch color (hex) from the bookmark palette. */
   color: string;
 }

@@ -114,8 +114,8 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
           </Tooltip>
           <ToolbarSearch />
           {/* The command bar (#590): the foregrounded actions moved up from the sidebar — capture,
-              jump to Next / Contexts / Projects (with their bookmark quick-jump chevrons, #588),
-              and Focus. Toolbar-resident, so they (and the bookmarks) survive a collapsed sidebar. */}
+              jump to Next / Contexts / Projects (Projects carries the bookmark quick-jump chevron,
+              #588), and Focus. Toolbar-resident, so they (and the bookmarks) survive a collapsed sidebar. */}
           {/* Uniform quiet styling: toolbar position already foregrounds these, so no colored
               stand-out buttons (the colors earned their keep in the sidebar list, not here).
               Nav buttons highlight via aria-current; icons keep each one scannable. */}
@@ -137,17 +137,14 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                 </NavLink>
               </Button>
             </Tooltip>
-            <div className="flex items-center">
-              <Tooltip label={t(tags.hint!)}>
-                <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
-                  <NavLink to={tags.to} aria-label={t(tags.label)}>
-                    <Tag />
-                    {!dense && <span className="hidden lg:inline">{t(tags.label)}</span>}
-                  </NavLink>
-                </Button>
-              </Tooltip>
-              <SidebarBookmarkMenu kind="tagFilter" />
-            </div>
+            <Tooltip label={t(tags.hint!)}>
+              <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
+                <NavLink to={tags.to} aria-label={t(tags.label)}>
+                  <Tag />
+                  {!dense && <span className="hidden lg:inline">{t(tags.label)}</span>}
+                </NavLink>
+              </Button>
+            </Tooltip>
             <Tooltip label={t(focus.hint!)}>
               <Button asChild size="sm" variant="ghost" className={NAV_BUTTON}>
                 <NavLink to="/focus" aria-label={t('domain.focus')}>
@@ -173,7 +170,7 @@ export function DesktopShell({ onSignOut }: { onSignOut: () => void }) {
                   </NavLink>
                 </Button>
               </Tooltip>
-              <SidebarBookmarkMenu kind="project" />
+              <SidebarBookmarkMenu />
               <ProjectExplorerButton />
             </div>
           </div>

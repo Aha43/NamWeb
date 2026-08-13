@@ -60,9 +60,9 @@ describe('buildDemo', () => {
     ]);
   });
 
-  it('seeds two toolbar bookmarks (a project and a tag filter)', () => {
+  it('seeds one toolbar bookmark (a project)', () => {
     const kinds = (doc.bookmarks ?? []).map((b) => b.kind);
-    expect(kinds).toEqual(['project', 'tagFilter']);
+    expect(kinds).toEqual(['project']);
     const project = doc.bookmarks?.find((b) => b.kind === 'project');
     expect(project?.projectId).toBe(byTitle('Vacation in Italy 🇮🇹').id);
   });

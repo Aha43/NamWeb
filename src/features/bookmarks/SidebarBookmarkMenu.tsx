@@ -21,21 +21,21 @@ import { bookmarksOf, bookmarkTarget, isBookmarkStale, movedBookmarkOrder } from
 import type { Bookmark } from '@/domain/types';
 
 /**
- * A kind-scoped bookmark quick-jump menu for the command bar (#588): just the chevron trigger +
- * the dropdown — the caller composes it beside its Projects/Contexts button as a split-button (the
- * label keeps navigating; the chevron opens the list). Renders nothing when the kind has no
- * bookmarks at all, so callers can drop it in unconditionally.
+ * The project bookmark quick-jump menu for the command bar (#588): just the chevron trigger +
+ * the dropdown — the caller composes it beside its Projects button as a split-button (the label
+ * keeps navigating; the chevron opens the list). Renders nothing when there are no bookmarks at
+ * all, so callers can drop it in unconditionally.
  *
  * The menu is also the desktop's light bookmark-management surface (#636/#594): reorder chevrons,
  * a remove ✕ per row, and stale project bookmarks shown greyed (not navigable) instead of hidden —
  * so a dead bookmark is visible and removable right where it used to work.
  *
- * Project bookmark rows are themselves split (#595): the label opens the project directly; the
- * trailing "…" opens the Finder-style picker **already navigated to that project** — bookmarks as
- * starting points, drill to a neighbour/descendant and Open it. (Two menu items per row rather
- * than a button nested inside an item, so menu semantics stay intact.)
+ * Rows are split (#595): the label opens the project directly; the trailing "…" opens the
+ * Finder-style picker **already navigated to that project** — bookmarks as starting points, drill
+ * to a neighbour/descendant and Open it. (Two menu items per row rather than a button nested inside
+ * an item, so menu semantics stay intact.)
  */
-export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind']; className?: string }) {
+export function SidebarBookmarkMenu({ className }: { className?: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { document, dispatch } = useWorkspaceContext();
@@ -44,17 +44,16 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
   // The bookmark being renamed (#732); null = dialog closed.
   const [renaming, setRenaming] = useState<Bookmark | null>(null);
   // Stale bookmarks included (greyed) — the desktop must be able to see and remove them (#594).
-  const bookmarks = document ? bookmarksOf(document).filter((b) => b.kind === kind) : [];
+  const bookmarks = document ? bookmarksOf(document) : [];
   if (!document || bookmarks.length === 0) return null;
-  const aria = kind === 'project' ? t('bookmarks.projectMenuAria') : t('bookmarks.contextMenuAria');
-  // Reorder within this menu's visible (kind-filtered) list; unshown kinds keep their slots (#636).
+  const aria = t('bookmarks.projectMenuAria');
   const move = (id: string, direction: 'up' | 'down') => {
     const order = movedBookmarkOrder(document, bookmarks, id, direction);
     if (order) dispatch({ type: 'reorderBookmarks', order });
   };
-  // The technical truth behind a label (#732): the full project path, or the tag selection —
-  // a renamed bookmark stays legible on hover. Stale rows carry their own suffix instead.
-  const tooltipFor = (bookmark: Bookmark): string => bookmarkTooltip(document, bookmark, t);
+  // The technical truth behind a label (#732): the full project path — a renamed bookmark stays
+  // legible on hover. Stale rows carry their own suffix instead.
+  const tooltipFor = (bookmark: Bookmark): string => bookmarkTooltip(document, bookmark);
   return (
     <>
       <DropdownMenu>
@@ -96,11 +95,11 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
                     </span>
                   </DropdownMenuItem>
                 </Tooltip>
-                {kind === 'project' && bookmark.projectId && !stale && (
+                {!stale && (
                   <DropdownMenuItem
                     aria-label={t('bookmarks.browseFromAria', { label: bookmark.label })}
                     className="shrink-0 px-2 text-muted-foreground"
-                    onClick={() => setBrowseFrom(bookmark.projectId!)}
+                    onClick={() => setBrowseFrom(bookmark.projectId)}
                   >
                     <Ellipsis className="h-4 w-4" />
                   </DropdownMenuItem>
@@ -136,7 +135,7 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
         open={renaming !== null}
         bookmark={renaming}
         projectName={
-          renaming?.kind === 'project' && renaming.projectId && !isBookmarkStale(document, renaming)
+          renaming && !isBookmarkStale(document, renaming)
             ? document.nodes[renaming.projectId]?.title
             : undefined
         }
@@ -145,19 +144,17 @@ export function SidebarBookmarkMenu({ kind, className }: { kind: Bookmark['kind'
         }}
         onRename={(label) => renaming && dispatch({ type: 'renameBookmark', id: renaming.id, label })}
       />
-      {kind === 'project' && (
-        <ProjectPickerDialog
-          open={browseFrom !== null}
-          onOpenChange={(open) => {
-            if (!open) setBrowseFrom(null);
-          }}
-          title={t('picker.openTitle')}
-          confirmLabel={t('picker.open')}
-          targets={allOpenableProjects(document)}
-          initialProjectId={browseFrom ?? undefined}
-          onConfirm={(id) => navigate(`/projects/${id}`)}
-        />
-      )}
+      <ProjectPickerDialog
+        open={browseFrom !== null}
+        onOpenChange={(open) => {
+          if (!open) setBrowseFrom(null);
+        }}
+        title={t('picker.openTitle')}
+        confirmLabel={t('picker.open')}
+        targets={allOpenableProjects(document)}
+        initialProjectId={browseFrom ?? undefined}
+        onConfirm={(id) => navigate(`/projects/${id}`)}
+      />
     </>
   );
 }

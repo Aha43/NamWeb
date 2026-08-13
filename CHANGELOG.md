@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Removed
+
+- Context (tag-filter) bookmarking. Bookmarking is now for projects (a location) only — saved views
+  are the single way to save a tag view. The two had overlapped since they were invented alongside
+  each other; this collapses them to one. The context-bookmark chevron on the Contexts entry, the
+  bookmark toggle on the tag-filter view, and the label-led "bookmark view" are gone. Any leftover
+  tag-filter bookmarks in an existing workspace are ignored (never shown, never migrated), so old
+  data still loads fine. Closes #1107.
+
 ## [3.2.0] - 2026-08-13
 
 **The AI gains write — opt-in, guarded, self-describing.** 3.1.0 let an AI assistant *read* your
