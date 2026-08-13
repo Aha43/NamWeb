@@ -40,6 +40,12 @@ sequenceDiagram
 **Key ideas, plainly:**
 - **PKCE** — a standard handshake that stops someone intercepting the one-time code from using it.
 - **Scopes** — `nam.read` (view) and `nam.write` (change). A read-only token genuinely can't write.
+  Since #1116 **both are granted by default** to every connection the owner signs in — the opt-in
+  write-consent checkbox was retired (the sole owner always enabled it, so it was pure friction).
+  Write is still never taken from the *client's* requested scope (a connector can't escalate itself;
+  a refresh can only narrow, never widen — #1050). A connection may still narrow itself to read-only,
+  and the write tools stay **visible-but-refusing** in that case (a stable tool list; a read-only call
+  returns a clear "nam.write not granted" message rather than the tool vanishing).
 - **The token is opaque** — a random string; we store only its *hash*, and it maps to your Supabase
   session behind the scenes. The AI never sees your password or your Supabase tokens.
 - **RLS is the real wall** — every read/write carries *your* JWT, so Supabase only ever returns/edits

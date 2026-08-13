@@ -147,11 +147,22 @@ describe('NamWeb MCP server (read surface)', () => {
     await server.close();
   });
 
-  it('exposes only read tools when the token lacks nam.write', async () => {
+  it('still advertises the write tools on a read-only connection — a stable tool list (#1116)', async () => {
     const { client, server } = await connectedClient({ canWrite: false });
     const names = (await client.listTools()).tools.map((t) => t.name);
-    expect(names.sort()).toEqual([...EXPECTED_READ_TOOLS].sort());
-    for (const write of EXPECTED_WRITE_TOOLS) expect(names).not.toContain(write);
+    // Write tools are registered regardless of canWrite, so the advertised list never flaps across a
+    // deploy/reconnect (the #1116 fix). They refuse at call time instead of vanishing.
+    expect(names.sort()).toEqual([...EXPECTED_READ_TOOLS, ...EXPECTED_WRITE_TOOLS].sort());
+    await server.close();
+  });
+
+  it('a write tool on a read-only connection refuses with a clear, interpretable message (#1116)', async () => {
+    const { client, server } = await connectedClient({ canWrite: false });
+    const result = await client.callTool({ name: 'add_inbox_item', arguments: { title: 'X' } });
+    expect((result as { isError?: boolean }).isError).toBe(true);
+    const text = firstText(result as never);
+    expect(text).toMatch(/read-only/i); // names the condition
+    expect(text).toMatch(/nam\.write/); // and the missing scope — an agent can interpret it
     await server.close();
   });
 

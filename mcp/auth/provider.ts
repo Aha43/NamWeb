@@ -113,8 +113,7 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
    * Authenticates against Supabase, then completes the OAuth redirect with a code.
    */
   handleLogin = async (req: Request, res: Response): Promise<void> => {
-    const { email, password, client_id, redirect_uri, code_challenge, state, scope, allow_write } =
-      req.body ?? {};
+    const { email, password, client_id, redirect_uri, code_challenge, state, scope } = req.body ?? {};
 
     if (!client_id || !redirect_uri || !code_challenge) {
       res.status(400).send('Missing OAuth parameters');
@@ -156,12 +155,10 @@ export class SupabaseOAuthProvider implements OAuthServerProvider {
       return;
     }
 
-    // Opt-in write (#1069): read-only unless the owner ticked the write-consent checkbox. The client's
-    // requested `scope` doesn't grant write — only this consent does. Flows into the pending-login /
-    // workspace-picker path too via `base.scopes`, so a multi-workspace user's choice is preserved.
-    // Parse the checkbox value EXACTLY (it's the write gate): the browser posts `allow_write=1` only
-    // when checked; a malformed/present-but-falsey value (`0`, `false`) must NOT count as consent.
-    const scopes = resolveGrantedScopes(allow_write === '1');
+    // Write is granted by default (#1116): a signed-in owner gets read + write, no consent checkbox.
+    // The client's requested `scope` still doesn't grant write — the authenticated sign-in does. Flows
+    // into the pending-login / workspace-picker path too via `base.scopes`.
+    const scopes = resolveGrantedScopes();
     const base = {
       clientId: client_id,
       redirectUri: redirect_uri,

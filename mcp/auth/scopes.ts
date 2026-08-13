@@ -10,14 +10,17 @@ export const SCOPE_WRITE = 'nam.write';
 export const SUPPORTED_SCOPES = [SCOPE_READ, SCOPE_WRITE] as const;
 
 /**
- * Resolve the scopes to grant at consent (#1069 opt-in write). `nam.read` is always granted — the
- * baseline every connection carries. `nam.write` is granted ONLY when the resource owner ticks the
- * write-consent checkbox on the sign-in page (`allowWrite`), NEVER from the client's requested scope
- * alone: a client can't escalate itself to write (#1050), and read-only stays the safe default. The
- * client's requested `scope` is advisory — the owner's consent is the authority for write.
+ * Resolve the scopes to grant at consent. Both `nam.read` and `nam.write` are granted to every
+ * connection the owner signs in (#1116): the sole owner always wanted write and enabled it every
+ * time, so the per-connection consent checkbox was pure friction — it's retired. Write is still
+ * never taken from the *client's* requested scope (a connector can't ask for more than the grant,
+ * enforced on refresh by `constrainRefreshScopes`); the owner's authenticated sign-in is the
+ * authority, and it now grants the full capability by default. A client may still *narrow* itself to
+ * read-only on refresh, and the write tools stay legible in that case (they refuse with a clear
+ * message rather than vanishing) — see `registerWrite` in server.ts.
  */
-export function resolveGrantedScopes(allowWrite: boolean): string[] {
-  return allowWrite ? [SCOPE_READ, SCOPE_WRITE] : [SCOPE_READ];
+export function resolveGrantedScopes(): string[] {
+  return [SCOPE_READ, SCOPE_WRITE];
 }
 
 /**

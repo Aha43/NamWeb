@@ -283,7 +283,7 @@ export function buildServer(
     (doc) => ({
       // Connection capabilities first (#1099) — so an agent knows its permissions and the server build
       // up front, instead of discovering "read-only" or "stale tools" by a write call that fails opaquely.
-      canWrite, // does this connection hold nam.write? (false = read-only; reconnect + consent to enable)
+      canWrite, // does this token hold nam.write? Granted by default (#1116); false only if a client narrowed itself to read-only — reconnect to restore.
       serverVersion: SERVER_VERSION,
       projectCount: projects(doc).length,
       inboxCount: inboxItems(doc).length,
@@ -457,16 +457,22 @@ export function buildServer(
     },
   );
 
-  // ---- Write tools (P2) ----------------------------------------------------
-  // Each maps to a domain Intent committed via `commit`. Human confirmation is
-  // connector-side (both ChatGPT and Claude prompt before a tool call). Gated on
-  // the `nam.write` scope: a read-only token never sees these tools at all.
-  if (!canWrite) return server;
+  // ---- Write tools ---------------------------------------------------------
+  // Each maps to a domain Intent committed via `commit`. Human confirmation is connector-side (both
+  // ChatGPT and Claude prompt before a tool call). Write is granted by default (#1116), so these are
+  // normally live. Crucially they are registered UNCONDITIONALLY: a connection that narrowed itself to
+  // read-only still sees them — a stable tool list across deploy/reconnect (the #1116 flap fix, where a
+  // read-only-then-write handshake used to hand the client a write-less tool list it then cached) — but
+  // each refuses with a clear, interpretable message instead of vanishing, so an agent never gets an
+  // opaque "tool not found" it can't distinguish from a typo or a stale deploy.
+  const READ_ONLY_REFUSAL =
+    'This MCP connection is read-only: the nam.write scope was not granted to this token. ' +
+    'Reconnect the connector to restore write access.';
 
-  // Every tool below is a write. Register through this wrapper so each carries write annotations
-  // (#1069): `readOnlyHint: false` tells a client (Claude) to prompt before running it, and
-  // `destructiveHint` flags the delete/remove tools. Generic over the input shape so each handler's
-  // args stay typed exactly as a direct `registerTool` call.
+  // Register through this wrapper so each write carries its annotations: `readOnlyHint: false` tells a
+  // client (Claude) to prompt before running it, and `destructiveHint` flags the delete/remove tools.
+  // When the connection lacks write, the callback is swapped for the plain refusal above (the schema
+  // still advertises the tool). Generic over the input shape so each handler's args stay typed exactly.
   const registerWrite = <Args extends z.ZodRawShape>(
     name: string,
     config: { description: string; inputSchema: Args },
@@ -478,7 +484,7 @@ export function buildServer(
         ...config,
         annotations: { readOnlyHint: false, destructiveHint: /^(delete|remove)_/.test(name) },
       },
-      cb,
+      canWrite ? cb : ((() => errorResult(READ_ONLY_REFUSAL)) as unknown as ToolCallback<Args>),
     );
 
   registerWrite(
