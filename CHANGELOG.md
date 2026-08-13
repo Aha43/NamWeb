@@ -35,7 +35,6 @@ minor = features (breaking changes allowed), patch = fixes.
   fallback) instead of showing a blank page until you refresh. And because Focus lives outside the
   shell, it now shows its own loading state while the workspace is still loading, instead of flashing
   a misleading "All clear". Closes #1108.
->>>>>>> main
 
 ## [3.2.0] - 2026-08-13
 
