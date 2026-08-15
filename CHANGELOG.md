@@ -8,6 +8,22 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-08-16
+
+**Write stops asking, and learns to schedule.** The 3.x AI arc keeps compounding through real
+write-with-Claude dogfooding — planning actual work in NAM over the MCP connection. **Write is now
+granted by default**: the opt-in "allow changes" consent checkbox is retired (the sole owner always
+ticked it), which also dissolves the `canWrite` **flap** that made a connection go dark for writes
+after a deploy+reconnect — the write tools are now always advertised, and a genuinely read-only
+connection gets a clear refusal instead of a vanishing tool. With write frictionless, the gaps that
+surfaced were about **reach**: the assistant could create work but not *schedule* it — so **`set_due`**
+now sets a node's due date, clock time, and an optional range (and `add_action` / `add_next_action`
+can schedule at birth), so AI-created commitments finally land on the calendar / Due / agenda (the
+trigger: planning a season of Brann home matches). And a capture papercut from working the inbox deck:
+**`c` now quick-captures** a remembered thought straight to the inbox without breaking the triage flow.
+Two Codex findings were hardened pre-cut — a same-day range whose end time preceded its start that
+`set_due` would have let slip, and a write-only refresh token that could exchange but not call `/mcp`.
+
 ### Added
 
 - **MCP can now set due dates.** A new `set_due` tool sets an action or project's due date, optional
@@ -2345,7 +2361,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.3.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.4.0...HEAD
+[3.4.0]: https://github.com/Aha43/NamWeb/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/Aha43/NamWeb/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/Aha43/NamWeb/compare/v3.1.0...v3.2.0
 [3.1.0]: https://github.com/Aha43/NamWeb/compare/v3.0.0...v3.1.0
