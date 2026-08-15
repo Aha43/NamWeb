@@ -38,6 +38,7 @@ import { pull } from '../src/sync/workspaceClient';
 import { commitIntent, type CommitOutcome, type WorkspaceSnapshot } from '../src/store/commit';
 import { normalizeTags, type Intent } from '../src/domain/mutations';
 import { newId, nowIso } from '../src/lib/local';
+import { parseFlexibleDate, parseFlexibleTime } from '../src/lib/dates';
 import type { NamNode, NodeStatus, Resource, WorkspaceDocument } from '../src/domain/types';
 import {
   actionMoveTargetsAll,
@@ -174,6 +175,22 @@ function assertActionParent(doc: WorkspaceDocument, parentId: string): void {
       `Parent ${parentId} is not a project — an action must live under a project (use add_next_action for a free action).`,
     );
   }
+}
+
+// Due date/time parsing for the scheduling tools (#1121). Reuse the SPA's lenient parsers so MCP
+// input round-trips exactly like the app: dates → canonical `YYYY-MM-DD`, times → 24h `HH:mm`. A
+// malformed value throws a tool-friendly message (commit() turns it into an errorResult).
+function parseDueDate(label: string, value: string | null | undefined): string | null {
+  if (value === null || value === undefined || value.trim() === '') return null;
+  const iso = parseFlexibleDate(value);
+  if (!iso) throw new Error(`${label} "${value}" is not a valid date — use YYYY-MM-DD (e.g. 2026-08-15).`);
+  return iso;
+}
+function parseDueTime(label: string, value: string | undefined): string | null {
+  if (value === undefined || value.trim() === '') return null;
+  const time = parseFlexibleTime(value);
+  if (!time) throw new Error(`${label} "${value}" is not a valid time — use 24-hour HH:mm (e.g. 19:00).`);
+  return time;
 }
 
 /** The compact result a write tool returns: the commit outcome + any new node id. */
@@ -520,23 +537,32 @@ export function buildServer(
   registerWrite(
     'add_action',
     {
-      description: 'Add an action to a project. Defaults to status BACKLOG (matches NamDesktop).',
+      description:
+        'Add an action to a project. Defaults to status BACKLOG (matches NamDesktop). Optionally ' +
+        'schedule it at creation with a due date and clock time (or set/adjust it later with set_due).',
       inputSchema: {
         project_id: z.string().describe('UUID of the project to add the action to'),
         title: z.string().describe('Action title'),
         status: z.enum(NODE_STATUSES).optional().describe('Defaults to BACKLOG'),
+        due: z.string().optional().describe('Due date at creation, YYYY-MM-DD'),
+        due_time: z.string().optional().describe('Clock time on the due date, 24-hour HH:mm (requires due)'),
       },
     },
-    ({ project_id, title, status }) =>
+    ({ project_id, title, status, due, due_time }) =>
       commit((doc) => {
         requireNode(doc, project_id);
         assertActionParent(doc, project_id); // #1054
+        const dueAt = parseDueDate('due', due);
+        const dueTime = parseDueTime('due_time', due_time);
+        if (dueTime && !dueAt) throw new Error('due_time requires due.');
         return {
           type: 'addAction',
           parentId: project_id,
           id: newId(),
           title,
           status: status ?? 'BACKLOG',
+          ...(dueAt ? { dueAt } : {}),
+          ...(dueTime ? { dueTime } : {}),
           now: nowIso(),
         };
       }),
@@ -545,18 +571,68 @@ export function buildServer(
   registerWrite(
     'add_next_action',
     {
-      description: 'Add a free-standing NEXT action, not attached to any project.',
-      inputSchema: { title: z.string().describe('Action title') },
+      description:
+        'Add a free-standing NEXT action, not attached to any project. Optionally schedule it at ' +
+        'creation with a due date and clock time (or set/adjust it later with set_due).',
+      inputSchema: {
+        title: z.string().describe('Action title'),
+        due: z.string().optional().describe('Due date at creation, YYYY-MM-DD'),
+        due_time: z.string().optional().describe('Clock time on the due date, 24-hour HH:mm (requires due)'),
+      },
     },
-    ({ title }) =>
-      commit((doc) => ({
-        type: 'addAction',
-        parentId: doc.nextActionsNodeId,
-        id: newId(),
-        title,
-        status: 'NEXT',
-        now: nowIso(),
-      })),
+    ({ title, due, due_time }) =>
+      commit((doc) => {
+        const dueAt = parseDueDate('due', due);
+        const dueTime = parseDueTime('due_time', due_time);
+        if (dueTime && !dueAt) throw new Error('due_time requires due.');
+        return {
+          type: 'addAction',
+          parentId: doc.nextActionsNodeId,
+          id: newId(),
+          title,
+          status: 'NEXT',
+          ...(dueAt ? { dueAt } : {}),
+          ...(dueTime ? { dueTime } : {}),
+          now: nowIso(),
+        };
+      }),
+  );
+
+  registerWrite(
+    'set_due',
+    {
+      description:
+        "Set an action or project's due date, with an optional clock time and an optional end date " +
+        '(a date range). Replaces the whole due state — pass due=null to clear it entirely (which also ' +
+        'clears the time and range). Dates are YYYY-MM-DD; times are 24-hour HH:mm.',
+      inputSchema: {
+        node_id: z.string().describe('UUID of the action or project'),
+        due: z.string().nullable().describe('Due date (YYYY-MM-DD), or null to clear the due entirely'),
+        due_time: z
+          .string()
+          .optional()
+          .describe('Clock time on the due date, 24-hour HH:mm (e.g. "19:00"); omit for an all-day due'),
+        due_end: z.string().optional().describe('End date for a range (YYYY-MM-DD); omit for a single day'),
+        due_end_time: z.string().optional().describe('Clock time on the end date, 24-hour HH:mm; requires due_end'),
+      },
+    },
+    ({ node_id, due, due_time, due_end, due_end_time }) =>
+      commit((doc) => {
+        requireNode(doc, node_id);
+        assertNotContainer(doc, node_id);
+        const dueAt = parseDueDate('due', due);
+        const dueTime = parseDueTime('due_time', due_time);
+        const dueEndAt = parseDueDate('due_end', due_end);
+        const dueEndTime = parseDueTime('due_end_time', due_end_time);
+        if (dueAt === null && (dueTime || dueEndAt || dueEndTime)) {
+          throw new Error('Cannot set a time or an end date while clearing the due (due is null).');
+        }
+        if (dueEndTime && !dueEndAt) throw new Error('due_end_time requires due_end.');
+        if (dueEndAt && dueAt && dueEndAt < dueAt) {
+          throw new Error(`due_end (${dueEndAt}) is before due (${dueAt}).`);
+        }
+        return { type: 'setDue', id: node_id, dueAt, dueEndAt, dueTime, dueEndTime, now: nowIso() };
+      }),
   );
 
   const markStatus = (toolName: string, status: NodeStatus) =>

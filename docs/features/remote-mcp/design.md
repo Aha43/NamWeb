@@ -198,9 +198,11 @@ exactly how the SPA roots them (`ProjectsPage.tsx`), so the existing invariant i
 re-implemented. `add_action` defaults to status `NEXT` (matching the SPA workbench).
 
 **Beyond parity (not desktop tools, available "for free"):** NamWeb's `Intent` set is a superset of
-the desktop's — due dates (`setDue`), saved-view / mission-control / template CRUD, and reordering
-(`reorderChildren` / `reorderView`) all exist as committed intents and can be surfaced as tools once
-parity lands, if useful.
+the desktop's — saved-view / mission-control / template CRUD and reordering (`reorderChildren` /
+`reorderView`) all exist as committed intents and can be surfaced as tools if useful. **Due dates
+have landed** (#1121): `set_due` sets a node's due date / time / range (and `add_action` /
+`add_next_action` can schedule at creation), so AI-created work reaches the calendar / Due / agenda
+surfaces — dogfooding wanted it (scheduling a season's home matches).
 
 ## Write safety
 
