@@ -236,6 +236,24 @@ describe('NamWeb MCP write tools', () => {
     expect(commitIntent).not.toHaveBeenCalled();
   });
 
+  it('set_due rejects a same-day range whose end time precedes the start time (review P2)', async () => {
+    const result = await call('set_due', {
+      node_id: 'a1',
+      due: '2026-08-15',
+      due_time: '19:00',
+      due_end: '2026-08-15',
+      due_end_time: '18:00',
+    });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/before due_time/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
+  it('set_due allows a same-day range when the end time is later (sanity)', async () => {
+    await call('set_due', { node_id: 'a1', due: '2026-08-15', due_time: '18:00', due_end: '2026-08-15', due_end_time: '19:00' });
+    expect(committedIntent()).toMatchObject({ type: 'setDue', dueTime: '18:00', dueEndTime: '19:00' });
+  });
+
   it('set_due rejects a time/range while clearing the due', async () => {
     const result = await call('set_due', { node_id: 'a1', due: null, due_time: '19:00' });
     expect(result.isError).toBe(true);
