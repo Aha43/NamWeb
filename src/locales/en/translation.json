@@ -448,6 +448,8 @@
   "inProgressFilter.only": "Show in-progress only",
   "inProgressFilter.showAll": "Show all",
   "inbox.addPlaceholder": "Add to inbox…",
+  "inbox.captureAnother": "Capture another inbox item",
+  "inbox.captureAnotherPlaceholder": "Remembered something? Add it to the inbox…",
   "inbox.createKeepProcessing": "Create & keep processing",
   "inbox.createOpenProject": "Create & open project",
   "inbox.deckPosition": "{position} of {total}",
