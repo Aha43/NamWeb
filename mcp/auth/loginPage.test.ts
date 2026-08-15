@@ -4,18 +4,15 @@ import { renderLoginPage } from './loginPage';
 const base = { clientId: 'c1', redirectUri: 'https://x/cb', codeChallenge: 'ch', csrfToken: 'tok' };
 
 describe('renderLoginPage consent copy', () => {
-  it('is read-only by default — the copy says view-not-change (#1069)', () => {
+  it('states plainly that the connection can read and make changes (#1116 write by default)', () => {
     const html = renderLoginPage(base);
-    expect(html).toContain('view them, not change them');
+    expect(html).toContain('read and make changes');
+    expect(html).toContain('create, edit, and delete');
   });
 
-  it('offers write only as an explicit, unticked opt-in checkbox (#1069)', () => {
+  it('has no write-consent checkbox — write is granted by default (#1116)', () => {
     const html = renderLoginPage(base);
-    expect(html).toContain('name="allow_write"');
-    expect(html).toContain('make changes');
-    expect(html).toContain('create, edit, and delete');
-    // the checkbox must NOT be pre-checked — read-only is the default
-    expect(html).not.toMatch(/name="allow_write"[^>]*checked/);
+    expect(html).not.toContain('name="allow_write"');
   });
 
   it('embeds the CSRF token and the brand mark', () => {

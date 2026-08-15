@@ -107,19 +107,12 @@ export function renderLoginPage(p: LoginPageParams): string {
   }
   const destination = `<p class="lead" style="margin-top:-.6rem">After signing in you'll be returned to <strong>${esc(destHost)}</strong>. Only continue if you recognise it.</p>`;
 
-  // Opt-in write (#1069): read-only is the default; the checkbox is the ONLY way this connection gets
-  // `nam.write` (honest, owner-controlled consent). Left unticked → the assistant can look, not touch.
-  // Wrap the text in ONE <span> so the flex `.choice` row has exactly two items (checkbox + text) —
-  // otherwise the inline <strong> splits the sentence into separate flex items that wrap into ragged
-  // columns (#1095). flex-start keeps the checkbox on the first line of the multi-line label.
-  const writeConsent = `<label class="choice" style="margin:.4rem 0 .2rem; align-items:flex-start">
-        <input type="checkbox" name="allow_write" value="1" style="flex:0 0 auto; margin-top:.15rem" />
-        <span>Also let it <strong>make changes</strong> — create, edit, and delete on your behalf. Leave unticked for read-only.</span>
-      </label>`;
-
+  // Write is granted by default (#1116): signing in connects this assistant with full read + write —
+  // the opt-in consent checkbox is retired (the owner always enabled it anyway). The copy names the
+  // capability plainly so the sign-in is still honest about what it grants.
   return page(
     'Sign in to Nam',
-    `    <p class="lead">Sign in with your Nam account to connect this assistant to your workspace. By default it can <strong>read</strong> your projects, inbox, and actions — view them, not change them.</p>
+    `    <p class="lead">Sign in with your Nam account to connect this assistant to your workspace. It can <strong>read and make changes</strong> — view your projects, inbox, and actions, and create, edit, and delete on your behalf.</p>
     ${destination}
     ${error}
     <form method="post" action="/nam/login">
@@ -128,7 +121,6 @@ export function renderLoginPage(p: LoginPageParams): string {
       <input name="email" type="email" autocomplete="username" required />
       <label>Password</label>
       <input name="password" type="password" autocomplete="current-password" required />
-      ${writeConsent}
       <button type="submit">Sign in</button>
     </form>`,
   );

@@ -8,6 +8,17 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **MCP: write is granted by default.** Signing an assistant in over the MCP connection now grants
+  read **and** write — the opt-in "Allow this connection to make changes" consent checkbox is retired
+  (the sole owner always enabled it). Write is still never taken from the client's requested scope (a
+  connector can't escalate itself; a refresh can only narrow, never widen). The write tools are now
+  **always advertised** — a read-only connection sees them but each refuses with a clear "nam.write
+  not granted, reconnect to restore" message instead of the tool vanishing. That also fixes the
+  `canWrite` **flap** across a deploy+reconnect: the advertised tool list no longer changes with the
+  connection's write state, so a client can't cache a write-less list mid-handshake. Closes #1116.
+
 ## [3.3.0] - 2026-08-13
 
 **Descriptions come out of hiding — and a redundant path retires.** This sprint came from dogfooding

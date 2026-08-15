@@ -131,7 +131,7 @@ describe('SupabaseOAuthProvider', () => {
     expect(tokens.access_token).toBeTruthy();
     expect(tokens.refresh_token).toBeTruthy();
     expect(tokens.token_type).toBe('bearer');
-    expect(tokens.scope).toBe('nam.read');
+    expect(tokens.scope).toBe('nam.read nam.write'); // write granted by default (#1116)
     expect(signInWithPassword).toHaveBeenCalledWith('me@nam.local', 'pw');
   });
 
@@ -141,24 +141,24 @@ describe('SupabaseOAuthProvider', () => {
 
     const info = await provider.verifyAccessToken(tokens.access_token);
     expect(info.clientId).toBe(client.client_id);
-    expect(info.scopes).toEqual(['nam.read']);
+    expect(info.scopes).toEqual([SCOPE_READ, SCOPE_WRITE]);
     expect(supabaseClientFromAuth(info)).toBe(fakeSupabase);
   });
 
-  it('grants nam.write ONLY when the owner ticks the write-consent checkbox (#1069)', async () => {
-    const code = await login({ allow_write: '1' });
+  it('grants read + write to every signed-in connection by default (#1116)', async () => {
+    const code = await login();
     const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
     expect(tokens.scope).toBe('nam.read nam.write');
     const info = await provider.verifyAccessToken(tokens.access_token);
     expect(info.scopes).toEqual([SCOPE_READ, SCOPE_WRITE]);
   });
 
-  it('stays read-only when the checkbox is unticked, even if the client requested write (#1069/#1050)', async () => {
-    // client asks for write, but the owner did NOT consent → read-only. Consent is the authority.
-    const code = await login({ scope: 'nam.read nam.write' });
+  it('grants the default read+write regardless of the client-requested scope (the sign-in is the authority)', async () => {
+    // The grant is fixed at the server, not taken from the client's requested `scope` (#1050/#1116).
+    const code = await login({ scope: 'nam.read' }); // client asks for read-only; grant is still read+write
     const tokens = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
     const info = await provider.verifyAccessToken(tokens.access_token);
-    expect(info.scopes).toEqual([SCOPE_READ]);
+    expect(info.scopes).toEqual([SCOPE_READ, SCOPE_WRITE]);
   });
 
   it('rotates the refresh token and invalidates the old one', async () => {
@@ -173,17 +173,18 @@ describe('SupabaseOAuthProvider', () => {
     await expect(provider.exchangeRefreshToken(client, first.refresh_token!)).rejects.toThrow();
   });
 
-  it('rejects a refresh that widens scope beyond the grant (#1050)', async () => {
-    const code = await login(); // granted nam.read only
+  it('rejects a refresh that requests a scope outside the grant (#1050)', async () => {
+    const code = await login(); // granted read + write (#1116)
     const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
-    // Asking for nam.write on refresh must be rejected (invalid_scope), not silently escalated.
+    // A scope the grant never included must be rejected (invalid_scope), not silently escalated —
+    // write is already in the grant now, so widening can only mean an out-of-grant scope.
     await expect(
-      provider.exchangeRefreshToken(client, first.refresh_token!, ['nam.write']),
+      provider.exchangeRefreshToken(client, first.refresh_token!, ['nam.read', 'nam.admin']),
     ).rejects.toThrow(/scope/i);
   });
 
   it('narrows scope on refresh — and ENFORCES it at the token, not just the response (#1051 review, P1)', async () => {
-    const code = await login({ allow_write: '1' }); // owner consents → granted read+write (#1069)
+    const code = await login(); // granted read+write by default (#1116)
     const first = await provider.exchangeAuthorizationCode(client, code, 'verifier', REDIRECT_URI);
     const refreshed = await provider.exchangeRefreshToken(client, first.refresh_token!, ['nam.read']);
     expect(refreshed.scope).toBe('nam.read');

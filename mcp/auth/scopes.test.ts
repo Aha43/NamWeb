@@ -7,17 +7,13 @@ import {
   resolveGrantedScopes,
 } from './scopes';
 
-describe('resolveGrantedScopes (#1069 opt-in write)', () => {
-  it('grants read-only by default — no write without owner consent (#1050 safe default)', () => {
-    expect(resolveGrantedScopes(false)).toEqual([SCOPE_READ]);
+describe('resolveGrantedScopes (#1116 write by default)', () => {
+  it('grants read + write to every signed-in connection (the consent checkbox is retired)', () => {
+    expect(resolveGrantedScopes()).toEqual([SCOPE_READ, SCOPE_WRITE]);
   });
 
-  it('grants read + write ONLY when the owner consents (the sign-in checkbox)', () => {
-    expect(resolveGrantedScopes(true)).toEqual([SCOPE_READ, SCOPE_WRITE]);
-  });
-
-  it('the write grant is exactly the supported set (read is the baseline)', () => {
-    expect(resolveGrantedScopes(true)).toEqual([...SUPPORTED_SCOPES]);
+  it('the grant is exactly the supported set (read is the baseline)', () => {
+    expect(resolveGrantedScopes()).toEqual([...SUPPORTED_SCOPES]);
   });
 });
 
