@@ -177,6 +177,75 @@ describe('InboxProcessDialog', () => {
     expect(onPrev).not.toHaveBeenCalled();
   });
 
+  it('deck mode: quick-capture adds a new inbox item without leaving the deck, and `c` focuses it (#1119)', () => {
+    const onCapture = vi.fn();
+    render(
+      <InboxProcessDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onResolve={vi.fn()}
+        onDelete={vi.fn()}
+        onSkip={vi.fn()}
+        onPrev={vi.fn()}
+        onCapture={onCapture}
+        remaining={3}
+        position={1}
+      />,
+    );
+    const field = screen.getByLabelText('Capture another inbox item');
+    // `c` fired outside a field focuses the capture input — mirrors the global shortcut this modal suppresses.
+    expect(field).not.toHaveFocus();
+    fireEvent.keyDown(document.body, { key: 'c' });
+    expect(field).toHaveFocus();
+    // A remembered thought → trimmed, dispatched to the inbox, field cleared + refocused, confirmation shown.
+    fireEvent.change(field, { target: { value: '  Call the vet  ' } });
+    fireEvent.submit(field.closest('form')!);
+    expect(onCapture).toHaveBeenCalledWith('Call the vet');
+    expect(field).toHaveValue('');
+    expect(field).toHaveFocus();
+    expect(screen.getByText('Just added')).toBeInTheDocument();
+  });
+
+  it('`c` does not steal the key while typing in a deck field (only focuses capture from outside) (#1119)', () => {
+    const onCapture = vi.fn();
+    render(
+      <InboxProcessDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onResolve={vi.fn()}
+        onDelete={vi.fn()}
+        onSkip={vi.fn()}
+        onPrev={vi.fn()}
+        onCapture={onCapture}
+        remaining={2}
+        position={1}
+      />,
+    );
+    const field = screen.getByLabelText('Capture another inbox item');
+    // Typing 'c' INTO the field must not preventDefault / re-focus-hijack — the target-is-input guard bails.
+    fireEvent.keyDown(field, { key: 'c' });
+    // (No assertion on value — jsdom keyDown doesn't type; the point is the handler bailed, not throwing.)
+    expect(onCapture).not.toHaveBeenCalled();
+  });
+
+  it('no quick-capture field when onCapture is not wired', () => {
+    render(
+      <InboxProcessDialog
+        node={node()}
+        open
+        onOpenChange={vi.fn()}
+        onResolve={vi.fn()}
+        onDelete={vi.fn()}
+        onSkip={vi.fn()}
+        remaining={2}
+        position={1}
+      />,
+    );
+    expect(screen.queryByLabelText('Capture another inbox item')).not.toBeInTheDocument();
+  });
+
   it('deck arrows fire in the capture phase, surviving a bubble-phase stopPropagation (#885)', () => {
     const onSkip = vi.fn();
     render(

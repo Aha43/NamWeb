@@ -448,6 +448,8 @@
   "inProgressFilter.only": "Vis kun pågående",
   "inProgressFilter.showAll": "Vis alle",
   "inbox.addPlaceholder": "Legg til i innboks…",
+  "inbox.captureAnother": "Fang en ny innbokspost",
+  "inbox.captureAnotherPlaceholder": "Kom du på noe? Legg det i innboksen…",
   "inbox.createKeepProcessing": "Opprett og fortsett",
   "inbox.createOpenProject": "Opprett og åpne prosjekt",
   "inbox.deckPosition": "{position} av {total}",

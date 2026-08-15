@@ -67,6 +67,30 @@ test('the deck cycles: skipped items come around again until resolved', async ({
   await expect.poll(() => doc.current().nodes[doc.current().inboxNodeId].childIds).toEqual([]);
 });
 
+test('quick-capture a remembered thought into the inbox without leaving the deck (#1119)', async ({ page, doc }) => {
+  await page.goto('/inbox');
+  await page.getByRole('button', { name: 'Process inbox (3)' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Process inbox' });
+  await expect(dialog.getByText(/First thought · 1 of 3/)).toBeVisible();
+
+  // `c` focuses the in-deck capture field — the global capture shortcut is suppressed while the modal is open.
+  await page.keyboard.press('c');
+  const field = dialog.getByRole('textbox', { name: 'Capture another inbox item' });
+  await expect(field).toBeFocused();
+
+  // Jot it, press Enter → it lands in the inbox; the deck stays open on the same item (flow undisturbed).
+  await field.fill('Call the vet');
+  await field.press('Enter');
+  await expect(field).toHaveValue('');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByText(/First thought · 1 of 3/)).toBeVisible();
+
+  // The new item is a 4th inbox child — added to the inbox, not injected into the current queue.
+  await expect
+    .poll(() => doc.current().nodes[doc.current().inboxNodeId].childIds.map((id) => doc.current().nodes[id].title))
+    .toContain('Call the vet');
+});
+
 test('the deck honors the selection: Process selected walks only the ticked items', async ({ page, doc }) => {
   await page.goto('/inbox');
   await page.getByRole('button', { name: 'Select items' }).click();

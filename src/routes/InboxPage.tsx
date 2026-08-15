@@ -231,6 +231,10 @@ export function InboxPage() {
                 },
                 onSkip: skip,
                 onPrev: prev,
+                // Quick-capture a just-remembered thought into the inbox without leaving the deck
+                // (#1119) — same dispatch as the inbox quick-add; lands in the inbox, not this queue.
+                onCapture: (title: string) =>
+                  dispatch({ type: 'addInboxItem', id: newId(), title, atTop: !addToBottom, now: nowIso() }),
               }
             : {})}
         />

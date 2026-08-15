@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- Quick-capture from inside the inbox process deck: a thought that arrives while you're triaging goes
+  straight to the inbox — press **`c`** (or use the field at the bottom of the deck) and keep
+  processing. The new item lands in the inbox, not the current queue, so the batch you're working is
+  undisturbed. (The global `c` shortcut is suppressed while a modal is open, so the deck now mirrors
+  it locally.) Closes #1119.
+
 ### Changed
 
 - **MCP: write is granted by default.** Signing an assistant in over the MCP connection now grants

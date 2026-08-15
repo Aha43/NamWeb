@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -46,6 +46,7 @@ export function InboxProcessDialog({
   onDelete,
   onSkip,
   onPrev,
+  onCapture,
   remaining,
   position,
 }: {
@@ -66,6 +67,10 @@ export function InboxProcessDialog({
   onSkip?: () => void;
   /** Deck mode: step back to the previous item (← / ArrowLeft). */
   onPrev?: () => void;
+  /** Deck mode: capture a just-remembered thought straight to the inbox without leaving the deck
+   *  (#1119). Lands in the inbox (not the current queue), so the batch you're triaging is undisturbed;
+   *  press `c` to jump to the field (the global capture shortcut is suppressed while this modal is open). */
+  onCapture?: (title: string) => void;
   /** Deck mode: how many items are left (incl. the current one). */
   remaining?: number;
   /** Deck mode: 1-based position of the current item within the remaining set (for "X of N"). */
@@ -84,6 +89,20 @@ export function InboxProcessDialog({
   const isDesktop = useIsDesktop();
   const deck = Boolean(onSkip); // process-all flow: parent swaps in the next item
   const parentId = targetId || undefined;
+  // Quick-capture within the deck (#1119): jot a just-remembered thought to the inbox and keep going.
+  const [captureValue, setCaptureValue] = useState('');
+  const [justCaptured, setJustCaptured] = useState(false);
+  const captureRef = useRef<HTMLInputElement>(null);
+
+  function submitCapture(e: FormEvent) {
+    e.preventDefault();
+    const title = captureValue.trim();
+    if (!title || !onCapture) return;
+    onCapture(title);
+    setCaptureValue('');
+    setJustCaptured(true);
+    captureRef.current?.focus(); // stay put — add several in a row
+  }
 
   function resolve(resolution: ProcessResolution) {
     const tagList = tags.split(',').map((s) => s.trim()).filter(Boolean);
@@ -108,21 +127,29 @@ export function InboxProcessDialog({
   useEffect(() => {
     if (!deck || !open) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       // A layer on top owns the keys: the project picker OR the make-project brain-dump (#1007) —
       // otherwise ←/→ would advance the inbox deck underneath the open dialog.
       if (pickerOpen || convertOpen) return;
       const el = e.target as HTMLElement | null;
+      // Typing target (incl. the capture field itself) keeps the keys — so `c` types normally there.
       if (el && (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable))
         return;
-      e.preventDefault();
-      if (e.key === 'ArrowRight') onSkip?.();
-      else onPrev?.();
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        onSkip?.();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        onPrev?.();
+      } else if ((e.key === 'c' || e.key === 'C') && onCapture) {
+        // Mirror the global quick-capture shortcut, which is suppressed while this modal is open (#1119).
+        e.preventDefault();
+        captureRef.current?.focus();
+      }
     }
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
-  }, [deck, open, pickerOpen, convertOpen, onSkip, onPrev]);
+  }, [deck, open, pickerOpen, convertOpen, onSkip, onPrev, onCapture]);
 
   const picker = (defaultLabel: string, fieldLabel: string) => {
     if (projectTargets.length === 0) return null;
@@ -264,6 +291,32 @@ export function InboxProcessDialog({
               ← {t('common.back')}
             </Button>
           </div>
+        )}
+
+        {deck && onCapture && (
+          // Quick-capture without breaking the deck (#1119): a thought that arrives mid-triage goes
+          // straight to the inbox (press `c` to jump here) and you keep processing. Persistent across
+          // steps so it's always a keystroke away; the new item lands in the inbox, not this queue.
+          <form onSubmit={submitCapture} className="mt-1 flex items-center gap-2 border-t border-border pt-3">
+            <input
+              ref={captureRef}
+              value={captureValue}
+              onChange={(e) => {
+                setCaptureValue(e.target.value);
+                setJustCaptured(false);
+              }}
+              placeholder={t('inbox.captureAnotherPlaceholder')}
+              aria-label={t('inbox.captureAnother')}
+              className="min-w-0 flex-1 rounded-md border border-input bg-background px-2 py-1.5 text-sm outline-hidden focus:border-ring"
+            />
+            <Button type="submit" size="sm" variant="outline" disabled={!captureValue.trim()}>
+              {t('common.add')}
+            </Button>
+            {/* aria-live so the add is announced; fixed width so the row doesn't jump as it appears. */}
+            <span className="min-w-14 text-xs text-muted-foreground" aria-live="polite">
+              {justCaptured ? t('capture.justAdded') : ''}
+            </span>
+          </form>
         )}
       </DialogContent>
       {/* Making a project from this inbox item: seed its first actions in the moment (#1007). The
