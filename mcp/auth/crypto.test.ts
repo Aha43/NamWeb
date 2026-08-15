@@ -14,10 +14,15 @@ describe('hashToken (#1053)', () => {
 
 describe('encryptJson / decryptJson (#1053)', () => {
   it('round-trips a value', () => {
-    const value = { access_token: 'at', refresh_token: 'rt', nested: [1, 2] };
+    // A long, distinctive canary made of base64-safe chars: the "ciphertext doesn't leak the
+    // plaintext" check must be meaningful (the token *could* appear in the base64 output if leaked)
+    // yet impossible to satisfy by chance. A short substring like "at" appears in random base64 ~2%
+    // of the time, which flaked CI (#1121-era); a 25-char marker never will.
+    const canary = 'PlaintextLeakCanary123456';
+    const value = { access_token: canary, refresh_token: 'rt', nested: [1, 2] };
     const blob = encryptJson(value, KEY);
     expect(typeof blob).toBe('string');
-    expect(blob).not.toContain('at'); // ciphertext, not the plaintext
+    expect(blob).not.toContain(canary); // ciphertext, not the plaintext
     expect(decryptJson(blob, KEY)).toEqual(value);
   });
 
