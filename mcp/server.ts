@@ -631,6 +631,11 @@ export function buildServer(
         if (dueEndAt && dueAt && dueEndAt < dueAt) {
           throw new Error(`due_end (${dueEndAt}) is before due (${dueAt}).`);
         }
+        // On a single day, the end time can't precede the start time — mirror the SPA due editor
+        // (DueFieldset #508), which MCP would otherwise let an AI violate (#1121 review, Codex P2).
+        if (dueEndAt && dueEndAt === dueAt && dueTime && dueEndTime && dueEndTime < dueTime) {
+          throw new Error(`due_end_time (${dueEndTime}) is before due_time (${dueTime}) on the same day.`);
+        }
         return { type: 'setDue', id: node_id, dueAt, dueEndAt, dueTime, dueEndTime, now: nowIso() };
       }),
   );

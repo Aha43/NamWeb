@@ -35,5 +35,10 @@ export function constrainRefreshScopes(requested: string[] | undefined, granted:
   if (beyond.length) {
     throw new InvalidScopeError(`Requested scope(s) exceed the grant: ${beyond.join(' ')}`);
   }
+  // Read is the baseline and write implies read — never mint a write-only token (#1116 review, P3):
+  // `/mcp` requires `nam.read`, so a `nam.write`-only token would exchange fine yet be unusable.
+  if (requested.includes(SCOPE_WRITE) && !requested.includes(SCOPE_READ)) {
+    return [SCOPE_READ, ...requested];
+  }
   return requested;
 }
