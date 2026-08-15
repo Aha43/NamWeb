@@ -10,6 +10,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **MCP can now set due dates.** A new `set_due` tool sets an action or project's due date, optional
+  clock time, and optional end (a date range) — declarative (replaces the whole due state; `due:null`
+  clears it), reusing the app's flexible date/time parsing so it round-trips exactly like the SPA. And
+  `add_action` / `add_next_action` can now **schedule at creation** (`due` + `due_time`). So AI-created
+  work reaches the calendar / Due / agenda surfaces — the gap dogfooding hit while scheduling a
+  season's home matches. Closes #1121.
 - Quick-capture from inside the inbox process deck: a thought that arrives while you're triaging goes
   straight to the inbox — press **`c`** (or use the field at the bottom of the deck) and keep
   processing. The new item lands in the inbox, not the current queue, so the batch you're working is

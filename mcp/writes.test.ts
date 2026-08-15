@@ -152,6 +152,18 @@ describe('NamWeb MCP write tools', () => {
     expect(committedIntent()).toMatchObject({ type: 'addAction', status: 'NEXT' });
   });
 
+  it('add_action schedules at creation, parsing a flexible date + time (#1121)', async () => {
+    await call('add_action', { project_id: 'p1', title: 'Attend Brann match', due: '2026-08-15', due_time: '19' });
+    expect(committedIntent()).toMatchObject({ type: 'addAction', title: 'Attend Brann match', dueAt: '2026-08-15', dueTime: '19:00' });
+  });
+
+  it('add_action rejects a time with no date (#1121)', async () => {
+    const result = await call('add_action', { project_id: 'p1', title: 'x', due_time: '19:00' });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/due_time requires due/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
   it('add_next_action roots a NEXT action under nextActionsNodeId', async () => {
     await call('add_next_action', { title: 'Free' });
     expect(committedIntent()).toMatchObject({
@@ -186,6 +198,55 @@ describe('NamWeb MCP write tools', () => {
   it('update_tags normalizes the tag list', async () => {
     await call('update_tags', { node_id: 'a1', tags: ['Work', ' work ', 'Home'] });
     expect(committedIntent()).toMatchObject({ type: 'updateTags', tags: ['work', 'home'] });
+  });
+
+  it('set_due sets a date + time, parsing flexible input to canonical form (#1121)', async () => {
+    await call('set_due', { node_id: 'a1', due: '26-8-15', due_time: '1930' });
+    expect(committedIntent()).toMatchObject({
+      type: 'setDue',
+      id: 'a1',
+      dueAt: '2026-08-15',
+      dueTime: '19:30',
+      dueEndAt: null,
+      dueEndTime: null,
+    });
+  });
+
+  it('set_due sets a range (start + end date)', async () => {
+    await call('set_due', { node_id: 'a1', due: '2026-08-15', due_end: '2026-08-17' });
+    expect(committedIntent()).toMatchObject({ type: 'setDue', id: 'a1', dueAt: '2026-08-15', dueEndAt: '2026-08-17' });
+  });
+
+  it('set_due with due=null clears the due (declarative)', async () => {
+    await call('set_due', { node_id: 'a1', due: null });
+    expect(committedIntent()).toMatchObject({ type: 'setDue', id: 'a1', dueAt: null, dueTime: null, dueEndAt: null, dueEndTime: null });
+  });
+
+  it('set_due rejects a malformed date with a clear message, and never commits', async () => {
+    const result = await call('set_due', { node_id: 'a1', due: 'next friday' });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/not a valid date/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
+  it('set_due rejects an end date before the start', async () => {
+    const result = await call('set_due', { node_id: 'a1', due: '2026-08-17', due_end: '2026-08-15' });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/before/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
+  it('set_due rejects a time/range while clearing the due', async () => {
+    const result = await call('set_due', { node_id: 'a1', due: null, due_time: '19:00' });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/clearing the due/i);
+  });
+
+  it('set_due refuses a structural container', async () => {
+    const result = await call('set_due', { node_id: 'inbox', due: '2026-08-15' });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toContain('container');
+    expect(commitIntent).not.toHaveBeenCalled();
   });
 
   it('move_node → moveNode (action to a valid destination)', async () => {

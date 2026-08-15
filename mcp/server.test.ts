@@ -102,6 +102,7 @@ const EXPECTED_WRITE_TOOLS = [
   'mark_backlog',
   'update_node',
   'update_tags',
+  'set_due',
   'move_node',
   'delete_node',
   'add_blocked_by',
