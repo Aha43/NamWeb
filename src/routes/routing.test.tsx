@@ -101,6 +101,22 @@ describe('routing', () => {
     expect(screen.getByText('Later thing')).toBeInTheDocument();
   });
 
+  it('renders the Someday view at /someday, listing parked items (#1131)', () => {
+    const doc = document();
+    doc.nodes['proj'].status = 'SOMEDAY'; // park the Roadmap project as someday
+    renderAt('/someday', { document: doc });
+    expect(screen.getByRole('heading', { name: 'Someday' })).toBeInTheDocument();
+    expect(screen.getByText('Roadmap')).toBeInTheDocument(); // the someday project (a root)
+  });
+
+  it('a someday project keeps its NEXT child out of the Next view (inheritance, #1131)', () => {
+    const doc = document();
+    doc.nodes['proj'].status = 'SOMEDAY'; // 'proj' has a NEXT child 't1' (Task one)
+    renderAt('/next', { document: doc });
+    expect(screen.getByText('Do this')).toBeInTheDocument(); // the free NEXT action stays
+    expect(screen.queryByText('Task one')).not.toBeInTheDocument(); // the someday project's child drops out
+  });
+
   it('renders the projects surface at /projects', () => {
     renderAt('/projects');
     expect(screen.getByLabelText('Add project')).toBeInTheDocument();

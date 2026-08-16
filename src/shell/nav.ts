@@ -5,6 +5,7 @@ import {
   Folders,
   Gauge,
   HelpCircle,
+  Hourglass,
   Inbox,
   LayoutDashboard,
   Layers,
@@ -37,6 +38,7 @@ const inbox: NavItem = { to: '/inbox', label: 'domain.inbox', icon: Inbox, hint:
 const looseEnds: NavItem = { to: '/loose-ends', label: 'domain.looseEnds', icon: Gauge, hint: 'nav.looseEndsHint', selfTitled: true };
 export const next: NavItem = { to: '/next', label: 'domain.status.next', icon: ListTodo, hint: 'nav.nextHint' };
 const backlog: NavItem = { to: '/backlog', label: 'domain.status.backlog', icon: Layers, hint: 'nav.backlogHint' };
+const someday: NavItem = { to: '/someday', label: 'domain.status.someday', icon: Hourglass, hint: 'nav.somedayHint' };
 const due: NavItem = { to: '/due', label: 'domain.due', icon: CalendarClock, hint: 'nav.dueHint' };
 export const calendar: NavItem = { to: '/calendar', label: 'domain.calendar', icon: CalendarDays, hint: 'nav.calendarHint', selfTitled: true };
 const blocked: NavItem = { to: '/blocked', label: 'domain.blocked', icon: Lock, hint: 'nav.blockedHint' };
@@ -57,7 +59,7 @@ const help: NavItem = { to: '/help', label: 'nav.help', icon: HelpCircle, hint: 
 /** All routable surfaces, flat — the phone bottom bar foregrounds a subset (capture + execution) and
  *  the rest live in the More sheet. */
 export const SURFACES: NavItem[] = [
-  inbox, looseEnds, next, backlog, due, calendar, blocked, tags, search, projects, goals, templates, shared, done, focus,
+  inbox, looseEnds, next, backlog, someday, due, calendar, blocked, tags, search, projects, goals, templates, shared, done, focus,
 ];
 
 export interface NavGroup {
@@ -74,7 +76,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
   { items: [inbox, looseEnds] },
   // Calendar lives in the toolbar command bar too (#763) — one home is enough on desktop;
   // the phone More sheet keeps it (no toolbar there).
-  { items: [backlog, due, blocked, done] },
+  { items: [backlog, someday, due, blocked, done] },
   { items: [goals, templates, shared] },
   { items: [help] },
 ];
@@ -83,7 +85,7 @@ export const SIDEBAR_GROUPS: NavGroup[] = [
  *  grouped, and rendered with their `hint` as a subtitle — tooltips don't fire on touch, so this is
  *  how the per-surface descriptions reach mobile. Tags + Search live here too (no toolbar on phone). */
 export const MORE_GROUPS: NavGroup[] = [
-  { label: 'nav.groupViews', items: [looseEnds, backlog, due, calendar, blocked, done] },
+  { label: 'nav.groupViews', items: [looseEnds, backlog, someday, due, calendar, blocked, done] },
   { label: 'nav.groupOrganize', items: [projects, goals, templates, shared] },
   { label: 'nav.groupFind', items: [tags, search] },
 ];

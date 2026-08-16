@@ -11,6 +11,8 @@
   "domain.status.backlog": "Backlog",
   "domain.status.done": "Done",
   "domain.status.next": "Next",
+  "domain.status.someday": "Someday",
+  "domain.status.somedayHint": "not decided to do",
   "domain.statusShort.backlog": "B",
   "domain.statusShort.done": "D",
   "domain.statusShort.next": "N",

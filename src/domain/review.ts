@@ -4,7 +4,7 @@
 // signals so a future AI layer can read exactly what a human sees.
 
 import type { NamNode, WorkspaceDocument } from './types';
-import { archivedNodeIds, isBlocked, structuralNodeIds, subtreeIds } from './lenses';
+import { archivedNodeIds, isBlocked, somedaySuppressedIds, structuralNodeIds, subtreeIds } from './lenses';
 import { NOT_STALLED_TAG, canonicalTag } from './systemTags';
 
 /** A project the user has explicitly marked "intentionally no next action" (#909). */
@@ -44,6 +44,9 @@ function lastTouched(n: NamNode): string | null {
 export function stalledProjects(doc: WorkspaceDocument, includeAcknowledged = false): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
+  // A SOMEDAY project has no committed next action by definition — flagging it is exactly the noise
+  // SOMEDAY exists to remove (#1131). Excludes the someday project AND anything under it.
+  const someday = somedaySuppressedIds(doc);
   const hasOpenNext = (projectId: string): boolean => {
     for (const id of subtreeIds(doc, projectId)) {
       const n = doc.nodes[id];
@@ -57,6 +60,7 @@ export function stalledProjects(doc: WorkspaceDocument, includeAcknowledged = fa
     n.project &&
     !structural.has(n.id) &&
     !archived.has(n.id) &&
+    !someday.has(n.id) &&
     isOpen(n) &&
     !hasOpenNext(n.id) &&
     (includeAcknowledged || !isNotStalled(n));
@@ -82,11 +86,18 @@ export function stalledProjects(doc: WorkspaceDocument, includeAcknowledged = fa
 export function goneQuiet(doc: WorkspaceDocument, now: Date = new Date()): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
+  const someday = somedaySuppressedIds(doc); // a someday item untouched 14+ days is normal, not a signal (#1131)
   const inboxIds = new Set(doc.nodes[doc.inboxNodeId]?.childIds ?? []);
   const cutoff = now.getTime() - GONE_QUIET_DAYS * 86_400_000;
   return Object.values(doc.nodes)
     .filter(
-      (n) => !n.project && !structural.has(n.id) && !archived.has(n.id) && !inboxIds.has(n.id) && isOpen(n),
+      (n) =>
+        !n.project &&
+        !structural.has(n.id) &&
+        !archived.has(n.id) &&
+        !someday.has(n.id) &&
+        !inboxIds.has(n.id) &&
+        isOpen(n),
     )
     .filter((n) => {
       const t = lastTouched(n);
