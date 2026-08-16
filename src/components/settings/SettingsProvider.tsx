@@ -3,6 +3,7 @@ import { DEFAULT_DATE_FORMAT, type DateFormat } from '@/lib/dates';
 import { activateLocale, detectInitialLocale, type Locale } from '@/lib/i18n';
 import {
   ADD_TO_BOTTOM_STORAGE_KEY,
+  DEFAULT_ACTION_STATUS_STORAGE_KEY,
   DATE_FORMAT_STORAGE_KEY,
   DENSE_STORAGE_KEY,
   COMPACT_ROWS_STORAGE_KEY,
@@ -13,6 +14,7 @@ import {
   SettingsContext,
   type ContentWidth,
   type Density,
+  type NewActionDefault,
 } from './settings-context';
 
 const DATE_FORMATS: DateFormat[] = ['medium', 'iso', 'dmy', 'mdy'];
@@ -76,6 +78,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   // The persisted default; the effective value starts there and the inline toggle flips it (session).
   const [addToBottomDefault, setDefaultState] = useState<boolean>(initialAddToBottom);
   const [addToBottom, setAddToBottom] = useState<boolean>(addToBottomDefault);
+  const [defaultNewActionStatus, setDefaultNewActionStatus] = useState<NewActionDefault>(() => {
+    try {
+      return localStorage.getItem(DEFAULT_ACTION_STATUS_STORAGE_KEY) === 'BACKLOG' ? 'BACKLOG' : 'NEXT';
+    } catch {
+      return 'NEXT'; // default: a new action is something you mean to do
+    }
+  });
 
   useEffect(() => {
     try {
@@ -140,6 +149,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }
   }, [addToBottomDefault]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(DEFAULT_ACTION_STATUS_STORAGE_KEY, defaultNewActionStatus);
+    } catch {
+      // best-effort persistence
+    }
+  }, [defaultNewActionStatus]);
+
   // Changing the default in Settings applies immediately (and becomes the new here-and-now value).
   const setAddToBottomDefault = (value: boolean) => {
     setDefaultState(value);
@@ -167,6 +184,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setAddToBottom,
         addToBottomDefault,
         setAddToBottomDefault,
+        defaultNewActionStatus,
+        setDefaultNewActionStatus,
       }}
     >
       {children}
