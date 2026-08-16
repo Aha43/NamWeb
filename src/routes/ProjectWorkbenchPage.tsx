@@ -33,7 +33,7 @@ import { useWorkspaceContext } from '@/store/workspace-context';
 export function ProjectWorkbenchPage() {
   const { id = '' } = useParams();
   const { document, dispatch } = useWorkspaceContext();
-  const { addToBottom } = useSettings();
+  const { addToBottom, defaultNewActionStatus } = useSettings();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
   const setStatus = useSetStatus();
@@ -228,13 +228,13 @@ export function ProjectWorkbenchPage() {
       dueSorted={dueSorted}
       onToggleDueSort={toggleDueSort}
       onAddAction={(title) => {
-        // New project actions land in BACKLOG (not NEXT) so they don't flood Next/Focus before
-        // you've triaged them — matches NamDesktop's default. Issue #210.
-        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: 'BACKLOG', atTop: !addToBottom, now: nowIso() });
+        // The status a new project action gets is a per-user default (#1132) — NEXT out of the box
+        // (capturing usually means intent), or BACKLOG for those who triage first (the old #210 default).
+        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: defaultNewActionStatus, atTop: !addToBottom, now: nowIso() });
         ensureSectionExpanded('actions');
       }}
       onAddActionToColumn={(columnId, title) =>
-        dispatch({ type: 'addAction', parentId: columnId, id: newId(), title, status: 'BACKLOG', atTop: !addToBottom, now: nowIso() })
+        dispatch({ type: 'addAction', parentId: columnId, id: newId(), title, status: defaultNewActionStatus, atTop: !addToBottom, now: nowIso() })
       }
       onAddSubProject={(title) => {
         dispatch({ type: 'addSubProject', parentId: id, id: newId(), title, atTop: !addToBottom, now: nowIso() });

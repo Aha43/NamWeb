@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **New project actions default to Next** (was Backlog), and it's now a per-user setting
+  (Account → Preferences → "New project actions default to"): Next if capturing usually means you
+  intend to do it, Backlog if you triage first. Applies to the workbench add-action rows. Closes #1132.
+
 ## [3.4.0] - 2026-08-16
 
 **Write stops asking, and learns to schedule.** The 3.x AI arc keeps compounding through real

@@ -7,6 +7,8 @@
   "account.dangerZone": "Faresone",
   "account.dateFormat": "Datoformat",
   "account.dateFormatHelp": "Hvordan forfallsdatoer vises. Datoinnskriving påvirkes ikke.",
+  "account.defaultActionStatus": "Nye prosjekthandlinger får som standard",
+  "account.defaultActionStatusHelp": "Statusen en ny handling får når du legger den til på et prosjekts arbeidsbenk. Neste hvis du mener å gjøre den; Etterslep hvis du sorterer først. Du kan alltid endre en enkelt handling etterpå.",
   "account.deleteAccount": "Slett konto",
   "account.deleteDesc": "Dette fjerner permanent kontoen din og alle arbeidsområdene dine fra skyen — på nettet og alle synkroniserte enheter. Lokale skrivebordsfiler på din egen maskin påvirkes ikke. Dette kan ikke angres.",
   "account.deleteHelp": "Slett kontoen din og alle skydataene dine permanent. Dette kan ikke angres.",

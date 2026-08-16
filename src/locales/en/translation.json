@@ -7,6 +7,8 @@
   "account.dangerZone": "Danger zone",
   "account.dateFormat": "Date format",
   "account.dateFormatHelp": "How due dates are displayed. Date entry is unaffected.",
+  "account.defaultActionStatus": "New project actions default to",
+  "account.defaultActionStatusHelp": "The status a new action gets when you add it on a project's workbench. Next if you mean to do it; Backlog if you triage first. You can always change a single action afterwards.",
   "account.deleteAccount": "Delete account",
   "account.deleteDesc": "This permanently removes your account and all your workspaces from the cloud — on the web and any synced device. Local desktop files on your own machine are not affected. This can't be undone.",
   "account.deleteHelp": "Permanently delete your account and all your cloud data. This can't be undone.",

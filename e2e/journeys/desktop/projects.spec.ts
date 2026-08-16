@@ -15,12 +15,12 @@ test.describe('projects workbench', () => {
     await expect(page).toHaveURL(/\/projects\/.+/);
     await expandWorkbench(page); // sections collapse by default (#279); reveals the add-panel inputs
 
-    // Add a direct action. New project actions default to BACKLOG (so they don't flood Next/Focus
-    // before triage) — the status badge reads "B". #210
+    // Add a direct action. New project actions default to NEXT now (capturing usually means intent),
+    // configurable in Settings back to Backlog — #1132 (was BACKLOG-by-default under #210).
     await page.getByLabel('Add action').fill('Buy shingles');
     await page.getByLabel('Add action').press('Enter');
     await expect(page.getByText('Buy shingles')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Status of Buy shingles: Backlog/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Status of Buy shingles: Next/ })).toBeVisible();
 
     // Add a sub-project and drill into it.
     await page.getByLabel('Add sub-project').fill('Phase 1');
@@ -32,6 +32,24 @@ test.describe('projects workbench', () => {
     await expect(breadcrumb.getByText('Phase 1')).toBeVisible();
     await breadcrumb.getByRole('button', { name: 'Roof repair' }).click();
     await expect(page.getByText('Buy shingles')).toBeVisible();
+  });
+
+  // #1132 — the per-user default status for new project actions (NEXT out of the box, Backlog opt-in).
+  test('the default-status setting flips new project actions to Backlog', async ({ page }) => {
+    await page.goto('/account?tab=preferences');
+    await page
+      .getByRole('group', { name: 'New project actions default to' })
+      .getByRole('button', { name: 'Backlog' })
+      .click();
+
+    await page.goto('/projects');
+    await page.getByLabel('Add project').fill('Garage');
+    await page.getByLabel('Add project').press('Enter');
+    await page.getByRole('button', { name: 'Open Garage' }).click();
+    await expandWorkbench(page);
+    await page.getByLabel('Add action').fill('Sort boxes');
+    await page.getByLabel('Add action').press('Enter');
+    await expect(page.getByRole('button', { name: /Status of Sort boxes: Backlog/ })).toBeVisible();
   });
 
   // #343 — delete a project straight from the list, behind an anchored confirm.
