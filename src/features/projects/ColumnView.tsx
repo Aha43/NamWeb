@@ -1,4 +1,4 @@
-import { Fragment, useState, type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { Fragment, useRef, useState, type CSSProperties, type FormEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import { ChevronLeft, ChevronRight, ChevronsLeftRight, ChevronsRightLeft, Pencil } from 'lucide-react';
 import {
   DndContext,
@@ -420,15 +420,18 @@ function ColumnResizer({
 function ColumnAdd({ label, onAdd }: { label: string; onAdd: (title: string) => void }) {
   const { t } = useTranslation();
   const [title, setTitle] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
   function submit(event: FormEvent) {
     event.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) return;
     onAdd(trimmed);
     setTitle('');
+    // Keep the add field — and the item just appended above it — in view as the column grows (#1133).
+    requestAnimationFrame(() => formRef.current?.scrollIntoView?.({ block: 'nearest' }));
   }
   return (
-    <form onSubmit={submit}>
+    <form ref={formRef} onSubmit={submit}>
       <input
         aria-label={t('column.addActionAria', { label })}
         value={title}

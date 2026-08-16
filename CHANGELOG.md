@@ -23,6 +23,10 @@ minor = features (breaking changes allowed), patch = fixes.
 - **New project actions default to Next** (was Backlog), and it's now a per-user setting
   (Account → Preferences → "New project actions default to"): Next if capturing usually means you
   intend to do it, Backlog if you triage first. Applies to the workbench add-action rows. Closes #1132.
+- Adding actions on a project workbench is smoother on long lists: the just-added action **scrolls
+  into view** (list and column views), and the list view's **add-action row is now pinned to the
+  bottom** of the Actions section (a chat-style input) so it stays put as items append to the tail —
+  no more adding blind below a long list when "new items go to the bottom" is on. Closes #1133.
 
 ## [3.4.0] - 2026-08-16
 

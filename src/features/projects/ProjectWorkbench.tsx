@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { Fragment, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, LayoutTemplate, Pencil, Target, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InlineRename } from '../actions/InlineRename';
@@ -236,7 +236,22 @@ export function ProjectWorkbench({
 
   const [renamingSubId, setRenamingSubId] = useState<string | null>(null);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const { dense } = useSettings();
+  const { dense, addToBottom } = useSettings();
+  // Auto-scroll the just-added action into view (#1133): when new items append to the tail, they'd
+  // otherwise land off-screen below a long list. On add we flag a scroll; the effect runs once the new
+  // row has rendered. Only for add-to-bottom — add-to-top lands the item by the add row, already in view.
+  const actionsEndRef = useRef<HTMLDivElement>(null);
+  const [scrollActionsToEnd, setScrollActionsToEnd] = useState(false);
+  useEffect(() => {
+    if (scrollActionsToEnd) {
+      actionsEndRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
+      setScrollActionsToEnd(false);
+    }
+  }, [actions, scrollActionsToEnd]);
+  const handleAddAction = (title: string) => {
+    onAddAction(title);
+    if (addToBottom) setScrollActionsToEnd(true);
+  };
 
   // Workbench keyboard shortcuts: `x` Details, `y` Actions, `z` Sub-projects (#436), `s` Summary
   // (#472). One key per target so each is predictable, rather than one overloaded "toggle all".
@@ -726,8 +741,6 @@ export function ProjectWorkbench({
                   </button>
                 </div>
               )}
-              {/* Add-action row lives in the list, always reachable (even when empty or collapsed). */}
-              <QuickAdd label={t('workbench.addAction')} placeholder={t('column.addActionPlaceholder')} onAdd={onAddAction} />
               {!sectionCollapsed('actions') && actions.length > 0 && (
                 <ReorderableActionList
                   rows={actions}
@@ -796,6 +809,14 @@ export function ProjectWorkbench({
                   )}
                 />
               )}
+              {/* Scroll anchor for the just-added action (#1133) — see handleAddAction. */}
+              <div ref={actionsEndRef} aria-hidden />
+              {/* The add-action row is pinned to the bottom of the section (#1133): as items append to
+                  the tail it stays in view (a chat-style input), and it's always reachable even when the
+                  list is empty or collapsed. bg-background so list rows don't show through it. */}
+              <div className="sticky bottom-0 z-10 bg-background pt-2">
+                <QuickAdd label={t('workbench.addAction')} placeholder={t('column.addActionPlaceholder')} onAdd={handleAddAction} />
+              </div>
             </div>
 
           <div className="space-y-1">
