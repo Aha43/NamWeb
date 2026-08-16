@@ -7,6 +7,7 @@ import { InboxPage } from './InboxPage';
 import { LooseEndsPage } from './LooseEndsPage';
 import { NextActionsPage } from './NextActionsPage';
 import { BacklogPage } from './BacklogPage';
+import { SomedayPage } from './SomedayPage';
 import { ProjectsPage } from './ProjectsPage';
 import { ProjectWorkbenchPage } from './ProjectWorkbenchPage';
 import { DonePage } from './DonePage';
@@ -55,6 +56,7 @@ export function AppRoutes() {
         <Route path="loose-ends" element={<LooseEndsPage />} />
         <Route path="next" element={<NextActionsPage />} />
         <Route path="backlog" element={<BacklogPage />} />
+        <Route path="someday" element={<SomedayPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="projects/:id" element={<ProjectWorkbenchPage />} />
         <Route path="done" element={<DonePage />} />
