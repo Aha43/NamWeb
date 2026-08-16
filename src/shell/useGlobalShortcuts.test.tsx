@@ -55,6 +55,8 @@ describe('useGlobalShortcuts', () => {
       setAddToBottom,
       addToBottomDefault: false,
       setAddToBottomDefault: vi.fn(),
+      defaultNewActionStatus: 'NEXT',
+      setDefaultNewActionStatus: vi.fn(),
     labs: false,
     compactRows: false,
     setCompactRows: vi.fn(),

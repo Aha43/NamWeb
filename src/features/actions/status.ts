@@ -8,6 +8,8 @@ import type { NodeStatus } from '@/domain/types';
 export const STATUS_OPTIONS: { value: NodeStatus; label: string }[] = [
   { value: 'NEXT', label: 'domain.status.next' },
   { value: 'BACKLOG', label: 'domain.status.backlog' },
+  // SOMEDAY (#1131): a parking state between "do later" and "done" — commitment, not timing.
+  { value: 'SOMEDAY', label: 'domain.status.someday' },
   { value: 'DONE', label: 'domain.status.done' },
 ];
 
@@ -20,5 +22,6 @@ export function statusLabel(t: TFunction, status: NodeStatus): string {
 export const STATUS_TEXT_TONE: Partial<Record<NodeStatus, string>> = {
   NEXT: 'text-primary',
   BACKLOG: 'text-muted-foreground',
+  SOMEDAY: 'text-muted-foreground', // parked and quiet, like backlog — it's "not now" work
   DONE: 'text-green-600 dark:text-green-400',
 };

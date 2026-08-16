@@ -20,7 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { buildUserExport, downloadJson } from '@/lib/exportData';
 import { validateNewPassword } from '@/lib/password';
 import { formatDate, type DateFormat } from '@/lib/dates';
-import { useSettings, type ContentWidth, type Density } from '@/components/settings/settings-context';
+import { useSettings, type ContentWidth, type Density, type NewActionDefault } from '@/components/settings/settings-context';
 import { useTranslation } from 'react-i18next';
 import { LOCALES, type Locale } from '@/lib/i18n';
 
@@ -415,6 +415,8 @@ function PreferencesTab() {
     setLabs,
     addToBottomDefault,
     setAddToBottomDefault,
+    defaultNewActionStatus,
+    setDefaultNewActionStatus,
     contentWidth,
     setContentWidth,
     density,
@@ -528,6 +530,20 @@ function PreferencesTab() {
         <p className="text-xs text-muted-foreground">
           {t('account.addBottomHelp')}
         </p>
+      </div>
+
+      <div className="space-y-1.5">
+        <Label>{t('account.defaultActionStatus')}</Label>
+        <Segmented<NewActionDefault>
+          label={t('account.defaultActionStatus')}
+          value={defaultNewActionStatus}
+          onChange={setDefaultNewActionStatus}
+          options={[
+            { value: 'NEXT', label: t('domain.status.next') },
+            { value: 'BACKLOG', label: t('domain.status.backlog') },
+          ]}
+        />
+        <p className="text-xs text-muted-foreground">{t('account.defaultActionStatusHelp')}</p>
       </div>
 
     </div>

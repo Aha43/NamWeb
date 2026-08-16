@@ -3,7 +3,11 @@
 // output exactly so this client reads and writes the same blob the desktop does.
 // Source of truth: NamDesktop `JsonWorkspaceRepository` / `NamNode` / `NodeStatus`.
 
-export type NodeStatus = 'NEXT' | 'BACKLOG' | 'DONE' | 'CANCELLED' | 'ARCHIVED';
+// SOMEDAY (#1131) is a commitment marker, not a timing one: "I don't want to forget this, but I
+// haven't decided to do it." A SOMEDAY node and its whole subtree drop out of the day-to-day surfaces
+// (Next/Backlog/Loose ends/context) and are reachable only via the Someday view, list_someday, and
+// search. Additive workspace-doc contract change — a future NamDesktop redo must extend its enum first.
+export type NodeStatus = 'NEXT' | 'BACKLOG' | 'DONE' | 'CANCELLED' | 'ARCHIVED' | 'SOMEDAY';
 
 export type ResourceType = 'TEXT' | 'EMAIL' | 'URI' | 'FILE' | 'COUNT' | 'QUESTION';
 

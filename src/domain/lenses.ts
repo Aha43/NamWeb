@@ -53,8 +53,10 @@ export function inboxItems(doc: WorkspaceDocument): NamNode[] {
 export function nextActions(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
+  const someday = somedaySuppressedIds(doc); // a NEXT action under a SOMEDAY project drops out too (#1131)
   return Object.values(doc.nodes).filter(
-    (n) => n.status === 'NEXT' && !n.project && !structural.has(n.id) && !archived.has(n.id),
+    (n) =>
+      n.status === 'NEXT' && !n.project && !structural.has(n.id) && !archived.has(n.id) && !someday.has(n.id),
   );
 }
 
@@ -174,13 +176,58 @@ export function archivedProjectIds(doc: WorkspaceDocument): Set<string> {
  * tag context, Search), where descendant actions otherwise keep their NEXT/BACKLOG status.
  */
 export function archivedNodeIds(doc: WorkspaceDocument): Set<string> {
+  return subtreeIdsWhere(doc, (n) => n.status === 'ARCHIVED');
+}
+
+/**
+ * Every id in the subtree of any node matching `predicate` (the node itself + all its descendants).
+ * The shared walk behind status-based subtree suppression — ARCHIVED (above) and SOMEDAY (#1131) — so
+ * "a node whose own or an ancestor's status is X" is computed one way, not open-coded twice.
+ */
+export function subtreeIdsWhere(doc: WorkspaceDocument, predicate: (n: NamNode) => boolean): Set<string> {
   const ids = new Set<string>();
   for (const node of Object.values(doc.nodes)) {
-    if (node.status === 'ARCHIVED') {
+    if (predicate(node)) {
       for (const id of subtreeIds(doc, node.id)) ids.add(id);
     }
   }
   return ids;
+}
+
+/**
+ * Every id suppressed by SOMEDAY (#1131): a SOMEDAY node and all its descendants. Used ONLY to
+ * **exclude** from the day-to-day surfaces (Next, Backlog, context, stalled, gone-quiet) — the same
+ * way `archivedNodeIds` is. NOT the shape the Someday view wants (see `somedayRoots`).
+ */
+export function somedaySuppressedIds(doc: WorkspaceDocument): Set<string> {
+  return subtreeIdsWhere(doc, (n) => n.status === 'SOMEDAY');
+}
+
+/**
+ * The **outermost** SOMEDAY nodes — `status === 'SOMEDAY'` and NOT already inside another SOMEDAY (or
+ * ARCHIVED) subtree — what the Someday view and `list_someday` render: one row per parked subtree, not
+ * every descendant (marking a project someday shouldn't return its nine children). ARCHIVED wins: a
+ * someday node under an archived parent is archived-gone, not a someday to review (#1131 review).
+ */
+export function somedayRoots(doc: WorkspaceDocument): NamNode[] {
+  const parents = buildParentIndex(doc);
+  const structural = structuralNodeIds(doc);
+  const roots: NamNode[] = [];
+  for (const node of Object.values(doc.nodes)) {
+    if (node.status !== 'SOMEDAY') continue;
+    let cursor = parents.get(node.id);
+    let covered = false;
+    while (cursor && !structural.has(cursor)) {
+      const status = doc.nodes[cursor]?.status;
+      if (status === 'SOMEDAY' || status === 'ARCHIVED') {
+        covered = true; // a someday/archived ancestor already represents this node
+        break;
+      }
+      cursor = parents.get(cursor);
+    }
+    if (!covered) roots.push(node);
+  }
+  return roots;
 }
 
 /** A project's direct child nodes, in `childIds` order, filtered by kind. */
@@ -557,8 +604,9 @@ export function contextItems(
 ): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
+  const someday = somedaySuppressedIds(doc); // #1131 — context views are "what to work"; someday is not
   return Object.values(doc.nodes).filter((n) => {
-    if (n.project || structural.has(n.id) || archived.has(n.id)) return false;
+    if (n.project || structural.has(n.id) || archived.has(n.id) || someday.has(n.id)) return false;
     if (n.status === 'DONE' && !includeDone) return false; // done joins only when the box asks (#766)
     if (nextOnly && n.status !== 'NEXT') return false;
     if (requiredTags.length === 0) return true;
@@ -608,12 +656,14 @@ export function backlogItems(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);
   const parents = buildParentIndex(doc);
   const archived = archivedNodeIds(doc);
+  const someday = somedaySuppressedIds(doc); // #1131 — the whole point: a clean backlog excludes someday
   return Object.values(doc.nodes).filter(
     (n) =>
       n.status === 'BACKLOG' &&
       !n.project &&
       !structural.has(n.id) &&
       !archived.has(n.id) &&
+      !someday.has(n.id) &&
       parents.get(n.id) !== doc.inboxNodeId,
   );
 }

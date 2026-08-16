@@ -8,8 +8,21 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **SOMEDAY status** — a commitment marker, not a timing one. Alongside Next / Backlog / Done, mark a
+  project or action **Someday** ("not decided to do") to keep it without carrying it: a someday node
+  **and its whole subtree** drop out of Next, Backlog, context views, and Loose ends (stalled +
+  gone-quiet), and live only in the new **Someday view** (and `list_someday` over MCP, and search).
+  Promoting out (→ Next / → Backlog) is one click, and deleting from Someday is low-friction — emptying
+  the list is a success, not a failure. MCP gains `mark_someday` / `list_someday`, and SOMEDAY is
+  settable on create. Closes #1131, #1072.
+
 ### Changed
 
+- **New project actions default to Next** (was Backlog), and it's now a per-user setting
+  (Account → Preferences → "New project actions default to"): Next if capturing usually means you
+  intend to do it, Backlog if you triage first. Applies to the workbench add-action rows. Closes #1132.
 - Adding actions on a project workbench is smoother on long lists: the just-added action **scrolls
   into view** (list and column views), and the list view's **add-action row is now pinned to the
   bottom** of the Actions section (a chat-style input) so it stays put as items append to the tail —
