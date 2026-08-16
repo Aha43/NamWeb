@@ -178,6 +178,11 @@ describe('NamWeb MCP write tools', () => {
     expect(committedIntent()).toMatchObject({ type: 'setStatus', id: 'a1', status: 'DONE' });
   });
 
+  it('mark_someday → setStatus SOMEDAY (#1131)', async () => {
+    await call('mark_someday', { node_id: 'a1' });
+    expect(committedIntent()).toMatchObject({ type: 'setStatus', id: 'a1', status: 'SOMEDAY' });
+  });
+
   it('refuses to change the status of a structural container', async () => {
     const result = await call('mark_done', { node_id: 'projects' });
     expect(result.isError).toBe(true);

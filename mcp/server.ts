@@ -54,6 +54,7 @@ import {
   projectPath,
   projects,
   searchResults,
+  somedayRoots,
   subProjects,
   subtreeIds,
 } from '../src/domain/lenses';
@@ -134,7 +135,7 @@ async function loadDoc(client: SupabaseClient, name: string): Promise<WorkspaceD
 
 // ---- Write helpers (P2) --------------------------------------------------
 
-const NODE_STATUSES = ['NEXT', 'BACKLOG', 'DONE', 'CANCELLED', 'ARCHIVED'] as const;
+const NODE_STATUSES = ['NEXT', 'BACKLOG', 'DONE', 'CANCELLED', 'ARCHIVED', 'SOMEDAY'] as const;
 const RESOURCE_TYPES = ['TEXT', 'EMAIL', 'URI', 'FILE'] as const;
 
 /** Look a node up for a write, throwing a tool-friendly error if it is missing. */
@@ -322,6 +323,13 @@ export function buildServer(
   );
   read('list_done', 'List all actions with status DONE across the whole workspace.', (doc) =>
     doneItems(doc).map((n) => nodeView(doc, n)),
+  );
+  read(
+    'list_someday',
+    'List SOMEDAY items — projects/actions parked as "not decided to do" (#1131). Returns the ' +
+      'outermost someday nodes only (a whole parked subtree is one row, not every descendant). ' +
+      'SOMEDAY items are deliberately absent from the Next/Backlog/stalled/gone-quiet listings.',
+    (doc) => somedayRoots(doc).map((n) => nodeView(doc, n)),
   );
   read(
     'list_saved_views',
@@ -657,6 +665,7 @@ export function buildServer(
   markStatus('mark_next', 'NEXT');
   markStatus('mark_done', 'DONE');
   markStatus('mark_backlog', 'BACKLOG');
+  markStatus('mark_someday', 'SOMEDAY'); // park as "not decided to do" (#1131)
 
   registerWrite(
     'update_node',

@@ -213,6 +213,8 @@
   "domain.status.backlog": "Etterslep",
   "domain.status.done": "Ferdig",
   "domain.status.next": "Neste",
+  "domain.status.someday": "En gang",
+  "domain.status.somedayHint": "ikke bestemt å gjøre",
   "domain.statusShort.backlog": "E",
   "domain.statusShort.done": "F",
   "domain.statusShort.next": "N",
