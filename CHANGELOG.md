@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- Adding actions on a project workbench is smoother on long lists: the just-added action **scrolls
+  into view** (list and column views), and the list view's **add-action row is now pinned to the
+  bottom** of the Actions section (a chat-style input) so it stays put as items append to the tail —
+  no more adding blind below a long list when "new items go to the bottom" is on. Closes #1133.
+
 ## [3.4.0] - 2026-08-16
 
 **Write stops asking, and learns to schedule.** The 3.x AI arc keeps compounding through real
