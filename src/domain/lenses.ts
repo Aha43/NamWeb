@@ -518,9 +518,10 @@ export interface BlockedGroup {
 export function blockedGroups(doc: WorkspaceDocument): BlockedGroup[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
+  const someday = somedaySuppressedIds(doc); // #1137 — a parked item isn't a live blocked end
   const byBlocker = new Map<string, NamNode[]>();
   for (const node of Object.values(doc.nodes)) {
-    if (node.project || node.status === 'DONE' || structural.has(node.id) || archived.has(node.id)) continue;
+    if (node.project || node.status === 'DONE' || structural.has(node.id) || archived.has(node.id) || someday.has(node.id)) continue;
     for (const bid of node.blockedBy) {
       const blocker = doc.nodes[bid];
       if (!blocker || blocker.status === 'DONE') continue;
@@ -549,8 +550,9 @@ export function dueGroups(doc: WorkspaceDocument, now: Date = new Date(), includ
   const groups: DueGroups = { overdue: [], today: [], thisWeek: [], later: [] };
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
+  const someday = somedaySuppressedIds(doc); // #1137 — someday is commitment-less; its dates don't nag Due
   for (const node of Object.values(doc.nodes)) {
-    if (node.project || node.status === 'CANCELLED' || structural.has(node.id) || archived.has(node.id) || !node.dueAt) continue;
+    if (node.project || node.status === 'CANCELLED' || structural.has(node.id) || archived.has(node.id) || someday.has(node.id) || !node.dueAt) continue;
     if (node.status === 'DONE' && !includeDone) continue;
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueAt);
     if (!match) continue;
