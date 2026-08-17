@@ -8,6 +8,18 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-08-17
+
+**Somewhere to put "not now — maybe never, and that's fine."** This release completes the GTD status
+model with **SOMEDAY** — a commitment marker, not a timing one. Where Backlog says *later* and a due
+date says *when*, SOMEDAY says *"I don't want to forget this, but I haven't decided to do it."* A
+someday item — with its whole subtree — drops out of **every** day-to-day surface (Next, Backlog, Due,
+Calendar, Agenda, Blocked, Loose ends, context) to live in a dedicated **Someday view** you visit on
+purpose; emptying that list is a success, not a chore. Around it, two capture-ergonomics wins from
+dogfooding: new project actions now default to **Next** (a per-user setting — capturing usually means
+you mean to do it), and the workbench add-action row is a **sticky, chat-style input** that keeps the
+item you just added in view as the list grows.
+
 ### Added
 
 - **SOMEDAY status** — a commitment marker, not a timing one. Alongside Next / Backlog / Done, mark a
@@ -2381,7 +2393,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.4.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.5.0...HEAD
+[3.5.0]: https://github.com/Aha43/NamWeb/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/Aha43/NamWeb/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/Aha43/NamWeb/compare/v3.2.0...v3.3.0
 [3.2.0]: https://github.com/Aha43/NamWeb/compare/v3.1.0...v3.2.0
