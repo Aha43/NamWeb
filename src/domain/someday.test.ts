@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { backlogItems, contextItems, nextActions, somedayRoots, somedaySuppressedIds } from './lenses';
+import { backlogItems, blockedGroups, contextItems, dueGroups, nextActions, somedayRoots, somedaySuppressedIds } from './lenses';
+import { dayActions } from './calendar';
 import { goneQuiet, stalledProjects } from './review';
 
 function node(id: string, p: Partial<NamNode> = {}): NamNode {
@@ -101,5 +102,37 @@ describe('somedayRoots (#1131 review)', () => {
     const doc = tree();
     doc.nodes['subp'].status = 'SOMEDAY'; // now someday under someday
     expect(somedayRoots(doc).map((n) => n.title)).toEqual(['Someday proj']); // still one row
+  });
+});
+
+describe('SOMEDAY suppression on the time surfaces (#1137)', () => {
+  // A parked item is commitment-less: even carrying a due date or a blocker, it must leave Due, the
+  // calendar/agenda, and Blocked — otherwise "someday" keeps nagging from the time surfaces. The
+  // normal action gets the same date/blocker as a control, so each test proves suppression, not absence.
+  function timed(): WorkspaceDocument {
+    const doc = tree();
+    doc.nodes['sa'].dueAt = '2026-07-20'; // the SOMEDAY action, now dated
+    doc.nodes['na'].dueAt = '2026-07-20'; // a normal dated action (control)
+    doc.nodes['sa'].blockedBy = ['nb']; // the SOMEDAY action, blocked by a live node
+    doc.nodes['na'].blockedBy = ['nb']; // a normal blocked action (control)
+    return doc;
+  }
+
+  it('a dated SOMEDAY action drops out of dueGroups', () => {
+    const titles = Object.values(dueGroups(timed())).flat().map((n) => n.title);
+    expect(titles).toContain('Normal next');
+    expect(titles).not.toContain('Someday next');
+  });
+
+  it('a dated SOMEDAY action drops out of the calendar grid (dayActions)', () => {
+    const titles = dayActions(timed(), '2026-07-20').map((n) => n.title);
+    expect(titles).toContain('Normal next');
+    expect(titles).not.toContain('Someday next');
+  });
+
+  it('a blocked SOMEDAY action drops out of blockedGroups', () => {
+    const titles = blockedGroups(timed()).flatMap((g) => g.actions.map((a) => a.title));
+    expect(titles).toContain('Normal next');
+    expect(titles).not.toContain('Someday next');
   });
 });

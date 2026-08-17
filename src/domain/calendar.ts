@@ -1,12 +1,12 @@
 // The global calendar's read model (#675) — pure lenses over the workspace document, separate
 // from lenses.ts so the calendar's date math stays in one place. "Open" mirrors the Due view's
-// notion: non-structural, not DONE/CANCELLED, not in an archived subtree, and carrying a due
+// notion: non-structural, not DONE/CANCELLED, not in an archived or someday subtree, and carrying a due
 // date. A date-range node (dueAt..dueEndAt) counts on EVERY day of its range — that's what
 // ranges are for; projects mark their full span the same way (#703). All dates are local-date
 // strings (YYYY-MM-DD), compared as strings (ISO order == chronological order).
 
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
-import { archivedNodeIds, structuralNodeIds } from './lenses';
+import { archivedNodeIds, somedaySuppressedIds, structuralNodeIds } from './lenses';
 import { effectiveDue } from './derivedDue';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -54,8 +54,9 @@ export function isValidLocalDate(s: string): boolean {
 function nodesWhere(doc: WorkspaceDocument, projects: boolean, keep: StatusKeep): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
+  const someday = somedaySuppressedIds(doc); // #1137 — parked items leave the calendar/agenda too
   return Object.values(doc.nodes).filter(
-    (n) => n.project === projects && !structural.has(n.id) && !archived.has(n.id) && keep(n.status),
+    (n) => n.project === projects && !structural.has(n.id) && !archived.has(n.id) && !someday.has(n.id) && keep(n.status),
   );
 }
 

@@ -12,11 +12,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 - **SOMEDAY status** — a commitment marker, not a timing one. Alongside Next / Backlog / Done, mark a
   project or action **Someday** ("not decided to do") to keep it without carrying it: a someday node
-  **and its whole subtree** drop out of Next, Backlog, context views, and Loose ends (stalled +
-  gone-quiet), and live only in the new **Someday view** (and `list_someday` over MCP, and search).
-  Promoting out (→ Next / → Backlog) is one click, and deleting from Someday is low-friction — emptying
-  the list is a success, not a failure. MCP gains `mark_someday` / `list_someday`, and SOMEDAY is
-  settable on create. Closes #1131, #1072.
+  **and its whole subtree** drop out of every day-to-day surface — Next, Backlog, Due, Calendar,
+  Agenda, Blocked, context views, and Loose ends (stalled + gone-quiet) — and live only in the new
+  **Someday view** (and `list_someday` over MCP, and search). Promoting out (→ Next / → Backlog) is
+  one click, and deleting from Someday is low-friction — emptying the list is a success, not a failure.
+  MCP gains `mark_someday` / `list_someday`, and SOMEDAY is settable on create. Closes #1131, #1072, #1137.
 
 ### Changed
 
