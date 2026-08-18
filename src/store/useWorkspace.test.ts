@@ -25,7 +25,7 @@ vi.mock('../sync/realtime', () => ({
 }));
 vi.mock('./commit', () => ({ commitIntent: (...a: unknown[]) => commitIntent(...a) }));
 // Identity apply so optimistic updates don't need real domain docs.
-vi.mock('../domain/mutations', () => ({ applyIntent: (doc: unknown) => doc }));
+vi.mock('../domain/mutations', () => ({ applyIntent: (doc: unknown) => doc, normalizeChildIds: () => false }));
 
 import { useWorkspace } from './useWorkspace';
 

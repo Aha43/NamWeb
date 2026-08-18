@@ -10,7 +10,7 @@ import { getWorkspaceName } from '../lib/workspace';
 import { pull, push } from '../sync/workspaceClient';
 import { subscribeToWorkspace } from '../sync/realtime';
 import { createDefaultWorkspace } from '../domain/createWorkspace';
-import { applyIntent, type Intent } from '../domain/mutations';
+import { applyIntent, normalizeChildIds, type Intent } from '../domain/mutations';
 import { commitIntent, type WorkspaceSnapshot } from './commit';
 import type { WorkspaceDocument } from '../domain/types';
 
@@ -93,7 +93,18 @@ export function useWorkspace(): UseWorkspace {
     setNoRemote(false);
     const result = await pull(supabase, workspaceNameRef.current);
     if (result.kind === 'ok') {
-      const snap = { document: result.document, version: result.version };
+      // Self-heal childIds corruption a raced reorder-replay could have persisted (#1141): prune
+      // dangling ids + collapse any node aliased into two parents (in place on the pulled doc). If it
+      // changed anything, push the repaired doc once, version-guarded — a concurrent write just
+      // conflicts and the next load heals again, so this never fights another writer. Either way we
+      // display the normalized doc; a failed push leaves the repair to ride the next successful write.
+      const document = result.document;
+      let version = result.version;
+      if (normalizeChildIds(document)) {
+        const healed = await push(supabase, workspaceNameRef.current, document, version);
+        if (healed.kind === 'ok') version = healed.version;
+      }
+      const snap = { document, version };
       committedRef.current = snap;
       setSnapshot(snap);
       failedRef.current = false; // a clean server state resolves any prior failed write

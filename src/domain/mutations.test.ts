@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { applyIntent, cloneTemplateNodes, intentTargetExists, normalizeTags, type Intent } from './mutations';
+import { applyIntent, cloneTemplateNodes, intentTargetExists, normalizeChildIds, normalizeTags, type Intent } from './mutations';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -706,6 +706,70 @@ describe('reorderChildren', () => {
     const doc = workspace();
     expect(applyIntent(doc, { type: 'reorderChildren', parentId: 'ghost', order: [] })).toEqual(doc);
     expect(intentTargetExists(doc, { type: 'reorderChildren', parentId: 'ghost', order: [] })).toBe(false);
+  });
+
+  // #1141 — the reorder is REPLAYED verbatim onto a freshly-pulled doc on conflict. Reconcile against
+  // the current children so a concurrent move isn't undone (which would alias a node into two parents).
+  it('drops ids a concurrent writer already moved out of this parent (no resurrection/alias)', () => {
+    // Fresh doc: 'b' was moved to a sibling since the reorder was captured. Replaying order ['b','a']
+    // must NOT put 'b' back under p — it lives under q now.
+    const doc = workspace([
+      node('p', { project: true, childIds: ['a'] }),
+      node('q', { project: true, childIds: ['b'] }),
+      node('a'),
+      node('b'),
+    ]);
+    const next = applyIntent(doc, { type: 'reorderChildren', parentId: 'p', order: ['b', 'a'] });
+    expect(next.nodes.p.childIds).toEqual(['a']); // 'b' not resurrected
+    expect(next.nodes.q.childIds).toEqual(['b']); // still solely under q — no alias
+  });
+
+  it('keeps a child the captured order never mentioned (a concurrent move-in), appended', () => {
+    const doc = workspace([node('p', { project: true, childIds: ['a', 'b', 'x'] }), node('a'), node('b'), node('x')]);
+    // Order captured before 'x' arrived under p.
+    const next = applyIntent(doc, { type: 'reorderChildren', parentId: 'p', order: ['b', 'a'] });
+    expect(next.nodes.p.childIds).toEqual(['b', 'a', 'x']); // reordered pair, 'x' preserved at the tail
+  });
+});
+
+describe('detach removes a node from ALL parents (#1141)', () => {
+  it('deleteLeaf clears an aliased id from both parents (no dangling residue)', () => {
+    // Corrupt starting state: 'y' aliased into two projects.
+    const doc = workspace([
+      node('p', { project: true, childIds: ['y'] }),
+      node('q', { project: true, childIds: ['y'] }),
+      node('y'),
+    ]);
+    const next = applyIntent(doc, { type: 'deleteLeaf', id: 'y' });
+    expect(next.nodes.y).toBeUndefined();
+    expect(next.nodes.p.childIds).toEqual([]); // both cleaned — not just the first
+    expect(next.nodes.q.childIds).toEqual([]);
+  });
+});
+
+describe('normalizeChildIds (#1141 self-heal)', () => {
+  it('prunes dangling child ids (the residue a delete of an aliased node leaves)', () => {
+    const doc = workspace([node('p', { project: true, childIds: ['a', 'ghost'] }), node('a')]);
+    expect(normalizeChildIds(doc)).toBe(true);
+    expect(doc.nodes.p.childIds).toEqual(['a']);
+  });
+
+  it('collapses an aliased id to a single (first) parent', () => {
+    const doc = workspace([
+      node('p', { project: true, childIds: ['y'] }),
+      node('q', { project: true, childIds: ['y'] }),
+      node('y'),
+    ]);
+    expect(normalizeChildIds(doc)).toBe(true);
+    const owners = [doc.nodes.p, doc.nodes.q].filter((n) => n.childIds.includes('y'));
+    expect(owners).toHaveLength(1); // exactly one parent keeps it
+  });
+
+  it('is a no-op (returns false, untouched) on a healthy doc', () => {
+    const doc = workspace([node('p', { project: true, childIds: ['a', 'b'] }), node('a'), node('b')]);
+    const before = structuredClone(doc);
+    expect(normalizeChildIds(doc)).toBe(false);
+    expect(doc).toEqual(before);
   });
 });
 
