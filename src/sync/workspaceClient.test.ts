@@ -49,7 +49,7 @@ describe('pull', () => {
   it('returns the row document and version', async () => {
     const client = makeClient({ queue: [{ data: { version: 7, document: doc }, error: null }] });
     const result = await pull(client, 'default');
-    expect(result).toEqual({ kind: 'ok', document: doc, version: 7 });
+    expect(result).toEqual({ kind: 'ok', document: doc, version: 7, healed: false });
   });
 
   it('returns noRemote when there is no row', async () => {
@@ -103,5 +103,50 @@ describe('push', () => {
   it('returns error when not authenticated', async () => {
     const client = makeClient({ user: null });
     expect(await push(client, 'default', doc, 0)).toEqual({ kind: 'error', message: 'Not authenticated' });
+  });
+});
+
+describe('pull — normalizes malformed childIds at ingest (#1141)', () => {
+  // pull is the single remote-ingest choke point (web load / Realtime reconcile / commitIntent
+  // conflict-pull, and the MCP loadSnapshot all read through it), so a repaired doc here means no
+  // committed or replay base downstream can carry a dangling/aliased childId.
+  function childNode(id: string, childIds: string[] = [], project = false) {
+    return { id, title: id, description: null, status: 'BACKLOG', project, childIds,
+      tags: [], blockedBy: [], resources: [], createdAt: null, updatedAt: null, statusChangedAt: null, dueAt: null };
+  }
+  const corruptDoc = (nodes: Record<string, unknown>) =>
+    ({ formatVersion: 1, rootNodeId: 'root', inboxNodeId: 'inbox', projectsNodeId: 'projects',
+       nextActionsNodeId: 'actions', nodes, registeredTags: [], savedViews: [], missionControls: [],
+       templates: [], viewOrders: {} } as unknown as WorkspaceDocument);
+
+  it('prunes a dangling child id and reports healed:true', async () => {
+    const document = corruptDoc({ p: childNode('p', ['a', 'ghost'], true), a: childNode('a') });
+    const client = makeClient({ queue: [{ data: { version: 7, document }, error: null }] });
+    const result = await pull(client, 'default');
+    if (result.kind !== 'ok') throw new Error('expected ok');
+    expect(result.healed).toBe(true);
+    expect(result.document.nodes.p.childIds).toEqual(['a']);
+    expect(result.version).toBe(7);
+  });
+
+  it('collapses an id aliased into two parents to a single owner (healed:true)', async () => {
+    const document = corruptDoc({
+      p: childNode('p', ['y'], true), q: childNode('q', ['y'], true), y: childNode('y'),
+    });
+    const client = makeClient({ queue: [{ data: { version: 3, document }, error: null }] });
+    const result = await pull(client, 'default');
+    if (result.kind !== 'ok') throw new Error('expected ok');
+    expect(result.healed).toBe(true);
+    const owners = [result.document.nodes.p, result.document.nodes.q].filter((n) => n.childIds.includes('y'));
+    expect(owners).toHaveLength(1);
+  });
+
+  it('leaves a clean doc untouched (healed:false)', async () => {
+    const document = corruptDoc({ p: childNode('p', ['a'], true), a: childNode('a') });
+    const client = makeClient({ queue: [{ data: { version: 2, document }, error: null }] });
+    const result = await pull(client, 'default');
+    if (result.kind !== 'ok') throw new Error('expected ok');
+    expect(result.healed).toBe(false);
+    expect(result.document.nodes.p.childIds).toEqual(['a']);
   });
 });

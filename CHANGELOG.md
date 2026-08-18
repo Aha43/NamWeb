@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A reorder could no longer lose or duplicate actions when another device (or the AI connector) was
+  editing the same project at the same moment.** A concurrent move colliding with a reorder could
+  replay the reorder's stale order verbatim and leave an action listed under **two** projects at once
+  (deleting it then removed it from both); the delete path also left a dangling reference behind. The
+  reorder now reconciles against the project's current children instead of overwriting them, deletes/
+  moves detach a node from **every** parent, and the workspace **self-heals** on load (pruning any
+  dangling reference and collapsing a doubly-listed action to a single project). Closes #1141.
+
 ## [3.5.0] - 2026-08-17
 
 **Somewhere to put "not now — maybe never, and that's fine."** This release completes the GTD status

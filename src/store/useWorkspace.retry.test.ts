@@ -26,6 +26,7 @@ vi.mock('./commit', () => ({ commitIntent: (...a: unknown[]) => commitIntent(...
 // A transforming apply so we can observe whether the optimistic edit survives.
 vi.mock('../domain/mutations', () => ({
   applyIntent: (doc: { content: string }, intent: { add: string }) => ({ content: doc.content + intent.add }),
+  normalizeChildIds: () => false,
 }));
 
 import { useWorkspace } from './useWorkspace';

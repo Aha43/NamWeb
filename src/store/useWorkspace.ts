@@ -93,7 +93,16 @@ export function useWorkspace(): UseWorkspace {
     setNoRemote(false);
     const result = await pull(supabase, workspaceNameRef.current);
     if (result.kind === 'ok') {
-      const snap = { document: result.document, version: result.version };
+      // `pull` already normalized the doc in memory (#1141). If it repaired malformed childIds, push
+      // the fix once, version-guarded, so it persists proactively on app open; a conflict just means
+      // another writer is active — the normalized doc is still our (clean) base, and the next
+      // committed write builds on it, so the repair is never lost.
+      let version = result.version;
+      if (result.healed) {
+        const healed = await push(supabase, workspaceNameRef.current, result.document, version);
+        if (healed.kind === 'ok') version = healed.version;
+      }
+      const snap = { document: result.document, version };
       committedRef.current = snap;
       setSnapshot(snap);
       failedRef.current = false; // a clean server state resolves any prior failed write

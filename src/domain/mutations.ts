@@ -162,14 +162,14 @@ function placeChild(parent: NamNode, id: string, atTop?: boolean): void {
   else parent.childIds.unshift(id);
 }
 
-/** Remove `id` from whichever node lists it as a child (in place on `doc`). */
+/** Remove `id` from EVERY node that lists it as a child (in place on `doc`). Removing from all
+ *  parents — not just the first (#1141) — matters when a node is (wrongly) aliased into two parents:
+ *  detaching only the first leaves a dangling id behind, so a delete/move can't fully clean up. In
+ *  the normal single-parent case this is one removal, same as before. */
 function detach(doc: WorkspaceDocument, id: string): void {
   for (const node of Object.values(doc.nodes)) {
     const i = node.childIds.indexOf(id);
-    if (i !== -1) {
-      node.childIds.splice(i, 1);
-      return;
-    }
+    if (i !== -1) node.childIds.splice(i, 1);
   }
 }
 
@@ -179,6 +179,33 @@ function parentOf(doc: WorkspaceDocument, id: string): string | undefined {
     if (node.childIds.includes(id)) return node.id;
   }
   return undefined;
+}
+
+/**
+ * Repair `childIds` corruption in place, returning whether anything changed (#1141). Two invariants
+ * a healthy tree holds but a raced reorder-replay could break:
+ *  - **no dangling ids** — every child id resolves to a live node; drop ids whose node is gone
+ *    (the residue a delete leaves when a node was aliased into two parents);
+ *  - **single parent** — each id is a child of at most one node; collapse an alias to its first
+ *    occurrence (stable `Object.values` order) so a node can never live under two projects.
+ * Self-heal is idempotent: a clean doc returns `false` and is untouched. Callers push once, guarded,
+ * only when it reports a change. Structural containers aren't special-cased — they hold real ids too.
+ */
+export function normalizeChildIds(doc: WorkspaceDocument): boolean {
+  const claimed = new Set<string>();
+  let changed = false;
+  for (const node of Object.values(doc.nodes)) {
+    const kept = node.childIds.filter((id) => {
+      if (!doc.nodes[id] || claimed.has(id)) return false; // dangling, or aliased to an earlier parent
+      claimed.add(id);
+      return true;
+    });
+    if (kept.length !== node.childIds.length) {
+      node.childIds = kept;
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 /**
@@ -753,10 +780,22 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
     }
     case 'reorderChildren': {
       // Reorder a project's structural children (its `childIds`) — the order shared with the
-      // desktop. The page computes the new full order (a permutation of the current childIds), so
-      // we store it verbatim; ignored if the parent vanished. Pure and replay-safe.
+      // desktop. The page computes the new full order (a permutation of the current childIds).
+      //
+      // RECONCILE, don't overwrite (#1141): the captured `order` is a snapshot. On a conflict this
+      // intent is REPLAYED onto a freshly-pulled doc; storing it verbatim there would resurrect an
+      // id a concurrent writer moved OUT of this project (aliasing it into two parents) or drop one
+      // moved IN. So intersect the order with the *current* children (dedup), then append any current
+      // child the order didn't mention (a concurrent add / move-in) at the tail. When `order` is a
+      // clean permutation of the current childIds — the normal case — this is identity.
       const parent = next.nodes[intent.parentId];
-      if (parent) parent.childIds = intent.order;
+      if (parent) {
+        const current = new Set(parent.childIds);
+        const placed = new Set<string>();
+        const ordered = intent.order.filter((id) => current.has(id) && !placed.has(id) && placed.add(id));
+        const rest = parent.childIds.filter((id) => !placed.has(id));
+        parent.childIds = [...ordered, ...rest];
+      }
       return next;
     }
     case 'createMissionControl': {
