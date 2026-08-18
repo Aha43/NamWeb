@@ -8,15 +8,25 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.5.1] - 2026-08-18
+
+**A quiet concurrency bug that could lose work, closed — and the workspace now self-heals.** When two
+writers touched the same project at the same moment — a second tab, another device, or the AI
+connector — a reorder colliding with a move could replay the reorder's stale order and leave an action
+listed under **two** projects at once (deleting it then removed it from both), while the original
+actions silently dropped out of view. The trigger was rare (it took a week of daily use to surface
+once), but the cost was real: the actions weren't deleted, just orphaned. This patch closes the race
+and adds a safety net so the same shape can't persist again.
+
 ### Fixed
 
-- **A reorder could no longer lose or duplicate actions when another device (or the AI connector) was
-  editing the same project at the same moment.** A concurrent move colliding with a reorder could
-  replay the reorder's stale order verbatim and leave an action listed under **two** projects at once
-  (deleting it then removed it from both); the delete path also left a dangling reference behind. The
-  reorder now reconciles against the project's current children instead of overwriting them, deletes/
-  moves detach a node from **every** parent, and the workspace **self-heals** on load (pruning any
-  dangling reference and collapsing a doubly-listed action to a single project). Closes #1141.
+- **A reorder can no longer lose or duplicate actions when another writer is editing the same project
+  concurrently.** The reorder now **reconciles** against the project's current children instead of
+  overwriting them (so a concurrent move is never resurrected or dropped); deleting or moving a node
+  detaches it from **every** parent (no dangling reference left behind); and every workspace read
+  **normalizes on ingest** — pruning any dangling reference and collapsing a doubly-listed action to a
+  single project — so no synced snapshot, from any device or the connector, can carry the corruption
+  forward. Closes #1141.
 
 ## [3.5.0] - 2026-08-17
 
@@ -2403,7 +2413,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.5.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.5.1...HEAD
+[3.5.1]: https://github.com/Aha43/NamWeb/compare/v3.5.0...v3.5.1
 [3.5.0]: https://github.com/Aha43/NamWeb/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/Aha43/NamWeb/compare/v3.3.0...v3.4.0
 [3.3.0]: https://github.com/Aha43/NamWeb/compare/v3.2.0...v3.3.0
