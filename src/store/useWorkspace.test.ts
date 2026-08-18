@@ -5,6 +5,7 @@ import type { WorkspaceDocument } from '../domain/types';
 // Module seams. The reconcile path is the unit under test: a Realtime signal
 // re-pulls and adopts only a strictly-newer snapshot when no write is in flight.
 const pull = vi.fn();
+const push = vi.fn();
 const commitIntent = vi.fn();
 const getSession = vi.fn();
 let capturedSignal: (() => void) | null = null;
@@ -16,7 +17,10 @@ vi.mock('../lib/supabase', () => ({
   },
 }));
 vi.mock('../lib/workspace', () => ({ getWorkspaceName: () => 'dev' }));
-vi.mock('../sync/workspaceClient', () => ({ pull: (...a: unknown[]) => pull(...a) }));
+vi.mock('../sync/workspaceClient', () => ({
+  pull: (...a: unknown[]) => pull(...a),
+  push: (...a: unknown[]) => push(...a),
+}));
 vi.mock('../sync/realtime', () => ({
   subscribeToWorkspace: (_c: unknown, _uid: unknown, onSignal: () => void) => {
     capturedSignal = onSignal;
@@ -120,5 +124,24 @@ describe('useWorkspace — burst dispatches (#650)', () => {
       resolveB({ outcome: 'committed', snapshot: { document: doc('afterAB'), version: 3 } });
     });
     await waitFor(() => expect(tagOf(view)).toBe('afterAB'));
+  });
+});
+
+describe('useWorkspace — self-heal persistence on load (#1141)', () => {
+  it('pushes the repaired doc once when pull reports it healed malformed childIds', async () => {
+    pull.mockResolvedValueOnce({ kind: 'ok', document: doc('healed'), version: 4, healed: true });
+    push.mockResolvedValueOnce({ kind: 'ok', version: 5 });
+    const view = renderHook(() => useWorkspace());
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+    // The normalized (pull-repaired) doc is persisted proactively, guarded on the pulled version.
+    await waitFor(() => expect(push).toHaveBeenCalledWith(expect.anything(), 'dev', doc('healed'), 4));
+  });
+
+  it('does not push when the pulled doc was already clean', async () => {
+    pull.mockResolvedValueOnce({ kind: 'ok', document: doc('clean'), version: 4, healed: false });
+    const view = renderHook(() => useWorkspace());
+    await waitFor(() => expect(view.result.current.loading).toBe(false));
+    await waitFor(() => expect(capturedSignal).not.toBeNull());
+    expect(push).not.toHaveBeenCalled();
   });
 });

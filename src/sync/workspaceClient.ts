@@ -12,11 +12,17 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { WorkspaceDocument } from '../domain/types';
+import { normalizeChildIds } from '../domain/mutations';
 
 const TABLE = 'workspaces';
 
 export type PullResult =
-  | { kind: 'ok'; document: WorkspaceDocument; version: number }
+  // `healed` = the ingested document carried malformed `childIds` (a dangling id, or an id aliased
+  // into two parents) that pull repaired in memory (#1141). It's true regardless of who wrote the
+  // corruption; callers use it to opportunistically persist the repair. The `document` is ALWAYS
+  // normalized either way — this is the single remote-ingest choke point (load, Realtime reconcile,
+  // and commitIntent's conflict-pull all read through here), so no committed/replay base is malformed.
+  | { kind: 'ok'; document: WorkspaceDocument; version: number; healed: boolean }
   | { kind: 'noRemote' }
   | { kind: 'error'; message: string };
 
@@ -45,7 +51,9 @@ export async function pull(client: SupabaseClient, name: string): Promise<PullRe
 
   if (error) return { kind: 'error', message: error.message };
   if (!data) return { kind: 'noRemote' };
-  return { kind: 'ok', document: data.document as WorkspaceDocument, version: data.version as number };
+  const document = data.document as WorkspaceDocument;
+  const healed = normalizeChildIds(document); // repair malformed childIds at ingest (#1141)
+  return { kind: 'ok', document, version: data.version as number, healed };
 }
 
 /**
