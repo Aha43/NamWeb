@@ -7,7 +7,7 @@
 // appear in action lists.
 
 import type { NodeStatus, NamNode, WorkspaceDocument } from './types';
-import { SYSTEM_TAGS, canonicalTag, isSystemTag } from './systemTags';
+import { SYSTEM_TAGS, canonicalTag, isChecklist, isSystemTag } from './systemTags';
 
 /** The container node ids that should never show up as actions. */
 export function structuralNodeIds(doc: WorkspaceDocument): Set<string> {
@@ -54,9 +54,15 @@ export function nextActions(doc: WorkspaceDocument): NamNode[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   const someday = somedaySuppressedIds(doc); // a NEXT action under a SOMEDAY project drops out too (#1131)
+  const checklist = checklistSuppressedIds(doc); // a check-item under a #checklist project too (#1147)
   return Object.values(doc.nodes).filter(
     (n) =>
-      n.status === 'NEXT' && !n.project && !structural.has(n.id) && !archived.has(n.id) && !someday.has(n.id),
+      n.status === 'NEXT' &&
+      !n.project &&
+      !structural.has(n.id) &&
+      !archived.has(n.id) &&
+      !someday.has(n.id) &&
+      !checklist.has(n.id),
   );
 }
 
@@ -201,6 +207,24 @@ export function subtreeIdsWhere(doc: WorkspaceDocument, predicate: (n: NamNode) 
  */
 export function somedaySuppressedIds(doc: WorkspaceDocument): Set<string> {
   return subtreeIdsWhere(doc, (n) => n.status === 'SOMEDAY');
+}
+
+/**
+ * Every id suppressed by a `#checklist` project (#1147): the DESCENDANTS of a checklist project (its
+ * check-items), **but not the checklist project node itself** — the project keeps its status and stays
+ * visible, only its items drop out of the day-to-day surfaces. This is why `subtreeIdsWhere` can't be
+ * reused verbatim (it always includes the matching node): we walk the subtree then remove the root.
+ * A checklist can't hold sub-projects (invariant), so the descendants are just the check-items.
+ */
+export function checklistSuppressedIds(doc: WorkspaceDocument): Set<string> {
+  const ids = new Set<string>();
+  for (const node of Object.values(doc.nodes)) {
+    if (node.project && isChecklist(node)) {
+      for (const id of subtreeIds(doc, node.id)) ids.add(id);
+      ids.delete(node.id); // the checklist project itself stays visible
+    }
+  }
+  return ids;
 }
 
 /**
@@ -363,11 +387,11 @@ export function projectQuickMoveTargets(doc: WorkspaceDocument, id: string): Qui
     : undefined;
   const grandParent = grandParentId ? doc.nodes[grandParentId] : undefined;
   const levelUp: QuickMoveTarget[] =
-    grandParent?.project && !archived.has(grandParent.id)
+    grandParent?.project && !archived.has(grandParent.id) && !isChecklist(grandParent)
       ? [{ id: grandParent.id, label: [...projectPath(doc, grandParent.id), grandParent.title].join(' › '), kind: 'parent' }]
       : [];
   const siblings = (parent?.childIds ?? [])
-    .filter((cid) => Boolean(doc.nodes[cid]?.project) && !excluded.has(cid) && !archived.has(cid))
+    .filter((cid) => Boolean(doc.nodes[cid]?.project) && !isChecklist(doc.nodes[cid]!) && !excluded.has(cid) && !archived.has(cid))
     .map((cid) => doc.nodes[cid]!)
     .map((n): QuickMoveTarget => ({ id: n.id, label: [...projectPath(doc, n.id), n.title].join(' › '), kind: 'sibling' }));
   return [...levelUp, ...topLevel, ...siblings];
@@ -413,12 +437,14 @@ export function projectMoveTargets(doc: WorkspaceDocument, id: string): ProjectM
   if (!doc.nodes[id]) return [];
   const excluded = subtreeIds(doc, id);
   const archived = archivedProjectIds(doc); // never offer an archived project as a destination
+  // A #checklist project holds only check-items, never sub-projects — never a valid move destination
+  // for a project (#1147). Matches the reducer/MCP invariant so the picker can't propose an illegal move.
+  const canHostProject = (nid: string): boolean =>
+    Boolean(doc.nodes[nid]?.project) && !isChecklist(doc.nodes[nid]!);
   const parentId = Object.values(doc.nodes).find((n) => n.childIds.includes(id))?.id;
   const parent = parentId ? doc.nodes[parentId] : undefined;
   const siblingIds = parent
-    ? parent.childIds.filter(
-        (cid) => Boolean(doc.nodes[cid]?.project) && !excluded.has(cid) && !archived.has(cid),
-      )
+    ? parent.childIds.filter((cid) => canHostProject(cid) && !excluded.has(cid) && !archived.has(cid))
     : [];
   const sibSet = new Set(siblingIds);
   const toTarget = (n: NamNode): ProjectMoveTarget => ({
@@ -432,7 +458,7 @@ export function projectMoveTargets(doc: WorkspaceDocument, id: string): ProjectM
   // Depth-first tree order for the "every other project" tail, so the destination list reads
   // hierarchically instead of hash-map order (#1020).
   const others = projectIdsDepthFirst(doc)
-    .filter((id) => !excluded.has(id) && !archived.has(id) && !sibSet.has(id) && id !== parentId)
+    .filter((id) => canHostProject(id) && !excluded.has(id) && !archived.has(id) && !sibSet.has(id) && id !== parentId)
     .map((id) => doc.nodes[id]!);
   return [...topLevel, ...siblings.map(toTarget), ...others.map(toTarget)];
 }
@@ -519,9 +545,10 @@ export function blockedGroups(doc: WorkspaceDocument): BlockedGroup[] {
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   const someday = somedaySuppressedIds(doc); // #1137 — a parked item isn't a live blocked end
+  const checklist = checklistSuppressedIds(doc); // #1147 — a check-item isn't a live blocked end
   const byBlocker = new Map<string, NamNode[]>();
   for (const node of Object.values(doc.nodes)) {
-    if (node.project || node.status === 'DONE' || structural.has(node.id) || archived.has(node.id) || someday.has(node.id)) continue;
+    if (node.project || node.status === 'DONE' || structural.has(node.id) || archived.has(node.id) || someday.has(node.id) || checklist.has(node.id)) continue;
     for (const bid of node.blockedBy) {
       const blocker = doc.nodes[bid];
       if (!blocker || blocker.status === 'DONE') continue;
@@ -551,8 +578,9 @@ export function dueGroups(doc: WorkspaceDocument, now: Date = new Date(), includ
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   const someday = somedaySuppressedIds(doc); // #1137 — someday is commitment-less; its dates don't nag Due
+  const checklist = checklistSuppressedIds(doc); // #1147 — a check-item's date doesn't nag Due either
   for (const node of Object.values(doc.nodes)) {
-    if (node.project || node.status === 'CANCELLED' || structural.has(node.id) || archived.has(node.id) || someday.has(node.id) || !node.dueAt) continue;
+    if (node.project || node.status === 'CANCELLED' || structural.has(node.id) || archived.has(node.id) || someday.has(node.id) || checklist.has(node.id) || !node.dueAt) continue;
     if (node.status === 'DONE' && !includeDone) continue;
     const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(node.dueAt);
     if (!match) continue;
@@ -607,8 +635,9 @@ export function contextItems(
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   const someday = somedaySuppressedIds(doc); // #1131 — context views are "what to work"; someday is not
+  const checklist = checklistSuppressedIds(doc); // #1147 — nor are check-items
   return Object.values(doc.nodes).filter((n) => {
-    if (n.project || structural.has(n.id) || archived.has(n.id) || someday.has(n.id)) return false;
+    if (n.project || structural.has(n.id) || archived.has(n.id) || someday.has(n.id) || checklist.has(n.id)) return false;
     if (n.status === 'DONE' && !includeDone) return false; // done joins only when the box asks (#766)
     if (nextOnly && n.status !== 'NEXT') return false;
     if (requiredTags.length === 0) return true;
@@ -659,6 +688,7 @@ export function backlogItems(doc: WorkspaceDocument): NamNode[] {
   const parents = buildParentIndex(doc);
   const archived = archivedNodeIds(doc);
   const someday = somedaySuppressedIds(doc); // #1131 — the whole point: a clean backlog excludes someday
+  const checklist = checklistSuppressedIds(doc); // #1147 — and a clean backlog excludes check-items
   return Object.values(doc.nodes).filter(
     (n) =>
       n.status === 'BACKLOG' &&
@@ -666,6 +696,7 @@ export function backlogItems(doc: WorkspaceDocument): NamNode[] {
       !structural.has(n.id) &&
       !archived.has(n.id) &&
       !someday.has(n.id) &&
+      !checklist.has(n.id) &&
       parents.get(n.id) !== doc.inboxNodeId,
   );
 }

@@ -4,6 +4,9 @@ import { actionMoveTargets, actionMoveTargetsAll, allTags, buildParentIndex, bui
 import { effectiveDue } from '@/domain/derivedDue';
 import { newId, nowIso } from '@/lib/local';
 import { cloneTemplateNodes, normalizeTags } from '@/domain/mutations';
+import { isChecklist } from '@/domain/systemTags';
+import { useToast } from '@/components/ui/toast/toast-context';
+import { useTranslation } from 'react-i18next';
 import type { NamNode } from '@/domain/types';
 import type { ActionEdits } from '@/features/actions/ActionDialog';
 import type { DueFields } from '@/features/actions/DueFieldset';
@@ -34,6 +37,8 @@ export function ProjectWorkbenchPage() {
   const { id = '' } = useParams();
   const { document, dispatch } = useWorkspaceContext();
   const { addToBottom, defaultNewActionStatus } = useSettings();
+  const { toast } = useToast();
+  const { t } = useTranslation();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
   const setStatus = useSetStatus();
@@ -237,6 +242,11 @@ export function ProjectWorkbenchPage() {
         dispatch({ type: 'addAction', parentId: columnId, id: newId(), title, status: defaultNewActionStatus, atTop: !addToBottom, now: nowIso() })
       }
       onAddSubProject={(title) => {
+        // A checklist holds only check-items — refuse a sub-project loudly rather than no-op (#1147).
+        if (isChecklist(project)) {
+          toast({ message: t('checklist.cannotAddSubproject') });
+          return;
+        }
         dispatch({ type: 'addSubProject', parentId: id, id: newId(), title, atTop: !addToBottom, now: nowIso() });
         ensureSectionExpanded('subprojects');
       }}

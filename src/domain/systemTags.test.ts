@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { IN_PROGRESS_TAG, NOT_STALLED_TAG, SHARED_HIDE_TAG, SHARED_OPEN_TAG, SHARED_SHOW_TAG, SYSTEM_FEATURES, SYSTEM_TAGS, canonicalTag, featureForTag, featuresFor, isSystemTag } from './systemTags';
+import { CHECKLIST_TAG, IN_PROGRESS_TAG, NOT_STALLED_TAG, SHARED_HIDE_TAG, SHARED_OPEN_TAG, SHARED_SHOW_TAG, SYSTEM_FEATURES, SYSTEM_TAGS, canonicalTag, featureForTag, featuresFor, isChecklist, isSystemTag } from './systemTags';
 
 describe('systemTags (#837/#842)', () => {
   it('canonicalTag: legacy alias, sigil case-folding, trimmed user tags', () => {
@@ -17,6 +17,7 @@ describe('systemTags (#837/#842)', () => {
     expect(isSystemTag('#shared-show')).toBe(true);
     expect(isSystemTag('#shared-open')).toBe(true);
     expect(isSystemTag('#not-stalled')).toBe(true); // #909
+    expect(isSystemTag('#checklist')).toBe(true); // #1147
     // An unregistered #… tag a user's doc predates the reservation with is NOT system — it must
     // render/behave as an ordinary tag, not masquerade (bold/protected) then get destroyed.
     expect(isSystemTag('#foo')).toBe(false);
@@ -32,7 +33,7 @@ describe('systemTags (#837/#842)', () => {
   });
 
   it('every exported *_TAG constant is registered in SYSTEM_TAGS (drift guard #844)', () => {
-    for (const c of [IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG]) {
+    for (const c of [IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG, NOT_STALLED_TAG, CHECKLIST_TAG]) {
       expect(SYSTEM_TAGS).toContain(c); // a constant missing from the registry would silently
       expect(isSystemTag(c)).toBe(true); //  fail: not bold, not protected, treated as user input
     }
@@ -46,8 +47,8 @@ describe('featuresFor (#1023)', () => {
     expect(tagsOf({ isProject: false, inShare: false })).toEqual([IN_PROGRESS_TAG]);
   });
 
-  it('a project NOT in a share sees only #not-stalled', () => {
-    expect(tagsOf({ isProject: true, inShare: false })).toEqual([NOT_STALLED_TAG]);
+  it('a project NOT in a share sees #not-stalled and #checklist', () => {
+    expect(tagsOf({ isProject: true, inShare: false })).toEqual([NOT_STALLED_TAG, CHECKLIST_TAG]);
   });
 
   it('inside a share, an action gains the both-scoped #shared-* rows but not the project-only ones', () => {
@@ -57,11 +58,12 @@ describe('featuresFor (#1023)', () => {
     expect(tags).toContain(SHARED_SHOW_TAG);
     expect(tags).not.toContain(SHARED_OPEN_TAG); // project-scoped
     expect(tags).not.toContain(NOT_STALLED_TAG); // project-scoped
+    expect(tags).not.toContain(CHECKLIST_TAG); // project-scoped
   });
 
   it('inside a share, a project gains #shared-open plus the both-scoped rows', () => {
     const tags = tagsOf({ isProject: true, inShare: true });
-    expect(tags).toEqual([NOT_STALLED_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG]);
+    expect(tags).toEqual([NOT_STALLED_TAG, CHECKLIST_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG]);
     expect(tags).not.toContain(IN_PROGRESS_TAG); // action-scoped
   });
 
@@ -73,6 +75,14 @@ describe('featuresFor (#1023)', () => {
     expect(featureForTag('#in-progress')?.tag).toBe(IN_PROGRESS_TAG);
     expect(featureForTag('In Progress')?.tag).toBe(IN_PROGRESS_TAG); // canonicalized
     expect(featureForTag('#not-stalled')?.tag).toBe(NOT_STALLED_TAG);
+    expect(featureForTag('#checklist')?.tag).toBe(CHECKLIST_TAG);
     expect(featureForTag('work')).toBeUndefined();
+  });
+
+  it('isChecklist reads the #checklist tag (canonical/cased), ignores others', () => {
+    expect(isChecklist({ tags: ['#checklist'] })).toBe(true);
+    expect(isChecklist({ tags: ['#Checklist'] })).toBe(true); // sigil case-folds
+    expect(isChecklist({ tags: ['#not-stalled', 'work'] })).toBe(false);
+    expect(isChecklist({ tags: [] })).toBe(false);
   });
 });

@@ -434,7 +434,7 @@ describe('tags & search', () => {
   it('allTags is the sorted union of node + registered tags — plus the system tags (#651)', () => {
     const doc = tagged();
     doc.registeredTags = ['waiting'];
-    expect(allTags(doc)).toEqual(['#in-progress', '#not-stalled', '#shared-hide', '#shared-open', '#shared-show', 'home', 'urgent', 'waiting']);
+    expect(allTags(doc)).toEqual(['#checklist', '#in-progress', '#not-stalled', '#shared-hide', '#shared-open', '#shared-show', 'home', 'urgent', 'waiting']);
   });
 
   it('allTags collapses NamDesktop-cased system-tag variants into the canonical form (#654)', () => {

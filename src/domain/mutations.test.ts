@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { NamNode, WorkspaceDocument } from './types';
-import { applyIntent, cloneTemplateNodes, intentTargetExists, normalizeChildIds, normalizeTags, type Intent } from './mutations';
+import { applyIntent, cloneTemplateNodes, intentTargetExists, normalizeChildIds, normalizeTags, validateIntent, type Intent } from './mutations';
 
 function node(id: string, partial: Partial<NamNode> = {}): NamNode {
   return {
@@ -911,5 +911,53 @@ describe('setDue with a date range (#438)', () => {
     const next = applyIntent(doc, { type: 'setDue', id: 'a', dueAt: null, now: NOW });
     expect(next.nodes.a.dueAt).toBeNull();
     expect(next.nodes.a.dueEndAt).toBeNull();
+  });
+});
+
+describe('validateIntent — #checklist no-sub-projects invariant (#1147)', () => {
+  // A checklist project `cl` with one check-item `ci`; a normal project `p` that has a sub-project.
+  function doc() {
+    return workspace([
+      node('cl', { project: true, tags: ['#checklist'], childIds: ['ci'] }),
+      node('ci', { project: false }),
+      node('p', { project: true, childIds: ['pa', 'sub'] }),
+      node('pa', { project: false }),
+      node('sub', { project: true }),
+    ]);
+  }
+
+  it('rejects adding a sub-project under a checklist, allows it under a normal project', () => {
+    expect(validateIntent(doc(), { type: 'addSubProject', parentId: 'cl', id: 'x', title: 'x', now: NOW })).toMatch(/checklist/i);
+    expect(validateIntent(doc(), { type: 'addSubProject', parentId: 'p', id: 'x', title: 'x', now: NOW })).toBeNull();
+  });
+
+  it('rejects grouping selected actions into a sub-project under a checklist', () => {
+    expect(
+      validateIntent(doc(), { type: 'groupIntoSubProject', parentId: 'cl', subProjectId: 's', actionIds: ['ci'], title: 't', now: NOW }),
+    ).toMatch(/checklist/i);
+  });
+
+  it('rejects moving a PROJECT into a checklist, but allows moving an ACTION in (a check-item)', () => {
+    expect(validateIntent(doc(), { type: 'moveNode', id: 'sub', newParentId: 'cl', now: NOW })).toMatch(/checklist/i);
+    expect(validateIntent(doc(), { type: 'moveNode', id: 'pa', newParentId: 'cl', now: NOW })).toBeNull();
+  });
+
+  it('rejects converting a check-item (action under a checklist) into a project', () => {
+    expect(validateIntent(doc(), { type: 'convertActionToProject', id: 'ci', now: NOW })).toMatch(/checklist/i);
+  });
+
+  it('rejects tagging a project that has sub-projects as #checklist; allows it on a leaf project', () => {
+    expect(validateIntent(doc(), { type: 'updateTags', id: 'p', tags: ['#checklist'], now: NOW })).toMatch(/checklist/i);
+    // `cl` is already a checklist with no sub-projects — re-saving its tags is fine.
+    expect(validateIntent(doc(), { type: 'updateTags', id: 'cl', tags: ['#checklist'], now: NOW })).toBeNull();
+    // A leaf project (no sub-projects) can become a checklist.
+    expect(validateIntent(doc(), { type: 'updateTags', id: 'sub', tags: ['#checklist'], now: NOW })).toBeNull();
+  });
+
+  it('applyIntent is a no-op backstop: a violating intent leaves the document unchanged', () => {
+    const before = doc();
+    const after = applyIntent(before, { type: 'addSubProject', parentId: 'cl', id: 'x', title: 'x', now: NOW });
+    expect(after).toEqual(before); // the checklist gained no child project; nothing corrupted
+    expect(after.nodes.x).toBeUndefined();
   });
 });

@@ -7,6 +7,8 @@ import { WorkspaceContext } from '@/store/workspace-context';
 import { useSharedProjectIds } from '@/features/sharing/useSharedProjectIds';
 import { buildPath } from '@/domain/lenses';
 import { canonicalTag } from '@/domain/systemTags';
+import { validateIntent } from '@/domain/mutations';
+import { useToast } from '@/components/ui/toast/toast-context';
 import { nowIso } from '@/lib/local';
 import { NodeFeaturesDialog } from './NodeFeaturesDialog';
 
@@ -21,6 +23,7 @@ import { NodeFeaturesDialog } from './NodeFeaturesDialog';
 export function NodeFeaturesButton({ nodeId, dense = false }: { nodeId: string; dense?: boolean }) {
   const { t } = useTranslation();
   const workspace = useContext(WorkspaceContext);
+  const { toast } = useToast();
   const sharedIds = useSharedProjectIds();
   const [open, setOpen] = useState(false);
   const doc = workspace?.document ?? null;
@@ -34,12 +37,20 @@ export function NodeFeaturesButton({ nodeId, dense = false }: { nodeId: string; 
   if (!workspace || !node) return null;
 
   const toggle = (tag: string, on: boolean) => {
-    workspace.dispatch({
-      type: 'updateTags',
+    const intent = {
+      type: 'updateTags' as const,
       id: nodeId,
       tags: on ? [...node.tags, tag] : node.tags.filter((x) => canonicalTag(x) !== tag),
       now: nowIso(),
-    });
+    };
+    // Turning ON #checklist on a project that has sub-projects is refused loudly (#1147) — the reducer
+    // would no-op it silently otherwise. Surface the reason instead of a toggle that does nothing.
+    const invalid = validateIntent(doc!, intent); // doc is non-null: we returned above when !node
+    if (invalid) {
+      toast({ message: t('checklist.cannotTagWithSubprojects') });
+      return;
+    }
+    workspace.dispatch(intent);
   };
 
   return (
