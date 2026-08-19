@@ -474,4 +474,21 @@ describe('ProjectWorkbench', () => {
     setup({ actions: [actionRow('a', 'Get quotes')], onDeleteAction: vi.fn() });
     expect(screen.queryByRole('button', { name: 'Delete done actions' })).not.toBeInTheDocument();
   });
+
+  it('shows a Reset button on a #checklist project with done items, calling onResetChecklist (#1149)', () => {
+    const onResetChecklist = vi.fn();
+    setup({ project: pnode('p', 'Packing list', { tags: ['#checklist'] }), onResetChecklist, checklistDoneCount: 3 });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(onResetChecklist).toHaveBeenCalled();
+  });
+
+  it('hides Reset on a non-checklist project even with a done count (#1149)', () => {
+    setup({ onResetChecklist: vi.fn(), checklistDoneCount: 3 }); // pnode default has no #checklist tag
+    expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
+  });
+
+  it('hides Reset on a checklist with nothing done — never a dead control (#1149)', () => {
+    setup({ project: pnode('p', 'Packing list', { tags: ['#checklist'] }), onResetChecklist: vi.fn(), checklistDoneCount: 0 });
+    expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
+  });
 });

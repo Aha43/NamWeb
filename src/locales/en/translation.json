@@ -329,6 +329,8 @@
   "features.chipHint": "Set in Features",
   "features.description": "Turn built-in behaviours on or off for this item.",
   "checklist.cannotAddSubproject": "A checklist can't hold sub-projects — only check-items. Remove #checklist first, or add this under a normal project.",
+  "checklist.reset": "Reset",
+  "checklist.resetTooltip": "Set the {{count}} done check-item(s) back to Backlog for the next run",
   "checklist.cannotTagWithSubprojects": "This project has sub-projects, so it can't be a checklist (checklists hold only check-items). Move or remove the sub-projects first.",
   "features.checklist.desc": "Treats this project as a checklist: its actions become check-items, kept out of Next, Backlog, Due, Calendar and Loose ends, and the project is never flagged stalled. It can hold check-items but not sub-projects.",
   "features.checklist.label": "Checklist",

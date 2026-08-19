@@ -16,6 +16,10 @@ minor = features (breaking changes allowed), patch = fixes.
   own status and stays visible. No new data model; a checklist is just a project you read differently.
   A checklist holds check-items but **not** sub-projects — that's enforced with a clear error (in the
   app and over the MCP connector), never a silent reinterpretation. Closes #1147.
+- **Reset a checklist for its next run.** A checklist's workbench header gains a **Reset** button that
+  sets all its done check-items back to Backlog in one click (with a single grouped Undo) — so a
+  recurring procedure is ready to run again without unchecking item by item. Shown only when there's
+  something done to reset. Closes #1149.
 
 ## [3.5.1] - 2026-08-18
 
