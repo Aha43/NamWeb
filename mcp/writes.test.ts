@@ -137,6 +137,27 @@ describe('NamWeb MCP write tools', () => {
     expect(commitIntent).not.toHaveBeenCalled();
   });
 
+  it('create_project under a #checklist project is refused loudly and does not commit (#1147)', async () => {
+    const doc = makeDoc();
+    doc.nodes.p1.tags = ['#checklist'];
+    pull.mockResolvedValue({ kind: 'ok', document: doc, version: 7 });
+    const result = await call('create_project', { title: 'Sub', parent_id: 'p1' });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/checklist/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
+  it('update_tags marking a project that has sub-projects as #checklist is refused (#1147)', async () => {
+    const doc = makeDoc();
+    doc.nodes.p1.childIds = ['a1', 'sp'];
+    doc.nodes.sp = node('sp', { title: 'Sub', project: true });
+    pull.mockResolvedValue({ kind: 'ok', document: doc, version: 7 });
+    const result = await call('update_tags', { node_id: 'p1', tags: ['#checklist'] });
+    expect(result.isError).toBe(true);
+    expect(firstText(result)).toMatch(/checklist/i);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
   it('add_action defaults to BACKLOG and attaches to the project (matches NamDesktop)', async () => {
     await call('add_action', { project_id: 'p1', title: 'Do' });
     expect(committedIntent()).toMatchObject({

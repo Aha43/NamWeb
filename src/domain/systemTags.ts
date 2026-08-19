@@ -36,10 +36,18 @@ export const SHARED_OPEN_TAG = '#shared-open';
  *  (#909) — e.g. a sprint/handover project whose actions are drafts you delete when done. */
 export const NOT_STALLED_TAG = '#not-stalled';
 
+/** On a PROJECT: interpret it as a CHECKLIST (#1147) — its child actions are check-items, done in
+ *  one sitting rather than tracked as work. The check-items are suppressed from the day-to-day
+ *  surfaces (Next / Backlog / context / Due / Calendar / Blocked / gone-quiet) and the checklist
+ *  project itself is never flagged stalled — but it keeps its own status and stays visible. Carries
+ *  an INVARIANT the reducer/tools enforce loudly: a `#checklist` project may hold actions but not
+ *  child sub-projects. */
+export const CHECKLIST_TAG = '#checklist';
+
 /** The registry of MEANINGFUL system tags — drives suggestions and the enforcement allowlist.
  *  Membership is otherwise structural (any `#…` tag is system); this list is which ones the app
  *  knows about and lets users apply. */
-export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG, NOT_STALLED_TAG];
+export const SYSTEM_TAGS: readonly string[] = [IN_PROGRESS_TAG, SHARED_HIDE_TAG, SHARED_SHOW_TAG, SHARED_OPEN_TAG, NOT_STALLED_TAG, CHECKLIST_TAG];
 
 /** The canonical form of a tag: the legacy `in progress` maps to `#in-progress`; any `#…` tag is
  *  lowercased to its canonical sigil form (NamDesktop may write case variants); a user tag is
@@ -56,6 +64,12 @@ export function canonicalTag(tag: string): string {
  *  reservation with must render/behave as an ORDINARY tag, not masquerade as system. */
 export function isSystemTag(tag: string): boolean {
   return SYSTEM_TAGS.includes(canonicalTag(tag));
+}
+
+/** A project carrying `#checklist` is interpreted as a checklist (#1147). Tag-only, like
+ *  `isNotStalled` — callers apply it in a project context (`node.project && isChecklist(node)`). */
+export function isChecklist(node: { tags: string[] }): boolean {
+  return node.tags.some((t) => canonicalTag(t) === CHECKLIST_TAG);
 }
 
 /** Which node kinds a feature makes sense on. `both` = actions and projects. */
@@ -89,6 +103,7 @@ export interface SystemFeature {
 export const SYSTEM_FEATURES: readonly SystemFeature[] = [
   { tag: IN_PROGRESS_TAG, labelKey: 'features.inProgress.label', descKey: 'features.inProgress.desc', appliesTo: 'action' },
   { tag: NOT_STALLED_TAG, labelKey: 'features.notStalled.label', descKey: 'features.notStalled.desc', appliesTo: 'project' },
+  { tag: CHECKLIST_TAG, labelKey: 'features.checklist.label', descKey: 'features.checklist.desc', appliesTo: 'project' },
   { tag: SHARED_HIDE_TAG, labelKey: 'features.sharedHide.label', descKey: 'features.sharedHide.desc', appliesTo: 'both', sharedOnly: true },
   { tag: SHARED_SHOW_TAG, labelKey: 'features.sharedShow.label', descKey: 'features.sharedShow.desc', appliesTo: 'both', sharedOnly: true, supersededBy: SHARED_HIDE_TAG },
   { tag: SHARED_OPEN_TAG, labelKey: 'features.sharedOpen.label', descKey: 'features.sharedOpen.desc', appliesTo: 'project', sharedOnly: true },

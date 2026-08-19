@@ -4,8 +4,8 @@
 // signals so a future AI layer can read exactly what a human sees.
 
 import type { NamNode, WorkspaceDocument } from './types';
-import { archivedNodeIds, isBlocked, somedaySuppressedIds, structuralNodeIds, subtreeIds } from './lenses';
-import { NOT_STALLED_TAG, canonicalTag } from './systemTags';
+import { archivedNodeIds, checklistSuppressedIds, isBlocked, somedaySuppressedIds, structuralNodeIds, subtreeIds } from './lenses';
+import { NOT_STALLED_TAG, canonicalTag, isChecklist } from './systemTags';
 
 /** A project the user has explicitly marked "intentionally no next action" (#909). */
 export function isNotStalled(n: NamNode): boolean {
@@ -61,6 +61,9 @@ export function stalledProjects(doc: WorkspaceDocument, includeAcknowledged = fa
     !structural.has(n.id) &&
     !archived.has(n.id) &&
     !someday.has(n.id) &&
+    // A checklist is never a stalled project — its items are a procedure, not a missing next action
+    // (#1147). Unconditional (unlike #not-stalled): it's a structural interpretation, not an ack.
+    !isChecklist(n) &&
     isOpen(n) &&
     !hasOpenNext(n.id) &&
     (includeAcknowledged || !isNotStalled(n));
@@ -87,6 +90,7 @@ export function goneQuiet(doc: WorkspaceDocument, now: Date = new Date()): NamNo
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   const someday = somedaySuppressedIds(doc); // a someday item untouched 14+ days is normal, not a signal (#1131)
+  const checklist = checklistSuppressedIds(doc); // a check-item sitting done/undone between runs isn't "quiet" (#1147)
   const inboxIds = new Set(doc.nodes[doc.inboxNodeId]?.childIds ?? []);
   const cutoff = now.getTime() - GONE_QUIET_DAYS * 86_400_000;
   return Object.values(doc.nodes)
@@ -96,6 +100,7 @@ export function goneQuiet(doc: WorkspaceDocument, now: Date = new Date()): NamNo
         !structural.has(n.id) &&
         !archived.has(n.id) &&
         !someday.has(n.id) &&
+        !checklist.has(n.id) &&
         !inboxIds.has(n.id) &&
         isOpen(n),
     )

@@ -5,7 +5,7 @@
 // never mutate the input. Mirrors NamDesktop `NamWorkspaceService`.
 
 import type { Bookmark, NamNode, NodeStatus, Resource, TemplateNode, WorkspaceDocument } from './types';
-import { IN_PROGRESS_TAG, SYSTEM_TAGS, canonicalTag, isSystemTag } from './systemTags';
+import { CHECKLIST_TAG, IN_PROGRESS_TAG, SYSTEM_TAGS, canonicalTag, isChecklist, isSystemTag } from './systemTags';
 import { canAddPrerequisite, subtreeIds } from './lenses';
 import { deleteTagInContextOrders, renameTagInContextOrders } from './contextViewKey';
 import { formatCount, parseCount } from './resourceCount';
@@ -390,9 +390,65 @@ export function intentTargetExists(doc: WorkspaceDocument, intent: Intent): bool
   return Boolean(doc.nodes[intent.id]);
 }
 
+const isChecklistProject = (doc: WorkspaceDocument, id: string | undefined): boolean => {
+  const n = id ? doc.nodes[id] : undefined;
+  return Boolean(n?.project && isChecklist(n));
+};
+
+const hasSubProject = (doc: WorkspaceDocument, id: string): boolean =>
+  (doc.nodes[id]?.childIds ?? []).some((cid) => doc.nodes[cid]?.project);
+
+const CHECKLIST_NO_SUBPROJECTS =
+  'A #checklist project can hold check-items (actions) but not sub-projects. ' +
+  'Remove #checklist first, or place this under a normal project.';
+const CHECKLIST_HAS_SUBPROJECTS =
+  'This project has sub-projects, so it cannot be a #checklist (checklists hold only check-items). ' +
+  'Move or remove the sub-projects first.';
+
+/**
+ * Business-rule validation the reducer itself can't enforce loudly (#1147). Returns a human-readable
+ * error message when an intent would violate the `#checklist` invariant — a checklist project may
+ * hold check-items (actions) but NEVER sub-projects — or `null` when the intent is allowed.
+ *
+ * `applyIntent` calls this as a no-op backstop (a violating intent leaves the doc unchanged, keeping
+ * replay safe), and the write surfaces call it to FAIL LOUDLY: the MCP `commit` wrapper throws it as
+ * a tool error, and the web toasts it. "Silently reinterpreting the user's structure is worse than
+ * refusing the operation" — so this refuses, it never flattens.
+ */
+export function validateIntent(doc: WorkspaceDocument, intent: Intent): string | null {
+  switch (intent.type) {
+    case 'addSubProject':
+      return isChecklistProject(doc, intent.parentId) ? CHECKLIST_NO_SUBPROJECTS : null;
+    case 'groupIntoSubProject':
+      return isChecklistProject(doc, intent.parentId) ? CHECKLIST_NO_SUBPROJECTS : null;
+    case 'moveNode':
+      // Moving an ACTION into a checklist is fine (it becomes a check-item); moving a PROJECT in is not.
+      return doc.nodes[intent.id]?.project && isChecklistProject(doc, intent.newParentId)
+        ? CHECKLIST_NO_SUBPROJECTS
+        : null;
+    case 'convertActionToProject':
+      // A check-item promoted to a project would become a sub-project of the checklist.
+      return isChecklistProject(doc, parentOf(doc, intent.id)) ? CHECKLIST_NO_SUBPROJECTS : null;
+    case 'updateTags': {
+      const node = doc.nodes[intent.id];
+      if (!node?.project) return null;
+      const addingChecklist =
+        intent.tags.some((t) => canonicalTag(t) === CHECKLIST_TAG) && !isChecklist(node);
+      return addingChecklist && hasSubProject(doc, intent.id) ? CHECKLIST_HAS_SUBPROJECTS : null;
+    }
+    default:
+      return null;
+  }
+}
+
 /** Apply an intent, returning a new document. No-ops if the target node is gone. */
 export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDocument {
   const next = structuredClone(doc);
+
+  // Backstop for the #checklist invariant (#1147): a violating intent leaves the doc unchanged, so a
+  // replayed or foreign intent that slipped past the loud check (MCP throw / web toast) still can't
+  // corrupt the tree. applyIntent stays no-throw (the sync replay depends on it).
+  if (validateIntent(doc, intent) !== null) return next;
 
   switch (intent.type) {
     case 'addInboxItem': {

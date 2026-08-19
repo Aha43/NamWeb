@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **`#checklist` — turn a project into a checklist.** Mark a project with the **Checklist** feature and
+  its actions become check-items: kept out of Next, Backlog, Due, Calendar, Agenda, Blocked, context
+  views and gone-quiet, and the project is never flagged as stalled in Loose ends — but it keeps its
+  own status and stays visible. No new data model; a checklist is just a project you read differently.
+  A checklist holds check-items but **not** sub-projects — that's enforced with a clear error (in the
+  app and over the MCP connector), never a silent reinterpretation. Closes #1147.
+
 ## [3.5.1] - 2026-08-18
 
 **A quiet concurrency bug that could lose work, closed — and the workspace now self-heals.** When two

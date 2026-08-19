@@ -6,7 +6,7 @@
 // strings (YYYY-MM-DD), compared as strings (ISO order == chronological order).
 
 import type { NamNode, NodeStatus, WorkspaceDocument } from './types';
-import { archivedNodeIds, somedaySuppressedIds, structuralNodeIds } from './lenses';
+import { archivedNodeIds, checklistSuppressedIds, somedaySuppressedIds, structuralNodeIds } from './lenses';
 import { effectiveDue } from './derivedDue';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -55,8 +55,15 @@ function nodesWhere(doc: WorkspaceDocument, projects: boolean, keep: StatusKeep)
   const structural = structuralNodeIds(doc);
   const archived = archivedNodeIds(doc);
   const someday = somedaySuppressedIds(doc); // #1137 — parked items leave the calendar/agenda too
+  const checklist = checklistSuppressedIds(doc); // #1147 — and so do check-items
   return Object.values(doc.nodes).filter(
-    (n) => n.project === projects && !structural.has(n.id) && !archived.has(n.id) && !someday.has(n.id) && keep(n.status),
+    (n) =>
+      n.project === projects &&
+      !structural.has(n.id) &&
+      !archived.has(n.id) &&
+      !someday.has(n.id) &&
+      !checklist.has(n.id) &&
+      keep(n.status),
   );
 }
 

@@ -36,7 +36,7 @@ import { ensureSchema, getPool } from './db/pool';
 
 import { pull } from '../src/sync/workspaceClient';
 import { commitIntent, type CommitOutcome, type WorkspaceSnapshot } from '../src/store/commit';
-import { normalizeTags, type Intent } from '../src/domain/mutations';
+import { normalizeTags, validateIntent, type Intent } from '../src/domain/mutations';
 import { newId, nowIso } from '../src/lib/local';
 import { parseFlexibleDate, parseFlexibleTime } from '../src/lib/dates';
 import type { NamNode, NodeStatus, Resource, WorkspaceDocument } from '../src/domain/types';
@@ -286,6 +286,10 @@ export function buildServer(
     try {
       const snapshot = await loadSnapshot(client, workspace);
       const intent = build(snapshot.document);
+      // Loud enforcement of domain invariants the reducer only no-ops (e.g. #checklist: no sub-projects,
+      // #1147). Throw → the catch below turns it into a clear tool error, never a silent no-op write.
+      const invalid = validateIntent(snapshot.document, intent);
+      if (invalid) throw new Error(invalid);
       const result = await commitIntent(client, workspace, snapshot, intent);
       if (result.outcome === 'error') return errorResult(result.message ?? 'Write failed.');
       return json(writeSummary(result.outcome, result.message, intent));
