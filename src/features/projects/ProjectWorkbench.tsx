@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, LayoutTemplate, Pencil, Target, Trash2 } from 'lucide-react';
+import { ArrowDownUp, CheckSquare, ChevronDown, ChevronRight, FileText, FolderInput, LayoutTemplate, Pencil, RotateCcw, Target, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { InlineRename } from '../actions/InlineRename';
 import { DueHintLabel } from '../actions/DueHintLabel';
@@ -39,6 +39,7 @@ import { ProjectPickerDialog } from './picker/ProjectPickerDialog';
 import { MoveTargetMenu } from './picker/MoveTargetMenu';
 import type { PickerTarget } from './picker/pickerModel';
 import type { QuickMoveTarget } from '@/domain/lenses';
+import { isChecklist } from '@/domain/systemTags';
 import type { EffectiveDue } from '@/domain/derivedDue';
 import type { DueFields } from '../actions/DueFieldset';
 import type { NamNode, NodeStatus } from '../../domain/types';
@@ -92,6 +93,10 @@ export interface ProjectWorkbenchProps {
   onDeleteProject?: () => void;
   /** Enter Focus mode over this project's open direct actions. */
   onFocus?: () => void;
+  /** Reset a #checklist: set all its DONE check-items back to BACKLOG (#1149). */
+  onResetChecklist?: () => void;
+  /** How many DONE check-items the reset would flip — the button shows only when > 0. */
+  checklistDoneCount?: number;
   /** Inline delete (with confirm) for a direct action row. */
   onDeleteAction?: (id: string) => void;
   /** Bulk: move the selected actions into a new sub-project (named) under this project. */
@@ -192,6 +197,8 @@ export function ProjectWorkbench({
   effectiveDueOf,
   onDeleteProject,
   onFocus,
+  onResetChecklist,
+  checklistDoneCount,
   onDeleteAction,
   onGroupSelected,
   onAddTagToActions,
@@ -503,6 +510,23 @@ export function ProjectWorkbench({
           )}
           <ShareButton projectId={project.id} />
           <NodeFeaturesButton nodeId={project.id} dense={dense} />
+          {/* Reset a checklist for its next run (#1149) — only for a #checklist project, and only
+              when there's something done to reset (so it never sits as a dead/no-op control). */}
+          {isChecklist(project) && onResetChecklist && (checklistDoneCount ?? 0) > 0 && (
+            <Tooltip label={t('checklist.resetTooltip', { count: checklistDoneCount })}>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="gap-1.5"
+                aria-label={t('checklist.reset')}
+                onClick={onResetChecklist}
+              >
+                <RotateCcw className="h-4 w-4" />
+                {!dense && t('checklist.reset')}
+              </Button>
+            </Tooltip>
+          )}
           <Tooltip label={t('workbench.summaryTooltip')}>
             <Button
               type="button"
