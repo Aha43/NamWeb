@@ -262,6 +262,15 @@ export function ProjectWorkbenchPage() {
       projectInheritedTags={effectiveTags(document, id).filter((t) => !project.tags.includes(t))}
       onDeleteProject={deleteProject}
       onFocus={() => navigate(`/focus?project=${id}`)}
+      checklistDoneCount={isChecklist(project) ? projectActions(document, id).filter((a) => a.status === 'DONE').length : 0}
+      onResetChecklist={() => {
+        // Reset the checklist for its next run (#1149): all DONE check-items back to BACKLOG, one
+        // grouped Undo toast (via setStatuses). Computed from the doc, not the status-filtered rows.
+        const doneIds = projectActions(document, id)
+          .filter((a) => a.status === 'DONE')
+          .map((a) => a.id);
+        if (doneIds.length) setStatuses(doneIds, 'BACKLOG');
+      }}
       onDeleteAction={deleteNode}
       onGroupSelected={(actionIds, title) =>
         dispatch({ type: 'groupIntoSubProject', parentId: id, subProjectId: newId(), title, actionIds, now: nowIso() })
