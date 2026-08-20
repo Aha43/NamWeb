@@ -491,4 +491,59 @@ describe('ProjectWorkbench', () => {
     setup({ project: pnode('p', 'Packing list', { tags: ['#checklist'] }), onResetChecklist: vi.fn(), checklistDoneCount: 0 });
     expect(screen.queryByRole('button', { name: 'Reset' })).not.toBeInTheDocument();
   });
+
+  it('renders check-items as checkboxes on a #checklist project; checking sets DONE (#1153)', () => {
+    const { onSetStatus } = setup({
+      project: pnode('p', 'Packing', { tags: ['#checklist'] }),
+      actions: [actionRow('a', 'Buy tickets')], // NEXT → unchecked
+    });
+    const box = screen.getByRole('checkbox', { name: 'Done: Buy tickets' });
+    expect(box).not.toBeChecked();
+    fireEvent.click(box);
+    expect(onSetStatus).toHaveBeenCalledWith('a', 'DONE');
+  });
+
+  it('unchecking a done check-item sets it back to BACKLOG (#1153)', () => {
+    const { onSetStatus } = setup({
+      project: pnode('p', 'Packing', { tags: ['#checklist'] }),
+      actions: [{ ...actionRow('a', 'Buy tickets'), status: 'DONE' }],
+    });
+    const box = screen.getByRole('checkbox', { name: 'Done: Buy tickets' });
+    expect(box).toBeChecked();
+    fireEvent.click(box);
+    expect(onSetStatus).toHaveBeenCalledWith('a', 'BACKLOG');
+  });
+
+  it('a normal (non-checklist) project keeps the status control, no check-item checkbox (#1153)', () => {
+    setup({ actions: [actionRow('a', 'Get quotes')] }); // default project has no #checklist tag
+    expect(screen.queryByRole('checkbox', { name: 'Done: Get quotes' })).not.toBeInTheDocument();
+  });
+
+  it('checklist bulk toolbar: hides Make-sub-project and reframes status to Mark done / not done (#1153)', () => {
+    setup({
+      project: pnode('p', 'Packing', { tags: ['#checklist'] }),
+      actions: [actionRow('a', 'Buy tickets')],
+      onDeleteAction: vi.fn(), // enables Select mode
+      onGroupSelected: vi.fn(),
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByLabelText('Select Buy tickets')); // Status ▾ is disabled with nothing selected
+    expect(screen.queryByRole('button', { name: 'Make sub-project from selected' })).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Status ▾' }), { key: 'Enter' });
+    expect(screen.getByRole('menuitem', { name: 'Mark done' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: 'Mark not done' })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Next' })).not.toBeInTheDocument();
+  });
+
+  it('hides the Sub-projects section + add row on a checklist with no sub-projects (#1153)', () => {
+    setup({ project: pnode('p', 'Packing', { tags: ['#checklist'] }), subProjects: [] });
+    expect(screen.queryByLabelText('Add sub-project')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sub-projects' })).not.toBeInTheDocument();
+  });
+
+  it('still surfaces legacy sub-projects on a checklist, but hides the add row (#1153)', () => {
+    setup({ project: pnode('p', 'Packing', { tags: ['#checklist'] }), subProjects: [pnode('s', 'Legacy sub')] });
+    expect(screen.getByRole('button', { name: 'Open Legacy sub' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Add sub-project')).not.toBeInTheDocument();
+  });
 });

@@ -235,7 +235,9 @@ export function ProjectWorkbenchPage() {
       onAddAction={(title) => {
         // The status a new project action gets is a per-user default (#1132) — NEXT out of the box
         // (capturing usually means intent), or BACKLOG for those who triage first (the old #210 default).
-        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status: defaultNewActionStatus, atTop: !addToBottom, now: nowIso() });
+        // On a checklist, a new check-item is always born unchecked = BACKLOG, regardless of the default (#1153).
+        const status = isChecklist(project) ? 'BACKLOG' : defaultNewActionStatus;
+        dispatch({ type: 'addAction', parentId: id, id: newId(), title, status, atTop: !addToBottom, now: nowIso() });
         ensureSectionExpanded('actions');
       }}
       onAddActionToColumn={(columnId, title) =>

@@ -20,6 +20,11 @@ minor = features (breaking changes allowed), patch = fixes.
   sets all its done check-items back to Backlog in one click (with a single grouped Undo) — so a
   recurring procedure is ready to run again without unchecking item by item. Shown only when there's
   something done to reset. Closes #1149.
+- **Checklists now behave like checklists.** On a `#checklist` project, each check-item shows a
+  **checkbox** in place of the status dropdown — ticking it marks the item done, unticking sends it
+  back to Backlog. New check-items start unchecked, the Sub-projects add row is hidden (a checklist
+  holds only check-items), and bulk actions drop "make sub-project" and offer **Mark done / Mark not
+  done**. Reordering and moving items out (to promote one to real work) still work. Closes #1153.
 
 ## [3.5.1] - 2026-08-18
 
