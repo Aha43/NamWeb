@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { TruncatedTitle } from '@/components/ui/truncated-title';
 import { cn } from '@/lib/utils';
 import { StatusMenu } from '../actions/StatusMenu';
+import { CheckItemCheckbox } from '../actions/CheckItemCheckbox';
 import { ReorderControls } from '../actions/ReorderControls';
 import { ReorderableActionList } from '@/components/dnd/ReorderableActionList';
 import { SortableList } from '@/components/dnd/SortableList';
@@ -236,6 +237,9 @@ export function ProjectWorkbench({
 }: ProjectWorkbenchProps) {
   const { t } = useTranslation();
   const isColumn = viewMode === 'column';
+  // This project is a checklist (#1153): its actions are check-items — rendered with a checkbox
+  // instead of a status dropdown, and it can't hold sub-projects (so those affordances are hidden).
+  const isChecklistProject = isChecklist(project);
   const subDnd = Boolean(dndEnabled && onReorderSubProjects && subProjects.length > 1);
   // Whether there's anything for the "by due" toggle to act on (list rows or any column's cards).
   const anyActions = actions.length > 0 || columns.some((c) => c.actions.length > 0);
@@ -662,7 +666,9 @@ export function ProjectWorkbench({
               {selectMode && (
                 <div className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-1.5 text-sm">
                   <span className="mr-1 text-muted-foreground">{t('actions.selectedCount', { count: selected.size })}</span>
-                  {onGroupSelected && (
+                  {/* Grouping selected actions into a sub-project is meaningless on a checklist — it
+                      can't hold sub-projects (#1153). Hide it rather than offer a refused control. */}
+                  {onGroupSelected && !isChecklistProject && (
                     <PromptButton
                       aria-label={t('workbench.makeSubAria')}
                       label={t('workbench.subProjectName')}
@@ -683,9 +689,19 @@ export function ProjectWorkbench({
                       {t('workbench.statusMenu')}
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start">
-                      <DropdownMenuItem onSelect={() => bulkSetStatus('NEXT')}>{t('domain.status.next')}</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => bulkSetStatus('BACKLOG')}>{t('domain.status.backlog')}</DropdownMenuItem>
-                      <DropdownMenuItem onSelect={() => bulkSetStatus('DONE')}>{t('domain.status.done')}</DropdownMenuItem>
+                      {isChecklistProject ? (
+                        // A checklist's items are done / not-done — offer just those (#1153).
+                        <>
+                          <DropdownMenuItem onSelect={() => bulkSetStatus('DONE')}>{t('checklist.markDone')}</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => bulkSetStatus('BACKLOG')}>{t('checklist.markNotDone')}</DropdownMenuItem>
+                        </>
+                      ) : (
+                        <>
+                          <DropdownMenuItem onSelect={() => bulkSetStatus('NEXT')}>{t('domain.status.next')}</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => bulkSetStatus('BACKLOG')}>{t('domain.status.backlog')}</DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => bulkSetStatus('DONE')}>{t('domain.status.done')}</DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   {onMoveActionInto && moveActionTargets.length > 0 && (
@@ -824,11 +840,19 @@ export function ProjectWorkbench({
                         </DropdownMenu>
                         )
                       )}
-                      <StatusMenu
-                        status={row.status}
-                        title={row.title}
-                        onSetStatus={(status) => onSetStatus(row.id, status)}
-                      />
+                      {isChecklistProject ? (
+                        <CheckItemCheckbox
+                          done={row.status === 'DONE'}
+                          title={row.title}
+                          onToggle={(done) => onSetStatus(row.id, done ? 'DONE' : 'BACKLOG')}
+                        />
+                      ) : (
+                        <StatusMenu
+                          status={row.status}
+                          title={row.title}
+                          onSetStatus={(status) => onSetStatus(row.id, status)}
+                        />
+                      )}
                     </>
                   )}
                 />
@@ -843,6 +867,9 @@ export function ProjectWorkbench({
               </div>
             </div>
 
+          {/* A checklist holds only check-items — hide the whole Sub-projects section unless it has
+              legacy sub-projects to surface (#1153). */}
+          {(!isChecklistProject || subProjects.length > 0) && (
           <div className="space-y-1">
               <SectionHeader
                 label={t('workbench.subProjects')}
@@ -852,8 +879,11 @@ export function ProjectWorkbench({
                 shortcutKey="z"
               />
               {/* Add-sub-project row lives in the Sub-projects section, always reachable — the list
-                  renders directly under it so a new sub-project appears where you just typed. */}
-              <QuickAdd label={t('workbench.addSubProject')} placeholder={t('workbench.addSubProjectPlaceholder')} onAdd={onAddSubProject} />
+                  renders directly under it so a new sub-project appears where you just typed. Hidden
+                  on a checklist, which can't hold sub-projects (#1153). */}
+              {!isChecklistProject && (
+                <QuickAdd label={t('workbench.addSubProject')} placeholder={t('workbench.addSubProjectPlaceholder')} onAdd={onAddSubProject} />
+              )}
               {!sectionCollapsed('subprojects') && subProjects.length > 0 && (viewMode === 'heatmap' && subProjectStats ? (
                 <div className="grid grid-cols-2 gap-2">
                   {subProjectStats.map((stat) => (
@@ -921,6 +951,7 @@ export function ProjectWorkbench({
                 </div>
               )}
             </div>
+          )}
 
           {/* Empty leaf project: offer to turn it back into an action (the sections above carry the add rows). */}
           {onConvertToAction && actions.length === 0 && subProjects.length === 0 && (
