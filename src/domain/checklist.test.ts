@@ -3,6 +3,7 @@ import type { NamNode, WorkspaceDocument } from './types';
 import {
   backlogItems,
   blockedGroups,
+  checklistProjects,
   checklistSuppressedIds,
   contextItems,
   dueGroups,
@@ -69,6 +70,10 @@ describe('#checklist suppression (#1147)', () => {
     const titles = projects(tree()).map((n) => n.title);
     expect(titles).toContain('Checklist');
     expect(titles).toContain('Empty checklist');
+  });
+
+  it('checklistProjects returns exactly the #checklist-tagged projects (#1163)', () => {
+    expect(checklistProjects(tree()).map((n) => n.title).sort()).toEqual(['Checklist', 'Empty checklist']);
   });
 
   it('a NEXT check-item drops out of nextActions', () => {

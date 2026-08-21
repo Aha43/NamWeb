@@ -158,6 +158,38 @@ describe('NamWeb MCP write tools', () => {
     expect(commitIntent).not.toHaveBeenCalled();
   });
 
+  it('mark_checklist adds the #checklist tag to a project (#1164)', async () => {
+    await call('mark_checklist', { project_id: 'p1' });
+    const intent = committedIntent() as Extract<Intent, { type: 'updateTags' }>;
+    expect(intent).toMatchObject({ type: 'updateTags', id: 'p1' });
+    expect(intent.tags).toContain('#checklist');
+  });
+
+  it('mark_checklist refuses a project that has sub-projects, and errors on a non-project (#1164)', async () => {
+    const doc = makeDoc();
+    doc.nodes.p1.childIds = ['a1', 'sp'];
+    doc.nodes.sp = node('sp', { title: 'Sub', project: true });
+    pull.mockResolvedValue({ kind: 'ok', document: doc, version: 7 });
+    expect((await call('mark_checklist', { project_id: 'p1' })).isError).toBe(true);
+    expect(commitIntent).not.toHaveBeenCalled();
+    // a1 is an action, not a project
+    expect((await call('mark_checklist', { project_id: 'a1' })).isError).toBe(true);
+  });
+
+  it('reset_checklist maps to a resetChecklist intent on a #checklist project (#1165)', async () => {
+    const doc = makeDoc();
+    doc.nodes.p1.tags = ['#checklist'];
+    pull.mockResolvedValue({ kind: 'ok', document: doc, version: 7 });
+    await call('reset_checklist', { project_id: 'p1' });
+    expect(committedIntent()).toMatchObject({ type: 'resetChecklist', id: 'p1' });
+  });
+
+  it('reset_checklist errors on a project that is not a checklist (#1165)', async () => {
+    const result = await call('reset_checklist', { project_id: 'p1' }); // not tagged by default
+    expect(result.isError).toBe(true);
+    expect(commitIntent).not.toHaveBeenCalled();
+  });
+
   it('add_action defaults to BACKLOG and attaches to the project (matches NamDesktop)', async () => {
     await call('add_action', { project_id: 'p1', title: 'Do' });
     expect(committedIntent()).toMatchObject({
