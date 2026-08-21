@@ -8,6 +8,21 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.6.1] - 2026-08-21
+
+**Closing the last doors on the checklist invariant.** A post-release code review found that a few
+less-obvious paths could still slip a sub-project under a checklist — processing an inbox item straight
+into a project, applying a template or seed whose top level is a project, or *undoing* a delete that
+restored a sub-project after its parent was tagged. All are now refused with the same clear message as
+the direct paths, so "a checklist holds only check-items" holds no matter how you get there.
+
+### Fixed
+
+- **The "a checklist can't hold sub-projects" rule now covers every path into it.** Inbox-to-project
+  conversion, template/seed application, and undo-restore are validated alongside the direct add/move/
+  convert/tag operations — a project can no longer be nested under a `#checklist` through any of them.
+  Closes #1159.
+
 ## [3.6.0] - 2026-08-21
 
 **Checklists — reusing what you already know.** A checklist isn't a new kind of thing to learn: it's
@@ -2448,7 +2463,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.6.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.6.1...HEAD
+[3.6.1]: https://github.com/Aha43/NamWeb/compare/v3.6.0...v3.6.1
 [3.6.0]: https://github.com/Aha43/NamWeb/compare/v3.5.1...v3.6.0
 [3.5.1]: https://github.com/Aha43/NamWeb/compare/v3.5.0...v3.5.1
 [3.5.0]: https://github.com/Aha43/NamWeb/compare/v3.4.0...v3.5.0
