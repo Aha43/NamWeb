@@ -8,6 +8,20 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-08-21
+
+**Checklists — reusing what you already know.** A checklist isn't a new kind of thing to learn: it's
+just a **project you read differently**. Tag a project **Checklist** and its actions become check-items
+— they show a **checkbox** instead of a status, drop out of Next / Backlog / Due / Calendar / Loose
+ends (so a recurring routine doesn't clutter your work lists or read as "stalled"), and the whole list
+is filtered by one **Show done** toggle rather than three status boxes. When a run is finished, one
+**Reset** click sends every done item back to unchecked for the next time — the recurring-template win
+without a recurrence engine. A checklist holds check-items but never sub-projects, and that's enforced
+with a clear refusal (in the app and, once redeployed, over the MCP connector) rather than a silent
+reshape — because quietly reinterpreting your structure is worse than refusing the operation. Items
+still reorder freely (order matters in a list) and any one can be promoted out to a normal project the
+moment it turns out to be real work.
+
 ### Added
 
 - **`#checklist` — turn a project into a checklist.** Mark a project with the **Checklist** feature and
@@ -2434,7 +2448,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.5.1...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.6.0...HEAD
+[3.6.0]: https://github.com/Aha43/NamWeb/compare/v3.5.1...v3.6.0
 [3.5.1]: https://github.com/Aha43/NamWeb/compare/v3.5.0...v3.5.1
 [3.5.0]: https://github.com/Aha43/NamWeb/compare/v3.4.0...v3.5.0
 [3.4.0]: https://github.com/Aha43/NamWeb/compare/v3.3.0...v3.4.0
