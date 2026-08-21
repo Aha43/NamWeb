@@ -960,4 +960,26 @@ describe('validateIntent — #checklist no-sub-projects invariant (#1147)', () =
     expect(after).toEqual(before); // the checklist gained no child project; nothing corrupted
     expect(after.nodes.x).toBeUndefined();
   });
+
+  // #1159 — the project-creating/restoring intents Codex flagged that also hit the reducer hole.
+  it('rejects processing an inbox item into a project under a checklist (convertInboxToProject)', () => {
+    expect(validateIntent(doc(), { type: 'convertInboxToProject', id: 'ci', parentId: 'cl', now: NOW })).toMatch(/checklist/i);
+    expect(validateIntent(doc(), { type: 'convertInboxToProject', id: 'ci', parentId: 'p', now: NOW })).toBeNull();
+    expect(validateIntent(doc(), { type: 'convertInboxToProject', id: 'ci', now: NOW })).toBeNull(); // no parent → top level
+  });
+
+  it('rejects a template/seed with a top-level project under a checklist, allows an all-action seed', () => {
+    const projSeed = [{ id: 's', title: 'Sub', project: true }];
+    const actionSeed = [{ id: 's', title: 'Item' }];
+    expect(validateIntent(doc(), { type: 'seedProject', parentId: 'cl', nodes: projSeed, now: NOW })).toMatch(/checklist/i);
+    expect(validateIntent(doc(), { type: 'applyTemplate', parentId: 'cl', nodes: projSeed, now: NOW })).toMatch(/checklist/i);
+    expect(validateIntent(doc(), { type: 'seedProject', parentId: 'cl', nodes: actionSeed, now: NOW })).toBeNull(); // checklist template
+    expect(validateIntent(doc(), { type: 'seedProject', parentId: 'p', nodes: projSeed, now: NOW })).toBeNull(); // normal parent
+  });
+
+  it('rejects undo restoring a sub-project under a checklist, allows restoring an action', () => {
+    const cap = (root: NamNode) => ({ type: 'restoreNodes' as const, capture: { nodes: [root], parentId: 'cl', index: 0, blockedRefs: [] } });
+    expect(validateIntent(doc(), cap(node('r', { project: true })))).toMatch(/checklist/i);
+    expect(validateIntent(doc(), cap(node('r', { project: false })))).toBeNull(); // an action check-item is fine
+  });
 });

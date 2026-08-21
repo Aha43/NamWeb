@@ -429,6 +429,21 @@ export function validateIntent(doc: WorkspaceDocument, intent: Intent): string |
     case 'convertActionToProject':
       // A check-item promoted to a project would become a sub-project of the checklist.
       return isChecklistProject(doc, parentOf(doc, intent.id)) ? CHECKLIST_NO_SUBPROJECTS : null;
+    case 'convertInboxToProject':
+      // Processing an inbox item straight into a project under a checklist (#1159).
+      return isChecklistProject(doc, intent.parentId) ? CHECKLIST_NO_SUBPROJECTS : null;
+    case 'applyTemplate':
+    case 'seedProject':
+      // A template/seed whose top level contains a project would land a sub-project under the
+      // checklist (#1159). All-action seeds — a checklist template — are fine.
+      return isChecklistProject(doc, intent.parentId) && intent.nodes.some((n) => n.project)
+        ? CHECKLIST_NO_SUBPROJECTS
+        : null;
+    case 'restoreNodes':
+      // Undo restoring a previously-deleted sub-project after its parent became a checklist (#1159).
+      return isChecklistProject(doc, intent.capture.parentId) && Boolean(intent.capture.nodes[0]?.project)
+        ? CHECKLIST_NO_SUBPROJECTS
+        : null;
     case 'updateTags': {
       const node = doc.nodes[intent.id];
       if (!node?.project) return null;
