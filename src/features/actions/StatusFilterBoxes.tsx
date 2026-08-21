@@ -25,3 +25,20 @@ export function StatusFilterBoxes({ boxes, onToggle }: { boxes: StatusBoxes; onT
     </div>
   );
 }
+
+/**
+ * A checklist has only two states — done and not-done — so the three include-boxes collapse to one
+ * (#1155): "Show done". Not-done items (NEXT + BACKLOG) always show; this reveals/hides the done ones.
+ * Bound to the same `DONE` box so the existing `actionNodes` filter needs no change.
+ */
+export function ChecklistDoneToggle({ showDone, onToggle }: { showDone: boolean; onToggle: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-3 px-1 text-xs text-muted-foreground">
+      <label className="flex items-center gap-1.5">
+        <input type="checkbox" checked={showDone} onChange={onToggle} />
+        {t('checklist.showDone')}
+      </label>
+    </div>
+  );
+}

@@ -11,7 +11,7 @@ import type { NamNode } from '@/domain/types';
 import type { ActionEdits } from '@/features/actions/ActionDialog';
 import type { DueFields } from '@/features/actions/DueFieldset';
 import { toActionRow, type ActionRowData } from '@/features/actions/rows';
-import { StatusFilterBoxes } from '@/features/actions/StatusFilterBoxes';
+import { StatusFilterBoxes, ChecklistDoneToggle } from '@/features/actions/StatusFilterBoxes';
 import { useStatusBoxes } from '@/features/actions/statusBoxes';
 import { sortByDue } from '@/features/actions/sort';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
@@ -197,7 +197,14 @@ export function ProjectWorkbenchPage() {
 
   return (
     <ProjectWorkbench
-      actionsStatusSlot={<StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />}
+      actionsStatusSlot={
+        isChecklist(project) ? (
+          // A checklist is done / not-done — one toggle for the done ones (#1155).
+          <ChecklistDoneToggle showDone={boxes.DONE} onToggle={() => toggleBox('DONE')} />
+        ) : (
+          <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />
+        )
+      }
       project={project}
       bookmarkSlot={<AddBookmarkButton draft={{ kind: 'project', projectId: id, label: project.title }} />}
       breadcrumb={buildPath(document, id)}

@@ -332,6 +332,7 @@
   "checklist.itemAria": "Ferdig: {title}",
   "checklist.markDone": "Merk som ferdig",
   "checklist.markNotDone": "Merk som ikke ferdig",
+  "checklist.showDone": "Vis ferdige",
   "checklist.reset": "Nullstill",
   "checklist.resetTooltip": "Sett de {count} ferdige sjekkpunktene tilbake til Etterslep for neste runde",
   "checklist.cannotTagWithSubprojects": "Dette prosjektet har underprosjekter, så det kan ikke være en sjekkliste (sjekklister har bare sjekkpunkter). Flytt eller fjern underprosjektene først.",
