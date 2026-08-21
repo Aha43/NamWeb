@@ -332,6 +332,7 @@
   "checklist.itemAria": "Done: {title}",
   "checklist.markDone": "Mark done",
   "checklist.markNotDone": "Mark not done",
+  "checklist.showDone": "Show done",
   "checklist.reset": "Reset",
   "checklist.resetTooltip": "Set the {count} done check-item(s) back to Backlog for the next run",
   "checklist.cannotTagWithSubprojects": "This project has sub-projects, so it can't be a checklist (checklists hold only check-items). Move or remove the sub-projects first.",

@@ -25,6 +25,9 @@ minor = features (breaking changes allowed), patch = fixes.
   back to Backlog. New check-items start unchecked, the Sub-projects add row is hidden (a checklist
   holds only check-items), and bulk actions drop "make sub-project" and offer **Mark done / Mark not
   done**. Reordering and moving items out (to promote one to real work) still work. Closes #1153.
+- **Checklist filter is one toggle, not three.** A checklist only has done and not-done, so its
+  workbench shows a single **Show done** checkbox in place of the Next / Backlog / Done include-boxes —
+  not-done items always show; toggle to reveal or hide the done ones. Closes #1155.
 
 ## [3.5.1] - 2026-08-18
 
