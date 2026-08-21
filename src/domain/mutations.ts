@@ -71,6 +71,7 @@ export type Intent =
   | { type: 'groupIntoSubProject'; parentId: string; subProjectId: string; title: string; actionIds: string[]; now: string }
   | { type: 'deleteRecursive'; id: string }
   | { type: 'deleteLeaf'; id: string }
+  | { type: 'resetChecklist'; id: string; now: string }
   | { type: 'restoreNodes'; capture: DeletionCapture };
 
 /**
@@ -944,6 +945,22 @@ export function applyIntent(doc: WorkspaceDocument, intent: Intent): WorkspaceDo
       if (!next.nodes[intent.id]) return next;
       detach(next, intent.id);
       delete next.nodes[intent.id];
+      return next;
+    }
+    case 'resetChecklist': {
+      // Reset a checklist for its next run (#1165): every DONE direct-child action back to BACKLOG.
+      // Single, replay-safe intent (the MCP reset_checklist tool commits one intent per call); the
+      // web Reset keeps its per-item setStatuses loop for the grouped Undo toast.
+      const node = next.nodes[intent.id];
+      if (!node) return next;
+      for (const cid of node.childIds) {
+        const child = next.nodes[cid];
+        if (child && !child.project && child.status === 'DONE') {
+          child.status = 'BACKLOG';
+          child.statusChangedAt = intent.now;
+          child.updatedAt = intent.now;
+        }
+      }
       return next;
     }
     case 'restoreNodes': {

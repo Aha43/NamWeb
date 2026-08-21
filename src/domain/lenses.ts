@@ -227,6 +227,12 @@ export function checklistSuppressedIds(doc: WorkspaceDocument): Set<string> {
   return ids;
 }
 
+/** Every project interpreted as a checklist — tagged `#checklist` (#1163). The read model behind the
+ *  MCP `list_checklists` tool; the project stays a normal node, its actions are the check-items. */
+export function checklistProjects(doc: WorkspaceDocument): NamNode[] {
+  return Object.values(doc.nodes).filter((n) => n.project && isChecklist(n));
+}
+
 /**
  * The **outermost** SOMEDAY nodes — `status === 'SOMEDAY'` and NOT already inside another SOMEDAY (or
  * ARCHIVED) subtree — what the Someday view and `list_someday` render: one row per parked subtree, not

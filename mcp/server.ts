@@ -51,6 +51,7 @@ import {
   nextActions,
   projectActions,
   projectMoveTargets,
+  checklistProjects,
   projectPath,
   projects,
   searchResults,
@@ -59,7 +60,7 @@ import {
   subtreeIds,
 } from '../src/domain/lenses';
 import { GONE_QUIET_DAYS, goneQuiet, stalledProjects } from '../src/domain/review';
-import { canonicalTag, isSystemTag } from '../src/domain/systemTags';
+import { CHECKLIST_TAG, canonicalTag, isChecklist, isSystemTag } from '../src/domain/systemTags';
 import pkg from '../package.json';
 
 // A build signal surfaced in get_workspace_context (#1099/#1097): `<version>+<sha>` when deployed
@@ -334,6 +335,12 @@ export function buildServer(
       'outermost someday nodes only (a whole parked subtree is one row, not every descendant). ' +
       'SOMEDAY items are deliberately absent from the Next/Backlog/stalled/gone-quiet listings.',
     (doc) => somedayRoots(doc).map((n) => nodeView(doc, n)),
+  );
+  read(
+    'list_checklists',
+    'List all projects tagged #checklist (#1163) — their child actions are check-items (done/not-done). ' +
+      'Check or uncheck an item with mark_done / mark_backlog; reset a whole checklist with reset_checklist.',
+    (doc) => checklistProjects(doc).map((n) => nodeView(doc, n)),
   );
   read(
     'list_saved_views',
@@ -670,6 +677,38 @@ export function buildServer(
   markStatus('mark_done', 'DONE');
   markStatus('mark_backlog', 'BACKLOG');
   markStatus('mark_someday', 'SOMEDAY'); // park as "not decided to do" (#1131)
+
+  registerWrite(
+    'mark_checklist',
+    {
+      description:
+        'Mark a project as a checklist (#1164): adds the #checklist tag, so its actions become ' +
+        'check-items. Refused if the project has sub-projects — a checklist holds only check-items.',
+      inputSchema: { project_id: z.string().describe('UUID of the project') },
+    },
+    ({ project_id }) =>
+      commit((doc) => {
+        const node = requireNode(doc, project_id);
+        if (!node.project) throw new Error(`Node ${project_id} is not a project; #checklist applies to projects.`);
+        return { type: 'updateTags', id: project_id, tags: [...node.tags, CHECKLIST_TAG], now: nowIso() };
+      }),
+  );
+
+  registerWrite(
+    'reset_checklist',
+    {
+      description:
+        'Reset a checklist for its next run (#1165): set every DONE check-item back to BACKLOG in one ' +
+        'step. The node must be a #checklist project.',
+      inputSchema: { project_id: z.string().describe('UUID of the #checklist project') },
+    },
+    ({ project_id }) =>
+      commit((doc) => {
+        const node = requireNode(doc, project_id);
+        if (!node.project || !isChecklist(node)) throw new Error(`Node ${project_id} is not a #checklist project.`);
+        return { type: 'resetChecklist', id: project_id, now: nowIso() };
+      }),
+  );
 
   registerWrite(
     'update_node',

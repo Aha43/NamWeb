@@ -983,3 +983,27 @@ describe('validateIntent — #checklist no-sub-projects invariant (#1147)', () =
     expect(validateIntent(doc(), cap(node('r', { project: false })))).toBeNull(); // an action check-item is fine
   });
 });
+
+describe('resetChecklist (#1165)', () => {
+  it('sets DONE direct-child actions back to BACKLOG, leaving others and sub-projects untouched', () => {
+    const doc = workspace([
+      node('cl', { project: true, tags: ['#checklist'], childIds: ['a', 'b', 'c', 'sub'] }),
+      node('a', { status: 'DONE', statusChangedAt: 'old' }),
+      node('b', { status: 'BACKLOG' }),
+      node('c', { status: 'DONE' }),
+      node('sub', { project: true, status: 'DONE' }), // a project child is not a check-item
+      node('outside', { status: 'DONE' }),
+    ]);
+    const next = applyIntent(doc, { type: 'resetChecklist', id: 'cl', now: NOW });
+    expect(next.nodes.a.status).toBe('BACKLOG');
+    expect(next.nodes.a.statusChangedAt).toBe(NOW);
+    expect(next.nodes.c.status).toBe('BACKLOG');
+    expect(next.nodes.sub.status).toBe('DONE'); // sub-project isn't a check-item
+    expect(next.nodes.outside.status).toBe('DONE'); // not a child of the checklist
+  });
+
+  it('no-ops when the project is gone', () => {
+    const doc = workspace([]);
+    expect(applyIntent(doc, { type: 'resetChecklist', id: 'ghost', now: NOW })).toEqual(doc);
+  });
+});
