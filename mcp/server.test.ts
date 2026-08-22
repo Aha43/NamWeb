@@ -104,6 +104,7 @@ const EXPECTED_WRITE_TOOLS = [
   'mark_backlog',
   'mark_someday',
   'mark_checklist',
+  'unmark_checklist',
   'reset_checklist',
   'update_node',
   'update_tags',

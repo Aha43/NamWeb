@@ -51,6 +51,7 @@ import {
   nextActions,
   projectActions,
   projectMoveTargets,
+  checklistProgress,
   checklistProjects,
   projectPath,
   projects,
@@ -236,6 +237,9 @@ function nodeView(doc: WorkspaceDocument, n: NamNode) {
     path: projectPath(doc, n.id),
   };
   if (n.project) view.childCount = n.childIds.length;
+  // A checklist's one meaningful number — checked of total (#1167) — so a listing answers "which
+  // checklists need attention", not just "which exist". On list_checklists and get_node alike.
+  if (n.project && isChecklist(n)) view.checklist = checklistProgress(doc, n.id);
   if (n.tags.length) {
     view.tags = n.tags;
     view.tagKinds = classifyTags(n.tags);
@@ -691,6 +695,26 @@ export function buildServer(
         const node = requireNode(doc, project_id);
         if (!node.project) throw new Error(`Node ${project_id} is not a project; #checklist applies to projects.`);
         return { type: 'updateTags', id: project_id, tags: [...node.tags, CHECKLIST_TAG], now: nowIso() };
+      }),
+  );
+
+  registerWrite(
+    'unmark_checklist',
+    {
+      description:
+        'Remove the #checklist tag from a project (#1168) — the reverse of mark_checklist, e.g. when a ' +
+        'checklist grows into a real project (or was tagged by mistake). Always safe; no-op if not tagged.',
+      inputSchema: { project_id: z.string().describe('UUID of the project') },
+    },
+    ({ project_id }) =>
+      commit((doc) => {
+        const node = requireNode(doc, project_id);
+        return {
+          type: 'updateTags',
+          id: project_id,
+          tags: node.tags.filter((t) => canonicalTag(t) !== CHECKLIST_TAG),
+          now: nowIso(),
+        };
       }),
   );
 

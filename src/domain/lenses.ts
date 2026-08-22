@@ -233,6 +233,22 @@ export function checklistProjects(doc: WorkspaceDocument): NamNode[] {
   return Object.values(doc.nodes).filter((n) => n.project && isChecklist(n));
 }
 
+/** A checklist's progress — DONE check-items over total (#1167): the one number a checklist has.
+ *  Counts the project's DIRECT child ACTIONS (check-items); a checklist holds no sub-projects, and any
+ *  legacy one isn't a check-item so it's ignored. Powers "4/7" on the MCP read surface. */
+export function checklistProgress(doc: WorkspaceDocument, id: string): { checked: number; total: number } {
+  let checked = 0;
+  let total = 0;
+  for (const cid of doc.nodes[id]?.childIds ?? []) {
+    const c = doc.nodes[cid];
+    if (c && !c.project) {
+      total += 1;
+      if (c.status === 'DONE') checked += 1;
+    }
+  }
+  return { checked, total };
+}
+
 /**
  * The **outermost** SOMEDAY nodes — `status === 'SOMEDAY'` and NOT already inside another SOMEDAY (or
  * ARCHIVED) subtree — what the Someday view and `list_someday` render: one row per parked subtree, not

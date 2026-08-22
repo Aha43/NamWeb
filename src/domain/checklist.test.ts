@@ -3,6 +3,7 @@ import type { NamNode, WorkspaceDocument } from './types';
 import {
   backlogItems,
   blockedGroups,
+  checklistProgress,
   checklistProjects,
   checklistSuppressedIds,
   contextItems,
@@ -74,6 +75,12 @@ describe('#checklist suppression (#1147)', () => {
 
   it('checklistProjects returns exactly the #checklist-tagged projects (#1163)', () => {
     expect(checklistProjects(tree()).map((n) => n.title).sort()).toEqual(['Checklist', 'Empty checklist']);
+  });
+
+  it('checklistProgress counts DONE over total direct check-items, ignoring sub-projects (#1167)', () => {
+    // `list` has c1 (NEXT), c2 (BACKLOG), c3 (DONE) → 1 of 3.
+    expect(checklistProgress(tree(), 'list')).toEqual({ checked: 1, total: 3 });
+    expect(checklistProgress(tree(), 'emptylist')).toEqual({ checked: 0, total: 1 }); // e1 BACKLOG
   });
 
   it('a NEXT check-item drops out of nextActions', () => {
