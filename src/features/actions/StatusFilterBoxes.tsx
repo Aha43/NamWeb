@@ -27,6 +27,22 @@ export function StatusFilterBoxes({ boxes, onToggle }: { boxes: StatusBoxes; onT
 }
 
 /**
+ * An extra include-box for SOMEDAY items on the project workbench (#1176). Someday actions aren't in
+ * the three standard boxes (they're suppressed from the day-to-day surfaces, #1131) but they DO sit on
+ * their project's own workbench — this lets you include or hide them there. Shown only when the project
+ * has someday actions, so it's never a dead control.
+ */
+export function SomedayFilterToggle({ show, onToggle }: { show: boolean; onToggle: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <input type="checkbox" checked={show} onChange={onToggle} />
+      {t('domain.status.someday')}
+    </label>
+  );
+}
+
+/**
  * A checklist has only two states — done and not-done — so the three include-boxes collapse to one
  * (#1155): "Show done". Not-done items (NEXT + BACKLOG) always show; this reveals/hides the done ones.
  * Bound to the same `DONE` box so the existing `actionNodes` filter needs no change.

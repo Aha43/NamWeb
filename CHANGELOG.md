@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **Filter Someday items on a project workbench.** A project whose workbench holds Someday actions now
+  shows a **Someday** include-box next to Next / Backlog / Done — so you can hide or isolate them
+  (they're shown by default). Appears only when the project has someday actions. Closes #1176.
+
 ## [3.7.0] - 2026-08-22
 
 **Checklists reach the assistant.** The `#checklist` feature now has full parity over the MCP
