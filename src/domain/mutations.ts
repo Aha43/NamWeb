@@ -405,6 +405,8 @@ const CHECKLIST_NO_SUBPROJECTS =
 const CHECKLIST_HAS_SUBPROJECTS =
   'This project has sub-projects, so it cannot be a #checklist (checklists hold only check-items). ' +
   'Move or remove the sub-projects first.';
+const CHECKLIST_RESET_NOT_CHECKLIST =
+  'reset_checklist target is not a #checklist project (it may have been un-marked concurrently).';
 
 /**
  * Business-rule validation the reducer itself can't enforce loudly (#1147). Returns a human-readable
@@ -445,6 +447,11 @@ export function validateIntent(doc: WorkspaceDocument, intent: Intent): string |
       return isChecklistProject(doc, intent.capture.parentId) && Boolean(intent.capture.nodes[0]?.project)
         ? CHECKLIST_NO_SUBPROJECTS
         : null;
+    case 'resetChecklist':
+      // The tool asserts a checklist at build time, but this intent gets REPLAYED on conflict (#1171):
+      // if another writer un-marked the project meanwhile, a replay would demote its now-normal DONE
+      // actions to BACKLOG. Reject on a non-checklist so the applyIntent backstop no-ops the replay.
+      return isChecklistProject(doc, intent.id) ? null : CHECKLIST_RESET_NOT_CHECKLIST;
     case 'updateTags': {
       const node = doc.nodes[intent.id];
       if (!node?.project) return null;
