@@ -100,6 +100,9 @@ export interface ProjectWorkbenchProps {
   checklistDoneCount?: number;
   /** Inline delete (with confirm) for a direct action row. */
   onDeleteAction?: (id: string) => void;
+  /** Bulk delete several actions with a SINGLE grouped Undo toast (#1175); falls back to per-id
+   *  `onDeleteAction` when absent. Powers "delete selected" and "delete done" without stacking undos. */
+  onDeleteActions?: (ids: string[]) => void;
   /** Bulk: move the selected actions into a new sub-project (named) under this project. */
   onGroupSelected?: (actionIds: string[], title: string) => void;
   /** Bulk: add a tag to the selected actions. */
@@ -201,6 +204,7 @@ export function ProjectWorkbench({
   onResetChecklist,
   checklistDoneCount,
   onDeleteAction,
+  onDeleteActions,
   onGroupSelected,
   onAddTagToActions,
   allTags,
@@ -317,7 +321,10 @@ export function ProjectWorkbench({
     setSelected(new Set());
   };
   const bulkDelete = () => {
-    if (onDeleteAction) for (const id of selected) onDeleteAction(id);
+    // One grouped Undo for the whole selection (#1175) — falling back to per-id only if the grouped
+    // handler isn't wired. Deleting 10 items should leave ONE undo toast, not a stack of ten.
+    if (onDeleteActions) onDeleteActions([...selected]);
+    else if (onDeleteAction) for (const id of selected) onDeleteAction(id);
     setSelected(new Set());
   };
   // Tag and status KEEP the selection (#936): the actions stay in the workbench, so you can tag then
@@ -355,7 +362,10 @@ export function ProjectWorkbench({
     onConfirm: (id: string) => void;
   } | null>(null);
   const deleteDone = () => {
-    if (onDeleteAction) for (const a of doneActions) onDeleteAction(a.id);
+    // Also one grouped Undo (#1175).
+    const ids = doneActions.map((a) => a.id);
+    if (onDeleteActions) onDeleteActions(ids);
+    else if (onDeleteAction) for (const id of ids) onDeleteAction(id);
   };
 
   // One sub-project row; `drag` is supplied when drag-and-drop is mounted.
