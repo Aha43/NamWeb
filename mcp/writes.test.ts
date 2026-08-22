@@ -190,6 +190,28 @@ describe('NamWeb MCP write tools', () => {
     expect(commitIntent).not.toHaveBeenCalled();
   });
 
+  it('unmark_checklist removes the #checklist tag (#1168)', async () => {
+    const doc = makeDoc();
+    doc.nodes.p1.tags = ['#checklist', 'work'];
+    pull.mockResolvedValue({ kind: 'ok', document: doc, version: 7 });
+    await call('unmark_checklist', { project_id: 'p1' });
+    const intent = committedIntent() as Extract<Intent, { type: 'updateTags' }>;
+    expect(intent).toMatchObject({ type: 'updateTags', id: 'p1' });
+    expect(intent.tags).toEqual(['work']); // #checklist filtered out, other tags kept
+  });
+
+  it('list_checklists carries a checked/total progress count (#1167)', async () => {
+    const doc = makeDoc();
+    doc.nodes.p1.tags = ['#checklist'];
+    doc.nodes.p1.childIds = ['a1', 'd1'];
+    doc.nodes.d1 = node('d1', { title: 'Done item', status: 'DONE' });
+    pull.mockResolvedValue({ kind: 'ok', document: doc, version: 7 });
+    const result = await call('list_checklists');
+    const rows = JSON.parse(firstText(result)) as { id: string; checklist?: { checked: number; total: number } }[];
+    const p1 = rows.find((r) => r.id === 'p1');
+    expect(p1?.checklist).toEqual({ checked: 1, total: 2 }); // a1 (NEXT) + d1 (DONE)
+  });
+
   it('add_action defaults to BACKLOG and attaches to the project (matches NamDesktop)', async () => {
     await call('add_action', { project_id: 'p1', title: 'Do' });
     expect(committedIntent()).toMatchObject({
