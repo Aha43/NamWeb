@@ -546,4 +546,29 @@ describe('ProjectWorkbench', () => {
     expect(screen.getByRole('button', { name: 'Open Legacy sub' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Add sub-project')).not.toBeInTheDocument();
   });
+
+  it('bulk delete uses the grouped onDeleteActions (one Undo, not a stack) when wired (#1175)', () => {
+    const onDeleteActions = vi.fn();
+    const onDeleteAction = vi.fn();
+    setup({ actions: [actionRow('a', 'Get quotes'), actionRow('b', 'Buy paint')], onDeleteAction, onDeleteActions });
+    fireEvent.click(screen.getByRole('button', { name: 'Select actions' }));
+    fireEvent.click(screen.getByLabelText('Select Get quotes'));
+    fireEvent.click(screen.getByLabelText('Select Buy paint'));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete selected actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' })); // popover confirm
+    expect(onDeleteActions).toHaveBeenCalledWith(['a', 'b']); // one grouped call
+    expect(onDeleteAction).not.toHaveBeenCalled(); // not the per-id path
+  });
+
+  it('delete-done uses the grouped onDeleteActions too (#1175)', () => {
+    const onDeleteActions = vi.fn();
+    setup({
+      actions: [actionRow('a', 'Get quotes'), { ...actionRow('d', 'Old task'), status: 'DONE' }],
+      onDeleteAction: vi.fn(),
+      onDeleteActions,
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete done actions' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    expect(onDeleteActions).toHaveBeenCalledWith(['d']);
+  });
 });

@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Bulk delete on a project workbench leaves one Undo, not a pile.** Deleting several selected actions
+  (or "Delete done actions") now shows a single grouped Undo toast that restores them all, instead of
+  stacking one toast per item. Closes #1175.
+
 ## [3.7.0] - 2026-08-22
 
 **Checklists reach the assistant.** The `#checklist` feature now has full parity over the MCP
