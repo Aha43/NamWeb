@@ -8,6 +8,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dark mode: destructive "delete" red is now readable.** The shared destructive color was too dark to
+  read as text on the dark background — delete controls (e.g. the Focus dialog's inbox-item delete) were
+  low-contrast. Brightened the dark-mode token, which fixes every `text-destructive` control at once and
+  keeps solid delete buttons legible. Closes #1177.
+
 ## [3.7.0] - 2026-08-22
 
 **Checklists reach the assistant.** The `#checklist` feature now has full parity over the MCP
