@@ -8,6 +8,30 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-08-22
+
+**Checklists reach the assistant.** The `#checklist` feature now has full parity over the MCP
+connector, so an AI working in your workspace can drive checklists the way the web does: list them
+(each with a **checked/total** progress count, so the listing answers *which need attention*, not just
+*which exist*), mark or unmark a project as a checklist, and reset one for its next run — checking and
+unchecking items ride the existing done/backlog tools. Same "interpretation, not a new model" design as
+the web side, and the "a checklist holds only check-items" invariant is enforced over the connector
+too. Web behavior is unchanged from 3.6.1; this release is the connector half of checklists (live once
+the MCP server is redeployed).
+
+### Added
+
+- **Checklist tools over MCP.** `list_checklists` (with a `checked`/`total` progress count per
+  checklist), `mark_checklist` / `unmark_checklist` (tag or un-tag a project as a checklist, the
+  invariant enforced), and `reset_checklist` (all done check-items back to Backlog for the next run).
+  Check/uncheck use the existing `mark_done` / `mark_backlog`. Closes #1163, #1164, #1165, #1167, #1168.
+
+### Fixed
+
+- **`reset_checklist` is safe under concurrent edits.** A reset replayed after another writer un-marked
+  the project no longer reopens what are now normal actions — it validates the target is still a
+  checklist and no-ops otherwise. Closes #1171.
+
 ## [3.6.1] - 2026-08-21
 
 **Closing the last doors on the checklist invariant.** A post-release code review found that a few
@@ -2463,7 +2487,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.6.1...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.7.0...HEAD
+[3.7.0]: https://github.com/Aha43/NamWeb/compare/v3.6.1...v3.7.0
 [3.6.1]: https://github.com/Aha43/NamWeb/compare/v3.6.0...v3.6.1
 [3.6.0]: https://github.com/Aha43/NamWeb/compare/v3.5.1...v3.6.0
 [3.5.1]: https://github.com/Aha43/NamWeb/compare/v3.5.0...v3.5.1
