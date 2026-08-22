@@ -137,7 +137,11 @@
     --muted-foreground: 215 20.2% 65.1%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    /* Brighter than the shadcn default dark red (0 62.8% 30.6%, #7d1c1c), which was too dark to read as
+       TEXT on the near-black dark background — the `text-destructive` delete controls (e.g. the Focus
+       dialog's inbox delete) were low-contrast (#1177). This reads as text AND stays legible with white
+       foreground on the `destructive` solid button. */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
