@@ -1006,4 +1006,21 @@ describe('resetChecklist (#1165)', () => {
     const doc = workspace([]);
     expect(applyIntent(doc, { type: 'resetChecklist', id: 'ghost', now: NOW })).toEqual(doc);
   });
+
+  // #1171 (Codex P2): the intent is REPLAYED on conflict. If the project was un-marked meanwhile, a
+  // replay must NOT demote its now-normal DONE actions — validateIntent rejects, the backstop no-ops.
+  it('validateIntent rejects reset on a non-checklist, so a replay-after-unmark is a no-op', () => {
+    const doc = workspace([
+      node('p', { project: true, childIds: ['a'] }), // NOT tagged #checklist
+      node('a', { status: 'DONE' }),
+    ]);
+    expect(validateIntent(doc, { type: 'resetChecklist', id: 'p', now: NOW })).toMatch(/checklist/i);
+    const after = applyIntent(doc, { type: 'resetChecklist', id: 'p', now: NOW });
+    expect(after.nodes.a.status).toBe('DONE'); // backstop no-op — a normal project's action is untouched
+  });
+
+  it('validateIntent allows reset on a real #checklist project', () => {
+    const doc = workspace([node('cl', { project: true, tags: ['#checklist'], childIds: [] })]);
+    expect(validateIntent(doc, { type: 'resetChecklist', id: 'cl', now: NOW })).toBeNull();
+  });
 });
