@@ -34,9 +34,9 @@ import { PostgresAuthStore } from './auth/postgresStore';
 import { loadEncryptionKey } from './auth/crypto';
 import { ensureSchema, getPool } from './db/pool';
 
-import { pull } from '../src/sync/workspaceClient';
+import { pull, push } from '../src/sync/workspaceClient';
 import { commitIntent, type CommitOutcome, type WorkspaceSnapshot } from '../src/store/commit';
-import { normalizeTags, validateIntent, type Intent } from '../src/domain/mutations';
+import { applyIntent, normalizeTags, validateIntent, type Intent } from '../src/domain/mutations';
 import { newId, nowIso } from '../src/lib/local';
 import { parseFlexibleDate, parseFlexibleTime } from '../src/lib/dates';
 import type { NamNode, NodeStatus, Resource, WorkspaceDocument } from '../src/domain/types';
@@ -371,6 +371,40 @@ export function buildServer(
       // Echo from the POST-commit document (result.snapshot.document) — the actual synced/replayed
       // state, not the pre-write snapshot — so the caller sees exactly what landed (#1194).
       return json(writeSummary(result.outcome, result.message, intent, result.snapshot.document));
+    } catch (err) {
+      return errorResult(err instanceof Error ? err.message : String(err));
+    }
+  };
+
+  // Run several writes as ONE atomic commit (#1198): apply every intent to the pulled snapshot, then
+  // push the whole document once (guarded on the held version). All-or-nothing — if a build/invariant
+  // throws, or the version moved under us, nothing is written and the caller is told to re-read and
+  // retry (no partial import, no interleaving). Echoes the affected nodes like a single write.
+  const commitBatch = async (build: (doc: WorkspaceDocument) => Intent[]): Promise<TextResult> => {
+    try {
+      const snapshot = await loadSnapshot(client, workspace);
+      const intents = build(snapshot.document);
+      if (intents.length === 0) return errorResult('Nothing to write — the items list was empty.');
+      let doc = snapshot.document;
+      for (const intent of intents) {
+        const invalid = validateIntent(doc, intent);
+        if (invalid) throw new Error(invalid);
+        doc = applyIntent(doc, intent); // fold onto the running doc so later intents see earlier ones
+      }
+      const res = await push(client, workspace, doc, snapshot.version);
+      if (res.kind === 'error') return errorResult(res.message);
+      if (res.kind !== 'ok') {
+        return errorResult(
+          'The workspace changed while writing — nothing was written (the batch is atomic). Re-read and retry.',
+        );
+      }
+      const nodes = intents
+        .map((i) => echoTarget(i))
+        .filter((id): id is string => id != null)
+        .map((id) => doc.nodes[id])
+        .filter((n): n is NamNode => Boolean(n))
+        .map((n) => fullNodeView(doc, n));
+      return json({ ok: true, outcome: 'synced' as const, count: nodes.length, nodes });
     } catch (err) {
       return errorResult(err instanceof Error ? err.message : String(err));
     }
@@ -722,9 +756,10 @@ export function buildServer(
         status: z.enum(NODE_STATUSES).optional().describe('Defaults to BACKLOG'),
         due: z.string().optional().describe('Due date at creation, YYYY-MM-DD'),
         due_time: z.string().optional().describe('Clock time on the due date, 24-hour HH:mm (requires due)'),
+        description: z.string().optional().describe('Description/notes at creation (#1198) — saves a follow-up update_node'),
       },
     },
-    ({ project_id, title, status, due, due_time }) =>
+    ({ project_id, title, status, due, due_time, description }) =>
       commit((doc) => {
         requireNode(doc, project_id);
         assertActionParent(doc, project_id); // #1054
@@ -739,9 +774,75 @@ export function buildServer(
           status: status ?? 'BACKLOG',
           ...(dueAt ? { dueAt } : {}),
           ...(dueTime ? { dueTime } : {}),
+          ...(description?.trim() ? { description } : {}),
           now: nowIso(),
         };
       }),
+  );
+
+  registerWrite(
+    'add_actions',
+    {
+      description:
+        'Add SEVERAL actions to a project in ONE atomic call (#1198) — for imports / brain-dumps, instead ' +
+        'of many add_action round-trips. All-or-nothing: if any item is invalid nothing is written. Each ' +
+        'item may carry a description, so you don\'t need a follow-up update_node per action.',
+      inputSchema: {
+        project_id: z.string().describe('UUID of the project to add the actions to'),
+        items: z
+          .array(
+            z.object({
+              title: z.string().describe('Action title'),
+              status: z.enum(NODE_STATUSES).optional().describe('Defaults to BACKLOG'),
+              due: z.string().optional().describe('Due date, YYYY-MM-DD'),
+              due_time: z.string().optional().describe('Clock time HH:mm (requires due)'),
+              description: z.string().optional().describe('Description/notes'),
+            }),
+          )
+          .describe('The actions to add, in order'),
+      },
+    },
+    ({ project_id, items }) =>
+      commitBatch((doc) => {
+        requireNode(doc, project_id);
+        assertActionParent(doc, project_id); // #1054
+        return items.map((it) => {
+          const dueAt = parseDueDate('due', it.due);
+          const dueTime = parseDueTime('due_time', it.due_time);
+          if (dueTime && !dueAt) throw new Error(`due_time requires due (item "${it.title}").`);
+          return {
+            type: 'addAction',
+            parentId: project_id,
+            id: newId(),
+            title: it.title,
+            status: it.status ?? 'BACKLOG',
+            ...(dueAt ? { dueAt } : {}),
+            ...(dueTime ? { dueTime } : {}),
+            ...(it.description?.trim() ? { description: it.description } : {}),
+            now: nowIso(),
+          };
+        });
+      }),
+  );
+
+  registerWrite(
+    'set_status',
+    {
+      description:
+        'Set the status of SEVERAL nodes in ONE atomic call (#1198) — e.g. park five projects as SOMEDAY, ' +
+        'or mark a batch DONE, in a single triage step. All-or-nothing.',
+      inputSchema: {
+        node_ids: z.array(z.string()).describe('UUIDs of the nodes to update'),
+        status: z.enum(NODE_STATUSES).describe('The status to set on all of them'),
+      },
+    },
+    ({ node_ids, status }) =>
+      commitBatch((doc) =>
+        node_ids.map((id) => {
+          requireNode(doc, id);
+          return { type: 'setStatus', id, status, now: nowIso() };
+        }),
+      ),
   );
 
   registerWrite(

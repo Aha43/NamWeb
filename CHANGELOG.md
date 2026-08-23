@@ -29,6 +29,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **MCP: bulk writes — `add_actions`, `set_status`, and `description` on `add_action`.** An AI can now
+  add many actions to a project in one atomic call (each with optional status / due / description) and set
+  the status of several nodes at once (e.g. park five projects as SOMEDAY) — instead of dozens of
+  single-item calls that hit the tool-call cap mid-import. Both are all-or-nothing (one bad item writes
+  nothing) and echo the affected nodes. `add_action` also gains a `description` param, so an import no
+  longer needs a follow-up `update_node` per item. Web unchanged (MCP-only). Closes #1198.
 - **MCP: `mark_not_stalled` / `unmark_not_stalled` — toggle the "intentionally next-less" flag.** An AI
   can now mark a project as deliberately having no next action (so the loose-ends / stalled review stops
   flagging it) and reverse it — the semantic way to manage the `#not-stalled` system tag, instead of
