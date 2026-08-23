@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **Bulk delete on a project workbench leaves one Undo, not a pile.** Deleting several selected actions
+  (or "Delete done actions") now shows a single grouped Undo toast that restores them all, instead of
+  stacking one toast per item. Closes #1175.
+
 ### Fixed
 
 - **Dark mode: destructive "delete" red is now readable.** The shared destructive color was too dark to
