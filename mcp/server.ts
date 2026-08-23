@@ -350,9 +350,12 @@ function fullNodeView(doc: WorkspaceDocument, n: NamNode) {
 }
 
 /** The node a write affects, so the echo (#1194) can project it. Keyed off the intent so it's one
- *  mechanism for every write, not per-tool. (Deletes don't go through the shared `commit`/echo path —
- *  `delete_node` is a raw handler that returns its own removed-nodes manifest, #1092.) */
+ *  mechanism for every write, not per-tool. The blocked-by intents key the affected node as `actionId`
+ *  rather than `id`, so name it explicitly — otherwise add_blocked_by / remove_blocked_by would be the
+ *  only writes that don't echo. (Deletes don't go through the shared `commit`/echo path — `delete_node`
+ *  is a raw handler that returns its own removed-nodes manifest, #1092.) */
 function echoTarget(intent: Intent): string | null {
+  if (intent.type === 'addPrerequisite' || intent.type === 'removePrerequisite') return intent.actionId;
   return 'id' in intent && typeof intent.id === 'string' ? intent.id : null;
 }
 
@@ -865,6 +868,7 @@ export function buildServer(
     ({ node_ids, status }) =>
       commitBatch((doc) =>
         node_ids.map((id) => {
+          assertNotContainer(doc, id); // same guard as the single mark_* tools — never status a container
           requireNode(doc, id);
           return { type: 'setStatus', id, status, now: nowIso() };
         }),
