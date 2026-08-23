@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ShareContent } from '@/domain/shareContent';
 
@@ -238,8 +238,13 @@ describe('GuestSharePage (#761)', () => {
       { node_id: 'aa11', res_index: 0, delta: 1 },
       { node_id: 'aa11', res_index: 0, delta: 1 },
     ]);
-    fireEvent(window, new Event('focus'));
-    expect(await screen.findByText(/cartons 2\/4/)).toBeInTheDocument();
+    // Flush the focus-triggered re-pull inside act (#821/F4 flake): the refresh fetch resolves on a
+    // microtask and setTicks re-renders — awaiting act settles that deterministically, instead of
+    // racing findByText's polling timer, which stalled past its timeout on a saturated CI worker.
+    await act(async () => {
+      fireEvent(window, new Event('focus'));
+    });
+    expect(screen.getByText(/cartons 2\/4/)).toBeInTheDocument();
   });
 
   it('delegated questions (#827): overlay answer, tap to answer, quiet refusal', async () => {
