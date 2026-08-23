@@ -440,7 +440,9 @@ export function buildServer(
     'list_subtree',
     {
       description:
-        'List a node and all its descendants (depth-first), each carrying its depth. Optionally cap the depth (0 = the node only, 1 = node + direct children, …).',
+        'List a node and all its descendants (depth-first), each carrying its depth. Optionally cap the ' +
+        'depth (0 = the node only, 1 = node + direct children, …). Set include_descriptions to read a whole ' +
+        'project for review in ONE call (each node carries its full description) instead of N get_node calls.',
       inputSchema: {
         node_id: z.string().describe('UUID of the root node'),
         depth: z
@@ -449,10 +451,17 @@ export function buildServer(
           .nonnegative()
           .optional()
           .describe('Max depth to descend; omit for the whole subtree'),
+        include_descriptions: z
+          .boolean()
+          .optional()
+          .describe(
+            'Inline each node\'s full description (plus blocked-by + resources), like get_node, instead ' +
+              'of just a hasDescription flag. Opt-in — a large subtree gets big. Default false.',
+          ),
       },
       annotations: { readOnlyHint: true },
     },
-    async ({ node_id, depth }) => {
+    async ({ node_id, depth, include_descriptions }) => {
       try {
         const doc = await loadDoc(client, workspace);
         if (!getNode(doc, node_id)) return errorResult(`No node with id ${node_id}.`);
@@ -462,7 +471,8 @@ export function buildServer(
           const n = doc.nodes[id];
           if (!n || seen.has(id)) return;
           seen.add(id);
-          out.push({ ...nodeView(doc, n), depth: d });
+          const view = include_descriptions ? fullNodeView(doc, n) : nodeView(doc, n);
+          out.push({ ...view, depth: d });
           if (depth != null && d >= depth) return;
           for (const childId of n.childIds) walk(childId, d + 1);
         };
