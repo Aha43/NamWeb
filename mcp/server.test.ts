@@ -484,6 +484,22 @@ describe('MCP read surface enrichment', () => {
     expect(r.nodes.every((n: { status: string }) => n.status === 'SOMEDAY')).toBe(true);
   });
 
+  it('set_status refuses a structural container, like the single mark_* tools (#1198)', async () => {
+    const { client, server } = await connectedClient();
+    const res = (await client.callTool({
+      name: 'set_status',
+      arguments: { node_ids: ['a1', 'inbox'], status: 'DONE' },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true); // atomic — nothing written when one target is a container
+    await server.close();
+  });
+
+  it('add_blocked_by echoes the affected node too (blocked-by intents key it as actionId) (#1194)', async () => {
+    const r = await call('add_blocked_by', { node_id: 'a1', blocked_by_id: 'a2' });
+    expect(r.id).toBe('a1');
+    expect(r.node.blockedBy).toEqual([{ id: 'a2', title: 'old thing' }]);
+  });
+
   it('delete_node self-confirms with its removed-nodes manifest, not a node echo (#1092/#1194)', async () => {
     const r = await call('delete_node', { node_id: 'a1' });
     expect(r.deletedCount).toBe(1);
