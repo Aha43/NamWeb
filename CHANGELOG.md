@@ -8,6 +8,16 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-08-23
+
+**The connector grows up — specced, built, and acceptance-tested across the loop.** The MCP user (an AI
+working the workspace) proposed this whole sprint from ten days of its own use; the result is a
+write-trustworthy, review-capable surface. Every write now **echoes its result** so a write is
+self-confirming; **bulk imports land atomically** (`add_actions` / `set_status`); `update_tags` and the
+resource tools can no longer clobber a concurrent change; a whole project reads in one
+`render_project_md` call; search gets exact/type/tag filters; and a `/health` probe tells a stale
+connector from a dead server. Web unchanged — this is entirely the MCP surface.
+
 ### Changed
 
 - **MCP: resources are addressable by a stable `id`, not just array index.** New resources (via
@@ -2574,7 +2584,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.8.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.9.0...HEAD
+[3.9.0]: https://github.com/Aha43/NamWeb/compare/v3.8.0...v3.9.0
 [3.8.0]: https://github.com/Aha43/NamWeb/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/Aha43/NamWeb/compare/v3.6.1...v3.7.0
 [3.6.1]: https://github.com/Aha43/NamWeb/compare/v3.6.0...v3.6.1
