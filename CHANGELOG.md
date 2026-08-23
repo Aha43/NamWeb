@@ -10,6 +10,11 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **MCP: `update_tags` is now context-tags-only and preserves system tags.** It sets the ordinary
+  (non-system) tags on a node and leaves system/sharing tags (`#checklist`, `#shared-*`, `#not-stalled`,
+  `#in-progress`) untouched — those are managed via their own ops (`mark_checklist`, `mark_not_stalled`,
+  …). Passing a system tag is refused. So an AI resending a tag list can never accidentally drop a
+  shared/checklist flag or set `#shared-open` by mistake. Web unchanged (MCP-only). Closes #1192.
 - **MCP: every write returns the resulting node (write-echo).** Write tools no longer answer a bare
   `{ok, synced}` — they now echo the affected node in the same shape `get_node` returns (or, for
   `delete_node`, its existing removed-nodes manifest). So an AI's write is self-confirming: it sees the
