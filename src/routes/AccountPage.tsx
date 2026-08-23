@@ -20,7 +20,7 @@ import { supabase } from '@/lib/supabase';
 import { buildUserExport, downloadJson } from '@/lib/exportData';
 import { validateNewPassword } from '@/lib/password';
 import { formatDate, type DateFormat } from '@/lib/dates';
-import { useSettings, type ContentWidth, type Density, type NewActionDefault } from '@/components/settings/settings-context';
+import { useSettings, type ContentWidth, type NewActionDefault } from '@/components/settings/settings-context';
 import { useTranslation } from 'react-i18next';
 import { LOCALES, type Locale } from '@/lib/i18n';
 
@@ -419,8 +419,6 @@ function PreferencesTab() {
     setDefaultNewActionStatus,
     contentWidth,
     setContentWidth,
-    density,
-    setDensity,
   } = useSettings();
   const { t, i18n } = useTranslation();
   return (
@@ -474,21 +472,6 @@ function PreferencesTab() {
           ]}
         />
         <p className="text-xs text-muted-foreground">{t('settings.contentWidthHelp')}</p>
-      </div>
-
-      <div className="space-y-1.5">
-        <Label>{t('settings.density')}</Label>
-        <Segmented<Density>
-          label={t('settings.density')}
-          value={density}
-          onChange={setDensity}
-          options={[
-            { value: 'comfortable', label: t('settings.densityComfortable') },
-            { value: 'cozy', label: t('settings.densityCozy') },
-            { value: 'compact', label: t('settings.densityCompact') },
-          ]}
-        />
-        <p className="text-xs text-muted-foreground">{t('settings.densityHelp')}</p>
       </div>
 
       <div className="space-y-1.5">

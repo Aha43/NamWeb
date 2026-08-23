@@ -16,6 +16,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **One row-density control instead of two overlapping ones.** The Preferences "Density" preset
+  (comfortable / cozy / compact) is gone — it only tightened the page's outer band on desktop and, via a
+  hidden coupling, doubled as a second row-height control that fought the in-list **Compact rows** toggle
+  (which then disabled itself with a confusing "set by density" note). Row height is now the single
+  always-live Compact rows toggle in each list header; the page band is a fixed comfortable value. Closes
+  #1185.
 - **Bulk delete on a project workbench leaves one Undo, not a pile.** Deleting several selected actions
   (or "Delete done actions") now shows a single grouped Undo toast that restores them all, instead of
   stacking one toast per item. Closes #1175.
