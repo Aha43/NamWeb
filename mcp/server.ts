@@ -866,17 +866,34 @@ export function buildServer(
     'update_tags',
     {
       description:
-        'Replace the full tag list on a node (tags are normalized: trimmed, lowercased, de-duplicated).',
+        'Set the CONTEXT tags on a node — the new complete list of ordinary (non-system) tags (normalized: ' +
+        'trimmed, lowercased, de-duplicated). System tags (#checklist, #shared-*, #not-stalled, #in-progress) ' +
+        'are NOT settable here — they are preserved untouched and managed via their own ops (e.g. ' +
+        'mark_checklist, mark_not_stalled). Passing a system tag is refused (#1192), so an agent can never ' +
+        'clobber a shared/checklist flag by resending a tag list.',
       inputSchema: {
         node_id: z.string().describe('UUID of the node'),
-        tags: z.array(z.string()).describe('The complete new tag list'),
+        tags: z.array(z.string()).describe('The complete new list of CONTEXT (non-system) tags'),
       },
     },
     ({ node_id, tags }) =>
       commit((doc) => {
         assertNotContainer(doc, node_id);
-        requireNode(doc, node_id);
-        return { type: 'updateTags', id: node_id, tags: normalizeTags(tags), now: nowIso() };
+        const node = requireNode(doc, node_id);
+        // Refuse system/sharing tags in the input — those have semantic ops (#1192): an accidental
+        // #shared-open from an agent is worse than a refusal, and this keeps update_tags a context-only tool.
+        const incoming = classifyTags(tags);
+        const reserved = [...incoming.system, ...incoming.sharing];
+        if (reserved.length) {
+          throw new Error(
+            `update_tags sets context tags only — ${reserved.join(', ')} ${reserved.length > 1 ? 'are' : 'is a'} ` +
+              `system tag. Use the semantic ops (e.g. mark_checklist, mark_not_stalled) for those.`,
+          );
+        }
+        // Preserve the node's existing system + sharing tags; replace only the context portion. So a
+        // resent list can't drop a #checklist/#shared-* the caller didn't (and can't) include.
+        const kept = node.tags.filter((t) => isSystemTag(t) || canonicalTag(t).startsWith('#shared-'));
+        return { type: 'updateTags', id: node_id, tags: normalizeTags([...kept, ...incoming.context]), now: nowIso() };
       }),
   );
 

@@ -358,6 +358,26 @@ describe('MCP read surface enrichment', () => {
     expect(r.node.description).toBe('the note'); // full get_node form, not a stub
   });
 
+  it('update_tags sets context tags but PRESERVES existing system/sharing tags (#1192)', async () => {
+    // p1 carries context 'work' + system '#in-progress' + sharing '#shared-open'.
+    const r = await call('update_tags', { node_id: 'p1', tags: ['roadmap'] });
+    expect(r.node.tags).toContain('roadmap'); // new context tag applied
+    expect(r.node.tags).not.toContain('work'); // old context tag replaced
+    expect(r.node.tags).toContain('#in-progress'); // system tag untouched
+    expect(r.node.tags).toContain('#shared-open'); // sharing tag untouched
+  });
+
+  it('update_tags refuses a system tag in the input (#1192)', async () => {
+    const { client, server } = await connectedClient();
+    const r = (await client.callTool({
+      name: 'update_tags',
+      arguments: { node_id: 'a1', tags: ['#checklist'] },
+    })) as { isError?: boolean; content: { type: string; text?: string }[] };
+    expect(r.isError).toBe(true);
+    expect(firstText(r as never)).toMatch(/system tag|semantic ops/i);
+    await server.close();
+  });
+
   it('a status write echoes the new status (#1194): mark_done', async () => {
     const r = await call('mark_done', { node_id: 'a1' });
     expect(r.node).toMatchObject({ id: 'a1', status: 'DONE' });
