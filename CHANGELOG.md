@@ -8,6 +8,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-08-23
+
+**A readability-and-tidy pass before the next big push.** The inbox clarify dialog now leads with the
+item you're working on, the project workbench gained a Someday include-box and one grouped Undo for bulk
+deletes, dark-mode delete text is legible, and two overlapping row-density controls collapsed into one.
+
 ### Added
 
 - **Filter Someday items on a project workbench.** A project whose workbench holds Someday actions now
@@ -2516,7 +2522,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.7.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.8.0...HEAD
+[3.8.0]: https://github.com/Aha43/NamWeb/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/Aha43/NamWeb/compare/v3.6.1...v3.7.0
 [3.6.1]: https://github.com/Aha43/NamWeb/compare/v3.6.0...v3.6.1
 [3.6.0]: https://github.com/Aha43/NamWeb/compare/v3.5.1...v3.6.0
