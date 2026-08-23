@@ -61,7 +61,7 @@ import {
   subtreeIds,
 } from '../src/domain/lenses';
 import { GONE_QUIET_DAYS, goneQuiet, stalledProjects } from '../src/domain/review';
-import { CHECKLIST_TAG, canonicalTag, isChecklist, isSystemTag } from '../src/domain/systemTags';
+import { CHECKLIST_TAG, NOT_STALLED_TAG, canonicalTag, isChecklist, isSystemTag } from '../src/domain/systemTags';
 import { projectSummaryMarkdown } from '../src/domain/projectSummary';
 import pkg from '../package.json';
 
@@ -780,6 +780,43 @@ export function buildServer(
           type: 'updateTags',
           id: project_id,
           tags: node.tags.filter((t) => canonicalTag(t) !== CHECKLIST_TAG),
+          now: nowIso(),
+        };
+      }),
+  );
+
+  registerWrite(
+    'mark_not_stalled',
+    {
+      description:
+        'Mark a project as intentionally next-less (#1193): adds the #not-stalled tag so the "loose ' +
+        'ends" / stalled-projects review stops flagging it (e.g. a reference or someday project that ' +
+        'deliberately has no next action). Projects only. No-op if already marked.',
+      inputSchema: { project_id: z.string().describe('UUID of the project') },
+    },
+    ({ project_id }) =>
+      commit((doc) => {
+        const node = requireNode(doc, project_id);
+        if (!node.project) throw new Error(`Node ${project_id} is not a project; #not-stalled applies to projects.`);
+        return { type: 'updateTags', id: project_id, tags: [...node.tags, NOT_STALLED_TAG], now: nowIso() };
+      }),
+  );
+
+  registerWrite(
+    'unmark_not_stalled',
+    {
+      description:
+        'Remove the #not-stalled tag from a project (#1193) — the reverse of mark_not_stalled, so the ' +
+        'project is flagged again if its subtree has no NEXT action. Always safe; no-op if not tagged.',
+      inputSchema: { project_id: z.string().describe('UUID of the project') },
+    },
+    ({ project_id }) =>
+      commit((doc) => {
+        const node = requireNode(doc, project_id);
+        return {
+          type: 'updateTags',
+          id: project_id,
+          tags: node.tags.filter((t) => canonicalTag(t) !== NOT_STALLED_TAG),
           now: nowIso(),
         };
       }),
