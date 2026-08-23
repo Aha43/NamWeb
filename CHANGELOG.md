@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **MCP: `render_project_md` — read a whole project as one Markdown document.** The connector can now
+  render a project (its actions and sub-projects, with tags and full descriptions, nested) in a single
+  call — for an AI doing a review or feeding a project into a chat, instead of walking it node-by-node.
+  Reuses the same pure renderer the web uses for project summaries, so the two surfaces can't drift.
+  Web unchanged (MCP-only). Closes #1196.
+
 ## [3.8.0] - 2026-08-23
 
 **A readability-and-tidy pass before the next big push.** The inbox clarify dialog now leads with the

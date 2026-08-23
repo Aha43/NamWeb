@@ -92,6 +92,7 @@ const EXPECTED_READ_TOOLS = [
   'find_node',
   'get_node',
   'list_resources',
+  'render_project_md',
 ];
 
 const EXPECTED_WRITE_TOOLS = [
@@ -170,6 +171,17 @@ describe('NamWeb MCP server (read surface)', () => {
     const text = firstText(result as never);
     expect(text).toMatch(/read-only/i); // names the condition
     expect(text).toMatch(/nam\.write/); // and the missing scope — an agent can interpret it
+    await server.close();
+  });
+
+  it('render_project_md returns the project as one Markdown document; refuses an action (#1196)', async () => {
+    const { client, server } = await connectedClient();
+    const ok = await client.callTool({ name: 'render_project_md', arguments: { project_id: 'p1' } });
+    expect((ok as { isError?: boolean }).isError).toBeFalsy();
+    expect(firstText(ok as never)).toContain('# Launch'); // the project title as an H1
+    const bad = await client.callTool({ name: 'render_project_md', arguments: { project_id: 'i1' } });
+    expect((bad as { isError?: boolean }).isError).toBe(true);
+    expect(firstText(bad as never)).toMatch(/not a project/i); // an action is refused clearly
     await server.close();
   });
 
