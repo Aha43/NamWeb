@@ -62,6 +62,7 @@ import {
 } from '../src/domain/lenses';
 import { GONE_QUIET_DAYS, goneQuiet, stalledProjects } from '../src/domain/review';
 import { CHECKLIST_TAG, canonicalTag, isChecklist, isSystemTag } from '../src/domain/systemTags';
+import { projectSummaryMarkdown } from '../src/domain/projectSummary';
 import pkg from '../package.json';
 
 // A build signal surfaced in get_workspace_context (#1099/#1097): `<version>+<sha>` when deployed
@@ -114,6 +115,12 @@ type TextResult = { content: { type: 'text'; text: string }[] };
 
 function json(data: unknown): TextResult {
   return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+}
+
+/** A plain-text tool result — for tools that return already-formatted prose (e.g. rendered Markdown)
+ *  rather than a JSON structure. */
+function text(body: string): TextResult {
+  return { content: [{ type: 'text', text: body }] };
 }
 
 function errorResult(message: string): TextResult & { isError: true } {
@@ -491,6 +498,33 @@ export function buildServer(
         }
         if (n.resources.length) view.resources = n.resources.map(resourceBrief);
         return json(view);
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    },
+  );
+
+  // Whole-project read as one Markdown document (#1196): the same renderer the web uses to feed
+  // project summaries into a code chat, exposed to the connector so a review reads a project in ONE
+  // call instead of N get_node calls (descriptions inline). Reuses the pure `projectSummaryMarkdown`
+  // (src/domain) — same output the UI produces, so the two surfaces can't drift.
+  server.registerTool(
+    'render_project_md',
+    {
+      description:
+        'Render a project and its actions/sub-projects as one Markdown document (titles, tags, and ' +
+        'full descriptions, nested). One call to read a whole project for a review or to feed into a ' +
+        'chat — instead of walking it node-by-node. Include-status defaults to all of NEXT/BACKLOG/DONE.',
+      inputSchema: { project_id: z.string().describe('UUID of the project to render') },
+      annotations: { readOnlyHint: true },
+    },
+    async ({ project_id }) => {
+      try {
+        const doc = await loadDoc(client, workspace);
+        const node = getNode(doc, project_id);
+        if (!node) return errorResult(`No node with id ${project_id}.`);
+        if (!node.project) return errorResult(`Node ${project_id} is an action, not a project — render_project_md needs a project.`);
+        return text(projectSummaryMarkdown(doc, project_id));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }
