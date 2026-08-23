@@ -4,8 +4,6 @@ import type { Locale } from '@/lib/i18n';
 
 /** How wide the central content area may grow (#958). `full` = today's edge-to-edge fill. */
 export type ContentWidth = 'comfortable' | 'wide' | 'full';
-/** Page-level vertical rhythm (#958). `comfortable` = today's spacing; tighter = more list per screen. */
-export type Density = 'comfortable' | 'cozy' | 'compact';
 /** The status a newly-added project action gets (#1132). Default `NEXT` — capturing usually means intent. */
 export type NewActionDefault = 'NEXT' | 'BACKLOG';
 
@@ -41,10 +39,6 @@ export interface SettingsContextValue {
    *  Default `comfortable`. */
   contentWidth: ContentWidth;
   setContentWidth: (width: ContentWidth) => void;
-  /** Vertical density (device-level, #958): tighten the page-level spacing so you see more list.
-   *  Default `comfortable` (today's rhythm). */
-  density: Density;
-  setDensity: (density: Density) => void;
 }
 
 export const SettingsContext = createContext<SettingsContextValue | undefined>(undefined);
@@ -75,8 +69,6 @@ export function useSettings(): SettingsContextValue {
       setCompactRows: () => {},
       contentWidth: 'comfortable',
       setContentWidth: () => {},
-      density: 'comfortable',
-      setDensity: () => {},
     }
   );
 }
@@ -93,6 +85,7 @@ export const DENSE_STORAGE_KEY = 'namweb.settings.dense';
 export const LABS_STORAGE_KEY = 'namweb.settings.labs';
 export const COMPACT_ROWS_STORAGE_KEY = 'namweb.settings.compact-rows';
 export const CONTENT_WIDTH_STORAGE_KEY = 'namweb.settings.content-width';
-export const DENSITY_STORAGE_KEY = 'namweb.settings.density';
+// 'namweb.settings.density' existed for the page-band preset (#958 → removed by #1185); the
+// single row-density control is now the CompactRowsToggle. Stale localStorage entries are harmless.
 // 'namweb.settings.capture-recent-limit' existed briefly (#617 → removed by #622, never in a
 // release); stale localStorage entries are harmless orphans.
