@@ -73,6 +73,15 @@ const SERVER_VERSION = process.env.NAM_MCP_BUILD
   ? `${pkg.version}+${process.env.NAM_MCP_BUILD}`
   : pkg.version;
 
+/**
+ * The unauthenticated liveness/build probe body (#1200). A connector that suddenly advertises zero
+ * tools can't tell "server is down" from "my OAuth session went stale" — a plain GET here answers the
+ * first (and reports the running build), so a dark connector is diagnosable instead of ambiguous.
+ */
+export function healthResponse(): { ok: true; name: string; version: string } {
+  return { ok: true, name: 'namweb-mcp', version: SERVER_VERSION };
+}
+
 // ---- Config --------------------------------------------------------------
 
 // Config is read lazily (inside main()/loadDoc) so importing this module for tests
@@ -1328,6 +1337,10 @@ async function main() {
   // X-Forwarded-For chain lets a client spoof req.ip and bypass the sign-in rate-limit. Set
   // NAM_MCP_TRUST_PROXY to the real hop count for your host.
   app.set('trust proxy', Number(process.env.NAM_MCP_TRUST_PROXY ?? 1));
+
+  // Liveness/build probe (#1200) — before any auth, so a client can check the server is up and read
+  // its build without a session. Distinguishes "server gone" from "stale connector / read-only".
+  app.get('/health', (_req, res) => res.json(healthResponse()));
 
   const noAuth = process.env.NAM_MCP_DEV_NOAUTH === '1';
   if (noAuth) {
