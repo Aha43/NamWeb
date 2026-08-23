@@ -203,14 +203,31 @@ function parseDueTime(label: string, value: string | undefined): string | null {
   return time;
 }
 
-/** The compact result a write tool returns: the commit outcome + any new node id. */
-function writeSummary(outcome: CommitOutcome, message: string | undefined, intent: Intent) {
-  const summary: { ok: boolean; outcome: CommitOutcome; id?: string; message?: string } = {
-    ok: true,
-    outcome,
-  };
-  if (intent.type === 'addInboxItem' || intent.type === 'addAction' || intent.type === 'addSubProject') {
-    summary.id = intent.id;
+/**
+ * What a write tool returns: the commit outcome PLUS the resulting node (#1194) — echoed in the same
+ * shape `get_node` returns, from the post-commit document. So a write is self-confirming: the caller
+ * sees the new tags / status / description it just set (or the id that's now `deleted`) without a
+ * follow-up read, and a structural bug — a move that landed wrong, a tag array that got clobbered —
+ * is visible immediately in the echo instead of a silent `{ok}` (the #1141 lesson from the surface).
+ */
+function writeSummary(
+  outcome: CommitOutcome,
+  message: string | undefined,
+  intent: Intent,
+  doc: WorkspaceDocument,
+) {
+  const summary: {
+    ok: boolean;
+    outcome: CommitOutcome;
+    id?: string;
+    node?: ReturnType<typeof fullNodeView>;
+    message?: string;
+  } = { ok: true, outcome };
+  const id = echoTarget(intent);
+  if (id) {
+    summary.id = id; // the affected (or newly created) node id
+    const n = doc.nodes[id];
+    if (n) summary.node = fullNodeView(doc, n); // the result, so the write confirms itself
   }
   if (message) summary.message = message;
   return summary;
@@ -266,6 +283,28 @@ function resourceBrief(r: Resource, index: number) {
   return { index, type: r.type, value: r.value, description: r.description };
 }
 
+/** The deep, review-capable projection of a node (#1106): everything `nodeView` shows PLUS the full
+ *  description text, blocked-by dependencies as {id,title}, and resources inline. Shared by `get_node`
+ *  and the write-echo (#1194) so a single write confirms exactly what a follow-up `get_node` would. */
+function fullNodeView(doc: WorkspaceDocument, n: NamNode) {
+  const view: Record<string, unknown> = { ...nodeView(doc, n) };
+  delete view.hasDescription; // replaced by the full text
+  delete view.resourceCount; // replaced by the resources array
+  if (n.description?.trim()) view.description = n.description;
+  if (n.blockedBy.length) {
+    view.blockedBy = n.blockedBy.map((id) => ({ id, title: doc.nodes[id]?.title ?? '(unknown)' }));
+  }
+  if (n.resources.length) view.resources = n.resources.map(resourceBrief);
+  return view;
+}
+
+/** The node a write affects, so the echo (#1194) can project it. Keyed off the intent so it's one
+ *  mechanism for every write, not per-tool. (Deletes don't go through the shared `commit`/echo path —
+ *  `delete_node` is a raw handler that returns its own removed-nodes manifest, #1092.) */
+function echoTarget(intent: Intent): string | null {
+  return 'id' in intent && typeof intent.id === 'string' ? intent.id : null;
+}
+
 /**
  * Build a fresh McpServer with the read tools registered, each closing over the
  * shared authenticated `client`. A new instance is created per HTTP request (the
@@ -304,7 +343,9 @@ export function buildServer(
       if (invalid) throw new Error(invalid);
       const result = await commitIntent(client, workspace, snapshot, intent);
       if (result.outcome === 'error') return errorResult(result.message ?? 'Write failed.');
-      return json(writeSummary(result.outcome, result.message, intent));
+      // Echo from the POST-commit document (result.snapshot.document) — the actual synced/replayed
+      // state, not the pre-write snapshot — so the caller sees exactly what landed (#1194).
+      return json(writeSummary(result.outcome, result.message, intent, result.snapshot.document));
     } catch (err) {
       return errorResult(err instanceof Error ? err.message : String(err));
     }
@@ -489,15 +530,7 @@ export function buildServer(
         const doc = await loadDoc(client, workspace);
         const n = getNode(doc, node_id);
         if (!n) return errorResult(`No node with id ${node_id}.`);
-        const view: Record<string, unknown> = { ...nodeView(doc, n) };
-        delete view.hasDescription; // replaced by the full text
-        delete view.resourceCount; // replaced by the resources array
-        if (n.description?.trim()) view.description = n.description;
-        if (n.blockedBy.length) {
-          view.blockedBy = n.blockedBy.map((id) => ({ id, title: doc.nodes[id]?.title ?? '(unknown)' }));
-        }
-        if (n.resources.length) view.resources = n.resources.map(resourceBrief);
-        return json(view);
+        return json(fullNodeView(doc, n));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

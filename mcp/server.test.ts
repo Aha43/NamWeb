@@ -9,7 +9,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { NamNode, WorkspaceDocument } from '../src/domain/types';
 
 const pull = vi.fn();
-vi.mock('../src/sync/workspaceClient', () => ({ pull }));
+const push = vi.fn();
+vi.mock('../src/sync/workspaceClient', () => ({ pull, push }));
 
 // Imported after the mock is registered.
 const { buildServer, assertNoAuthAllowed } = await import('./server');
@@ -289,6 +290,8 @@ describe('MCP read surface enrichment', () => {
   beforeEach(() => {
     pull.mockReset();
     pull.mockResolvedValue({ kind: 'ok', document: richDoc(), version: 1 });
+    push.mockReset();
+    push.mockResolvedValue({ kind: 'ok', version: 2 }); // writes succeed so we can inspect the echo (#1194)
   });
   afterEach(() => vi.restoreAllMocks());
 
@@ -341,6 +344,34 @@ describe('MCP read surface enrichment', () => {
     };
     expect(result.isError).toBe(true);
     await server.close();
+  });
+
+  // Write-echo (#1194): every write returns the resulting node in get_node form (or `deleted`), so a
+  // write is self-confirming — no verification-read, and a clobber/mis-move is visible immediately.
+  it('update_tags echoes the resulting node with its new tags (#1194)', async () => {
+    const r = await call('update_tags', { node_id: 'a1', tags: ['errand', 'urgent'] });
+    expect(r.outcome).toBe('synced');
+    expect(r.id).toBe('a1');
+    expect(r.node).toMatchObject({ id: 'a1', title: 'Ship it', tags: ['errand', 'urgent'] });
+    expect(r.node.description).toBe('the note'); // full get_node form, not a stub
+  });
+
+  it('a status write echoes the new status (#1194): mark_done', async () => {
+    const r = await call('mark_done', { node_id: 'a1' });
+    expect(r.node).toMatchObject({ id: 'a1', status: 'DONE' });
+  });
+
+  it('a create echoes the new node with its id (#1194): add_action', async () => {
+    const r = await call('add_action', { project_id: 'p1', title: 'New one' });
+    expect(typeof r.id).toBe('string');
+    expect(r.node).toMatchObject({ id: r.id, title: 'New one', type: 'action', status: 'BACKLOG' });
+  });
+
+  it('delete_node self-confirms with its removed-nodes manifest, not a node echo (#1092/#1194)', async () => {
+    const r = await call('delete_node', { node_id: 'a1' });
+    expect(r.deletedCount).toBe(1);
+    expect(r.deleted).toEqual([{ id: 'a1', title: 'Ship it' }]);
+    expect(r.node).toBeUndefined(); // delete is a raw handler, not the shared commit/echo path
   });
 
   it('classifies tags into system / sharing / context lanes (#1070)', async () => {

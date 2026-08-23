@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **MCP: every write returns the resulting node (write-echo).** Write tools no longer answer a bare
+  `{ok, synced}` — they now echo the affected node in the same shape `get_node` returns (or, for
+  `delete_node`, its existing removed-nodes manifest). So an AI's write is self-confirming: it sees the
+  new tags / status / description it just set without a follow-up read, and a clobber or mis-move is
+  visible immediately instead of surfacing later. Web unchanged (MCP-only). Closes #1194.
+
 ### Added
 
 - **MCP: `render_project_md` — read a whole project as one Markdown document.** The connector can now
