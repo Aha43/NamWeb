@@ -107,6 +107,8 @@ const EXPECTED_WRITE_TOOLS = [
   'mark_someday',
   'mark_checklist',
   'unmark_checklist',
+  'mark_not_stalled',
+  'unmark_not_stalled',
   'reset_checklist',
   'update_node',
   'update_tags',
@@ -359,6 +361,23 @@ describe('MCP read surface enrichment', () => {
   it('a status write echoes the new status (#1194): mark_done', async () => {
     const r = await call('mark_done', { node_id: 'a1' });
     expect(r.node).toMatchObject({ id: 'a1', status: 'DONE' });
+  });
+
+  it('mark_not_stalled / unmark_not_stalled toggle the #not-stalled system tag on a project (#1193)', async () => {
+    const marked = await call('mark_not_stalled', { project_id: 'p2' });
+    expect(marked.node.tags).toContain('#not-stalled');
+    expect(marked.node.tagKinds.system).toContain('#not-stalled');
+    const unmarked = await call('unmark_not_stalled', { project_id: 'p2' });
+    expect(unmarked.node.tags ?? []).not.toContain('#not-stalled');
+  });
+
+  it('mark_not_stalled refuses an action (projects only) (#1193)', async () => {
+    const { client, server } = await connectedClient();
+    const r = (await client.callTool({ name: 'mark_not_stalled', arguments: { project_id: 'a1' } })) as {
+      isError?: boolean;
+    };
+    expect(r.isError).toBe(true);
+    await server.close();
   });
 
   it('a create echoes the new node with its id (#1194): add_action', async () => {
