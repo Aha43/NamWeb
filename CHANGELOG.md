@@ -27,6 +27,10 @@ minor = features (breaking changes allowed), patch = fixes.
   can now mark a project as deliberately having no next action (so the loose-ends / stalled review stops
   flagging it) and reverse it — the semantic way to manage the `#not-stalled` system tag, instead of
   the general tag tool. Web unchanged (MCP-only). Closes #1193.
+- **MCP: `list_subtree(include_descriptions)` — read a subtree's descriptions in one call.** An opt-in
+  flag makes each node in a `list_subtree` carry its full description (plus blocked-by + resources), like
+  `get_node` — so a review that walks a project reads its descriptions in a single call instead of one
+  `get_node` per node. Web unchanged (MCP-only). Closes #1197.
 - **MCP: `render_project_md` — read a whole project as one Markdown document.** The connector can now
   render a project (its actions and sub-projects, with tags and full descriptions, nested) in a single
   call — for an AI doing a review or feeding a project into a chat, instead of walking it node-by-node.

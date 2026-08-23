@@ -424,6 +424,19 @@ describe('MCP read surface enrichment', () => {
     });
   });
 
+  it('list_subtree include_descriptions inlines full descriptions like get_node (#1197)', async () => {
+    const plain = await call('list_subtree', { node_id: 'p1' });
+    const a1plain = plain.find((n: { id: string }) => n.id === 'a1');
+    expect(a1plain.hasDescription).toBe(true); // presence flag by default
+    expect(a1plain.description).toBeUndefined();
+
+    const rich = await call('list_subtree', { node_id: 'p1', include_descriptions: true });
+    const a1rich = rich.find((n: { id: string }) => n.id === 'a1');
+    expect(a1rich.description).toBe('the note'); // full text inline
+    expect(a1rich.resources).toEqual([{ index: 0, type: 'URI', value: 'https://x', description: null }]);
+    expect(a1rich.depth).toBe(1); // still carries depth
+  });
+
   it('list_subtree returns the node + descendants with depth, and honors a depth cap (#1074)', async () => {
     const full = await call('list_subtree', { node_id: 'p1' });
     expect(full.map((n: { id: string; depth: number }) => [n.id, n.depth])).toEqual([
