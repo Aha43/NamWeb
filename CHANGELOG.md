@@ -22,6 +22,10 @@ minor = features (breaking changes allowed), patch = fixes.
   (which then disabled itself with a confusing "set by density" note). Row height is now the single
   always-live Compact rows toggle in each list header; the page band is a fixed comfortable value. Closes
   #1185.
+- **The inbox clarify dialog leads with the item, not the chrome.** When you process an inbox item (or
+  walk the deck), the thing you're clarifying is now the large, full-contrast line at the top — the
+  static "Process inbox / Process item" step name drops to a quiet eyebrow above it. Previously the item
+  sat in dim grey under a louder generic header, so the eye had to hunt for it. Closes #1186.
 - **Bulk delete on a project workbench leaves one Undo, not a pile.** Deleting several selected actions
   (or "Delete done actions") now shows a single grouped Undo toast that restores them all, instead of
   stacking one toast per item. Closes #1175.
