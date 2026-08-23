@@ -387,7 +387,10 @@ export function buildServer(
   // Run a write: pull a fresh snapshot, build the intent from it, then commit it
   // (version guard + conflict-replay). Build-time errors (missing node, structural
   // guard) and push failures surface as tool errors, not throws.
-  const commit = async (build: (doc: WorkspaceDocument) => Intent): Promise<TextResult> => {
+  const commit = async (
+    build: (doc: WorkspaceDocument) => Intent,
+    opts?: { replayOnConflict?: boolean },
+  ): Promise<TextResult> => {
     try {
       const snapshot = await loadSnapshot(client, workspace);
       const intent = build(snapshot.document);
@@ -395,8 +398,18 @@ export function buildServer(
       // #1147). Throw → the catch below turns it into a clear tool error, never a silent no-op write.
       const invalid = validateIntent(snapshot.document, intent);
       if (invalid) throw new Error(invalid);
-      const result = await commitIntent(client, workspace, snapshot, intent);
+      const result = await commitIntent(client, workspace, snapshot, intent, opts);
       if (result.outcome === 'error') return errorResult(result.message ?? 'Write failed.');
+      // Tools that opt out of conflict-replay: an intent that carries a whole precomputed array (resources,
+      // tags) must NOT be replayed onto a freshly-pulled doc — that reapplies a stale array and silently
+      // drops a concurrent change (the #1141 replace-on-replay class). On a conflict it comes back
+      // `reloaded` (not applied), so tell the caller to re-read and retry instead of echoing a phantom write.
+      if (opts?.replayOnConflict === false && result.outcome !== 'synced') {
+        return errorResult(
+          'The workspace changed since you read it — nothing was written (replaying this whole-array write ' +
+            'would overwrite a concurrent change). Re-read and retry.',
+        );
+      }
       // Echo from the POST-commit document (result.snapshot.document) — the actual synced/replayed
       // state, not the pre-write snapshot — so the caller sees exactly what landed (#1194).
       return json(writeSummary(result.outcome, result.message, intent, result.snapshot.document));
@@ -1111,7 +1124,10 @@ export function buildServer(
         // resent list can't drop a #checklist/#shared-* the caller didn't (and can't) include.
         const kept = node.tags.filter((t) => isSystemTag(t) || canonicalTag(t).startsWith('#shared-'));
         return { type: 'updateTags', id: node_id, tags: normalizeTags([...kept, ...incoming.context]), now: nowIso() };
-      }),
+      },
+      // Whole-array replacement — must not replay onto a concurrently-changed doc (would drop a
+      // protected tag another writer just added, #1192 P2). Retry-on-conflict instead.
+      { replayOnConflict: false }),
   );
 
   registerWrite(
@@ -1245,7 +1261,10 @@ export function buildServer(
           { id: newId(), type, value, description: description ?? null },
         ];
         return { type: 'updateResources', id: node_id, resources, now: nowIso() };
-      }),
+      },
+      // Whole-array replacement — retry-on-conflict, never replay (would drop a concurrent resource
+      // change, #1195 P2). Stable ids fix picking the wrong item; this fixes the replay clobber.
+      { replayOnConflict: false }),
   );
 
   registerWrite(
@@ -1266,7 +1285,8 @@ export function buildServer(
         const at = resolveResourceIndex(node, resource_id, index);
         const resources = node.resources.filter((_, i) => i !== at);
         return { type: 'updateResources', id: node_id, resources, now: nowIso() };
-      }),
+      },
+      { replayOnConflict: false }), // whole-array replacement — retry-on-conflict, never replay (#1195 P2)
   );
 
   registerWrite(
@@ -1298,7 +1318,8 @@ export function buildServer(
         };
         const resources = node.resources.map((r, i) => (i === at ? updated : r));
         return { type: 'updateResources', id: node_id, resources, now: nowIso() };
-      }),
+      },
+      { replayOnConflict: false }), // whole-array replacement — retry-on-conflict, never replay (#1195 P2)
   );
 
   return server;
