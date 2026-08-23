@@ -214,8 +214,14 @@ export function InboxProcessDialog({
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{deck ? t('inbox.processDeckTitle') : t('inbox.processItemTitle')}</DialogTitle>
-          <DialogDescription className="truncate">
+          {/* #1186 — the item you're clarifying is the hero. The static step name stays the dialog's
+              accessible title but now reads as a quiet eyebrow; the item title (which used to sit here
+              in the muted description, so the eye had to hunt for it) is promoted to the loud line.
+              Item + deck position stay on one line to keep the "Title · N of N" cue. */}
+          <DialogTitle className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            {deck ? t('inbox.processDeckTitle') : t('inbox.processItemTitle')}
+          </DialogTitle>
+          <DialogDescription className="text-xl font-semibold leading-snug text-foreground break-words">
             {node.title}
             {deck && remaining && position
               ? ` · ${t('inbox.deckPosition', { position, total: remaining })}`
