@@ -12,6 +12,11 @@ export type NodeStatus = 'NEXT' | 'BACKLOG' | 'DONE' | 'CANCELLED' | 'ARCHIVED' 
 export type ResourceType = 'TEXT' | 'EMAIL' | 'URI' | 'FILE' | 'COUNT' | 'QUESTION';
 
 export interface Resource {
+  /** Stable id (#1195). Additive/optional: resources created before this — and any from an older
+   *  client — have none, so callers address them by array index instead. New resources (add_resource)
+   *  carry one, so an agent can edit/remove by a handle that survives another writer reordering the
+   *  array. Absent = legacy, address by index. */
+  id?: string;
   type: ResourceType;
   value: string;
   description: string | null;

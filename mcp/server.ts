@@ -290,7 +290,24 @@ function nodeView(doc: WorkspaceDocument, n: NamNode) {
 }
 
 function resourceBrief(r: Resource, index: number) {
-  return { index, type: r.type, value: r.value, description: r.description };
+  // Both handles: `id` is stable across reorders/removals (prefer it, #1195); `index` stays for legacy
+  // resources that predate ids. Omit id when absent so a consumer can tell which addressing to use.
+  return { ...(r.id ? { id: r.id } : {}), index, type: r.type, value: r.value, description: r.description };
+}
+
+/** Resolve which resource a remove/edit targets: by stable `id` (preferred, #1195) or array `index`
+ *  (legacy). Throws a clear message on a bad handle — never a silent wrong-resource. */
+function resolveResourceIndex(node: NamNode, resourceId: string | undefined, index: number | undefined): number {
+  if (resourceId != null) {
+    const i = node.resources.findIndex((r) => r.id === resourceId);
+    if (i < 0) throw new Error(`No resource with id ${resourceId} on this node (see list_resources).`);
+    return i;
+  }
+  if (index != null) {
+    if (index < 0 || index >= node.resources.length) throw new Error(`No resource at index ${index}.`);
+    return index;
+  }
+  throw new Error('Provide resource_id (preferred — stable) or index.');
 }
 
 /** Whether a node carries `tag` (own or inherited), by canonical form. */
@@ -1218,9 +1235,10 @@ export function buildServer(
     ({ node_id, type, value, description }) =>
       commit((doc) => {
         const node = requireNode(doc, node_id);
+        // New resources carry a stable id (#1195) so they can be edited/removed by handle later.
         const resources: Resource[] = [
           ...node.resources,
-          { type, value, description: description ?? null },
+          { id: newId(), type, value, description: description ?? null },
         ];
         return { type: 'updateResources', id: node_id, resources, now: nowIso() };
       }),
@@ -1230,17 +1248,19 @@ export function buildServer(
     'remove_resource',
     {
       description:
-        'Remove the resource at the given index from a node (see list_resources for indexes).',
+        'Remove a resource from a node. Address it by resource_id (preferred — stable across reorders, ' +
+        '#1195) or by index (legacy resources without an id). list_resources shows both.',
       inputSchema: {
         node_id: z.string().describe('UUID of the node'),
-        index: z.number().int().nonnegative().describe('Index of the resource to remove'),
+        resource_id: z.string().optional().describe('Stable id of the resource (preferred)'),
+        index: z.number().int().nonnegative().optional().describe('Array index (for legacy resources without an id)'),
       },
     },
-    ({ node_id, index }) =>
+    ({ node_id, resource_id, index }) =>
       commit((doc) => {
         const node = requireNode(doc, node_id);
-        if (index >= node.resources.length) throw new Error(`No resource at index ${index}.`);
-        const resources = node.resources.filter((_, i) => i !== index);
+        const at = resolveResourceIndex(node, resource_id, index);
+        const resources = node.resources.filter((_, i) => i !== at);
         return { type: 'updateResources', id: node_id, resources, now: nowIso() };
       }),
   );
@@ -1248,26 +1268,31 @@ export function buildServer(
   registerWrite(
     'edit_resource',
     {
-      description: 'Edit the resource at the given index. Omitted fields are left unchanged.',
+      description:
+        'Edit a resource (omitted fields unchanged). Address it by resource_id (preferred — stable, ' +
+        '#1195) or by index (legacy). list_resources shows both.',
       inputSchema: {
         node_id: z.string().describe('UUID of the node'),
-        index: z.number().int().nonnegative().describe('Index of the resource to edit'),
+        resource_id: z.string().optional().describe('Stable id of the resource (preferred)'),
+        index: z.number().int().nonnegative().optional().describe('Array index (for legacy resources without an id)'),
         type: z.enum(RESOURCE_TYPES).optional().describe('New type'),
         value: z.string().optional().describe('New value'),
         description: z.string().nullable().optional().describe('New label, or null to clear'),
       },
     },
-    ({ node_id, index, type, value, description }) =>
+    ({ node_id, resource_id, index, type, value, description }) =>
       commit((doc) => {
         const node = requireNode(doc, node_id);
-        const current = node.resources[index];
-        if (!current) throw new Error(`No resource at index ${index}.`);
+        const at = resolveResourceIndex(node, resource_id, index);
+        const current = node.resources[at];
+        // Spread current so id + guestEditable/completesAction survive an edit (they were dropped before).
         const updated: Resource = {
+          ...current,
           type: type ?? current.type,
           value: value ?? current.value,
           description: description !== undefined ? description : current.description,
         };
-        const resources = node.resources.map((r, i) => (i === index ? updated : r));
+        const resources = node.resources.map((r, i) => (i === at ? updated : r));
         return { type: 'updateResources', id: node_id, resources, now: nowIso() };
       }),
   );

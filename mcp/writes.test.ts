@@ -427,8 +427,8 @@ describe('NamWeb MCP write tools', () => {
     const intent = committedIntent();
     expect(intent.type).toBe('updateResources');
     expect((intent as Extract<Intent, { type: 'updateResources' }>).resources).toEqual([
-      { type: 'URI', value: 'http://x', description: 'link' },
-      { type: 'EMAIL', value: 'a@b.c', description: null },
+      { type: 'URI', value: 'http://x', description: 'link' }, // existing legacy resource, no id
+      { id: expect.any(String), type: 'EMAIL', value: 'a@b.c', description: null }, // new one gets a stable id (#1195)
     ]);
   });
 

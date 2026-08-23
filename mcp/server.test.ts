@@ -278,7 +278,18 @@ function richDoc(): WorkspaceDocument {
     }),
   );
   add(node('p2', { title: 'Stale', project: true, childIds: ['a2'] })); // no NEXT in subtree → stalled
-  add(node('a2', { title: 'old thing', status: 'BACKLOG', updatedAt: '2020-01-01T00:00:00' })); // gone quiet
+  add(
+    node('a2', {
+      title: 'old thing',
+      status: 'BACKLOG',
+      updatedAt: '2020-01-01T00:00:00', // gone quiet
+      // One legacy resource (no id, index 0) + one with a stable id — for the #1195 addressing tests.
+      resources: [
+        { type: 'URI', value: 'https://legacy', description: null },
+        { id: 'r-a2', type: 'URI', value: 'https://a2', description: null },
+      ],
+    }),
+  );
   return {
     formatVersion: 1,
     rootNodeId: 'root',
@@ -387,6 +398,32 @@ describe('MCP read surface enrichment', () => {
   it('a status write echoes the new status (#1194): mark_done', async () => {
     const r = await call('mark_done', { node_id: 'a1' });
     expect(r.node).toMatchObject({ id: 'a1', status: 'DONE' });
+  });
+
+  it('add_resource assigns a stable id (#1195)', async () => {
+    const r = await call('add_resource', { node_id: 'a1', type: 'URI', value: 'https://new', description: null });
+    const added = r.node.resources.find((x: { value: string }) => x.value === 'https://new');
+    expect(typeof added.id).toBe('string');
+  });
+
+  it('edit_resource addresses by stable id and preserves it (#1195)', async () => {
+    const r = await call('edit_resource', { node_id: 'a2', resource_id: 'r-a2', value: 'https://a2-edited' });
+    const edited = r.node.resources.find((x: { id?: string }) => x.id === 'r-a2');
+    expect(edited.value).toBe('https://a2-edited'); // changed, and still carries id r-a2
+  });
+
+  it('remove_resource by id removes exactly that one; legacy still by index (#1195)', async () => {
+    const byId = await call('remove_resource', { node_id: 'a2', resource_id: 'r-a2' });
+    expect((byId.node.resources ?? []).some((x: { id?: string }) => x.id === 'r-a2')).toBe(false);
+    const byIndex = await call('remove_resource', { node_id: 'a2', index: 0 }); // the legacy id-less one
+    expect((byIndex.node.resources ?? []).length).toBe(1); // r-a2 remains
+  });
+
+  it('remove_resource with neither id nor index errors (#1195)', async () => {
+    const { client, server } = await connectedClient();
+    const res = (await client.callTool({ name: 'remove_resource', arguments: { node_id: 'a2' } })) as { isError?: boolean };
+    expect(res.isError).toBe(true);
+    await server.close();
   });
 
   it('mark_not_stalled / unmark_not_stalled toggle the #not-stalled system tag on a project (#1193)', async () => {
