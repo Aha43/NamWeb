@@ -100,6 +100,8 @@ const EXPECTED_WRITE_TOOLS = [
   'add_inbox_item',
   'create_project',
   'add_action',
+  'add_actions',
+  'set_status',
   'add_next_action',
   'mark_next',
   'mark_done',
@@ -404,6 +406,41 @@ describe('MCP read surface enrichment', () => {
     const r = await call('add_action', { project_id: 'p1', title: 'New one' });
     expect(typeof r.id).toBe('string');
     expect(r.node).toMatchObject({ id: r.id, title: 'New one', type: 'action', status: 'BACKLOG' });
+  });
+
+  it('add_action accepts a description at creation (#1198)', async () => {
+    const r = await call('add_action', { project_id: 'p1', title: 'With notes', description: 'a birth note' });
+    expect(r.node.description).toBe('a birth note');
+  });
+
+  it('add_actions adds many in one atomic call, echoing each node (#1198)', async () => {
+    const r = await call('add_actions', {
+      project_id: 'p1',
+      items: [
+        { title: 'First', status: 'NEXT' },
+        { title: 'Second', description: 'with a note' },
+      ],
+    });
+    expect(r.count).toBe(2);
+    expect(r.nodes.map((n: { title: string }) => n.title)).toEqual(['First', 'Second']);
+    expect(r.nodes[0]).toMatchObject({ title: 'First', status: 'NEXT' });
+    expect(r.nodes[1].description).toBe('with a note');
+  });
+
+  it('add_actions is atomic — one invalid item writes nothing (#1198)', async () => {
+    const { client, server } = await connectedClient();
+    const res = (await client.callTool({
+      name: 'add_actions',
+      arguments: { project_id: 'nope', items: [{ title: 'x' }] },
+    })) as { isError?: boolean };
+    expect(res.isError).toBe(true); // unknown project → nothing written
+    await server.close();
+  });
+
+  it('set_status updates several nodes in one call (#1198)', async () => {
+    const r = await call('set_status', { node_ids: ['a1', 'a2'], status: 'SOMEDAY' });
+    expect(r.count).toBe(2);
+    expect(r.nodes.every((n: { status: string }) => n.status === 'SOMEDAY')).toBe(true);
   });
 
   it('delete_node self-confirms with its removed-nodes manifest, not a node echo (#1092/#1194)', async () => {
