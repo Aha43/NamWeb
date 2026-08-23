@@ -14,6 +14,13 @@ minor = features (breaking changes allowed), patch = fixes.
   (or "Delete done actions") now shows a single grouped Undo toast that restores them all, instead of
   stacking one toast per item. Closes #1175.
 
+### Fixed
+
+- **Dark mode: destructive "delete" red is now readable.** The shared destructive color was too dark to
+  read as text on the dark background — delete controls (e.g. the Focus dialog's inbox-item delete) were
+  low-contrast. Brightened the dark-mode token, which fixes every `text-destructive` control at once and
+  keeps solid delete buttons legible. Closes #1177.
+
 ## [3.7.0] - 2026-08-22
 
 **Checklists reach the assistant.** The `#checklist` feature now has full parity over the MCP
