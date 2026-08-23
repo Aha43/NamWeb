@@ -29,6 +29,10 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Added
 
+- **MCP: unauthenticated `GET /health` liveness + build probe.** A connector that suddenly shows zero
+  tools couldn't tell "server is down" from "my session went stale"; hitting `/health` now answers the
+  first and reports the running build (`{ ok, name, version }`), with no session required. Web unchanged
+  (MCP-only). Closes #1200.
 - **MCP: bulk writes — `add_actions`, `set_status`, and `description` on `add_action`.** An AI can now
   add many actions to a project in one atomic call (each with optional status / due / description) and set
   the status of several nodes at once (e.g. park five projects as SOMEDAY) — instead of dozens of

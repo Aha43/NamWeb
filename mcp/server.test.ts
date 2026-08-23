@@ -13,7 +13,7 @@ const push = vi.fn();
 vi.mock('../src/sync/workspaceClient', () => ({ pull, push }));
 
 // Imported after the mock is registered.
-const { buildServer, assertNoAuthAllowed } = await import('./server');
+const { buildServer, assertNoAuthAllowed, healthResponse } = await import('./server');
 
 // --- Minimal valid workspace (mirrors src/domain/lenses.test.ts skeleton) ---
 
@@ -188,6 +188,10 @@ describe('NamWeb MCP server (read surface)', () => {
     expect((bad as { isError?: boolean }).isError).toBe(true);
     expect(firstText(bad as never)).toMatch(/not a project/i); // an action is refused clearly
     await server.close();
+  });
+
+  it('healthResponse is an unauthenticated liveness/build probe (#1200)', () => {
+    expect(healthResponse()).toEqual({ ok: true, name: 'namweb-mcp', version: expect.any(String) });
   });
 
   it('get_workspace_context reports capabilities (canWrite, serverVersion) + counts, tags, titles (#1099)', async () => {
