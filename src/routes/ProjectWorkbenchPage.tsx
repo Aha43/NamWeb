@@ -28,7 +28,7 @@ import { useDueSort } from '@/features/projects/useDueSort';
 import { useIsDesktop } from '@/shell/useIsDesktop';
 import { useSettings } from '@/components/settings/settings-context';
 import { useActionEditor } from '@/features/actions/action-editor-context';
-import { useDeleteNode } from '@/features/actions/useDeleteNode';
+import { useDeleteNode, useDeleteNodes } from '@/features/actions/useDeleteNode';
 import { useSetStatus, useSetStatuses } from '@/features/actions/useSetStatus';
 import { useDeleteProject } from '@/features/projects/delete/delete-project-context';
 import { useWorkspaceContext } from '@/store/workspace-context';
@@ -41,6 +41,7 @@ export function ProjectWorkbenchPage() {
   const { t } = useTranslation();
   const { openEditor } = useActionEditor();
   const deleteNode = useDeleteNode();
+  const deleteNodes = useDeleteNodes();
   const setStatus = useSetStatus();
   const setStatuses = useSetStatuses();
   const { requestDeleteProject } = useDeleteProject();
@@ -295,6 +296,7 @@ export function ProjectWorkbenchPage() {
         if (doneIds.length) setStatuses(doneIds, 'BACKLOG');
       }}
       onDeleteAction={deleteNode}
+      onDeleteActions={deleteNodes}
       onGroupSelected={(actionIds, title) =>
         dispatch({ type: 'groupIntoSubProject', parentId: id, subProjectId: newId(), title, actionIds, now: nowIso() })
       }

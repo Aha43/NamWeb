@@ -14,6 +14,19 @@ minor = features (breaking changes allowed), patch = fixes.
   shows a **Someday** include-box next to Next / Backlog / Done — so you can hide or isolate them
   (they're shown by default). Appears only when the project has someday actions. Closes #1176.
 
+### Changed
+
+- **Bulk delete on a project workbench leaves one Undo, not a pile.** Deleting several selected actions
+  (or "Delete done actions") now shows a single grouped Undo toast that restores them all, instead of
+  stacking one toast per item. Closes #1175.
+
+### Fixed
+
+- **Dark mode: destructive "delete" red is now readable.** The shared destructive color was too dark to
+  read as text on the dark background — delete controls (e.g. the Focus dialog's inbox-item delete) were
+  low-contrast. Brightened the dark-mode token, which fixes every `text-destructive` control at once and
+  keeps solid delete buttons legible. Closes #1177.
+
 ## [3.7.0] - 2026-08-22
 
 **Checklists reach the assistant.** The `#checklist` feature now has full parity over the MCP
