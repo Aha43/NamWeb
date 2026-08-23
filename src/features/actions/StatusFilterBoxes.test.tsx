@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { StatusFilterBoxes, ChecklistDoneToggle } from './StatusFilterBoxes';
+import { StatusFilterBoxes, ChecklistDoneToggle, SomedayFilterToggle } from './StatusFilterBoxes';
 
 describe('StatusFilterBoxes', () => {
   it('renders the three include-boxes reflecting the boxes state', () => {
@@ -33,5 +33,18 @@ describe('ChecklistDoneToggle (#1155)', () => {
     render(<ChecklistDoneToggle showDone onToggle={onToggle} />);
     fireEvent.click(screen.getByRole('checkbox', { name: 'Show done' }));
     expect(onToggle).toHaveBeenCalled();
+  });
+});
+
+describe('SomedayFilterToggle (#1176)', () => {
+  it('renders a "Someday" include-box reflecting show, and toggles', () => {
+    const onToggle = vi.fn();
+    const { rerender } = render(<SomedayFilterToggle show onToggle={onToggle} />);
+    const box = screen.getByRole('checkbox', { name: 'Someday' });
+    expect(box).toBeChecked();
+    fireEvent.click(box);
+    expect(onToggle).toHaveBeenCalled();
+    rerender(<SomedayFilterToggle show={false} onToggle={onToggle} />);
+    expect(screen.getByRole('checkbox', { name: 'Someday' })).not.toBeChecked();
   });
 });

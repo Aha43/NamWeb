@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router';
 import { actionMoveTargets, actionMoveTargetsAll, allTags, buildParentIndex, buildPath, effectiveTags, projectActions, projectMoveTargets, projectQuickMoveTargets, reorderKindWithinChildren, subProjects } from '@/domain/lenses';
 import { effectiveDue } from '@/domain/derivedDue';
@@ -11,7 +11,7 @@ import type { NamNode } from '@/domain/types';
 import type { ActionEdits } from '@/features/actions/ActionDialog';
 import type { DueFields } from '@/features/actions/DueFieldset';
 import { toActionRow, type ActionRowData } from '@/features/actions/rows';
-import { StatusFilterBoxes, ChecklistDoneToggle } from '@/features/actions/StatusFilterBoxes';
+import { StatusFilterBoxes, ChecklistDoneToggle, SomedayFilterToggle } from '@/features/actions/StatusFilterBoxes';
 import { useStatusBoxes } from '@/features/actions/statusBoxes';
 import { sortByDue } from '@/features/actions/sort';
 import { ProjectWorkbench } from '@/features/projects/ProjectWorkbench';
@@ -61,13 +61,22 @@ export function ProjectWorkbenchPage() {
   // SUBTRACT — all three checked is exactly today's list (other statuses pass through).
   // Declared before the early returns (rules of hooks — the delete/convert redirects fire them).
   const [boxes, toggleBox] = useStatusBoxes({ NEXT: true, BACKLOG: true, DONE: true });
+  // A SOMEDAY action sits on its own project's workbench but isn't in the three boxes (#1176). Default
+  // shown (no behavior change); the workbench offers a "Someday" include-box when the project has any.
+  const [showSomeday, setShowSomeday] = useState(true);
 
   if (!document) return null;
   const project = document.nodes[id];
   if (!project || !project.project) return <Navigate to={postDeleteNavRef.current ?? '/projects'} replace />;
 
-  const actionNodes = projectActions(document, id).filter((n) =>
-    n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE' ? boxes[n.status] : true,
+  const projActions = projectActions(document, id);
+  const somedayCount = projActions.filter((n) => n.status === 'SOMEDAY').length;
+  const actionNodes = projActions.filter((n) =>
+    n.status === 'NEXT' || n.status === 'BACKLOG' || n.status === 'DONE'
+      ? boxes[n.status]
+      : n.status === 'SOMEDAY'
+        ? showSomeday
+        : true,
   );
   const subProjectNodes = subProjects(document, id);
   // When the "by due" toggle is on, order action rows soonest-due first (undated last) instead of the
@@ -203,7 +212,12 @@ export function ProjectWorkbenchPage() {
           // A checklist is done / not-done — one toggle for the done ones (#1155).
           <ChecklistDoneToggle showDone={boxes.DONE} onToggle={() => toggleBox('DONE')} />
         ) : (
-          <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />
+          <div className="flex flex-wrap items-center gap-3 px-1">
+            <StatusFilterBoxes boxes={boxes} onToggle={toggleBox} />
+            {somedayCount > 0 && (
+              <SomedayFilterToggle show={showSomeday} onToggle={() => setShowSomeday((v) => !v)} />
+            )}
+          </div>
         )
       }
       project={project}
