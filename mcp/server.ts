@@ -46,6 +46,7 @@ import {
   archivedProjectIds,
   backlogItems,
   doneItems,
+  effectiveTags,
   getNode,
   inboxItems,
   nextActions,
@@ -283,6 +284,30 @@ function resourceBrief(r: Resource, index: number) {
   return { index, type: r.type, value: r.value, description: r.description };
 }
 
+/** Whether a node carries `tag` (own or inherited), by canonical form. */
+function hasTag(doc: WorkspaceDocument, id: string, tag: string): boolean {
+  const target = canonicalTag(tag);
+  return effectiveTags(doc, id).some((t) => canonicalTag(t) === target);
+}
+
+/**
+ * Narrow a flat action list by the optional MCP filters (#1199): within a project subtree, carrying a
+ * tag, and/or due before a date — so an agent asks for the slice it wants (fewer tokens, fewer
+ * misreads) instead of the whole list. `project_id` is validated by the caller (an unknown id is an
+ * error, not a silent empty — the #1200 empty≠error principle).
+ */
+function applyActionFilters(
+  doc: WorkspaceDocument,
+  nodes: NamNode[],
+  f: { subtreeIds?: Set<string>; tag?: string; due_before?: string },
+): NamNode[] {
+  let out = nodes;
+  if (f.subtreeIds) out = out.filter((n) => f.subtreeIds!.has(n.id));
+  if (f.tag) out = out.filter((n) => hasTag(doc, n.id, f.tag!));
+  if (f.due_before) out = out.filter((n) => n.dueAt != null && n.dueAt < f.due_before!);
+  return out;
+}
+
 /** The deep, review-capable projection of a node (#1106): everything `nodeView` shows PLUS the full
  *  description text, blocked-by dependencies as {id,title}, and resources inline. Shared by `get_node`
  *  and the write-echo (#1194) so a single write confirms exactly what a follow-up `get_node` would. */
@@ -372,11 +397,46 @@ export function buildServer(
   read('list_projects', 'List all top-level projects.', (doc) =>
     projects(doc).map((p) => nodeView(doc, p)),
   );
-  read('list_next_actions', 'List all actions with status NEXT across the whole workspace.', (doc) =>
-    nextActions(doc).map((n) => nodeView(doc, n)),
+  // Optional narrowing filters for the flat action lists (#1199): a big backlog is mostly noise to an
+  // agent hunting one project's items — filters cut tokens and misreads at the source.
+  const actionListFilters = {
+    project_id: z.string().optional().describe('Only actions within this project (its subtree)'),
+    tag: z.string().optional().describe('Only actions carrying this tag (own or inherited)'),
+    due_before: z.string().optional().describe('Only actions with a due date strictly before this (YYYY-MM-DD)'),
+  } as const;
+  const listActions = (
+    name: string,
+    description: string,
+    select: (doc: WorkspaceDocument) => NamNode[],
+  ) =>
+    server.registerTool(
+      name,
+      { description, inputSchema: actionListFilters, annotations: { readOnlyHint: true } },
+      async ({ project_id, tag, due_before }) => {
+        try {
+          const doc = await loadDoc(client, workspace);
+          let ids: Set<string> | undefined;
+          if (project_id) {
+            const p = requireNode(doc, project_id); // unknown id → error, not a silent empty (#1200)
+            if (!p.project) return errorResult(`Node ${project_id} is an action, not a project.`);
+            ids = subtreeIds(doc, project_id);
+          }
+          const rows = applyActionFilters(doc, select(doc), { subtreeIds: ids, tag, due_before });
+          return json(rows.map((n) => nodeView(doc, n)));
+        } catch (err) {
+          return errorResult(err instanceof Error ? err.message : String(err));
+        }
+      },
+    );
+  listActions(
+    'list_next_actions',
+    'List actions with status NEXT across the workspace. Optionally filter by project (subtree), tag, or due-before.',
+    (doc) => nextActions(doc),
   );
-  read('list_backlog', 'List all actions with status BACKLOG across the whole workspace.', (doc) =>
-    backlogItems(doc).map((n) => nodeView(doc, n)),
+  listActions(
+    'list_backlog',
+    'List actions with status BACKLOG across the workspace. Optionally filter by project (subtree), tag, or due-before.',
+    (doc) => backlogItems(doc),
   );
   read('list_done', 'List all actions with status DONE across the whole workspace.', (doc) =>
     doneItems(doc).map((n) => nodeView(doc, n)),
@@ -488,14 +548,30 @@ export function buildServer(
     'find_node',
     {
       description:
-        'Find nodes by title or tag (case-insensitive substring match) across actions and projects.',
-      inputSchema: { title: z.string().describe('Substring to search for') },
+        'Find nodes by title or tag (case-insensitive substring match) across actions and projects. ' +
+        'DONE and archived nodes are never returned. Narrow noisy matches with exact / type / status / ' +
+        'tag — e.g. exact:true for a whole-title match, type:"project", or tag to a specific context.',
+      inputSchema: {
+        title: z.string().describe('Text to match against title or tag (substring unless exact:true)'),
+        exact: z.boolean().optional().describe('Match the FULL title exactly (case-insensitive) instead of substring'),
+        type: z.enum(['project', 'action']).optional().describe('Only projects, or only actions'),
+        status: z.enum(NODE_STATUSES).optional().describe('Only nodes with this status (note: DONE / archived are never returned)'),
+        tag: z.string().optional().describe('Only nodes carrying this tag (own or inherited)'),
+      },
       annotations: { readOnlyHint: true },
     },
-    async ({ title }) => {
+    async ({ title, exact, type, status, tag }) => {
       try {
         const doc = await loadDoc(client, workspace);
-        return json(searchResults(doc, title).map(({ node }) => nodeView(doc, node)));
+        let nodes = searchResults(doc, title).map(({ node }) => node);
+        if (exact) {
+          const q = title.trim().toLowerCase();
+          nodes = nodes.filter((n) => n.title.toLowerCase() === q);
+        }
+        if (type) nodes = nodes.filter((n) => (n.project ? 'project' : 'action') === type);
+        if (status) nodes = nodes.filter((n) => n.status === status);
+        if (tag) nodes = nodes.filter((n) => hasTag(doc, n.id, tag));
+        return json(nodes.map((n) => nodeView(doc, n)));
       } catch (err) {
         return errorResult(err instanceof Error ? err.message : String(err));
       }

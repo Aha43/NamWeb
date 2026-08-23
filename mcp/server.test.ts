@@ -424,6 +424,32 @@ describe('MCP read surface enrichment', () => {
     });
   });
 
+  it('find_node: exact-match narrows a substring hit (#1199)', async () => {
+    expect((await call('find_node', { title: 'Ship' })).map((n: { id: string }) => n.id)).toContain('a1');
+    expect((await call('find_node', { title: 'Ship', exact: true })).some((n: { id: string }) => n.id === 'a1')).toBe(false);
+    expect((await call('find_node', { title: 'Ship it', exact: true })).map((n: { id: string }) => n.id)).toContain('a1');
+  });
+
+  it('find_node: type filter restricts to projects/actions (#1199)', async () => {
+    const projectsOnly = await call('find_node', { title: 'l', type: 'project' }); // matches Launch, Stale, old thing
+    expect(projectsOnly.length).toBeGreaterThan(0);
+    expect(projectsOnly.every((n: { type: string }) => n.type === 'project')).toBe(true);
+  });
+
+  it('list_backlog filters by project subtree; unknown project errors (#1199)', async () => {
+    expect((await call('list_backlog')).map((n: { id: string }) => n.id)).toEqual(['a2']); // only BACKLOG
+    expect((await call('list_backlog', { project_id: 'p2' })).map((n: { id: string }) => n.id)).toEqual(['a2']);
+    expect(await call('list_backlog', { project_id: 'p1' })).toEqual([]); // p1's only action is NEXT
+    const { client, server } = await connectedClient();
+    const bad = (await client.callTool({ name: 'list_backlog', arguments: { project_id: 'nope' } })) as { isError?: boolean };
+    expect(bad.isError).toBe(true); // not a silent empty (#1200 principle)
+    await server.close();
+  });
+
+  it('list_next_actions filters by project subtree (#1199)', async () => {
+    expect((await call('list_next_actions', { project_id: 'p1' })).map((n: { id: string }) => n.id)).toEqual(['a1']);
+  });
+
   it('list_subtree include_descriptions inlines full descriptions like get_node (#1197)', async () => {
     const plain = await call('list_subtree', { node_id: 'p1' });
     const a1plain = plain.find((n: { id: string }) => n.id === 'a1');
