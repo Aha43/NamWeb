@@ -10,6 +10,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **MCP: resources are addressable by a stable `id`, not just array index.** New resources (via
+  `add_resource`) now carry an `id`, and `remove_resource` / `edit_resource` accept `resource_id`
+  (preferred) — so an agent editing or deleting a resource can't hit the wrong one when the array has
+  shifted under it (a two-surfaces-on-one-node hazard). Array `index` stays as a fallback for legacy
+  resources. Also fixes `edit_resource` silently dropping a resource's `guestEditable`/`completesAction`
+  flags. Additive doc-format change (`Resource.id` optional; absent = legacy). Web unchanged (MCP-only).
+  Closes #1195.
 - **MCP: search & list filters to cut noise.** `find_node` gains `exact` (whole-title match) plus
   `type` / `status` / `tag` filters (a bare substring returned dozens of noisy hits), and now documents
   that it never returns DONE/archived nodes. `list_next_actions` and `list_backlog` gain optional
