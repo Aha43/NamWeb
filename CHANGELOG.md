@@ -10,6 +10,12 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **MCP: search & list filters to cut noise.** `find_node` gains `exact` (whole-title match) plus
+  `type` / `status` / `tag` filters (a bare substring returned dozens of noisy hits), and now documents
+  that it never returns DONE/archived nodes. `list_next_actions` and `list_backlog` gain optional
+  `project_id` (subtree), `tag`, and `due_before` filters — so an agent asks for the slice it wants
+  instead of a 95-item list. An unknown `project_id` is a clear error, not a silent empty. Web unchanged
+  (MCP-only). Closes #1199.
 - **MCP: `update_tags` is now context-tags-only and preserves system tags.** It sets the ordinary
   (non-system) tags on a node and leaves system/sharing tags (`#checklist`, `#shared-*`, `#not-stalled`,
   `#in-progress`) untouched — those are managed via their own ops (`mark_checklist`, `mark_not_stalled`,
