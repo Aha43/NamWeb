@@ -384,6 +384,18 @@ describe('MCP read surface enrichment', () => {
     expect(r.node.tags).toContain('#shared-open'); // sharing tag untouched
   });
 
+  it('whole-array writes (tags/resources) retry on conflict instead of clobbering (#1192/#1195 P2)', async () => {
+    push.mockResolvedValueOnce({ kind: 'conflict', remoteVersion: 2 }); // another writer landed first
+    const { client, server } = await connectedClient();
+    const res = (await client.callTool({ name: 'update_tags', arguments: { node_id: 'a1', tags: ['x'] } })) as {
+      isError?: boolean;
+      content: { type: string; text?: string }[];
+    };
+    expect(res.isError).toBe(true); // not replayed onto the fresh doc — the caller is told to retry
+    expect(firstText(res as never)).toMatch(/re-read and retry|nothing was written/i);
+    await server.close();
+  });
+
   it('update_tags refuses a system tag in the input (#1192)', async () => {
     const { client, server } = await connectedClient();
     const r = (await client.callTool({
