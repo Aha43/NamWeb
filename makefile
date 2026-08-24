@@ -5,7 +5,7 @@
 # the agent now; keep this file focused on what a human still needs a one-liner for, and
 # add a target whenever there's a recurring "you go do this" step.
 
-.PHONY: dev run docker install test e2e build lint help mcp-deploy mcp-logs mcp-status
+.PHONY: dev run docker install test e2e build lint help mcp-deploy mcp-logs mcp-status migrate-resource-ids
 
 help:
 	@echo "NamWeb make targets:"
@@ -20,6 +20,7 @@ help:
 	@echo "  make mcp-deploy  Gated deploy of the MCP server to Fly (mcp typecheck + tests, then fly deploy)"
 	@echo "  make mcp-logs    Tail the live MCP server logs (Fly)"
 	@echo "  make mcp-status  Show the MCP server machine status (Fly)"
+	@echo "  make migrate-resource-ids  One-time #1195 stamp of ids on legacy resources (DRY RUN; APPLY=1 to write)"
 
 # Smart launcher: bring up everything NamWeb needs, then start the dev server.
 dev:
@@ -55,3 +56,8 @@ mcp-logs:
 
 mcp-status:
 	fly status -a nam-mcp
+
+# One-time resource-id migration (#1195). DRY RUN by default (no write); set APPLY=1 to stamp ids.
+# Hits the workspace described by your env (.env by default — point it at prod to migrate prod).
+migrate-resource-ids:
+	tsx --env-file=.env scripts/migrate-resource-ids.ts
