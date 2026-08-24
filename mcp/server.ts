@@ -95,13 +95,15 @@ function requireEnv(name: string): string {
   return value;
 }
 
-function workspaceName(): string {
+// Exported (#1195) so one-off maintenance scripts (e.g. the resource-id migration) resolve the SAME
+// workspace + sign in the SAME way as the server — no drift to the wrong doc.
+export function workspaceName(): string {
   return process.env.VITE_WORKSPACE_NAME ?? 'default';
 }
 
 // ---- Supabase session (P0: password sign-in stands in for P1 OAuth) ------
 
-async function signedInClient(): Promise<SupabaseClient> {
+export async function signedInClient(): Promise<SupabaseClient> {
   const email = requireEnv('NAM_MCP_EMAIL');
   const client = createClient(
     requireEnv('VITE_SUPABASE_URL'),
