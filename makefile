@@ -5,7 +5,7 @@
 # the agent now; keep this file focused on what a human still needs a one-liner for, and
 # add a target whenever there's a recurring "you go do this" step.
 
-.PHONY: dev run docker install test e2e build lint help mcp-deploy mcp-logs mcp-status migrate-resource-ids
+.PHONY: dev run docker install test e2e build lint help mcp-deploy mcp-logs mcp-status migrate-resource-ids mcp-migrate-resource-ids
 
 help:
 	@echo "NamWeb make targets:"
@@ -20,7 +20,8 @@ help:
 	@echo "  make mcp-deploy  Gated deploy of the MCP server to Fly (mcp typecheck + tests, then fly deploy)"
 	@echo "  make mcp-logs    Tail the live MCP server logs (Fly)"
 	@echo "  make mcp-status  Show the MCP server machine status (Fly)"
-	@echo "  make migrate-resource-ids  One-time #1195 stamp of ids on legacy resources (DRY RUN; APPLY=1 to write)"
+	@echo "  make migrate-resource-ids      #1214 stamp on LOCAL stack (.env) (DRY RUN; APPLY=1 to write)"
+	@echo "  make mcp-migrate-resource-ids  #1214 stamp on PROD, in the Fly container (DRY RUN; APPLY=1 to write)"
 
 # Smart launcher: bring up everything NamWeb needs, then start the dev server.
 dev:
@@ -57,7 +58,13 @@ mcp-logs:
 mcp-status:
 	fly status -a nam-mcp
 
-# One-time resource-id migration (#1195). DRY RUN by default (no write); set APPLY=1 to stamp ids.
-# Hits the workspace described by your env (.env by default — point it at prod to migrate prod).
+# One-time resource-id migration (#1214) against your LOCAL stack (.env). DRY RUN by default; APPLY=1
+# to write. For PROD use `make mcp-migrate-resource-ids` below (runs in the Fly container).
 migrate-resource-ids:
 	tsx --env-file=.env scripts/migrate-resource-ids.ts
+
+# PROD resource-id migration (#1214): run it IN the Fly container, where NAM_MCP_*/VITE_SUPABASE_* are
+# already injected as secrets — no local prod creds. DRY RUN by default; `make mcp-migrate-resource-ids
+# APPLY=1` to write. Needs the script in the deployed image, so `make mcp-deploy` first if it isn't yet.
+mcp-migrate-resource-ids:
+	fly ssh console -a nam-mcp -C "sh -c 'APPLY=$(APPLY) npx tsx scripts/migrate-resource-ids.ts'"
