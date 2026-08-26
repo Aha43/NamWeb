@@ -8,6 +8,23 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-08-26
+
+**AI-in-the-loop is now how NAM is run.** The 3.x era set out to bring AI onto NAM through a remote MCP
+connector, Labs-dark. It stopped being an experiment. Over 3.x the connector learned the whole
+workbench, checklists reached it, and — the part that makes this a milestone rather than a feature —
+the write surface became *trustworthy*: every write echoes its result, bulk imports land atomically,
+and (as of this cut's pre-release audit) no write can silently overwrite a concurrent change. But the
+proof isn't the tools; it's the loop closing: the AI MCP user **specced its own improvement sprint**
+from ten days of real work, the coder built it, the AI **acceptance-tested it** against the live
+server, then **ran a data migration end-to-end through the connector** — every hand-off through NAM
+itself. The human owns the product; the AIs own their surfaces. This cut also lands the last of that
+arc: resources addressable by a stable id (the index-shift trap gone) and the conflict-replay audit
+above.
+
+*Next (4.x): reconcile-at-apply-time writes (#1223); ChatGPT / second-vendor support when OpenAI opens
+the tier (#1102).*
+
 ### Changed
 
 - **MCP: parent-destination writes no longer replay a stale parent check.** `create_project`,
@@ -2616,7 +2633,8 @@ focus against the same Supabase backend. Everything below shipped on the way her
   (`docs/features/web-app/design.md`). No application code yet — the frontend stack and first
   epics are decided in a planning session.
 
-[Unreleased]: https://github.com/Aha43/NamWeb/compare/v3.9.0...HEAD
+[Unreleased]: https://github.com/Aha43/NamWeb/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/Aha43/NamWeb/compare/v3.9.0...v4.0.0
 [3.9.0]: https://github.com/Aha43/NamWeb/compare/v3.8.0...v3.9.0
 [3.8.0]: https://github.com/Aha43/NamWeb/compare/v3.7.0...v3.8.0
 [3.7.0]: https://github.com/Aha43/NamWeb/compare/v3.6.1...v3.7.0
