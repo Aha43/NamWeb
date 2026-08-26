@@ -239,10 +239,17 @@ describe('GuestSharePage (#761)', () => {
       { node_id: 'aa11', res_index: 0, delta: 1 },
     ]);
     // Coming back to the tab fires `focus` → refreshTicks() → fetchShareResourceEvents → setTicks.
-    // POLL for the result (#821/F4): a one-shot getByText after `act` raced React's microtask flush and
-    // flaked on CI; waitFor retries until the re-pull lands (same pattern as the sibling test below).
-    fireEvent(window, new Event('focus'));
-    await waitFor(() => expect(screen.getByText(/cartons 2\/4/)).toBeInTheDocument(), { timeout: 3000 });
+    // Re-dispatch focus on EACH poll until the re-pull lands (#821/F4). The focus LISTENER is attached
+    // by a passive effect that can lag the render `findByText` resolved on, so on a saturated CI worker
+    // a single dispatch could fire before the listener exists and be silently missed — retrying the
+    // dispatch (refreshTicks is idempotent under its generation guard) makes it robust to that lag.
+    await waitFor(
+      () => {
+        fireEvent(window, new Event('focus'));
+        expect(screen.getByText(/cartons 2\/4/)).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
   });
 
   it('delegated questions (#827): overlay answer, tap to answer, quiet refusal', async () => {
