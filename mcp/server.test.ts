@@ -419,6 +419,27 @@ describe('MCP read surface enrichment', () => {
     }
   });
 
+  it('parent-destination writes retry on conflict — the build-time guard is not replayed (Codex P1)', async () => {
+    // create_project / add_action / move_node validate the destination parent only while building the
+    // intent; replaying onto a fresh doc could nest under a concurrently-converted parent. Retry instead.
+    const cases: Array<[string, Record<string, unknown>]> = [
+      ['create_project', { title: 'X', parent_id: 'p1' }],
+      ['add_action', { project_id: 'p1', title: 'Y' }],
+      ['move_node', { node_id: 'a1', new_parent_id: 'p2' }],
+    ];
+    for (const [name, args] of cases) {
+      push.mockResolvedValueOnce({ kind: 'conflict', remoteVersion: 2 });
+      const { client, server } = await connectedClient();
+      const res = (await client.callTool({ name, arguments: args })) as {
+        isError?: boolean;
+        content: { type: string; text?: string }[];
+      };
+      expect(res.isError, `${name} should retry on conflict, not replay a stale parent guard`).toBe(true);
+      expect(firstText(res as never)).toMatch(/re-read and retry|nothing was written/i);
+      await server.close();
+    }
+  });
+
   it('update_tags refuses a system tag in the input (#1192)', async () => {
     const { client, server } = await connectedClient();
     const r = (await client.callTool({

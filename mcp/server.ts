@@ -783,7 +783,10 @@ export function buildServer(
         }
         const parentId = parent_id ?? doc.projectsNodeId;
         return { type: 'addSubProject', parentId, id: newId(), title, now: nowIso() };
-      }),
+      },
+      // Codex P1: the parent-type guard above is build-time only — replaying this onto a fresh doc
+      // could nest under a parent that was concurrently converted to an action. Retry, don't replay.
+      { replayOnConflict: false }),
   );
 
   registerWrite(
@@ -819,7 +822,10 @@ export function buildServer(
           ...(description?.trim() ? { description } : {}),
           now: nowIso(),
         };
-      }),
+      },
+      // Codex P1: the assertActionParent guard is build-time only — replay could attach this action
+      // under a parent that was concurrently converted to an action. Retry, don't replay.
+      { replayOnConflict: false }),
   );
 
   registerWrite(
@@ -1166,7 +1172,10 @@ export function buildServer(
           );
         }
         return { type: 'moveNode', id: node_id, newParentId: new_parent_id, now: nowIso() };
-      }),
+      },
+      // Codex P1: the move-targets guard is build-time only — replay could move this node under a
+      // destination that was concurrently converted to an action. Retry, don't replay.
+      { replayOnConflict: false }),
   );
 
   registerWrite(
