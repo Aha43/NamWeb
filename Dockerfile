@@ -21,9 +21,6 @@ RUN npm ci
 COPY tsconfig*.json ./
 COPY mcp ./mcp
 COPY src ./src
-# One-off maintenance scripts (e.g. the #1214 resource-id migration) so they can be run IN the
-# container via `fly ssh console` — where the prod creds already live, no local secrets needed.
-COPY scripts ./scripts
 
 # Config is entirely via env: NAM_MCP_* (EMAIL/PASSWORD or OAuth), VITE_SUPABASE_URL /
 # VITE_SUPABASE_PUBLISHABLE_KEY, VITE_WORKSPACE_NAME, NAM_MCP_DATABASE_URL (persistent OAuth store),
