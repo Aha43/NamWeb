@@ -275,7 +275,7 @@ function richDoc(): WorkspaceDocument {
       dueAt: '2026-08-12',
       dueTime: '14:30',
       description: 'the note',
-      resources: [{ type: 'URI', value: 'https://x', description: null }],
+      resources: [{ id: 'r-a1', type: 'URI', value: 'https://x', description: null }],
     }),
   );
   add(node('p2', { title: 'Stale', project: true, childIds: ['a2'] })); // no NEXT in subtree → stalled
@@ -349,7 +349,7 @@ describe('MCP read surface enrichment', () => {
       title: 'Ship it',
       description: 'the note', // the actual text, not just hasDescription
       path: ['Launch'],
-      resources: [{ index: 0, type: 'URI', value: 'https://x', description: null }],
+      resources: [{ id: 'r-a1', type: 'URI', value: 'https://x', description: null }],
     });
     // presence flags are replaced by the real data
     expect(node.hasDescription).toBeUndefined();
@@ -414,11 +414,11 @@ describe('MCP read surface enrichment', () => {
   });
 
   it('migrate_resource_ids: dry-run reports the count, apply stamps + pushes (#1214)', async () => {
-    // richDoc has 2 id-less resources: a1's, and a2's legacy one (a2's r-a2 already has an id).
+    // richDoc has 1 id-less resource: a2's legacy one (a1's and a2's r-a2 already carry ids).
     const dry = await call('migrate_resource_ids', {});
-    expect(dry).toEqual({ dryRun: true, wouldStamp: 2 });
+    expect(dry).toEqual({ dryRun: true, wouldStamp: 1 });
     const applied = await call('migrate_resource_ids', { dry_run: false });
-    expect(applied).toMatchObject({ stamped: 2 });
+    expect(applied).toMatchObject({ stamped: 1 });
   });
 
   it('add_resource assigns a stable id (#1195)', async () => {
@@ -433,17 +433,20 @@ describe('MCP read surface enrichment', () => {
     expect(edited.value).toBe('https://a2-edited'); // changed, and still carries id r-a2
   });
 
-  it('remove_resource by id removes exactly that one; legacy still by index (#1195)', async () => {
+  it('remove_resource removes exactly the resource_id given (#1195/#1214)', async () => {
     const byId = await call('remove_resource', { node_id: 'a2', resource_id: 'r-a2' });
     expect((byId.node.resources ?? []).some((x: { id?: string }) => x.id === 'r-a2')).toBe(false);
-    const byIndex = await call('remove_resource', { node_id: 'a2', index: 0 }); // the legacy id-less one
-    expect((byIndex.node.resources ?? []).length).toBe(1); // r-a2 remains
+    expect((byId.node.resources ?? []).length).toBe(1); // a2's other (legacy) resource remains
   });
 
-  it('remove_resource with neither id nor index errors (#1195)', async () => {
+  it('remove_resource errors on an unknown resource_id — no array index to shift (#1214)', async () => {
     const { client, server } = await connectedClient();
-    const res = (await client.callTool({ name: 'remove_resource', arguments: { node_id: 'a2' } })) as { isError?: boolean };
+    const res = (await client.callTool({
+      name: 'remove_resource',
+      arguments: { node_id: 'a2', resource_id: 'nope' },
+    })) as { isError?: boolean; content: { type: string; text?: string }[] };
     expect(res.isError).toBe(true);
+    expect(firstText(res as never)).toMatch(/no resource with id/i);
     await server.close();
   });
 
@@ -574,7 +577,7 @@ describe('MCP read surface enrichment', () => {
     const rich = await call('list_subtree', { node_id: 'p1', include_descriptions: true });
     const a1rich = rich.find((n: { id: string }) => n.id === 'a1');
     expect(a1rich.description).toBe('the note'); // full text inline
-    expect(a1rich.resources).toEqual([{ index: 0, type: 'URI', value: 'https://x', description: null }]);
+    expect(a1rich.resources).toEqual([{ id: 'r-a1', type: 'URI', value: 'https://x', description: null }]);
     expect(a1rich.depth).toBe(1); // still carries depth
   });
 

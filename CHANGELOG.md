@@ -8,6 +8,15 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Changed
+
+- **MCP: `remove_resource` / `edit_resource` address a resource by `resource_id` only — the array
+  `index` is gone.** With every resource now carrying a stable id (`add_resource` stamps new ones; the
+  `migrate_resource_ids` run stamped the rest), the index fallback — where a concurrent reorder could
+  shift the target and make a remove/edit hit the *wrong* resource — is removed, not deprecated:
+  `resource_id` is required and it's the only handle, so that trap is now impossible. `list_resources`
+  and node views no longer emit `index`. Web unchanged (MCP-only). Refs #1214.
+
 ### Added
 
 - **MCP: `migrate_resource_ids` — one-shot maintenance to stamp ids on legacy resources.** Runs the

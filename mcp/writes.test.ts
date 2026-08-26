@@ -54,7 +54,7 @@ function makeDoc(): WorkspaceDocument {
       title: 'Draft',
       status: 'NEXT',
       description: 'keep me',
-      resources: [{ type: 'URI', value: 'http://x', description: 'link' }],
+      resources: [{ id: 'r-x', type: 'URI', value: 'http://x', description: 'link' }],
     }),
   );
   return {
@@ -427,26 +427,26 @@ describe('NamWeb MCP write tools', () => {
     const intent = committedIntent();
     expect(intent.type).toBe('updateResources');
     expect((intent as Extract<Intent, { type: 'updateResources' }>).resources).toEqual([
-      { type: 'URI', value: 'http://x', description: 'link' }, // existing legacy resource, no id
+      { id: 'r-x', type: 'URI', value: 'http://x', description: 'link' }, // existing resource keeps its id
       { id: expect.any(String), type: 'EMAIL', value: 'a@b.c', description: null }, // new one gets a stable id (#1195)
     ]);
   });
 
-  it('remove_resource drops the resource at the index', async () => {
-    await call('remove_resource', { node_id: 'a1', index: 0 });
+  it('remove_resource drops the resource with the given resource_id', async () => {
+    await call('remove_resource', { node_id: 'a1', resource_id: 'r-x' });
     expect((committedIntent() as Extract<Intent, { type: 'updateResources' }>).resources).toEqual([]);
   });
 
-  it('remove_resource with an out-of-range index errors', async () => {
-    const result = await call('remove_resource', { node_id: 'a1', index: 5 });
+  it('remove_resource with an unknown resource_id errors', async () => {
+    const result = await call('remove_resource', { node_id: 'a1', resource_id: 'nope' });
     expect(result.isError).toBe(true);
     expect(commitIntent).not.toHaveBeenCalled();
   });
 
-  it('edit_resource merges over the existing resource', async () => {
-    await call('edit_resource', { node_id: 'a1', index: 0, value: 'http://y' });
+  it('edit_resource merges over the resource with the given resource_id', async () => {
+    await call('edit_resource', { node_id: 'a1', resource_id: 'r-x', value: 'http://y' });
     expect((committedIntent() as Extract<Intent, { type: 'updateResources' }>).resources).toEqual([
-      { type: 'URI', value: 'http://y', description: 'link' },
+      { id: 'r-x', type: 'URI', value: 'http://y', description: 'link' },
     ]);
   });
 
