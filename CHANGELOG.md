@@ -8,6 +8,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ## [Unreleased]
 
+### Added
+
+- **MCP: `migrate_resource_ids` — one-shot maintenance to stamp ids on legacy resources.** Runs the
+  #1214 resource-id migration through the connector as the authenticated user (no server/owner
+  credentials needed), so an AI can finish retiring the array-index hazard for resources created before
+  ids existed. Idempotent; `dry_run` defaults to true (reports the count) — pass `dry_run:false` to
+  apply. Web unchanged (MCP-only). Refs #1214.
+
 ## [3.9.0] - 2026-08-23
 
 **The connector grows up — specced, built, and acceptance-tested across the loop.** The MCP user (an AI

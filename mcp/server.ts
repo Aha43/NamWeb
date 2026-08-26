@@ -64,6 +64,7 @@ import {
 import { GONE_QUIET_DAYS, goneQuiet, stalledProjects } from '../src/domain/review';
 import { CHECKLIST_TAG, NOT_STALLED_TAG, canonicalTag, isChecklist, isSystemTag } from '../src/domain/systemTags';
 import { projectSummaryMarkdown } from '../src/domain/projectSummary';
+import { stampResourceIds } from '../src/domain/resourceMigration';
 import pkg from '../package.json';
 
 // A build signal surfaced in get_workspace_context (#1099/#1097): `<version>+<sha>` when deployed
@@ -1322,6 +1323,41 @@ export function buildServer(
         return { type: 'updateResources', id: node_id, resources, now: nowIso() };
       },
       { replayOnConflict: false }), // whole-array replacement — retry-on-conflict, never replay (#1195 P2)
+  );
+
+  // One-shot maintenance (#1214): stamp a stable id onto every resource that predates ids, so no
+  // resource needs array-index addressing. Runs as the connected user (this client is already their
+  // OAuth-resolved session), so it needs no owner creds — unlike the out-of-band script. A raw handler,
+  // not a domain intent: stamping mints ids from what it reads (can't pre-generate in the caller), which
+  // must stay OUT of the pure/replayable reducer path — so pull → stamp → push once, retry on conflict.
+  registerWrite(
+    'migrate_resource_ids',
+    {
+      description:
+        'One-time maintenance: stamp a stable id onto every workspace resource that predates ids (so ' +
+        'remove/edit by resource_id works everywhere, retiring the array-index hazard). Idempotent. ' +
+        'dry_run (default true) only reports how many WOULD be stamped; pass dry_run:false to apply.',
+      inputSchema: {
+        dry_run: z.boolean().optional().describe('Report only (default true); pass false to write.'),
+      },
+    },
+    async ({ dry_run }) => {
+      try {
+        const snapshot = await loadSnapshot(client, workspace);
+        const doc = structuredClone(snapshot.document);
+        const count = stampResourceIds(doc, newId);
+        if (dry_run !== false) return json({ dryRun: true, wouldStamp: count });
+        if (count === 0) return json({ stamped: 0 });
+        const res = await push(client, workspace, doc, snapshot.version);
+        if (res.kind === 'ok') return json({ stamped: count, version: res.version });
+        if (res.kind === 'conflict') {
+          return errorResult('The workspace changed while migrating — nothing written. Re-read and retry.');
+        }
+        return errorResult(`Migration push failed: ${res.message}`);
+      } catch (err) {
+        return errorResult(err instanceof Error ? err.message : String(err));
+      }
+    },
   );
 
   return server;

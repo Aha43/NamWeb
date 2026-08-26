@@ -122,6 +122,7 @@ const EXPECTED_WRITE_TOOLS = [
   'add_resource',
   'remove_resource',
   'edit_resource',
+  'migrate_resource_ids',
 ];
 
 describe('NamWeb MCP server (read surface)', () => {
@@ -410,6 +411,14 @@ describe('MCP read surface enrichment', () => {
   it('a status write echoes the new status (#1194): mark_done', async () => {
     const r = await call('mark_done', { node_id: 'a1' });
     expect(r.node).toMatchObject({ id: 'a1', status: 'DONE' });
+  });
+
+  it('migrate_resource_ids: dry-run reports the count, apply stamps + pushes (#1214)', async () => {
+    // richDoc has 2 id-less resources: a1's, and a2's legacy one (a2's r-a2 already has an id).
+    const dry = await call('migrate_resource_ids', {});
+    expect(dry).toEqual({ dryRun: true, wouldStamp: 2 });
+    const applied = await call('migrate_resource_ids', { dry_run: false });
+    expect(applied).toMatchObject({ stamped: 2 });
   });
 
   it('add_resource assigns a stable id (#1195)', async () => {
