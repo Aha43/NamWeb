@@ -10,6 +10,13 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **MCP: parent-destination writes no longer replay a stale parent check.** `create_project`,
+  `add_action`, and `move_node` validate the destination parent while building the intent, but on a
+  version conflict that intent was replayed onto the freshly-pulled doc — so if another writer had
+  concurrently turned the destination project into an action, the replay could nest a child under an
+  action (a malformed tree). They now retry-on-conflict instead of replaying, matching the other
+  guarded writes. Found by the pre-4.0 review. Web unchanged (MCP-only).
+
 - **MCP: six more writes are safe against the conflict-replay clobber (audit #1098).** A sweep of every
   write tool found six that still carried a whole-array or multi-field snapshot which, on a version
   conflict, could silently overwrite a concurrent writer's change on replay: `update_node`
