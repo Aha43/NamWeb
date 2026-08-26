@@ -11,12 +11,46 @@
 // Idempotent + version-guarded: re-running after success stamps nothing; a concurrent write aborts it
 // with nothing written (just re-run). See `make migrate-resource-ids`.
 
+import { readFileSync, readdirSync } from 'node:fs';
 import { signedInClient, workspaceName } from '../mcp/server';
 import { pull, push } from '../src/sync/workspaceClient';
 import { stampResourceIds } from '../src/domain/resourceMigration';
 import { newId } from '../src/lib/local';
 
+/**
+ * On Fly, `fly ssh console` starts a bare shell — it does NOT inherit the app's injected secrets
+ * (those live on the running app process, not the ssh session). Backfill any missing vars from the
+ * environ of whichever process HAS them (found by scanning /proc — the ssh session runs as root, so
+ * it can read the app process's environ). No-op locally (vars already set) or off a /proc system.
+ */
+function backfillEnvFromRunningApp(): void {
+  if (process.env.NAM_MCP_EMAIL) return; // already have it (local run via .env)
+  let pids: string[];
+  try {
+    pids = readdirSync('/proc').filter((p) => /^\d+$/.test(p));
+  } catch {
+    return; // not on Fly / no /proc — leave env as-is; requireEnv reports the real missing var.
+  }
+  for (const pid of pids) {
+    let raw: string;
+    try {
+      raw = readFileSync(`/proc/${pid}/environ`, 'utf8');
+    } catch {
+      continue; // process gone or not readable
+    }
+    if (!raw.includes('NAM_MCP_EMAIL=')) continue; // not the app process
+    for (const pair of raw.split('\0')) {
+      const eq = pair.indexOf('=');
+      if (eq <= 0) continue;
+      const key = pair.slice(0, eq);
+      if (process.env[key] === undefined) process.env[key] = pair.slice(eq + 1);
+    }
+    return; // found + loaded the app's env
+  }
+}
+
 async function main(): Promise<void> {
+  backfillEnvFromRunningApp(); // Fly ssh has a bare env — pull the secrets off the running app process
   const apply = process.env.APPLY === '1';
   const url = process.env.VITE_SUPABASE_URL ?? '(VITE_SUPABASE_URL unset)';
 
