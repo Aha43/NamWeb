@@ -292,25 +292,22 @@ function nodeView(doc: WorkspaceDocument, n: NamNode) {
   return view;
 }
 
-function resourceBrief(r: Resource, index: number) {
-  // Both handles: `id` is stable across reorders/removals (prefer it, #1195); `index` stays for legacy
-  // resources that predate ids. Omit id when absent so a consumer can tell which addressing to use.
-  return { ...(r.id ? { id: r.id } : {}), index, type: r.type, value: r.value, description: r.description };
+function resourceBrief(r: Resource) {
+  // Every resource carries a stable `id` (add_resource stamps new ones; the #1214 migration stamped the
+  // rest), so `id` is the sole handle — the shifting array `index` is gone from the surface, not just
+  // deprecated: remove/edit accept `resource_id` only, so an index-shift can no longer hit the wrong one.
+  return { id: r.id, type: r.type, value: r.value, description: r.description };
 }
 
 /** Resolve which resource a remove/edit targets: by stable `id` (preferred, #1195) or array `index`
  *  (legacy). Throws a clear message on a bad handle — never a silent wrong-resource. */
-function resolveResourceIndex(node: NamNode, resourceId: string | undefined, index: number | undefined): number {
-  if (resourceId != null) {
-    const i = node.resources.findIndex((r) => r.id === resourceId);
-    if (i < 0) throw new Error(`No resource with id ${resourceId} on this node (see list_resources).`);
-    return i;
-  }
-  if (index != null) {
-    if (index < 0 || index >= node.resources.length) throw new Error(`No resource at index ${index}.`);
-    return index;
-  }
-  throw new Error('Provide resource_id (preferred — stable) or index.');
+/** The array position of the resource with `resourceId`, or a clear error. Id is the sole handle since
+ *  the #1214 migration (the array-index path was retired) — a stable id can't be shifted out from under
+ *  a caller, so remove/edit never hit the wrong resource. */
+function resourceIndexById(node: NamNode, resourceId: string): number {
+  const i = node.resources.findIndex((r) => r.id === resourceId);
+  if (i < 0) throw new Error(`No resource with id ${resourceId} on this node (see list_resources).`);
+  return i;
 }
 
 /** Whether a node carries `tag` (own or inherited), by canonical form. */
@@ -1274,18 +1271,17 @@ export function buildServer(
     'remove_resource',
     {
       description:
-        'Remove a resource from a node. Address it by resource_id (preferred — stable across reorders, ' +
-        '#1195) or by index (legacy resources without an id). list_resources shows both.',
+        'Remove a resource from a node, addressed by its stable resource_id (from list_resources). ' +
+        'Id-only since #1214 — no array index, so a concurrent reorder can never make this hit the wrong one.',
       inputSchema: {
         node_id: z.string().describe('UUID of the node'),
-        resource_id: z.string().optional().describe('Stable id of the resource (preferred)'),
-        index: z.number().int().nonnegative().optional().describe('Array index (for legacy resources without an id)'),
+        resource_id: z.string().describe('Stable id of the resource (from list_resources)'),
       },
     },
-    ({ node_id, resource_id, index }) =>
+    ({ node_id, resource_id }) =>
       commit((doc) => {
         const node = requireNode(doc, node_id);
-        const at = resolveResourceIndex(node, resource_id, index);
+        const at = resourceIndexById(node, resource_id);
         const resources = node.resources.filter((_, i) => i !== at);
         return { type: 'updateResources', id: node_id, resources, now: nowIso() };
       },
@@ -1296,21 +1292,20 @@ export function buildServer(
     'edit_resource',
     {
       description:
-        'Edit a resource (omitted fields unchanged). Address it by resource_id (preferred — stable, ' +
-        '#1195) or by index (legacy). list_resources shows both.',
+        'Edit a resource (omitted fields unchanged), addressed by its stable resource_id (from ' +
+        'list_resources). Id-only since #1214 — no array index.',
       inputSchema: {
         node_id: z.string().describe('UUID of the node'),
-        resource_id: z.string().optional().describe('Stable id of the resource (preferred)'),
-        index: z.number().int().nonnegative().optional().describe('Array index (for legacy resources without an id)'),
+        resource_id: z.string().describe('Stable id of the resource (from list_resources)'),
         type: z.enum(RESOURCE_TYPES).optional().describe('New type'),
         value: z.string().optional().describe('New value'),
         description: z.string().nullable().optional().describe('New label, or null to clear'),
       },
     },
-    ({ node_id, resource_id, index, type, value, description }) =>
+    ({ node_id, resource_id, type, value, description }) =>
       commit((doc) => {
         const node = requireNode(doc, node_id);
-        const at = resolveResourceIndex(node, resource_id, index);
+        const at = resourceIndexById(node, resource_id);
         const current = node.resources[at];
         // Spread current so id + guestEditable/completesAction survive an edit (they were dropped before).
         const updated: Resource = {
