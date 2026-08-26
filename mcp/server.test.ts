@@ -397,6 +397,28 @@ describe('MCP read surface enrichment', () => {
     await server.close();
   });
 
+  it('the audited snapshot-carrying writes also retry on conflict (#1098)', async () => {
+    // Each carries a whole-array/multi-field snapshot the audit flagged: updateNode (title+desc pair),
+    // setDue (4 due fields), and the system-tag ops (whole-tags replace, add + filter shapes).
+    const cases: Array<[string, Record<string, unknown>]> = [
+      ['update_node', { node_id: 'a1', title: 'X' }],
+      ['set_due', { node_id: 'a1', due: '2026-09-01' }],
+      ['mark_not_stalled', { project_id: 'p2' }],
+      ['unmark_checklist', { project_id: 'p2' }],
+    ];
+    for (const [name, args] of cases) {
+      push.mockResolvedValueOnce({ kind: 'conflict', remoteVersion: 2 });
+      const { client, server } = await connectedClient();
+      const res = (await client.callTool({ name, arguments: args })) as {
+        isError?: boolean;
+        content: { type: string; text?: string }[];
+      };
+      expect(res.isError, `${name} should retry on conflict, not clobber`).toBe(true);
+      expect(firstText(res as never)).toMatch(/re-read and retry|nothing was written/i);
+      await server.close();
+    }
+  });
+
   it('update_tags refuses a system tag in the input (#1192)', async () => {
     const { client, server } = await connectedClient();
     const r = (await client.callTool({

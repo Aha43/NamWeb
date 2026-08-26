@@ -957,7 +957,10 @@ export function buildServer(
           throw new Error(`due_end_time (${dueEndTime}) is before due_time (${dueTime}) on the same day.`);
         }
         return { type: 'setDue', id: node_id, dueAt, dueEndAt, dueTime, dueEndTime, now: nowIso() };
-      }),
+      },
+      // #1098: setDue carries all four due fields as one snapshot — replaying it on a conflict would
+      // overwrite a concurrent edit to another due field on the same node. Retry-on-conflict instead.
+      { replayOnConflict: false }),
   );
 
   const markStatus = (toolName: string, status: NodeStatus) =>
@@ -992,7 +995,8 @@ export function buildServer(
         const node = requireNode(doc, project_id);
         if (!node.project) throw new Error(`Node ${project_id} is not a project; #checklist applies to projects.`);
         return { type: 'updateTags', id: project_id, tags: [...node.tags, CHECKLIST_TAG], now: nowIso() };
-      }),
+      },
+      { replayOnConflict: false }), // #1098: whole-tags replace — retry, don't replay (same hazard as update_tags #1192)
   );
 
   registerWrite(
@@ -1012,7 +1016,8 @@ export function buildServer(
           tags: node.tags.filter((t) => canonicalTag(t) !== CHECKLIST_TAG),
           now: nowIso(),
         };
-      }),
+      },
+      { replayOnConflict: false }), // #1098: whole-tags replace — retry, don't replay (same hazard as update_tags #1192)
   );
 
   registerWrite(
@@ -1029,7 +1034,8 @@ export function buildServer(
         const node = requireNode(doc, project_id);
         if (!node.project) throw new Error(`Node ${project_id} is not a project; #not-stalled applies to projects.`);
         return { type: 'updateTags', id: project_id, tags: [...node.tags, NOT_STALLED_TAG], now: nowIso() };
-      }),
+      },
+      { replayOnConflict: false }), // #1098: whole-tags replace — retry, don't replay (same hazard as update_tags #1192)
   );
 
   registerWrite(
@@ -1049,7 +1055,8 @@ export function buildServer(
           tags: node.tags.filter((t) => canonicalTag(t) !== NOT_STALLED_TAG),
           now: nowIso(),
         };
-      }),
+      },
+      { replayOnConflict: false }), // #1098: whole-tags replace — retry, don't replay (same hazard as update_tags #1192)
   );
 
   registerWrite(
@@ -1089,7 +1096,10 @@ export function buildServer(
           description: description !== undefined ? description : node.description,
           now: nowIso(),
         };
-      }),
+      },
+      // #1098: updateNode carries title+description as a pair, back-filling the un-passed field from the
+      // pre-conflict doc — replaying it would overwrite a concurrent edit to the OTHER field. Retry instead.
+      { replayOnConflict: false }),
   );
 
   registerWrite(
