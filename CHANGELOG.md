@@ -10,6 +10,14 @@ minor = features (breaking changes allowed), patch = fixes.
 
 ### Changed
 
+- **MCP: six more writes are safe against the conflict-replay clobber (audit #1098).** A sweep of every
+  write tool found six that still carried a whole-array or multi-field snapshot which, on a version
+  conflict, could silently overwrite a concurrent writer's change on replay: `update_node`
+  (title+description), `set_due` (the four due fields), and `mark_checklist` / `unmark_checklist` /
+  `mark_not_stalled` / `unmark_not_stalled` (whole tag list — the same hazard `update_tags` was already
+  fixed for). All six now retry-on-conflict instead of replaying, matching `update_tags` / the resource
+  tools / `delete_node`. Web unchanged (MCP-only). Closes #1098.
+
 - **MCP: `remove_resource` / `edit_resource` address a resource by `resource_id` only — the array
   `index` is gone.** With every resource now carrying a stable id (`add_resource` stamps new ones; the
   `migrate_resource_ids` run stamped the rest), the index fallback — where a concurrent reorder could
